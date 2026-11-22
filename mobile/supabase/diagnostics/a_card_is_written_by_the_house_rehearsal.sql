@@ -1,9 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_card_is_written_by_the_house_rehearsal.sql — 20261120_10. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_card_is_written_by_the_house_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_card_is_written_by_the_house_rehearsal.sql
 --
--- The train applies 20261120_10 here (with_train), 20261120_00 to 20261120_09 already applied; a sealed copy already holds it.
+-- 20261120_10 is applied on production (the train of 2026-11-22); this shows it still holds there, and on every sealed copy.
 -- Then the house and members in good standing, acting as themselves, find what it fixes holding (review round 14).
 -- Every row here is undone with the transaction. Read each NOTICE as  case|expected|got ; the last line
 -- is the verdict, and any miss makes psql exit non-zero.
@@ -28,12 +28,6 @@ CREATE TEMP TABLE ha4l_ids (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
 GRANT SELECT ON ha4l_ids TO authenticated;
 CREATE TEMP TABLE ha4l_seen (what text PRIMARY KEY, got text) ON COMMIT DROP;
 GRANT ALL ON ha4l_seen TO authenticated;
-
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261120_10_a_card_is_written_by_the_house.sql
-\endif
 
 -- ── H-A4.locks ──
 RESET ROLE;

@@ -35,6 +35,47 @@ CREATE SCHEMA public;
 COMMENT ON SCHEMA public IS 'standard public schema';
 
 
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: lounge_messages; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.lounge_messages (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    lounge_id uuid NOT NULL,
+    user_id uuid,
+    content text DEFAULT ''::text,
+    type text DEFAULT 'text'::text,
+    metadata jsonb DEFAULT '{}'::jsonb,
+    reply_to_id uuid,
+    reply_to_content text,
+    reply_to_username text,
+    created_at timestamp with time zone DEFAULT now(),
+    deleted_at timestamp with time zone,
+    film_id integer,
+    film_title text,
+    film_poster text,
+    carries_words_of uuid[],
+    CONSTRAINT lounge_messages_content_len CHECK ((char_length(content) <= 2000)),
+    CONSTRAINT lounge_messages_film_poster_len CHECK ((char_length(film_poster) <= 2048)),
+    CONSTRAINT lounge_messages_film_title_len CHECK ((char_length(film_title) <= 300)),
+    CONSTRAINT lounge_messages_metadata_len CHECK ((char_length((metadata)::text) <= 8000)),
+    CONSTRAINT lounge_messages_reply_to_content_len CHECK ((char_length(reply_to_content) <= 2000)),
+    CONSTRAINT lounge_messages_reply_to_username_len CHECK ((char_length(reply_to_username) <= 100)),
+    CONSTRAINT lounge_messages_type_len CHECK ((char_length(type) <= 100))
+);
+
+
+--
+-- Name: COLUMN lounge_messages.carries_words_of; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.lounge_messages.carries_words_of IS 'The members whose words this message carries besides its writer''s: the author of the message it answers (its quote), the author of the piece its card shows, the author of a card it answers. Written by the house alone (a_reply_quotes_its_message on insert; a_keeps_what_it_is keeps it from its writer). NULL: none. lounge_messages_hide_blocked hides a message carrying the words of one hidden from the reader, unless it is the reader''s own.';
+
+
 --
 -- Name: a_block_stands_between(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
@@ -50,6 +91,31 @@ CREATE FUNCTION public.a_block_stands_between(p_one uuid, p_other uuid) RETURNS 
          OR (b.blocker_id = p_other AND b.blocked_id = p_one))
   );
 $$;
+
+
+--
+-- Name: a_cards_author(text, jsonb); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.a_cards_author(p_type text, p_metadata jsonb) RETURNS uuid
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+  -- The piece a card shows, named as the phone and the website name it in the card's metadata; a
+  -- name that is not an id, or a piece no longer in the house, has no author.
+  SELECT CASE p_type
+           WHEN 'log_share'     THEN (SELECT l.user_id FROM public.logs l WHERE l.id = k.id)
+           WHEN 'list_share'    THEN (SELECT s.user_id FROM public.lists s WHERE s.id = k.id)
+           WHEN 'dossier_share' THEN (SELECT d.user_id FROM public.dispatch_posts d WHERE d.id = k.id)
+         END
+    FROM (SELECT CASE WHEN n.named ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+                      THEN n.named::uuid END AS id
+            FROM (SELECT CASE p_type
+                           WHEN 'log_share'     THEN coalesce(p_metadata ->> 'log_id', p_metadata ->> 'logId')
+                           WHEN 'list_share'    THEN p_metadata ->> 'listId'
+                           WHEN 'dossier_share' THEN coalesce(p_metadata ->> 'dossier_id', p_metadata ->> 'dossierId')
+                         END AS named) n) k
+$_$;
 
 
 --
@@ -150,17 +216,14 @@ CREATE FUNCTION public.a_filings_shared_line(p_kind text, p_title text, p_body t
     LANGUAGE sql IMMUTABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  -- As the phone's filingShareLine and cardTitle: the headline; else the words unless they are marked
-  -- as a spoiler (cut to 300 characters); else the kind, its film, and that it holds spoilers.
-  SELECT CASE
-    WHEN nullif(btrim(coalesce(p_title, '')), '') IS NOT NULL THEN left(btrim(p_title), 300)
-    WHEN p_spoiler IS NULL AND nullif(btrim(coalesce(p_body, '')), '') IS NOT NULL
-      THEN CASE WHEN char_length(btrim(p_body)) <= 300 THEN btrim(p_body) ELSE left(btrim(p_body), 299) || '…' END
+  SELECT private.a_card_cut(CASE
+    WHEN nullif(btrim(coalesce(p_title, '')), '') IS NOT NULL THEN p_title
+    WHEN p_spoiler IS NULL AND nullif(btrim(coalesce(p_body, '')), '') IS NOT NULL THEN p_body
     ELSE CASE lower(p_kind) WHEN 'take' THEN 'TAKE' WHEN 'seeking' THEN 'SEEKING' WHEN 'wire' THEN 'WIRE'
                             WHEN 'ballot' THEN 'BALLOT' WHEN 'dossier' THEN 'ESSAY' ELSE upper(p_kind) END
          || coalesce(' on ' || nullif(btrim(coalesce(p_film, '')), ''), '')
          || CASE WHEN p_spoiler IS NOT NULL THEN ' · SPOILERS' ELSE '' END
-  END
+  END)
 $$;
 
 
@@ -232,6 +295,21 @@ END $$;
 
 
 --
+-- Name: a_rank_is_counted(text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.a_rank_is_counted(p_event text, p_rank text) RETURNS void
+    LANGUAGE sql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  INSERT INTO public.gate_metrics AS m (day, event, feature_id, rank, standing, count)
+  VALUES (current_date, p_event, '', coalesce(p_rank, ''), '', 1)
+  ON CONFLICT (day, event, feature_id, rank, standing)
+  DO UPDATE SET count = m.count + 1;
+$$;
+
+
+--
 -- Name: a_reaction_is_in_its_message_salon(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -262,15 +340,17 @@ BEGIN
   IF NEW.reply_to_id IS NULL THEN
     NEW.reply_to_content := NULL;
     NEW.reply_to_username := NULL;
-    RETURN NEW;
+  ELSE
+    SELECT * INTO q FROM public.lounge_messages WHERE id = NEW.reply_to_id;
+    IF NOT FOUND OR q.lounge_id IS DISTINCT FROM NEW.lounge_id THEN
+      RAISE EXCEPTION 'A reply answers a message of its own salon.' USING ERRCODE = '42501';
+    END IF;
+    NEW.reply_to_content := CASE WHEN q.deleted_at IS NULL THEN q.content END;
+    NEW.reply_to_username := CASE WHEN q.user_id IS NULL THEN '[deleted]'
+                                  ELSE (SELECT p.username FROM public.profiles p WHERE p.id = q.user_id) END;
   END IF;
-  SELECT * INTO q FROM public.lounge_messages WHERE id = NEW.reply_to_id;
-  IF NOT FOUND OR q.lounge_id IS DISTINCT FROM NEW.lounge_id THEN
-    RAISE EXCEPTION 'A reply answers a message of its own salon.' USING ERRCODE = '42501';
-  END IF;
-  NEW.reply_to_content := CASE WHEN q.deleted_at IS NULL THEN q.content END;
-  NEW.reply_to_username := CASE WHEN q.user_id IS NULL THEN '[deleted]'
-                                ELSE (SELECT p.username FROM public.profiles p WHERE p.id = q.user_id) END;
+  -- Whose words it carries besides its writer's, named by the house: the hiding rule reads it.
+  NEW.carries_words_of := public.whose_words_a_message_carries(NEW.user_id, NEW.type, NEW.metadata, NEW.reply_to_id);
   RETURN NEW;
 END $$;
 
@@ -457,6 +537,28 @@ END $_$;
 
 
 --
+-- Name: a_shared_card_is_the_houses(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.a_shared_card_is_the_houses() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  -- The kinds the apps send: words, or a card of a film, a person, a record, a stack or a filing.
+  IF NEW.type IS NULL OR NEW.type NOT IN ('text', 'film_share', 'person_share', 'log_share', 'list_share', 'dossier_share') THEN
+    RAISE EXCEPTION 'MESSAGE_KIND' USING ERRCODE = '22023',
+      HINT = 'A salon message is words, or a card of a film, a person, a record, a stack or a filing.';
+  END IF;
+  IF NEW.type = 'text' THEN
+    RETURN NEW;
+  END IF;
+  -- Run as the member writing (no SECURITY DEFINER): the piece is read under the house's read rules.
+  RETURN private.a_shared_card(NEW, true);
+END $$;
+
+
+--
 -- Name: a_spoiler_take_veils_its_cards(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -464,13 +566,16 @@ CREATE FUNCTION public.a_spoiler_take_veils_its_cards() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
+DECLARE
+  v_line text := public.a_filings_shared_line(NEW.kind, NEW.title, NEW.body, NEW.spoiler_label,
+                   CASE WHEN NEW.subject_kind = 'film' THEN NEW.subject_title END);
 BEGIN
   -- The house's own write, so a_keeps_what_it_is lets it (the sharer's message is not the author's).
   -- Asked as containment, so the cards' own index (lounge_messages_card_names) finds them; a card
   -- already gone stays gone.
   UPDATE public.lounge_messages m
-     SET film_title = public.a_filings_shared_line(NEW.kind, NEW.title, NEW.body, NEW.spoiler_label,
-                        CASE WHEN NEW.subject_kind = 'film' THEN NEW.subject_title END)
+     SET film_title = v_line,
+         metadata = CASE WHEN m.metadata ? 'title' THEN m.metadata || jsonb_build_object('title', v_line) ELSE m.metadata END
    WHERE m.type = 'dossier_share'
      AND m.metadata <> '{}'::jsonb
      AND m.metadata @> jsonb_build_object('dossier_id', NEW.id::text)
@@ -543,6 +648,37 @@ $$;
 
 
 --
+-- Name: analytics_events_daily_ceiling(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.analytics_events_daily_ceiling() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_me  uuid := auth.uid();
+  v_day date := (now() AT TIME ZONE 'UTC')::date;
+  v_n   integer;
+BEGIN
+  -- The house's own writes are not counted: a member's request always carries the member.
+  IF v_me IS NULL THEN
+    RETURN NEW;
+  END IF;
+  INSERT INTO public.analytics_budget AS b (user_id, day, n)
+  VALUES (v_me, v_day, 1)
+  ON CONFLICT (user_id) DO UPDATE SET
+    day = v_day,
+    n   = (CASE WHEN b.day = v_day THEN b.n ELSE 0 END) + 1
+  RETURNING n INTO v_n;
+  IF v_n > 1000 THEN
+    RAISE EXCEPTION 'RATE_LIMITED' USING ERRCODE = 'RH429', DETAIL = 'day',
+      HINT = GREATEST(1, ceil(extract(epoch FROM ((v_day + 1)::timestamp AT TIME ZONE 'UTC') - now())))::integer::text;
+  END IF;
+  RETURN NEW;
+END $$;
+
+
+--
 -- Name: approve_lounge_member(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -600,7 +736,7 @@ CREATE FUNCTION public.audience_allows(p_actor uuid, p_owner uuid, p_pref text) 
     WHEN p_owner IS NULL THEN TRUE
     WHEN auth.uid() = p_owner THEN TRUE
     WHEN public.a_block_stands_between(auth.uid(), p_owner) THEN FALSE
-    WHEN NOT public.can_view_user_data(p_owner) THEN FALSE
+    WHEN NOT private.can_view_user_data(p_owner) THEN FALSE
     WHEN COALESCE(p_pref, 'everyone') = 'everyone' THEN TRUE
     WHEN COALESCE(p_pref, 'everyone') = 'nobody' THEN FALSE
     ELSE EXISTS (SELECT 1 FROM public.interactions
@@ -622,7 +758,7 @@ CREATE FUNCTION public.ballot_tally(p_post uuid) RETURNS jsonb
        WHERE p.id = p_post
          AND p.kind = 'ballot'
          AND p.is_published AND p.withheld_at IS NULL AND p.ended_at IS NULL
-         AND NOT COALESCE(p.user_id = ANY ((SELECT public.hidden_authors())::uuid[]), false)
+         AND NOT COALESCE(p.user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)
          -- Voted in, or closed: until then the result is not the reader's to see.
          AND (p.closes_at <= now()
               OR EXISTS (SELECT 1 FROM public.dispatch_votes v
@@ -662,12 +798,23 @@ BEGIN
     UPDATE reports
        SET status = 'resolved', resolved_at = now(), resolved_by = v_admin_id, resolution_action = 'dismiss'
      WHERE id = ANY(p_report_ids) AND status = 'pending'
-    RETURNING id, target_user_id
+    RETURNING id, target_user_id, reporter_id
+  ), recorded AS (
+    INSERT INTO mod_actions (report_id, target_user_id, admin_id, action, reason)
+    SELECT d.id, d.target_user_id, v_admin_id, 'dismiss', p_reason FROM dismissed d
+    RETURNING report_id
+  ), told AS (
+    -- Each reporter told as a single dismissal tells them (resolve_moderation_report_v2).
+    INSERT INTO notifications (user_id, type, title, body, message, metadata)
+    SELECT d.reporter_id, 'moderation', 'Your Report Was Reviewed',
+           'Thank you for looking after the house. Your report was reviewed, and the matter is settled.',
+           'Thank you for looking after the house. Your report was reviewed, and the matter is settled.',
+           jsonb_build_object('report_id', d.id, 'action', 'dismiss')
+      FROM dismissed d
+     WHERE d.reporter_id IS NOT NULL
   )
-  INSERT INTO mod_actions (report_id, target_user_id, admin_id, action, reason)
-  SELECT d.id, d.target_user_id, v_admin_id, 'dismiss', p_reason FROM dismissed d;
+  SELECT count(*) INTO v_count FROM recorded;
 
-  GET DIAGNOSTICS v_count = ROW_COUNT;
   RETURN v_count;
 END;
 $$;
@@ -699,7 +846,9 @@ CREATE FUNCTION public.can_annotate_list(p_actor uuid, p_list_id uuid) RETURNS b
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
+  -- A stack the house withholds takes no critique meanwhile, from anyone (H-B10).
   SELECT NOT (COALESCE(l.is_private, false) AND l.user_id IS DISTINCT FROM auth.uid())
+     AND l.withheld_at IS NULL
      AND public.audience_allows(p_actor, l.user_id,
            (SELECT preferences->>'privacy_annotations' FROM public.profiles WHERE id = l.user_id))
   FROM public.lists l WHERE l.id = p_list_id;
@@ -714,7 +863,8 @@ CREATE FUNCTION public.can_annotate_log(p_actor uuid, p_log_id uuid) RETURNS boo
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  SELECT public.audience_allows(p_actor, l.user_id,
+  -- A log the house withholds takes no critique meanwhile, from anyone (H-B10).
+  SELECT l.withheld_at IS NULL AND public.audience_allows(p_actor, l.user_id,
     (SELECT preferences->>'privacy_annotations' FROM public.profiles WHERE id = l.user_id))
   FROM public.logs l WHERE l.id = p_log_id;
 $$;
@@ -728,14 +878,18 @@ CREATE FUNCTION public.can_endorse_content(p_actor uuid, p_type text, p_log_id u
     LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-DECLARE v_owner uuid; v_pref text; v_private boolean := false;
+DECLARE v_owner uuid; v_pref text; v_private boolean := false; v_withheld boolean := false;
 BEGIN
   IF p_type = 'endorse_log' THEN
-    SELECT user_id INTO v_owner FROM public.logs WHERE id = p_log_id;
+    SELECT user_id, withheld_at IS NOT NULL INTO v_owner, v_withheld FROM public.logs WHERE id = p_log_id;
   ELSIF p_type = 'endorse_list' THEN
-    SELECT user_id, COALESCE(is_private, false) INTO v_owner, v_private FROM public.lists WHERE id = p_list_id;
+    SELECT user_id, COALESCE(is_private, false), withheld_at IS NOT NULL INTO v_owner, v_private, v_withheld FROM public.lists WHERE id = p_list_id;
   ELSE
     RETURN TRUE;
+  END IF;
+  -- A piece the house withholds takes no mark meanwhile, from anyone (H-B10).
+  IF v_withheld THEN
+    RETURN FALSE;
   END IF;
   IF v_private AND v_owner IS DISTINCT FROM auth.uid() THEN
     RETURN FALSE;
@@ -751,28 +905,102 @@ $$;
 --
 
 CREATE FUNCTION public.can_view_user_data(target_uid uuid) RETURNS boolean
-    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT private.can_view_user_data(target_uid);
+$$;
+
+
+--
+-- Name: FUNCTION can_view_user_data(target_uid uuid); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.can_view_user_data(target_uid uuid) IS 'private.can_view_user_data(), for the house''s own functions that call it by this name. No member or visitor may call it: the API would serve it.';
+
+
+--
+-- Name: check_critique_pace(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.check_critique_pace() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
 DECLARE
-  is_private    boolean;
-  profile_found boolean;
-  is_following  boolean;
+  v_now      timestamptz := now();
+  v_day      date := (now() AT TIME ZONE 'UTC')::date;
+  v_target   text;
+  v_again    boolean;
+  v_tokens   real;
+  v_count    integer;
+  v_swept    timestamptz;
+  v_n        integer;
+  v_since    timestamptz;
+  v_midnight integer := ceil(extract(epoch FROM ((v_day + 1)::timestamp AT TIME ZONE 'UTC') - v_now))::integer;
 BEGIN
-  IF auth.uid() = target_uid THEN RETURN TRUE; END IF;
+  -- The house's own writes are not paced: a member's request always carries the member.
+  IF auth.uid() IS NULL THEN
+    RETURN NEW;
+  END IF;
 
-  SELECT is_social_private, TRUE INTO is_private, profile_found
-    FROM public.profiles WHERE id = target_uid;
+  -- The piece critiqued, and whether this critique is already filed (sent again, its answer lost).
+  IF TG_TABLE_NAME = 'log_comments' THEN
+    v_target := 'critique:log:' || NEW.log_id::text;
+    v_again := EXISTS (SELECT 1 FROM public.log_comments WHERE id = NEW.id);
+  ELSIF TG_TABLE_NAME = 'list_comments' THEN
+    v_target := 'critique:list:' || NEW.list_id::text;
+    v_again := EXISTS (SELECT 1 FROM public.list_comments WHERE id = NEW.id);
+  ELSIF TG_TABLE_NAME = 'dispatch_comments' THEN
+    v_target := 'critique:post:' || NEW.post_id::text;
+    v_again := EXISTS (SELECT 1 FROM public.dispatch_comments WHERE id = NEW.id);
+  ELSE
+    RETURN NEW;
+  END IF;
+  IF v_again THEN
+    RETURN NEW;
+  END IF;
 
-  IF NOT COALESCE(profile_found, false) THEN RETURN FALSE; END IF;
-  IF NOT COALESCE(is_private, false)   THEN RETURN TRUE;  END IF;
+  -- The member's room to critique, refilled for the time since, less this critique; and the day's
+  -- count. One row, one statement: a member's critiques at the same moment wait on each other here.
+  INSERT INTO public.critique_budget AS b (user_id, tokens, refilled_at, day, n, swept_at)
+  VALUES (NEW.user_id, 29, v_now, v_day, 1, v_now)
+  ON CONFLICT (user_id) DO UPDATE SET
+    tokens      = LEAST(30, b.tokens + GREATEST(0, extract(epoch FROM v_now - b.refilled_at))::real / 20) - 1,
+    refilled_at = GREATEST(b.refilled_at, v_now),
+    day         = v_day,
+    n           = (CASE WHEN b.day = v_day THEN b.n ELSE 0 END) + 1,
+    swept_at    = CASE WHEN b.swept_at <= v_now - interval '1 hour' THEN v_now ELSE b.swept_at END
+  RETURNING tokens, n, swept_at INTO v_tokens, v_count, v_swept;
 
-  SELECT EXISTS (
-    SELECT 1 FROM public.interactions
-    WHERE type = 'follow' AND user_id = auth.uid() AND target_user_id = target_uid
-  ) INTO is_following;
+  IF v_tokens < 0 THEN
+    -- Twenty seconds for each critique short of one.
+    RAISE EXCEPTION 'RATE_LIMITED' USING ERRCODE = 'RH429', DETAIL = 'member',
+      HINT = GREATEST(1, ceil(-v_tokens * 20))::integer::text;
+  END IF;
+  IF v_count > 500 THEN
+    -- The day's own word, so a ceiling met a minute before midnight is never told as a pace.
+    RAISE EXCEPTION 'RATE_LIMITED' USING ERRCODE = 'RH429', DETAIL = 'day',
+      HINT = GREATEST(1, v_midnight)::text;
+  END IF;
 
-  RETURN COALESCE(is_following, false);
+  -- Once an hour, by their next critique, the member's critiques of pieces over an hour ago are let go.
+  IF v_swept = v_now THEN
+    DELETE FROM public.interaction_churn
+     WHERE user_id = NEW.user_id AND target LIKE 'critique:%' AND since <= v_now - interval '1 hour';
+  END IF;
+  INSERT INTO public.interaction_churn AS c (user_id, target, since, n)
+  VALUES (NEW.user_id, v_target, v_now, 1)
+  ON CONFLICT (user_id, target) DO UPDATE SET
+    since = CASE WHEN c.since <= v_now - interval '1 hour' THEN v_now ELSE c.since END,
+    n     = CASE WHEN c.since <= v_now - interval '1 hour' THEN 1 ELSE c.n + 1 END
+  RETURNING n, since INTO v_n, v_since;
+  IF v_n > 20 THEN
+    RAISE EXCEPTION 'RATE_LIMITED' USING ERRCODE = 'RH429', DETAIL = 'target',
+      HINT = GREATEST(1, ceil(extract(epoch FROM v_since + interval '1 hour' - v_now)))::integer::text;
+  END IF;
+
+  RETURN NEW;
 END $$;
 
 
@@ -1112,10 +1340,6 @@ BEGIN
 END $$;
 
 
-SET default_tablespace = '';
-
-SET default_table_access_method = heap;
-
 --
 -- Name: logs; Type: TABLE; Schema: public; Owner: -
 --
@@ -1149,6 +1373,7 @@ CREATE TABLE public.logs (
     viewing_history jsonb DEFAULT '[]'::jsonb,
     view_count integer DEFAULT 1,
     viewing_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    withheld_at timestamp with time zone,
     CONSTRAINT check_rating_range CHECK (((rating >= (0)::numeric) AND (rating <= (5)::numeric))),
     CONSTRAINT check_title_not_empty CHECK (((film_title IS NOT NULL) AND (film_title <> ''::text))),
     CONSTRAINT logs_abandoned_reason_len CHECK ((char_length(abandoned_reason) <= 500)),
@@ -1172,6 +1397,13 @@ CREATE TABLE public.logs (
 
 
 --
+-- Name: COLUMN logs.withheld_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.logs.withheld_at IS 'Withheld by the house (a REMOVE CONTENT awaiting its appeal, withheld_pieces): read by its author alone until deleted or given back. Written by the house alone.';
+
+
+--
 -- Name: critiques_seen(public.logs); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1179,7 +1411,7 @@ CREATE FUNCTION public.critiques_seen(l public.logs) RETURNS integer
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT public.hidden_authors() AS hidden)
+  WITH me AS (SELECT (SELECT private.hidden_authors()) AS hidden)
   SELECT CASE
     WHEN COALESCE(cardinality(me.hidden), 0) = 0
       THEN COALESCE((SELECT c.critique_count FROM public.log_counts c WHERE c.log_id = l.id), 0)
@@ -1279,6 +1511,47 @@ $$;
 
 
 --
+-- Name: delete_withheld_piece(uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.delete_withheld_piece(p_action_id uuid, p_due boolean DEFAULT false) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  w      public.withheld_pieces%ROWTYPE;
+  v_rows integer := 0;
+BEGIN
+  SELECT * INTO w FROM public.withheld_pieces WHERE mod_action_id = p_action_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN false;
+  END IF;
+  -- Asked by the hourly job (p_due): its deadline asked again under the piece's lock, so an appeal filed
+  -- since the job read it (file_appeal takes the deadline away) keeps it.
+  IF p_due AND (w.delete_after IS NULL OR w.delete_after > now()) THEN
+    RETURN false;
+  END IF;
+  -- Deleted as REMOVE CONTENT deleted it before; its counts left it out already (each counting trigger
+  -- takes nothing off for a withheld row), and the notices set aside go with the register's row.
+  CASE w.kind
+    WHEN 'log'              THEN DELETE FROM public.logs              WHERE id = w.piece_id AND withheld_at IS NOT NULL;
+    WHEN 'list'             THEN DELETE FROM public.lists             WHERE id = w.piece_id AND withheld_at IS NOT NULL;
+    WHEN 'log_comment'      THEN DELETE FROM public.log_comments      WHERE id = w.piece_id AND withheld_at IS NOT NULL;
+    WHEN 'list_comment'     THEN DELETE FROM public.list_comments     WHERE id = w.piece_id AND withheld_at IS NOT NULL;
+    WHEN 'dispatch_comment' THEN DELETE FROM public.dispatch_comments WHERE id = w.piece_id AND withheld_at IS NOT NULL;
+    WHEN 'dispatch_post' THEN
+      -- A filing is never deleted: ended by the house, its words emptied, as REMOVE CONTENT ended one.
+      PERFORM public.dispatch_empty_filing(w.piece_id, 'house');
+      UPDATE public.dispatch_posts SET withheld_at = NULL WHERE id = w.piece_id AND ended_at IS NOT NULL;
+  END CASE;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  DELETE FROM public.withheld_pieces WHERE mod_action_id = p_action_id;
+  RETURN v_rows > 0;
+END;
+$$;
+
+
+--
 -- Name: derive_author_username_column(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1332,7 +1605,7 @@ CREATE FUNCTION public.dispatch_archive_films(p_pattern text) RETURNS TABLE(subj
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT public.hidden_authors() AS hidden),
+  WITH me AS (SELECT (SELECT private.hidden_authors()) AS hidden),
   hits AS (
     SELECT p.subject_id, p.subject_title, p.subject_sub, p.subject_image, p.created_at, p.id
       FROM public.dispatch_posts p CROSS JOIN me
@@ -1374,6 +1647,8 @@ BEGIN
   END IF;
   NEW.certify_count := OLD.certify_count;
   NEW.created_at    := OLD.created_at;
+  -- Withheld by the house: only the house gives it back (H-B10).
+  NEW.withheld_at   := OLD.withheld_at;
   -- A critique belongs to the filing it was written under. Moving it puts a
   -- member's words beneath somebody else's writing.
   NEW.post_id       := OLD.post_id;
@@ -1427,8 +1702,11 @@ BEGIN
     UPDATE public.dispatch_posts SET comment_count = comment_count + 1 WHERE id = NEW.post_id;
     RETURN NEW;
   ELSE
-    UPDATE public.dispatch_posts
-       SET comment_count = GREATEST(0, comment_count - 1) WHERE id = OLD.post_id;
+    -- A critique the house withheld was taken off the count when it was withheld (H-B10).
+    IF OLD.withheld_at IS NULL THEN
+      UPDATE public.dispatch_posts
+         SET comment_count = GREATEST(0, comment_count - 1) WHERE id = OLD.post_id;
+    END IF;
     RETURN OLD;
   END IF;
 END $$;
@@ -1470,7 +1748,7 @@ CREATE FUNCTION public.dispatch_empty_filing(p_post uuid, p_by text) RETURNS voi
   )
   UPDATE public.lounge_messages m
      SET film_title = NULL, film_poster = NULL,
-         metadata = (m.metadata - 'author_username') || jsonb_build_object('gone', true)
+         metadata = ((m.metadata - 'author_username') - 'title') || jsonb_build_object('gone', true)
     FROM ended
    WHERE m.type = 'dossier_share'
      AND m.metadata <> '{}'::jsonb
@@ -2357,6 +2635,73 @@ END $$;
 
 
 --
+-- Name: expire_withheld_pieces(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.expire_withheld_pieces() RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_id uuid;
+  v_n  integer := 0;
+BEGIN
+  -- The pieces whose 30 days passed unappealed: deleted as REMOVE CONTENT deleted them before. One whose
+  -- appeal was filed in time carries no end (file_appeal), and waits for its hearing. Each is claimed
+  -- under its lock (one an appeal or a hearing holds is left to the next hour), and its deadline asked
+  -- again under that lock (delete_withheld_piece's p_due): an appeal filed meanwhile keeps it.
+  FOR v_id IN SELECT mod_action_id FROM public.withheld_pieces WHERE delete_after <= now()
+               ORDER BY delete_after LIMIT 500 FOR UPDATE SKIP LOCKED LOOP
+    IF public.delete_withheld_piece(v_id, true) THEN
+      v_n := v_n + 1;
+    END IF;
+  END LOOP;
+  RETURN v_n;
+END;
+$$;
+
+
+--
+-- Name: file_appeal(uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.file_appeal(p_action_id uuid, p_appeal text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_me    uuid := auth.uid();
+  v_words text := btrim(coalesce(public.clean_member_text(p_appeal), ''));
+  m       public.mod_actions%ROWTYPE;
+BEGIN
+  IF v_me IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+  IF char_length(v_words) = 0 OR char_length(v_words) > 1000 THEN
+    RAISE EXCEPTION 'An appeal is between 1 and 1,000 characters.' USING ERRCODE = 'P0001';
+  END IF;
+  -- Held while it is written: two presses at once file one appeal, the second refused.
+  -- A member silenced or suspended may still appeal: the appeal is how they answer it.
+  SELECT * INTO m FROM public.mod_actions
+   WHERE id = p_action_id AND target_user_id = v_me AND action <> 'dismiss'
+   FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'VERDICT_GONE' USING ERRCODE = 'P0002';
+  END IF;
+  IF m.appeal IS NOT NULL THEN
+    RAISE EXCEPTION 'ALREADY_APPEALED' USING ERRCODE = 'P0002';
+  END IF;
+
+  UPDATE public.mod_actions
+     SET appeal = v_words, appeal_filed_at = now(), appeal_status = 'pending'
+   WHERE id = p_action_id;
+  -- A piece the verdict withheld is kept whole until the appeal is heard, however long that takes (H-B10).
+  UPDATE public.withheld_pieces SET delete_after = NULL WHERE mod_action_id = p_action_id;
+END;
+$$;
+
+
+--
 -- Name: forget_other_devices(text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2461,7 +2806,7 @@ CREATE FUNCTION public.get_community_feed_auth_cursor(p_limit integer DEFAULT 40
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT hidden_authors() AS hidden)
+  WITH me AS (SELECT (SELECT private.hidden_authors()) AS hidden)
   SELECT
     l.id, l.film_id, l.film_title, l.poster_path, l.rating, l.review,
     l.drop_cap, l.status, l.abandoned_reason, l.created_at, l.year,
@@ -2473,11 +2818,12 @@ CREATE FUNCTION public.get_community_feed_auth_cursor(p_limit integer DEFAULT 40
     CASE
       WHEN COALESCE(cardinality(me.hidden), 0) = 0 THEN COALESCE(c.critique_count, 0)
       ELSE (SELECT count(*)::integer FROM log_comments x
-             WHERE x.log_id = l.id AND NOT COALESCE(x.user_id = ANY (me.hidden), false))
+             WHERE x.log_id = l.id AND NOT COALESCE(x.user_id = ANY (me.hidden), false)
+               AND x.withheld_at IS NULL)
     END AS critique_count,
     (auth.uid() IS NOT NULL AND EXISTS (
       SELECT 1 FROM interactions im
-       WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'
+       WHERE im.target_log_id = l.id AND im.user_id = (SELECT auth.uid()) AND im.type = 'endorse_log'
     )) AS certified,
     l.alt_poster, l.physical_media
   FROM logs l
@@ -2486,7 +2832,9 @@ CREATE FUNCTION public.get_community_feed_auth_cursor(p_limit integer DEFAULT 40
   CROSS JOIN me
   WHERE l.review IS NOT NULL
     AND l.review <> ''
-    AND NOT COALESCE(l.user_id = ANY ((SELECT hidden_authors())::uuid[]), false)
+    -- a log the house withholds is in no feed, its author's own included (H-B10)
+    AND l.withheld_at IS NULL
+    AND NOT COALESCE(l.user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)
     AND (
       p_cursor_created_at IS NULL
       OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
@@ -2552,11 +2900,13 @@ CREATE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT 
       SELECT l.id, l.created_at, l.user_id
         FROM lists l
        WHERE COALESCE(p_search, '') <> '' AND NOT (SELECT walk FROM many) AND l.is_private = false
+         AND l.withheld_at IS NULL
          AND l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
       UNION
       SELECT l.id, l.created_at, l.user_id
         FROM profiles pu JOIN lists l ON l.user_id = pu.id
        WHERE COALESCE(p_search, '') <> '' AND NOT (SELECT walk FROM many) AND l.is_private = false
+         AND l.withheld_at IS NULL
          AND pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
     ) m
      WHERE p_cursor_created_at IS NULL OR (m.created_at, m.id) < (p_cursor_created_at, p_cursor_id)
@@ -2577,8 +2927,10 @@ CREATE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT 
                ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
         )
         AND l.is_private = false
-        AND NOT COALESCE(l.user_id = ANY ((SELECT hidden_authors())::uuid[]), false)
-        AND public.can_view_user_data(l.user_id)
+        -- a stack the house withholds is on no shelf (H-B10)
+        AND l.withheld_at IS NULL
+        AND NOT COALESCE(l.user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)
+        AND private.can_view_user_data(l.user_id)
         AND (p_filter_following = false OR EXISTS (
               SELECT 1 FROM interactions i
                WHERE i.target_user_id = l.user_id AND i.user_id = auth.uid() AND i.type = 'follow'))
@@ -2589,8 +2941,8 @@ CREATE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT 
     -- Read in the order it was kept (newest first), each asked only as it is reached.
     (SELECT m.id, m.created_at
        FROM matched m
-      WHERE NOT COALESCE(m.user_id = ANY ((SELECT hidden_authors())::uuid[]), false)
-        AND public.can_view_user_data(m.user_id)
+      WHERE NOT COALESCE(m.user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)
+        AND private.can_view_user_data(m.user_id)
         AND (p_filter_following = false OR EXISTS (
               SELECT 1 FROM interactions i
                WHERE i.target_user_id = m.user_id AND i.user_id = auth.uid() AND i.type = 'follow'))
@@ -2630,14 +2982,18 @@ CREATE FUNCTION public.get_following_feed_auth_cursor(p_limit integer DEFAULT 40
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT public.hidden_authors() AS hidden),
+  WITH me AS (SELECT (SELECT private.hidden_authors()) AS hidden),
   followed AS (
     SELECT i.target_user_id AS author
       FROM public.interactions i
-     WHERE i.user_id = auth.uid()
+     WHERE i.user_id = (SELECT auth.uid())
        AND i.type = 'follow'
-       AND NOT COALESCE(i.target_user_id = ANY ((SELECT public.hidden_authors())::uuid[]), false)
-       AND public.can_view_user_data(i.target_user_id)
+       AND NOT COALESCE(i.target_user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)
+       -- can_view_user_data of a member the reader follows, asked here as one join, not a call a
+       -- follow: their profile is there (the follow itself opens a private file), and no block
+       -- stands either way, which the test above already holds (hidden_authors() names every
+       -- member the reader blocked and every member who blocked them).
+       AND EXISTS (SELECT 1 FROM public.profiles fp WHERE fp.id = i.target_user_id)
   ),
   page AS (
     SELECT r.id, r.created_at
@@ -2648,6 +3004,8 @@ CREATE FUNCTION public.get_following_feed_auth_cursor(p_limit integer DEFAULT 40
          WHERE l.user_id = f.author
            AND l.review IS NOT NULL
            AND l.review <> ''
+           -- a log the house withholds is in no feed (H-B10)
+           AND l.withheld_at IS NULL
            AND (p_cursor_created_at IS NULL OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id))
          ORDER BY l.created_at DESC, l.id DESC
          LIMIT p_limit
@@ -2666,11 +3024,12 @@ CREATE FUNCTION public.get_following_feed_auth_cursor(p_limit integer DEFAULT 40
     CASE
       WHEN COALESCE(cardinality(me.hidden), 0) = 0 THEN COALESCE(c.critique_count, 0)
       ELSE (SELECT count(*)::integer FROM public.log_comments x
-             WHERE x.log_id = l.id AND NOT COALESCE(x.user_id = ANY (me.hidden), false))
+             WHERE x.log_id = l.id AND NOT COALESCE(x.user_id = ANY (me.hidden), false)
+               AND x.withheld_at IS NULL)
     END AS critique_count,
     EXISTS (
       SELECT 1 FROM public.interactions im
-       WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'
+       WHERE im.target_log_id = l.id AND im.user_id = (SELECT auth.uid()) AND im.type = 'endorse_log'
     ) AS certified,
     l.alt_poster, l.physical_media
   FROM page pg
@@ -2702,8 +3061,9 @@ CREATE FUNCTION public.get_lobby() RETURNS jsonb
       JOIN public.logs l ON l.id = e.target_id
       JOIN public.profiles p ON p.id = l.user_id
      WHERE btrim(coalesce(l.review, '')) <> '' AND NOT coalesce(l.is_spoiler, false)
+       AND l.withheld_at IS NULL  -- a piece the house withholds hangs for no one, its author included (H-B10)
        AND NOT coalesce(p.is_banned, false)
-       AND NOT public.is_hidden_by(auth.uid(), l.user_id)
+       AND NOT private.is_hidden_by(auth.uid(), l.user_id)
      ORDER BY e.place
      LIMIT 1
   ),
@@ -2715,9 +3075,10 @@ CREATE FUNCTION public.get_lobby() RETURNS jsonb
       JOIN public.lists s ON s.id = e.target_id
       JOIN public.profiles p ON p.id = s.user_id
      WHERE NOT coalesce(s.is_private, false)
+       AND s.withheld_at IS NULL  -- a piece the house withholds hangs for no one (H-B10)
        AND (SELECT count(*) FROM public.list_items i WHERE i.list_id = s.id) >= 4
        AND NOT coalesce(p.is_banned, false)
-       AND NOT public.is_hidden_by(auth.uid(), s.user_id)
+       AND NOT private.is_hidden_by(auth.uid(), s.user_id)
      ORDER BY (s.user_id = (SELECT author_id FROM the_log)) IS TRUE, e.place
      LIMIT 1
   ),
@@ -2818,7 +3179,7 @@ CREATE FUNCTION public.get_lounge_list() RETURNS jsonb
     -- muted (the room does not offer them to be admitted across it, nor counts them).
     'pending', coalesce((SELECT jsonb_agg(jsonb_build_object('lounge_id', p.lounge_id, 'user_id', p.user_id))
       FROM public.lounge_members p WHERE p.lounge_id IN (SELECT id FROM hosted) AND p.status = 'pending'
-        AND NOT public.is_hidden_by((SELECT id FROM me), p.user_id)), '[]'::jsonb),
+        AND NOT private.is_hidden_by((SELECT id FROM me), p.user_id)), '[]'::jsonb),
     'faces', coalesce((SELECT jsonb_agg(to_jsonb(f))
       FROM public.get_salon_member_faces(ARRAY(SELECT id FROM own)) f), '[]'::jsonb),
     'last_words', coalesce((SELECT jsonb_agg(to_jsonb(w))
@@ -2835,7 +3196,7 @@ CREATE FUNCTION public.get_lounge_unread_counts() RETURNS TABLE(lounge_id uuid, 
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT auth.uid() AS id, public.hidden_authors() AS hidden),
+  WITH me AS (SELECT auth.uid() AS id, (SELECT private.hidden_authors()) AS hidden),
   rooms AS (
     SELECT lm.lounge_id, lm.last_read_at, (NOT l.is_private OR lm.status IN ('approved', 'muted')) AS readable
       FROM me
@@ -2844,22 +3205,40 @@ CREATE FUNCTION public.get_lounge_unread_counts() RETURNS TABLE(lounge_id uuid, 
   )
   SELECT
     r.lounge_id,
+    -- A room read before is counted from that moment alone: its index (lounge_messages_room_newest)
+    -- starts there, so only the messages since are read, each from its row to ask whose words it
+    -- carries. One test asking "never read, or since" could start nowhere, and read every message the
+    -- room holds (291 ms for a member in 200 rooms of the load house). A room never read: all of it.
     CASE WHEN r.readable THEN (
-      SELECT count(*) FROM (
-        SELECT 1 FROM public.lounge_messages m
-         WHERE m.lounge_id = r.lounge_id
-           AND m.user_id <> me.id
-           AND (r.last_read_at IS NULL OR m.created_at > r.last_read_at)
-           AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
-         LIMIT 100
-      ) unread
+      CASE WHEN r.last_read_at IS NULL THEN (
+        SELECT count(*) FROM (
+          SELECT 1 FROM public.lounge_messages m
+           WHERE m.lounge_id = r.lounge_id
+             AND m.user_id <> me.id
+             AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
+             AND NOT COALESCE(m.carries_words_of && me.hidden, false)
+           LIMIT 100
+        ) unread
+      ) ELSE (
+        SELECT count(*) FROM (
+          SELECT 1 FROM public.lounge_messages m
+           WHERE m.lounge_id = r.lounge_id
+             AND m.created_at > r.last_read_at
+             AND m.user_id <> me.id
+             AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
+             AND NOT COALESCE(m.carries_words_of && me.hidden, false)
+           LIMIT 100
+        ) unread
+      ) END
     ) ELSE 0 END AS unread_count,
     -- The last word the member can read: one from a member they hid moved the card to the front
-    -- and said "LAST WORD 1M AGO" over a room with nothing new in it (review round 8).
+    -- and said "LAST WORD 1M AGO" over a room with nothing new in it (review round 8); one carrying
+    -- a hidden member's words is not one they can read either (review round 14).
     CASE WHEN r.readable THEN (
       SELECT m.created_at FROM public.lounge_messages m
        WHERE m.lounge_id = r.lounge_id
          AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
+         AND (m.user_id = me.id OR NOT COALESCE(m.carries_words_of && me.hidden, false))
        ORDER BY m.created_at DESC, m.id DESC
        LIMIT 1
     ) END AS last_message_at
@@ -2878,7 +3257,7 @@ CREATE FUNCTION public.get_marks_ledger() RETURNS json
   WITH me AS MATERIALIZED (
     -- The member asking, and whether the logs' read rule would hide their own rows from them.
     SELECT (SELECT auth.uid()) AS id,
-           COALESCE((SELECT auth.uid()) = ANY ((SELECT public.hidden_authors())::uuid[]), false) AS hidden
+           COALESCE((SELECT auth.uid()) = ANY ((SELECT private.hidden_authors())::uuid[]), false) AS hidden
   )
   SELECT json_build_object(
     -- One pass over the member's logs; every column is gathered in the same order, so the i-th of each
@@ -2907,12 +3286,12 @@ $$;
 -- Name: get_moderation_history_for_users(uuid[], integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer DEFAULT 5) RETURNS TABLE(id uuid, report_id uuid, target_user_id uuid, admin_id uuid, action text, reason text, duration_hours integer, expires_at timestamp with time zone, created_at timestamp with time zone)
+CREATE FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer DEFAULT 5) RETURNS TABLE(id uuid, report_id uuid, target_user_id uuid, admin_id uuid, action text, reason text, duration_hours integer, expires_at timestamp with time zone, created_at timestamp with time zone, lifted_at timestamp with time zone, appeal_status text)
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
   SELECT r.id, r.report_id, r.target_user_id, r.admin_id, r.action, r.reason,
-         r.duration_hours, r.expires_at, r.created_at
+         r.duration_hours, r.expires_at, r.created_at, r.lifted_at, r.appeal_status
   FROM (
     SELECT m.*,
            ROW_NUMBER() OVER (PARTITION BY m.target_user_id ORDER BY m.created_at DESC, m.id DESC) AS rn
@@ -2920,11 +3299,189 @@ CREATE FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per
     WHERE m.target_user_id = ANY(COALESCE(p_user_ids, ARRAY[]::uuid[]))
       AND EXISTS (
         SELECT 1 FROM public.profiles p
-        WHERE p.id = auth.uid() AND p.role = 'admin'
+        WHERE p.id = (SELECT auth.uid()) AND p.role = 'admin'
       )
   ) r
   WHERE r.rn <= LEAST(GREATEST(COALESCE(p_per_user, 5), 0), 20)
   ORDER BY r.target_user_id, r.created_at DESC, r.id DESC;
+$$;
+
+
+--
+-- Name: get_my_verdict(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.get_my_verdict(p_action_id uuid) RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_me uuid := auth.uid();
+  m    public.mod_actions%ROWTYPE;
+BEGIN
+  IF v_me IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+  -- One's own verdicts alone; a dismissal of a report about one is no verdict on one.
+  SELECT * INTO m FROM public.mod_actions
+   WHERE id = p_action_id AND target_user_id = v_me AND action <> 'dismiss';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'VERDICT_GONE' USING ERRCODE = 'P0002';
+  END IF;
+
+  RETURN jsonb_build_object(
+    'id', m.id,
+    'action', m.action,
+    'reason', m.reason,
+    'created_at', m.created_at,
+    'duration_hours', m.duration_hours,
+    'expires_at', m.expires_at,
+    -- What a removal took: the member's own words, kept with the verdict.
+    'removed', CASE WHEN m.action = 'delete_content' AND m.content_snapshot IS NOT NULL
+                    THEN jsonb_strip_nulls(jsonb_build_object('title', m.content_snapshot ->> 'title', 'body', m.content_snapshot ->> 'body')) END,
+    -- Whether an overturned removal puts the piece back where it stood, or only hands back its words:
+    -- a piece withheld (H-B10) is given back whole, its critiques and marks with it.
+    'restorable', (m.content_snapshot ? 'kept') OR EXISTS (SELECT 1 FROM public.withheld_pieces w WHERE w.mod_action_id = m.id),
+    -- Withheld, not yet deleted: seen by the member alone, and kept whole until (appeal_by) unappealed,
+    -- or until its appeal is heard (no end once one is filed).
+    'withheld', EXISTS (SELECT 1 FROM public.withheld_pieces w WHERE w.mod_action_id = m.id),
+    'appeal_by', (SELECT w.delete_after FROM public.withheld_pieces w WHERE w.mod_action_id = m.id),
+    -- Overturned: whether it was put back where it stood (whole, for a piece withheld), as the hearing
+    -- wrote it on the verdict (the register goes when the piece is given back).
+    'put_back', coalesce(m.appeal_put_back, false),
+    'lifted_at', m.lifted_at,
+    'lift_reason', m.lift_reason,
+    'appeal', CASE WHEN m.appeal IS NULL THEN NULL ELSE jsonb_build_object(
+                'text', m.appeal, 'filed_at', m.appeal_filed_at, 'status', m.appeal_status,
+                'judged_at', m.appeal_judged_at, 'note', m.appeal_note) END,
+    'can_appeal', m.appeal IS NULL,
+    -- An appeal no moderator may hear yet (the house's one moderator ruled it, or it is about them): it
+    -- waits for another, and the member is told so (the owner's decision, 2026-11-19).
+    'no_moderator_yet', m.appeal_status = 'pending' AND NOT private.an_appeal_may_be_heard(m.admin_id, m.target_user_id));
+END;
+$$;
+
+
+--
+-- Name: get_my_verdicts(timestamp with time zone, uuid, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.get_my_verdicts(p_cursor_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid, p_limit integer DEFAULT 30) RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_me uuid := auth.uid();
+BEGIN
+  IF v_me IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+  -- One's own verdicts alone; a dismissal of a report about one is no verdict on one.
+  RETURN coalesce((
+    SELECT jsonb_agg(jsonb_build_object(
+             'id', m.id,
+             'action', m.action,
+             'reason', m.reason,
+             'created_at', m.created_at,
+             'duration_hours', m.duration_hours,
+             'expires_at', m.expires_at,
+             'lifted_at', m.lifted_at,
+             'appeal_status', m.appeal_status,
+             'content_type', (SELECT r.content_type FROM public.reports r WHERE r.id = m.report_id))
+           ORDER BY m.created_at DESC, m.id DESC)
+      FROM (
+        SELECT * FROM public.mod_actions q
+         WHERE q.target_user_id = v_me AND q.action <> 'dismiss'
+           AND (p_cursor_at IS NULL OR (q.created_at, q.id) < (p_cursor_at, p_cursor_id))
+         ORDER BY q.created_at DESC, q.id DESC
+         LIMIT LEAST(GREATEST(coalesce(p_limit, 30), 1), 50)
+      ) m
+  ), '[]'::jsonb);
+END;
+$$;
+
+
+--
+-- Name: get_my_withheld_pieces(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.get_my_withheld_pieces() RETURNS jsonb
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  -- The member's own pieces the house withholds, so every page of theirs marks each as withheld, never
+  -- as if it stood public: which piece, the verdict that withholds it (its sheet opens from the mark),
+  -- until when it is kept unappealed (none once an appeal is filed), and whether an appeal is filed.
+  SELECT coalesce(jsonb_agg(jsonb_build_object(
+           'kind', w.kind, 'piece_id', w.piece_id, 'verdict_id', w.mod_action_id,
+           'appeal_by', w.delete_after, 'appealed', m.appeal IS NOT NULL)
+           ORDER BY w.withheld_at, w.mod_action_id), '[]'::jsonb)
+    FROM public.withheld_pieces w
+    JOIN public.mod_actions m ON m.id = w.mod_action_id
+   WHERE w.author_id = (SELECT auth.uid()) AND (SELECT auth.uid()) IS NOT NULL
+$$;
+
+
+--
+-- Name: get_pending_appeals(timestamp with time zone, uuid, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.get_pending_appeals(p_cursor_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid, p_limit integer DEFAULT 20) RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_admin_id uuid := auth.uid();
+BEGIN
+  IF v_admin_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = v_admin_id AND role = 'admin') THEN
+    RAISE EXCEPTION 'Unauthorized: admin role required' USING ERRCODE = '42501';
+  END IF;
+
+  -- Oldest first, as a court hears them: a page at a time, keyset on the moment filed and the verdict.
+  -- Asked of the partial index mod_actions_appeals_waiting (H-B6.index), never every verdict.
+  RETURN coalesce((
+    SELECT jsonb_agg(jsonb_build_object(
+             'id', m.id,
+             'action', m.action,
+             'reason', m.reason,
+             'created_at', m.created_at,
+             'duration_hours', m.duration_hours,
+             'expires_at', m.expires_at,
+             'lifted_at', m.lifted_at,
+             'appeal', m.appeal,
+             'appeal_filed_at', m.appeal_filed_at,
+             -- The one who ruled may not hear it: the screen says so, and the house refuses it.
+             'ruled_by_you', m.admin_id IS NOT DISTINCT FROM v_admin_id,
+             -- Why this moderator may not hear it (the one who ruled, or the member it is about), or none.
+             'refused', private.a_judge_is_refused(v_admin_id, m.admin_id, m.target_user_id),
+             -- No moderator of the house may hear it yet: it waits for another to be appointed.
+             'no_moderator_yet', NOT private.an_appeal_may_be_heard(m.admin_id, m.target_user_id),
+             'ruled_by', (SELECT a.username FROM public.profiles a WHERE a.id = m.admin_id),
+             'member', jsonb_build_object('id', t.id, 'username', t.username, 'avatar_url', t.avatar_url,
+                         'is_banned', coalesce(t.is_banned, false),
+                         'exiled', coalesce(t.is_banned, false) AND coalesce(t.suspension_reason, '') LIKE 'PERMANENT EXILE:%',
+                         'suspended_until', CASE WHEN t.suspended_until > now() THEN t.suspended_until END),
+             'case', (SELECT jsonb_build_object('content_type', r.content_type, 'reason', r.reason, 'details', r.details)
+                        FROM public.reports r WHERE r.id = m.report_id),
+             'removed', CASE WHEN m.action = 'delete_content' AND m.content_snapshot IS NOT NULL
+                             THEN jsonb_strip_nulls(jsonb_build_object('title', m.content_snapshot ->> 'title', 'body', m.content_snapshot ->> 'body')) END,
+             'restorable', (m.content_snapshot ? 'kept') OR EXISTS (SELECT 1 FROM public.withheld_pieces w WHERE w.mod_action_id = m.id),
+             -- the piece withheld, kept whole until this hearing (H-B10)
+             'withheld', EXISTS (SELECT 1 FROM public.withheld_pieces w WHERE w.mod_action_id = m.id))
+           ORDER BY m.appeal_filed_at, m.id)
+      FROM (
+        SELECT * FROM public.mod_actions q
+         WHERE q.appeal_status = 'pending'
+           AND (p_cursor_at IS NULL OR (q.appeal_filed_at, q.id) > (p_cursor_at, p_cursor_id))
+         ORDER BY q.appeal_filed_at, q.id
+         LIMIT LEAST(GREATEST(coalesce(p_limit, 20), 1), 50)
+      ) m
+      LEFT JOIN public.profiles t ON t.id = m.target_user_id
+  ), '[]'::jsonb);
+END;
 $$;
 
 
@@ -2978,24 +3535,35 @@ CREATE FUNCTION public.get_profile_counts(p_user_id uuid) RETURNS json
     SET search_path TO 'public', 'pg_temp'
     AS $$
   SELECT json_build_object(
-    'logs_count',      CASE WHEN public.can_view_user_data(p_user_id)
-                            THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id) ELSE 0 END,
-    'ledger_count',    CASE WHEN public.can_view_user_data(p_user_id)
-                            THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id
-                                    AND (rating > 0 OR COALESCE(review, '') <> '')) ELSE 0 END,
-    'watchlist_count', CASE WHEN public.can_view_user_data(p_user_id)
+    -- A piece the house withholds is counted for its author alone (H-B10). The member's records are
+    -- read once for both of their counts, and each question of the caller is asked once a call (an
+    -- InitPlan each), never once a row.
+    'logs_count',      CASE WHEN me.open THEN mine.logs ELSE 0 END,
+    'ledger_count',    CASE WHEN me.open THEN mine.ledger ELSE 0 END,
+    'watchlist_count', CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM watchlists WHERE user_id = p_user_id) ELSE 0 END,
-    'vault_count',     CASE WHEN public.can_view_user_data(p_user_id)
+    'vault_count',     CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM physical_archive WHERE user_id = p_user_id) ELSE 0 END,
-    'lists_count',     CASE WHEN public.can_view_user_data(p_user_id)
+    'lists_count',     CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM lists WHERE user_id = p_user_id
-                                    AND (is_private = false OR user_id = auth.uid())) ELSE 0 END,
-    'followers_count', (SELECT COUNT(*) FROM interactions i WHERE i.target_user_id = p_user_id AND i.type = 'follow'
-                          AND NOT COALESCE(i.user_id = ANY (me.hidden), false)),
-    'following_count', (SELECT COUNT(*) FROM interactions i WHERE i.user_id = p_user_id AND i.type = 'follow'
-                          AND NOT COALESCE(i.target_user_id = ANY (me.hidden), false))
+                                    AND ((is_private = false AND withheld_at IS NULL) OR user_id = me.id)) ELSE 0 END,
+    -- Across a block the follows rule shows none of the member's follows, so none are counted.
+    'followers_count', CASE WHEN me.across THEN 0 ELSE
+                         (SELECT COUNT(*) FROM interactions i WHERE i.target_user_id = p_user_id AND i.type = 'follow'
+                            AND NOT COALESCE(i.user_id = ANY (me.hidden), false)) END,
+    'following_count', CASE WHEN me.across THEN 0 ELSE
+                         (SELECT COUNT(*) FROM interactions i WHERE i.user_id = p_user_id AND i.type = 'follow'
+                            AND NOT COALESCE(i.target_user_id = ANY (me.hidden), false)) END
   )
-  FROM (SELECT public.hidden_authors() AS hidden) me;
+  FROM (SELECT (SELECT auth.uid()) AS id,
+               (SELECT private.hidden_authors()) AS hidden,
+               (SELECT private.can_view_user_data(p_user_id)) AS open,
+               (SELECT COALESCE(auth.uid() IS DISTINCT FROM p_user_id
+                        AND public.a_block_stands_between(auth.uid(), p_user_id), false)) AS across) me
+  CROSS JOIN LATERAL (
+    SELECT count(*) AS logs, count(*) FILTER (WHERE rating > 0 OR COALESCE(review, '') <> '') AS ledger
+      FROM logs WHERE me.open AND user_id = p_user_id AND (withheld_at IS NULL OR user_id = me.id)
+  ) mine;
 $$;
 
 
@@ -3008,7 +3576,7 @@ CREATE FUNCTION public.get_public_profile_analytics(p_user_id uuid) RETURNS json
     SET search_path TO 'public', 'pg_temp'
     AS $_$
   SELECT CASE
-    WHEN auth.uid() IS NULL OR NOT public.can_view_user_data(p_user_id)
+    WHEN auth.uid() IS NULL OR NOT private.can_view_user_data(p_user_id)
       THEN '{"error": "forbidden"}'::jsonb
     ELSE (
       WITH user_logs AS MATERIALIZED (
@@ -3020,6 +3588,8 @@ CREATE FUNCTION public.get_public_profile_analytics(p_user_id uuid) RETURNS json
           CASE WHEN year ~ '^\d{1,4}$' THEN year::int END AS year_int,
           CASE WHEN is_autopsied = true THEN autopsy END AS autopsy
         FROM public.logs WHERE user_id = p_user_id
+          -- a log the house withholds counts for its author alone (H-B10)
+          AND (withheld_at IS NULL OR user_id = auth.uid())
       ),
       -- The films this member logged, each once, joined once.
       films_read AS MATERIALIZED (
@@ -3112,9 +3682,8 @@ DECLARE
   v_admin_id   uuid := auth.uid();
   v_type       text;
   v_content_id uuid;
-  v_title      text;
-  v_body       text;
-  v_route      text;
+  v_now        jsonb;
+  v_reported   jsonb;
 BEGIN
   -- ── Admin gate: identical to resolve_moderation_report_v2 ──
   -- Uses auth.uid() (canonical identity), never a caller-supplied param.
@@ -3135,76 +3704,22 @@ BEGIN
     RETURN jsonb_build_object('found', false);
   END IF;
 
-  -- ── A piece already gone is destroyed evidence, asked as the verdict asks it (piece_stands) ──
-  -- A filing ended (withdrawn by its author, or emptied by an earlier REMOVE CONTENT) keeps its row
-  -- with its words emptied: it read as found, an empty exhibit, and REMOVE CONTENT was offered only
-  -- to be refused as PIECE_GONE (review round 12).
-  IF NOT public.piece_stands(v_type, v_content_id) THEN
-    RETURN jsonb_build_object('found', false);
+  -- The piece as it stands now: destroyed when it is gone, as the verdict asks it.
+  v_now := public.piece_as_it_stands(v_type, v_content_id);
+
+  -- The words as they stood when the report was filed, kept by submit_report (none for a report
+  -- filed before the house kept them: the evidence reads as it always did).
+  SELECT words INTO v_reported FROM public.reported_words WHERE report_id = p_report_id;
+  IF v_reported IS NULL THEN
+    RETURN v_now;
   END IF;
 
-  -- ── Fetch the exhibit by content type (columns verified against live schema) ──
-  IF v_type = 'log' THEN
-    SELECT film_title, review, '/log/' || id::text
-      INTO v_title, v_body, v_route FROM logs WHERE id = v_content_id;
-
-  ELSIF v_type = 'list' THEN
-    SELECT title, description, '/stacks/' || id::text
-      INTO v_title, v_body, v_route FROM lists WHERE id = v_content_id;
-
-  ELSIF v_type = 'log_comment' THEN               -- log_comments.body
-    SELECT body, '/log/' || log_id::text
-      INTO v_body, v_route FROM log_comments WHERE id = v_content_id;
-
-  ELSIF v_type = 'list_comment' THEN              -- list_comments.content
-    SELECT content, '/stacks/' || list_id::text
-      INTO v_body, v_route FROM list_comments WHERE id = v_content_id;
-
-  ELSIF v_type = 'dossier' THEN
-    SELECT title, full_content, '/dossier/' || id::text
-      INTO v_title, v_body, v_route FROM dispatch_dossiers WHERE id = v_content_id;
-
-  ELSIF v_type = 'dossier_comment' THEN           -- dossier_comments.body
-    SELECT body, '/dossier/' || dossier_id::text
-      INTO v_body, v_route FROM dossier_comments WHERE id = v_content_id;
-
-  ELSIF v_type = 'dispatch_post' THEN
-    SELECT title, coalesce(full_content, body), '/dispatch/' || id::text
-      INTO v_title, v_body, v_route FROM dispatch_posts WHERE id = v_content_id;
-
-  ELSIF v_type = 'dispatch_comment' THEN
-    SELECT body, '/dispatch/' || post_id::text
-      INTO v_body, v_route FROM dispatch_comments WHERE id = v_content_id;
-
-  ELSIF v_type = 'lounge_message' THEN            -- lounge_messages.content
-    -- A withdrawn or removed message keeps its row, its words emptied (deleted_at set): it is
-    -- gone, as a deleted piece is, and reads as destroyed.
-    SELECT content, '/lounge/' || lounge_id::text
-      INTO v_body, v_route FROM lounge_messages WHERE id = v_content_id AND deleted_at IS NULL;
-
-  ELSIF v_type = 'lounge' THEN
-    SELECT name, description, '/lounge/' || id::text
-      INTO v_title, v_body, v_route FROM lounges WHERE id = v_content_id;
-
-  ELSIF v_type = 'profile' THEN                   -- route uses username, not id
-    SELECT username, bio, '/user/' || username
-      INTO v_title, v_body, v_route FROM profiles WHERE id = v_content_id;
-
-  ELSE
-    RETURN jsonb_build_object('found', false);     -- unknown type → graceful miss
-  END IF;
-
-  -- Content deleted since the report was filed → route never got set
-  IF v_route IS NULL THEN
-    RETURN jsonb_build_object('found', false);
-  END IF;
-
-  RETURN jsonb_build_object(
-    'found', true,
-    'title', v_title,
-    'body',  v_body,
-    'route', v_route
-  );
+  -- Changed: the piece still stands and its words (its name, picture, cover) are not those reported.
+  -- Its address is left out: a page renamed is changed by its name already.
+  RETURN v_now || jsonb_build_object(
+    'reported', v_reported - 'route',
+    'changed', coalesce((v_now ->> 'found')::boolean, false)
+               AND (v_now - 'found' - 'route') IS DISTINCT FROM (v_reported - 'route'));
 END;
 $$;
 
@@ -3217,7 +3732,7 @@ CREATE FUNCTION public.get_salon_last_words(p_lounge_ids uuid[]) RETURNS TABLE(l
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT auth.uid() AS id, public.hidden_authors() AS hidden)
+  WITH me AS (SELECT auth.uid() AS id, (SELECT private.hidden_authors()) AS hidden)
   SELECT l.id, newest.created_at
     FROM me
     JOIN public.lounges l ON l.id = ANY (p_lounge_ids[1:100])
@@ -3226,6 +3741,7 @@ CREATE FUNCTION public.get_salon_last_words(p_lounge_ids uuid[]) RETURNS TABLE(l
         FROM public.lounge_messages m
        WHERE m.lounge_id = l.id
          AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
+         AND (m.user_id = me.id OR NOT COALESCE(m.carries_words_of && me.hidden, false))
        ORDER BY m.created_at DESC, m.id DESC
        LIMIT 1
     ) newest
@@ -3241,8 +3757,10 @@ CREATE FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[]) RETURNS TABLE
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
+  WITH reader AS (SELECT (SELECT private.hidden_authors()) AS hidden)
   SELECT r.id, f.username, f.avatar_url, f.rn::integer
-  FROM (SELECT DISTINCT x.id FROM unnest(p_lounge_ids) AS x(id)) r
+  FROM reader
+  CROSS JOIN (SELECT DISTINCT x.id FROM unnest(p_lounge_ids) AS x(id)) r
   CROSS JOIN LATERAL (
     SELECT first3.username, first3.avatar_url,
            row_number() OVER (ORDER BY first3.joined_at, first3.user_id) AS rn
@@ -3253,7 +3771,7 @@ CREATE FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[]) RETURNS TABLE
       WHERE lm.lounge_id = r.id
         AND lm.status = 'approved'
         AND p.username IS NOT NULL
-        AND NOT public.is_hidden_by(auth.uid(), lm.user_id)
+        AND NOT COALESCE(lm.user_id = ANY (reader.hidden), false)
       ORDER BY lm.joined_at ASC, lm.user_id ASC
       LIMIT 3
     ) first3
@@ -3266,6 +3784,48 @@ $$;
 
 
 --
+-- Name: get_sanctioned_members(text, uuid, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.get_sanctioned_members(p_cursor_name text DEFAULT NULL::text, p_cursor_id uuid DEFAULT NULL::uuid, p_limit integer DEFAULT 30) RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_admin_id uuid := auth.uid();
+BEGIN
+  IF v_admin_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = v_admin_id AND role = 'admin') THEN
+    RAISE EXCEPTION 'Unauthorized: admin role required' USING ERRCODE = '42501';
+  END IF;
+
+  -- By handle, a page at a time (keyset on the handle and the id): the list an admin reads to lift.
+  -- Asked of the partial index profiles_under_sanction (H-B2.index), never every member.
+  RETURN coalesce((
+    SELECT jsonb_agg(jsonb_build_object(
+             'id', p.id, 'username', p.username, 'avatar_url', p.avatar_url,
+             'is_banned', coalesce(p.is_banned, false),
+             'exiled', coalesce(p.is_banned, false) AND coalesce(p.suspension_reason, '') LIKE 'PERMANENT EXILE:%',
+             'suspended_until', CASE WHEN p.suspended_until > now() THEN p.suspended_until END,
+             'reason', p.suspension_reason,
+             'since', p.banned_at)
+           ORDER BY lower(coalesce(p.username, '')), p.id)
+      FROM (
+        SELECT * FROM public.profiles q
+         WHERE (q.is_banned OR q.suspended_until IS NOT NULL)
+           AND (coalesce(q.is_banned, false) OR q.suspended_until > now())
+           AND (p_cursor_name IS NULL OR (lower(coalesce(q.username, '')), q.id) > (lower(p_cursor_name), p_cursor_id))
+         ORDER BY lower(coalesce(q.username, '')), q.id
+         LIMIT LEAST(GREATEST(coalesce(p_limit, 30), 1), 50)
+      ) p
+  ), '[]'::jsonb);
+END;
+$$;
+
+
+--
 -- Name: get_taste_match(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3274,7 +3834,7 @@ CREATE FUNCTION public.get_taste_match(p_user_id uuid) RETURNS jsonb
     SET search_path TO 'public', 'pg_temp'
     AS $$
   SELECT CASE
-    WHEN auth.uid() IS NULL OR NOT public.can_view_user_data(p_user_id)
+    WHEN auth.uid() IS NULL OR NOT private.can_view_user_data(p_user_id)
       THEN '{"error": "forbidden"}'::jsonb
     ELSE jsonb_build_object('mine', public.taste_shape(auth.uid()), 'theirs', public.taste_shape(p_user_id))
   END;
@@ -3292,7 +3852,7 @@ CREATE FUNCTION public.get_taste_profile(p_user_id uuid) RETURNS json
 DECLARE
   result JSON;
 BEGIN
-  IF NOT public.can_view_user_data(p_user_id) THEN
+  IF NOT private.can_view_user_data(p_user_id) THEN
     RETURN json_build_object('error', 'forbidden');
   END IF;
 
@@ -3300,6 +3860,8 @@ BEGIN
     SELECT DISTINCT l.film_id
       FROM public.logs l
      WHERE l.user_id = p_user_id AND l.film_id > 0
+       -- a log the house withholds counts for its author alone (H-B10)
+       AND (l.withheld_at IS NULL OR l.user_id = auth.uid())
   ),
   known AS (
     SELECT f.*
@@ -3393,7 +3955,7 @@ DECLARE
   v_months JSON := '[]'::json;
 BEGIN
   -- The check the other two functions already had. This one had none.
-  IF NOT public.can_view_user_data(p_user_id) THEN
+  IF NOT private.can_view_user_data(p_user_id) THEN
     RETURN json_build_object('error', 'forbidden');
   END IF;
 
@@ -3455,13 +4017,13 @@ BEGIN
   INTO v_current, v_longest, v_run, v_months;
 
   SELECT json_build_object(
-    'total_logs', (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id),
+    'total_logs', (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id AND (withheld_at IS NULL OR user_id = auth.uid())),
     'avg_rating', (SELECT COALESCE(ROUND(AVG(rating)::numeric, 2), 0)
-                   FROM logs WHERE user_id = p_user_id AND rating > 0),
+                   FROM logs WHERE user_id = p_user_id AND (withheld_at IS NULL OR user_id = auth.uid()) AND rating > 0),
     'rating_distribution', (
       SELECT COALESCE(json_agg(row_to_json(rd)), '[]'::json) FROM (
         SELECT rating, COUNT(*) as count FROM logs
-        WHERE user_id = p_user_id AND rating > 0
+        WHERE user_id = p_user_id AND (withheld_at IS NULL OR user_id = auth.uid()) AND rating > 0
         GROUP BY rating ORDER BY rating) rd),
 
     -- the 12-month window is gone. The Archive's records by the month each is filed under, as
@@ -3470,7 +4032,7 @@ BEGIN
       SELECT COALESCE(json_agg(row_to_json(ma)), '[]'::json) FROM (
         SELECT TO_CHAR(COALESCE(watched_date::date, created_at::date), 'YYYY-MM') as month,
                COUNT(*) as count
-        FROM logs WHERE user_id = p_user_id
+        FROM logs WHERE user_id = p_user_id AND (withheld_at IS NULL OR user_id = auth.uid())
         GROUP BY month ORDER BY month DESC) ma),
 
     'current_streak', v_current,
@@ -3482,7 +4044,7 @@ BEGIN
     'format_breakdown', (
       SELECT COALESCE(json_agg(row_to_json(fb)), '[]'::json) FROM (
         SELECT format, COUNT(*) as count FROM logs
-        WHERE user_id = p_user_id AND format IS NOT NULL AND format != ''
+        WHERE user_id = p_user_id AND (withheld_at IS NULL OR user_id = auth.uid()) AND format IS NOT NULL AND format != ''
         GROUP BY format ORDER BY count DESC) fb),
 
     'vault_formats', v_vault,
@@ -3507,6 +4069,72 @@ CREATE FUNCTION public.get_user_blocks(p_user_id uuid) RETURNS TABLE(blocked_id 
   FROM public.user_blocks ub
   WHERE ub.blocker_id = auth.uid()
   ORDER BY ub.created_at DESC;
+$$;
+
+
+--
+-- Name: give_back_withheld_piece(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.give_back_withheld_piece(p_action_id uuid) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  w      public.withheld_pieces%ROWTYPE;
+  v_film integer;
+  v_parent uuid;
+  v_rows integer := 0;
+BEGIN
+  SELECT * INTO w FROM public.withheld_pieces WHERE mod_action_id = p_action_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN false;
+  END IF;
+
+  -- The withholding lifted; everything never touched (its critiques, films, marks, cards) returns with it.
+  IF w.kind = 'log' THEN
+    UPDATE public.logs SET withheld_at = NULL WHERE id = w.piece_id AND withheld_at IS NOT NULL RETURNING film_id INTO v_film;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+    IF v_rows > 0 THEN PERFORM public.refresh_film_verdict(v_film); END IF;
+  ELSIF w.kind = 'list' THEN
+    UPDATE public.lists SET withheld_at = NULL WHERE id = w.piece_id AND withheld_at IS NOT NULL;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  ELSIF w.kind = 'log_comment' THEN
+    UPDATE public.log_comments SET withheld_at = NULL WHERE id = w.piece_id AND withheld_at IS NOT NULL RETURNING log_id INTO v_parent;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+    IF v_rows > 0 THEN
+      INSERT INTO public.log_counts AS c (log_id, critique_count) VALUES (v_parent, 1)
+        ON CONFLICT (log_id) DO UPDATE SET critique_count = c.critique_count + 1;
+    END IF;
+  ELSIF w.kind = 'list_comment' THEN
+    UPDATE public.list_comments SET withheld_at = NULL WHERE id = w.piece_id AND withheld_at IS NOT NULL;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  ELSIF w.kind = 'dispatch_comment' THEN
+    UPDATE public.dispatch_comments SET withheld_at = NULL WHERE id = w.piece_id AND withheld_at IS NOT NULL RETURNING post_id INTO v_parent;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+    IF v_rows > 0 THEN UPDATE public.dispatch_posts SET comment_count = comment_count + 1 WHERE id = v_parent; END IF;
+  ELSIF w.kind = 'dispatch_post' THEN
+    UPDATE public.dispatch_posts SET withheld_at = NULL WHERE id = w.piece_id AND withheld_at IS NOT NULL;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  END IF;
+
+  -- The notices set aside, written back as they were: their moment, whether read, and as already pushed
+  -- (the push service claims only a fresh notice not yet pushed), so no phone is told of it twice. One
+  -- whose member has gone, or now hides its sender, is not written (the notices' own gate refuses it).
+  IF v_rows > 0 THEN
+    -- Its cards, made again from it as it stands now.
+    PERFORM private.a_withheld_piece_turns_its_cards(w.kind, w.piece_id, false);
+    INSERT INTO public.notifications
+    SELECT (jsonb_populate_record(NULL::public.notifications,
+              x.notice || jsonb_build_object('pushed_at', coalesce(x.notice ->> 'pushed_at', now()::text)))).*
+      FROM jsonb_array_elements(w.notices) AS x(notice)
+     WHERE EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (x.notice ->> 'user_id')::uuid)
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+
+  DELETE FROM public.withheld_pieces WHERE mod_action_id = p_action_id;
+  RETURN v_rows > 0;
+END;
 $$;
 
 
@@ -3571,6 +4199,17 @@ BEGIN
     WHEN v_founding AND public.tier_weight(v_top_tier) < 2 THEN 'auteur'
     ELSE coalesce(v_top_tier, 'cinephile') END;
 
+
+  -- A store's grant that rose is a rank bought, one that ended a rank given up: counted by the house,
+  -- from its own record (round 14). A renewal or a retried webhook (the grant unchanged) and a rank
+  -- given by hand count nothing. Counted at no door: the door is the phone's alone to know.
+  IF p_source IN ('revenuecat', 'paytabs') THEN
+    IF v_grant IS NOT NULL AND public.tier_weight(v_grant) > public.tier_weight(coalesce(v_before, 'cinephile')) THEN
+      PERFORM public.a_rank_is_counted('rank_purchased', CASE WHEN v_grant IN ('auteur', 'founding') THEN 'auteur' ELSE 'archivist' END);
+    ELSIF v_grant IS NULL AND v_before IS NOT NULL THEN
+      PERFORM public.a_rank_is_counted('rank_relinquished', '');
+    END IF;
+  END IF;
   RETURN QUERY
   UPDATE public.profiles p
      SET role = CASE WHEN p.role = 'admin' THEN p.role ELSE v_in_force END,
@@ -3727,14 +4366,10 @@ $$;
 --
 
 CREATE FUNCTION public.hidden_authors() RETURNS uuid[]
-    LANGUAGE sql STABLE SECURITY DEFINER
+    LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  SELECT COALESCE(array_agg(DISTINCT h.author), '{}'::uuid[]) FROM (
-    SELECT b.blocked_id AS author FROM public.user_blocks b WHERE b.blocker_id = auth.uid()
-    UNION ALL
-    SELECT b.blocker_id FROM public.user_blocks b WHERE b.blocked_id = auth.uid() AND b.type = 'block'
-  ) h;
+  SELECT private.hidden_authors();
 $$;
 
 
@@ -3742,7 +4377,7 @@ $$;
 -- Name: FUNCTION hidden_authors(); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.hidden_authors() IS 'The members whose words are hidden from the caller: those they blocked or muted, and those who blocked them. The same rule as is_hidden_by, asked once per statement. It names no one is_hidden_by does not already answer for.';
+COMMENT ON FUNCTION public.hidden_authors() IS 'private.hidden_authors(), for the house''s own functions that call it by this name. No member or visitor may call it: the API would serve it.';
 
 
 --
@@ -3764,17 +4399,18 @@ CREATE FUNCTION public.increment_dossier_views(dossier_uuid uuid) RETURNS void
 --
 
 CREATE FUNCTION public.is_hidden_by(viewer_id uuid, author_id uuid) RETURNS boolean
-    LANGUAGE sql STABLE SECURITY DEFINER
+    LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  -- viewer_id is deliberately ignored; the session decides who the viewer is.
-  -- The second branch is intentionally narrower: only a 'block' is mutual.
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_blocks
-    WHERE (blocker_id = auth.uid()  AND blocked_id = author_id)
-       OR (blocker_id = author_id   AND blocked_id = auth.uid() AND type = 'block')
-  );
+  SELECT private.is_hidden_by(viewer_id, author_id);
 $$;
+
+
+--
+-- Name: FUNCTION is_hidden_by(viewer_id uuid, author_id uuid); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.is_hidden_by(viewer_id uuid, author_id uuid) IS 'private.is_hidden_by(), for the house''s own functions that call it by this name. No member or visitor may call it: the API would serve it.';
 
 
 --
@@ -3844,6 +4480,235 @@ END $$;
 
 
 --
+-- Name: judge_appeal(uuid, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.judge_appeal(p_action_id uuid, p_outcome text, p_note text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+DECLARE
+  v_admin_id uuid := auth.uid();
+  v_note     text := btrim(coalesce(p_note, ''));
+  m          public.mod_actions%ROWTYPE;
+  v_snap     jsonb;
+  v_kept     jsonb;
+  v_type     text;
+  v_id       uuid;
+  v_rows     integer := 0;
+  v_effect   text := '';
+  v_notice   text;
+BEGIN
+  IF v_admin_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = v_admin_id AND role = 'admin') THEN
+    RAISE EXCEPTION 'Unauthorized: admin role required' USING ERRCODE = '42501';
+  END IF;
+  IF p_outcome IS NULL OR p_outcome NOT IN ('upheld', 'overturned') THEN
+    RAISE EXCEPTION 'An appeal is upheld or overturned.' USING ERRCODE = 'P0001';
+  END IF;
+  IF char_length(v_note) = 0 OR char_length(v_note) > 500 THEN
+    RAISE EXCEPTION 'A word for the member of up to 500 characters is required.' USING ERRCODE = 'P0001';
+  END IF;
+
+  -- Held while it is heard: a second moderator hearing it at the same moment waits, then is refused.
+  SELECT * INTO m FROM public.mod_actions WHERE id = p_action_id FOR UPDATE;
+  IF NOT FOUND OR m.appeal IS NULL THEN
+    RAISE EXCEPTION 'VERDICT_GONE' USING ERRCODE = 'P0002';
+  END IF;
+  IF m.appeal_status IS DISTINCT FROM 'pending' THEN
+    RAISE EXCEPTION 'ALREADY_JUDGED' USING ERRCODE = 'P0002';
+  END IF;
+  -- The owner's rule (a_judge_is_refused, the house's one rule of who may judge a case): the one who
+  -- ruled never hears the appeal of their own verdict, nor does the member the verdict is about.
+  IF private.a_judge_is_refused(v_admin_id, m.admin_id, m.target_user_id) IS NOT NULL THEN
+    RAISE EXCEPTION '%', private.a_judge_is_refused(v_admin_id, m.admin_id, m.target_user_id) USING ERRCODE = '42501';
+  END IF;
+
+  UPDATE public.mod_actions
+     SET appeal_status = p_outcome, appeal_judged_by = v_admin_id, appeal_judged_at = now(), appeal_note = v_note
+   WHERE id = p_action_id;
+
+  IF p_outcome = 'overturned' THEN
+    -- Struck: the verdict no longer holds the member's standing, and the record says so.
+    UPDATE public.mod_actions
+       SET lifted_at = now(), lifted_by = v_admin_id, lift_reason = 'Overturned on appeal: ' || v_note
+     WHERE id = p_action_id AND lifted_at IS NULL;
+
+    IF m.action = 'warn' AND m.target_user_id IS NOT NULL THEN
+      -- The warning it wrote (in the verdict's own moment) is withdrawn, and the count with it.
+      DELETE FROM public.warnings
+       WHERE id = (SELECT w.id FROM public.warnings w
+                    WHERE w.user_id = m.target_user_id AND w.reason = m.reason AND w.created_at = m.created_at
+                    ORDER BY w.id LIMIT 1);
+      UPDATE public.profiles SET warning_count = GREATEST(coalesce(warning_count, 0) - 1, 0) WHERE id = m.target_user_id;
+      v_effect := 'The warning is withdrawn.';
+
+    ELSIF m.action IN ('suspend', 'mute_user') AND m.target_user_id IS NOT NULL THEN
+      PERFORM public.standing_from_verdicts(m.target_user_id, 'suspension');
+      v_effect := 'The pause it set no longer holds.';
+
+    ELSIF m.action IN ('ban', 'permanent_exile') AND m.target_user_id IS NOT NULL THEN
+      PERFORM public.standing_from_verdicts(m.target_user_id, 'ban');
+      v_effect := 'The closing it set no longer holds.';
+
+    ELSIF m.action = 'delete_content' AND EXISTS (SELECT 1 FROM public.withheld_pieces w WHERE w.mod_action_id = m.id) THEN
+      -- Withheld (H-B10): given back whole, its critiques, marks, cards, counts and notices with it.
+      -- Deleted meanwhile by its own author, there is nothing left to give back.
+      IF public.give_back_withheld_piece(m.id) THEN
+        v_rows := 1;
+        v_effect := 'What it removed stands again where it was, whole, as it stood.';
+      ELSE
+        v_effect := 'What it removed is no longer in the house: you deleted it meanwhile.';
+      END IF;
+
+    ELSIF m.action = 'delete_content' THEN
+      -- Put back where its row still stands, and only as the house left it (never over what its
+      -- author has written since).
+      v_snap := coalesce(m.content_snapshot, '{}'::jsonb);
+      v_kept := v_snap -> 'kept';
+      v_type := coalesce(v_snap ->> 'type', (SELECT r.content_type FROM public.reports r WHERE r.id = m.report_id));
+      v_id := coalesce(
+        CASE WHEN (v_snap ->> 'id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN (v_snap ->> 'id')::uuid END,
+        (SELECT CASE WHEN r.content_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN r.content_id::uuid END
+           FROM public.reports r WHERE r.id = m.report_id));
+      IF v_type = 'lounge_message' AND coalesce(v_kept ->> 'content', v_snap ->> 'body') IS NOT NULL THEN
+        UPDATE public.lounge_messages
+           SET content = coalesce(v_kept ->> 'content', v_snap ->> 'body'), deleted_at = NULL
+         WHERE id = v_id AND deleted_at IS NOT NULL AND content = '';
+        GET DIAGNOSTICS v_rows = ROW_COUNT;
+        -- Whole: the replies that quoted it have their quotes back, as the withdrawal took them.
+        IF v_rows > 0 THEN
+          UPDATE public.lounge_messages r SET reply_to_content = coalesce(v_kept ->> 'content', v_snap ->> 'body')
+           WHERE r.reply_to_id = v_id AND r.reply_to_content IS NULL;
+        END IF;
+      ELSIF v_type IN ('dispatch_post', 'dossier') AND v_kept IS NOT NULL THEN
+        UPDATE public.dispatch_posts
+           SET body = coalesce(v_kept ->> 'body', ''), full_content = v_kept ->> 'full_content', title = v_kept ->> 'title',
+               subject_image = v_kept ->> 'subject_image', subject_backdrop = v_kept ->> 'subject_backdrop',
+               source = v_kept ->> 'source', source_url = v_kept ->> 'source_url', spoiler_label = v_kept ->> 'spoiler_label',
+               ended_at = NULL, ended_by = NULL
+         WHERE id = v_id AND ended_by = 'house';
+        GET DIAGNOSTICS v_rows = ROW_COUNT;
+      ELSIF v_type = 'profile' AND v_kept IS NOT NULL THEN
+        UPDATE public.profiles
+           SET bio = coalesce(bio, v_kept ->> 'bio'),
+               display_name = coalesce(display_name, v_kept ->> 'display_name'),
+               avatar_url = coalesce(avatar_url, v_kept ->> 'avatar_url'),
+               social_links = CASE WHEN social_links IS NULL OR social_links = '{}'::jsonb THEN coalesce(v_kept -> 'social_links', '{}'::jsonb) ELSE social_links END
+         WHERE id = v_id;
+        GET DIAGNOSTICS v_rows = ROW_COUNT;
+      ELSIF v_type = 'lounge' AND v_kept IS NOT NULL THEN
+        UPDATE public.lounges
+           SET name = CASE WHEN name = 'An Unnamed Salon' THEN coalesce(v_kept ->> 'name', name) ELSE name END,
+               description = CASE WHEN coalesce(description, '') = '' THEN coalesce(v_kept ->> 'description', '') ELSE description END,
+               cover_image = coalesce(cover_image, v_kept ->> 'cover_image')
+         WHERE id = v_id;
+        GET DIAGNOSTICS v_rows = ROW_COUNT;
+      END IF;
+      v_effect := CASE WHEN v_rows > 0 THEN 'What it removed stands again where it was.'
+                       ELSE 'What it removed is kept for you with the verdict, to file again.' END;
+    END IF;
+    -- What the overturn did, kept on the verdict for the member's sheet: put back where it stood, or not.
+    IF m.action = 'delete_content' THEN
+      UPDATE public.mod_actions SET appeal_put_back = (v_rows > 0) WHERE id = p_action_id;
+    END IF;
+  ELSIF m.action = 'delete_content' THEN
+    -- Upheld: a piece withheld for this hearing is deleted now, as REMOVE CONTENT deleted it before (H-B10).
+    IF public.delete_withheld_piece(m.id) THEN
+      v_effect := 'The piece it withheld is now deleted.';
+    END IF;
+  END IF;
+
+  IF m.target_user_id IS NOT NULL THEN
+    v_notice := CASE p_outcome
+      WHEN 'upheld' THEN 'The Tribunal has heard your appeal and upholds the verdict.' || CASE WHEN v_effect <> '' THEN ' ' || v_effect ELSE '' END
+      ELSE 'The Tribunal has heard your appeal and overturns the verdict: it is struck from your record. ' || v_effect
+    END || ' The Tribunal''s word: ' || v_note;
+    INSERT INTO public.notifications (user_id, type, title, body, message, metadata)
+    VALUES (m.target_user_id, 'moderation', 'Your Appeal Was Heard', v_notice, v_notice,
+            jsonb_build_object('action', 'appeal', 'outcome', p_outcome, 'mod_action_id', m.id));
+  END IF;
+END;
+$_$;
+
+
+--
+-- Name: lift_sanction(uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.lift_sanction(p_user_id uuid, p_reason text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_admin_id uuid := auth.uid();
+  v_reason   text := btrim(coalesce(p_reason, ''));
+  v_banned   boolean;
+  v_until    timestamptz;
+  v_said     text;
+  v_lifted   uuid;
+  v_what     text;
+  v_notice   text;
+BEGIN
+  IF v_admin_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = v_admin_id AND role = 'admin') THEN
+    RAISE EXCEPTION 'Unauthorized: admin role required' USING ERRCODE = '42501';
+  END IF;
+  IF char_length(v_reason) = 0 OR char_length(v_reason) > 500 THEN
+    RAISE EXCEPTION 'A reason of up to 500 characters is required.' USING ERRCODE = 'P0001';
+  END IF;
+  -- No admin lifts their own sanction: the house's one rule of who may judge a case (a_judge_is_refused).
+  IF private.a_judge_is_refused(v_admin_id, NULL, p_user_id) IS NOT NULL THEN
+    RAISE EXCEPTION '%', private.a_judge_is_refused(v_admin_id, NULL, p_user_id) USING ERRCODE = '42501';
+  END IF;
+
+  -- The member's standing, held while it is lifted: a verdict given at the same moment waits.
+  SELECT coalesce(is_banned, false), suspended_until, suspension_reason INTO v_banned, v_until, v_said
+    FROM public.profiles WHERE id = p_user_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'MEMBER_GONE' USING ERRCODE = 'P0002';
+  END IF;
+  -- Exile is the house's last word: never lifted by hand, only overturned on its one appeal.
+  IF EXISTS (SELECT 1 FROM public.mod_actions WHERE target_user_id = p_user_id AND action = 'permanent_exile' AND lifted_at IS NULL)
+     OR (v_banned AND coalesce(v_said, '') LIKE 'PERMANENT EXILE:%') THEN
+    RAISE EXCEPTION 'EXILE_STANDS' USING ERRCODE = 'P0001';
+  END IF;
+  IF NOT v_banned AND (v_until IS NULL OR v_until <= now()) THEN
+    -- Lifted meanwhile by another admin, or a suspension run out: nothing stands to lift.
+    RAISE EXCEPTION 'NOT_SANCTIONED' USING ERRCODE = 'P0002';
+  END IF;
+
+  -- The verdict told in the member's notice: the ban standing, else the suspension that governs.
+  SELECT id INTO v_lifted FROM public.mod_actions
+   WHERE target_user_id = p_user_id AND lifted_at IS NULL
+     AND (action = 'ban' OR (action IN ('suspend', 'mute_user') AND expires_at > now()))
+   ORDER BY (action = 'ban') DESC, expires_at DESC NULLS LAST, created_at DESC LIMIT 1;
+
+  -- Only what holds now is lifted: a sentence already served stays served on the record, never "lifted".
+  UPDATE public.mod_actions
+     SET lifted_at = now(), lifted_by = v_admin_id, lift_reason = v_reason
+   WHERE target_user_id = p_user_id AND lifted_at IS NULL
+     AND (action = 'ban' OR (action IN ('suspend', 'mute_user') AND expires_at > now()));
+
+  UPDATE public.profiles
+     SET is_banned = false, banned_at = NULL, suspended_until = NULL, suspension_reason = NULL
+   WHERE id = p_user_id;
+
+  v_what := CASE WHEN v_banned THEN 'the closing of your membership' ELSE 'the pause on your membership' END;
+  v_notice := 'The house has lifted ' || v_what || '. You may write again. Reason: ' || v_reason;
+  INSERT INTO public.notifications (user_id, type, title, body, message, metadata)
+  VALUES (p_user_id, 'moderation', 'A Notice from the House', v_notice, v_notice,
+          jsonb_build_object('action', 'lift', 'reason', v_reason)
+          || CASE WHEN v_lifted IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('mod_action_id', v_lifted) END);
+END;
+$$;
+
+
+--
 -- Name: like_escape(text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3870,7 +4735,7 @@ CREATE FUNCTION public.list_certify_count(p_list_id uuid) RETURNS bigint
     AND EXISTS (
       SELECT 1 FROM public.lists l
       WHERE l.id = p_list_id
-        AND (l.is_private = false OR l.user_id = auth.uid())
+        AND ((l.is_private = false AND l.withheld_at IS NULL) OR l.user_id = auth.uid())
     );
 $$;
 
@@ -3898,7 +4763,7 @@ CREATE FUNCTION public.list_certify_counts(p_list_ids uuid[]) RETURNS TABLE(list
       AND EXISTS (
         SELECT 1 FROM public.lists l
         WHERE l.id = t.id
-          AND (l.is_private = false OR l.user_id = auth.uid())
+          AND ((l.is_private = false AND l.withheld_at IS NULL) OR l.user_id = auth.uid())
       )
   )
   FROM unnest(p_list_ids) AS t(id);
@@ -3964,6 +4829,7 @@ BEGIN
     SELECT 'log', c.log_id, c.user_id, 'q'
       FROM public.log_comments c JOIN public.logs l ON l.id = c.log_id
      WHERE c.user_id IS NOT NULL AND c.user_id <> l.user_id AND c.created_at >= v_start AND c.created_at < v_end
+       AND c.withheld_at IS NULL  -- a critique the house withholds is no regard (H-B10)
     UNION ALL
     SELECT 'list', x.target_list_id, x.user_id, 'c'
       FROM public.interactions x JOIN public.lists s ON s.id = x.target_list_id
@@ -3972,6 +4838,7 @@ BEGIN
     SELECT 'list', c.list_id, c.user_id, 'q'
       FROM public.list_comments c JOIN public.lists s ON s.id = c.list_id
      WHERE c.user_id IS NOT NULL AND c.user_id <> s.user_id AND c.created_at >= v_start AND c.created_at < v_end
+       AND c.withheld_at IS NULL  -- (H-B10)
     UNION ALL
     SELECT 'post', c.post_id, c.user_id, 'c'
       FROM public.dispatch_certifications c JOIN public.dispatch_posts d ON d.id = c.post_id
@@ -3980,6 +4847,7 @@ BEGIN
     SELECT 'post', c.post_id, c.user_id, 'q'
       FROM public.dispatch_comments c JOIN public.dispatch_posts d ON d.id = c.post_id
      WHERE c.user_id IS NOT NULL AND c.user_id <> d.user_id AND c.created_at >= v_start AND c.created_at < v_end
+       AND c.withheld_at IS NULL  -- (H-B10)
   ),
   counted AS (
     -- a banned member's regard counts for nothing
@@ -4000,6 +4868,7 @@ BEGIN
     SELECT 'log'::text AS slot, l.id, l.user_id AS author, l.created_at
       FROM public.logs l JOIN public.profiles p ON p.id = l.user_id
      WHERE btrim(coalesce(l.review, '')) <> '' AND NOT coalesce(l.is_spoiler, false)
+       AND l.withheld_at IS NULL  -- a piece the house withholds never hangs (H-B10)
        AND l.created_at < v_end
        AND NOT coalesce(p.is_banned, false) AND NOT coalesce(p.is_social_private, false)
        AND NOT EXISTS (SELECT 1 FROM public.lobby_withheld w WHERE w.kind = 'log' AND w.target_id = l.id)
@@ -4018,6 +4887,7 @@ BEGIN
     SELECT 'list', s.id, s.user_id, s.created_at
       FROM public.lists s JOIN public.profiles p ON p.id = s.user_id
      WHERE NOT coalesce(s.is_private, false)
+       AND s.withheld_at IS NULL  -- a piece the house withholds never hangs (H-B10)
        AND (SELECT count(*) FROM public.list_items i WHERE i.list_id = s.id) >= 4
        AND s.created_at < v_end
        AND NOT coalesce(p.is_banned, false) AND NOT coalesce(p.is_social_private, false)
@@ -4138,10 +5008,11 @@ CREATE FUNCTION public.log_counts_keep_critique() RETURNS trigger
     SET search_path TO 'public', 'pg_temp'
     AS $$
 BEGIN
-  IF TG_OP IN ('DELETE', 'UPDATE') THEN
+  -- A critique the house withheld was taken off its log's count when it was withheld (H-B10).
+  IF TG_OP IN ('DELETE', 'UPDATE') AND OLD.withheld_at IS NULL THEN
     UPDATE public.log_counts SET critique_count = GREATEST(0, critique_count - 1) WHERE log_id = OLD.log_id;
   END IF;
-  IF TG_OP IN ('INSERT', 'UPDATE') THEN
+  IF TG_OP IN ('INSERT', 'UPDATE') AND NEW.withheld_at IS NULL THEN
     INSERT INTO public.log_counts AS c (log_id, critique_count) VALUES (NEW.log_id, 1)
       ON CONFLICT (log_id) DO UPDATE SET critique_count = c.critique_count + 1;
   END IF;
@@ -4395,6 +5266,41 @@ END $$;
 
 
 --
+-- Name: lounge_messages_daily_ceiling(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.lounge_messages_daily_ceiling() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_me  uuid := auth.uid();
+  v_day date := (now() AT TIME ZONE 'UTC')::date;
+  v_n   integer;
+BEGIN
+  -- The house's own writes are not counted: a member's request always carries the member.
+  IF v_me IS NULL THEN
+    RETURN NEW;
+  END IF;
+  -- Sent again, its first send landed: no new message.
+  IF EXISTS (SELECT 1 FROM public.lounge_messages WHERE id = NEW.id) THEN
+    RETURN NEW;
+  END IF;
+  INSERT INTO public.salon_budget AS b (user_id, day, n)
+  VALUES (v_me, v_day, 1)
+  ON CONFLICT (user_id) DO UPDATE SET
+    day = v_day,
+    n   = (CASE WHEN b.day = v_day THEN b.n ELSE 0 END) + 1
+  RETURNING n INTO v_n;
+  IF v_n > 1000 THEN
+    RAISE EXCEPTION 'RATE_LIMITED' USING ERRCODE = 'RH429', DETAIL = 'day',
+      HINT = GREATEST(1, ceil(extract(epoch FROM ((v_day + 1)::timestamp AT TIME ZONE 'UTC') - now())))::integer::text;
+  END IF;
+  RETURN NEW;
+END $$;
+
+
+--
 -- Name: lpn_belongs_to_its_viewing(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -4461,6 +5367,7 @@ CREATE FUNCTION public.member_viewings(p_user_id uuid) RETURNS TABLE(log_id uuid
   SELECT l.id, l.viewing_id, l.film_id, l.watched_date, l.rating
     FROM public.logs l
    WHERE l.user_id = p_user_id
+     AND (l.withheld_at IS NULL OR l.user_id = (SELECT auth.uid()))  -- withheld: its author's alone (H-B10)
   UNION ALL
   SELECT l.id,
          CASE WHEN pg_input_is_valid(e->>'viewingId', 'uuid') THEN (e->>'viewingId')::uuid END,
@@ -4473,6 +5380,7 @@ CREATE FUNCTION public.member_viewings(p_user_id uuid) RETURNS TABLE(log_id uuid
    CROSS JOIN LATERAL jsonb_array_elements(
            CASE WHEN jsonb_typeof(l.viewing_history) = 'array' THEN l.viewing_history ELSE '[]'::jsonb END) AS e
    WHERE l.user_id = p_user_id
+     AND (l.withheld_at IS NULL OR l.user_id = (SELECT auth.uid()))  -- withheld: its author's alone (H-B10)
      AND jsonb_typeof(e) = 'object';
 $$;
 
@@ -4826,6 +5734,89 @@ $$;
 
 
 --
+-- Name: piece_as_it_stands(text, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.piece_as_it_stands(p_type text, p_id uuid) RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_title text;
+  v_body  text;
+  v_route text;
+  v_more  jsonb := '{}'::jsonb;
+BEGIN
+  -- A piece already gone (deleted, withdrawn, emptied by an earlier removal) is asked as the verdict
+  -- asks it (piece_stands): the two can never disagree.
+  IF p_id IS NULL OR NOT public.piece_stands(p_type, p_id) THEN
+    -- Withheld by an earlier verdict (H-B10): not destroyed, and may come back on its appeal.
+    RETURN jsonb_build_object('found', false)
+        || coalesce((SELECT jsonb_build_object('withheld', true, 'appealed', m.appeal IS NOT NULL)
+                       FROM public.withheld_pieces w JOIN public.mod_actions m ON m.id = w.mod_action_id
+                      WHERE w.kind = public.withheld_kind(p_type) AND w.piece_id = p_id), '{}'::jsonb);
+  END IF;
+
+  IF p_type = 'log' THEN
+    SELECT film_title, review, '/log/' || id::text
+      INTO v_title, v_body, v_route FROM public.logs WHERE id = p_id;
+
+  ELSIF p_type = 'list' THEN
+    SELECT title, description, '/stacks/' || id::text
+      INTO v_title, v_body, v_route FROM public.lists WHERE id = p_id;
+
+  ELSIF p_type = 'log_comment' THEN               -- log_comments.body
+    SELECT body, '/log/' || log_id::text
+      INTO v_body, v_route FROM public.log_comments WHERE id = p_id;
+
+  ELSIF p_type = 'list_comment' THEN              -- list_comments.content
+    SELECT content, '/stacks/' || list_id::text
+      INTO v_body, v_route FROM public.list_comments WHERE id = p_id;
+
+  ELSIF p_type = 'dossier' THEN
+    SELECT title, full_content, '/dossier/' || id::text
+      INTO v_title, v_body, v_route FROM public.dispatch_dossiers WHERE id = p_id;
+
+  ELSIF p_type = 'dossier_comment' THEN           -- dossier_comments.body
+    SELECT body, '/dossier/' || dossier_id::text
+      INTO v_body, v_route FROM public.dossier_comments WHERE id = p_id;
+
+  ELSIF p_type = 'dispatch_post' THEN
+    SELECT title, coalesce(full_content, body), '/dispatch/' || id::text
+      INTO v_title, v_body, v_route FROM public.dispatch_posts WHERE id = p_id;
+
+  ELSIF p_type = 'dispatch_comment' THEN
+    SELECT body, '/dispatch/' || post_id::text
+      INTO v_body, v_route FROM public.dispatch_comments WHERE id = p_id;
+
+  ELSIF p_type = 'lounge_message' THEN            -- lounge_messages.content
+    SELECT content, '/lounge/' || lounge_id::text
+      INTO v_body, v_route FROM public.lounge_messages WHERE id = p_id AND deleted_at IS NULL;
+
+  ELSIF p_type = 'lounge' THEN                    -- a salon is reported for its name, words or cover
+    SELECT name, description, '/lounge/' || id::text, jsonb_build_object('cover_image', cover_image)
+      INTO v_title, v_body, v_route, v_more FROM public.lounges WHERE id = p_id;
+
+  ELSIF p_type = 'profile' THEN                   -- a page is reported for its words or its picture
+    SELECT username, bio, '/user/' || username, jsonb_build_object('display_name', display_name, 'avatar_url', avatar_url)
+      INTO v_title, v_body, v_route, v_more FROM public.profiles WHERE id = p_id;
+
+  ELSE
+    RETURN jsonb_build_object('found', false);     -- unknown type: a graceful miss
+  END IF;
+
+  -- Content deleted since: the route never got set.
+  IF v_route IS NULL THEN
+    RETURN jsonb_build_object('found', false);
+  END IF;
+
+  RETURN jsonb_build_object('found', true, 'title', v_title, 'body', v_body, 'route', v_route)
+      || jsonb_strip_nulls(coalesce(v_more, '{}'::jsonb));
+END;
+$$;
+
+
+--
 -- Name: piece_stands(text, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -4836,15 +5827,17 @@ CREATE FUNCTION public.piece_stands(p_type text, p_id uuid) RETURNS boolean
   -- Whether a reported piece still stands, as the house removes it: a filing is never deleted, only
   -- ended (its words emptied), and a salon message only withdrawn; every other piece stands while its
   -- row does. A kind no removal reaches (a salon, a profile) stands.
+  -- A piece the house withholds is removed already, awaiting its appeal (H-B10): a second report of it
+  -- reads its evidence as gone, and no second removal is made.
   SELECT CASE p_type
-    WHEN 'log'              THEN EXISTS (SELECT 1 FROM public.logs WHERE id = p_id)
-    WHEN 'list'             THEN EXISTS (SELECT 1 FROM public.lists WHERE id = p_id)
-    WHEN 'log_comment'      THEN EXISTS (SELECT 1 FROM public.log_comments WHERE id = p_id)
-    WHEN 'list_comment'     THEN EXISTS (SELECT 1 FROM public.list_comments WHERE id = p_id)
-    WHEN 'dossier'          THEN EXISTS (SELECT 1 FROM public.dispatch_posts WHERE id = p_id AND ended_at IS NULL)
-    WHEN 'dispatch_post'    THEN EXISTS (SELECT 1 FROM public.dispatch_posts WHERE id = p_id AND ended_at IS NULL)
-    WHEN 'dossier_comment'  THEN EXISTS (SELECT 1 FROM public.dispatch_comments WHERE id = p_id)
-    WHEN 'dispatch_comment' THEN EXISTS (SELECT 1 FROM public.dispatch_comments WHERE id = p_id)
+    WHEN 'log'              THEN EXISTS (SELECT 1 FROM public.logs WHERE id = p_id AND withheld_at IS NULL)
+    WHEN 'list'             THEN EXISTS (SELECT 1 FROM public.lists WHERE id = p_id AND withheld_at IS NULL)
+    WHEN 'log_comment'      THEN EXISTS (SELECT 1 FROM public.log_comments WHERE id = p_id AND withheld_at IS NULL)
+    WHEN 'list_comment'     THEN EXISTS (SELECT 1 FROM public.list_comments WHERE id = p_id AND withheld_at IS NULL)
+    WHEN 'dossier'          THEN EXISTS (SELECT 1 FROM public.dispatch_posts WHERE id = p_id AND ended_at IS NULL AND withheld_at IS NULL)
+    WHEN 'dispatch_post'    THEN EXISTS (SELECT 1 FROM public.dispatch_posts WHERE id = p_id AND ended_at IS NULL AND withheld_at IS NULL)
+    WHEN 'dossier_comment'  THEN EXISTS (SELECT 1 FROM public.dispatch_comments WHERE id = p_id AND withheld_at IS NULL)
+    WHEN 'dispatch_comment' THEN EXISTS (SELECT 1 FROM public.dispatch_comments WHERE id = p_id AND withheld_at IS NULL)
     WHEN 'lounge_message'   THEN EXISTS (SELECT 1 FROM public.lounge_messages WHERE id = p_id AND deleted_at IS NULL)
     ELSE true
   END
@@ -5013,13 +6006,23 @@ CREATE FUNCTION public.record_gate_event(p_event text, p_feature_id text DEFAULT
     SET search_path TO 'public', 'pg_temp'
     AS $_$
 DECLARE
+  v_uid     uuid := auth.uid();
   v_feature text := coalesce(p_feature_id, '');
   v_rank    text := coalesce(p_rank, '');
   v_stand   text := coalesce(p_standing, '');
+  v_salt    bytea;
+  v_who     bytea;
+  v_counter text;
 BEGIN
+  -- Only a member counts: a stranger with the anon key could otherwise write any number.
+  IF v_uid IS NULL THEN
+    RETURN;
+  END IF;
+
   -- A closed vocabulary. Anything else is not a funnel event and is dropped
   -- silently: a measurement call must never be able to fail a member's action.
-  IF p_event NOT IN ('gate_tapped', 'membership_opened', 'rank_purchased', 'rank_relinquished', 'gate_refused') THEN
+  -- A rank bought or ended is the house's to count, from its own record (grant_entitlement).
+  IF p_event NOT IN ('gate_tapped', 'membership_opened', 'gate_refused') THEN
     RETURN;
   END IF;
 
@@ -5029,6 +6032,31 @@ BEGIN
   IF v_feature !~ '^[a-z0-9-]{0,48}$' THEN v_feature := 'other'; END IF;
   IF v_rank    !~ '^[a-z]{0,16}$'     THEN v_rank    := '';      END IF;
   IF v_stand   !~ '^[a-z]{0,16}$'     THEN v_stand   := '';      END IF;
+
+  -- Today's key, drawn once (two first callers at once both draw; the first written stands).
+  SELECT d.salt INTO v_salt FROM public.gate_day d WHERE d.day = current_date;
+  IF NOT FOUND THEN
+    -- A new day: the earlier days' keys and fingerprints go, so none can be tied to anyone again.
+    DELETE FROM public.gate_counted WHERE day < current_date;
+    DELETE FROM public.gate_day WHERE day < current_date;
+    INSERT INTO public.gate_day (day, salt) VALUES (current_date, uuid_send(gen_random_uuid()) || uuid_send(gen_random_uuid()))
+    ON CONFLICT (day) DO NOTHING;
+    SELECT d.salt INTO v_salt FROM public.gate_day d WHERE d.day = current_date;
+  END IF;
+  v_who := sha256(v_salt || convert_to(v_uid::text, 'UTF8'));
+
+  -- A member adds to at most 100 counters a day.
+  IF (SELECT count(*) FROM public.gate_counted c WHERE c.day = current_date AND c.who = v_who) >= 100 THEN
+    RETURN;
+  END IF;
+
+  -- Once per member per counter per day.
+  v_counter := p_event || '|' || v_feature || '|' || v_rank || '|' || v_stand;
+  INSERT INTO public.gate_counted (day, who, counter) VALUES (current_date, v_who, v_counter)
+  ON CONFLICT DO NOTHING;
+  IF NOT FOUND THEN
+    RETURN;
+  END IF;
 
   -- Try the existing counter first. This is the overwhelmingly common path and
   -- it touches one row by primary key.
@@ -5058,7 +6086,7 @@ $_$;
 -- Name: FUNCTION record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text) IS 'Increments an aggregate gate counter. Records no identity of any kind. A gate_refused row means a member reached a server refusal with no rope in front of it.';
+COMMENT ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text) IS 'Increments an aggregate gate counter (a rope tapped, the Society opened, a server refusal), once per member per counter per house day, members only. A rank bought or ended is counted by grant_entitlement from the house''s own record, never here. Records no identity: the day''s fingerprints (gate_counted) are keyed by a key let go with the day. A gate_refused row means a member reached a server refusal with no rope in front of it.';
 
 
 --
@@ -5108,6 +6136,7 @@ BEGIN
     COUNT(*)
   FROM public.logs l
   WHERE l.film_id = p_film_id
+    AND l.withheld_at IS NULL  -- a log the house withholds is in no film's verdict (H-B10)
   ON CONFLICT (id) DO UPDATE
     SET avg_rating   = EXCLUDED.avg_rating,
         rating_count = EXCLUDED.rating_count,
@@ -5419,7 +6448,11 @@ DECLARE
   v_expires_at     timestamptz;
   v_notice         text;
   v_snapshot       jsonb;
+  v_kept           jsonb;
   v_rows           integer;
+  v_held_until     timestamptz;
+  v_held_banned    boolean;
+  v_action_id      uuid;
 BEGIN
   IF v_admin_id IS NULL THEN
     RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
@@ -5449,16 +6482,25 @@ BEGIN
     RAISE EXCEPTION 'A duration in hours is required for %', p_action USING ERRCODE = 'P0001';
   END IF;
 
-  IF p_action = 'delete_content' AND v_content_type = 'profile' THEN
-    RAISE EXCEPTION 'A profile is not content. Use ban or permanent_exile.' USING ERRCODE = 'P0001';
-  END IF;
-
   IF p_duration_hours IS NOT NULL THEN
     v_expires_at := now() + (p_duration_hours || ' hours')::interval;
   END IF;
 
+  -- The copy of what a removal takes: the piece as it stands (piece_as_it_stands), and, where its row
+  -- stays to be put back (a salon message struck through, a filing emptied, a page's or a salon's words
+  -- cleared), the fields that put it back, should the removal be overturned on appeal.
   IF p_action = 'delete_content' THEN
-    v_snapshot := public.get_report_evidence(p_report_id);
+    v_snapshot := public.piece_as_it_stands(v_content_type, v_content_id);
+    -- A log, a stack, a critique and a filing are withheld whole (H-B10), so need nothing kept to put them back.
+    v_kept := CASE v_content_type
+      WHEN 'lounge_message' THEN (SELECT jsonb_build_object('content', content) FROM lounge_messages WHERE id = v_content_id)
+      WHEN 'profile' THEN (SELECT jsonb_build_object('bio', bio, 'display_name', display_name, 'avatar_url', avatar_url,
+                                   'social_links', social_links) FROM profiles WHERE id = v_content_id)
+      WHEN 'lounge' THEN (SELECT jsonb_build_object('name', name, 'description', description, 'cover_image', cover_image)
+                            FROM lounges WHERE id = v_content_id)
+    END;
+    v_snapshot := v_snapshot || jsonb_build_object('type', v_content_type, 'id', v_content_id)
+               || CASE WHEN v_kept IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('kept', v_kept) END;
   END IF;
 
   -- Closed only while still pending: the lock above holds it so, and this says so as well.
@@ -5480,9 +6522,17 @@ BEGIN
       UPDATE profiles SET warning_count = warning_count + 1
       WHERE id = v_target_user_id;
 
-    WHEN 'suspend' THEN
+    WHEN 'suspend', 'mute_user' THEN
+      -- The later end stands: a shorter sentence given after a longer one never cuts it short. The
+      -- member's page carries the reason of the sentence that governs (a ban's, while one stands).
+      SELECT suspended_until, coalesce(is_banned, false) INTO v_held_until, v_held_banned
+        FROM profiles WHERE id = v_target_user_id FOR UPDATE;
       UPDATE profiles
-      SET suspended_until = v_expires_at, suspension_reason = p_reason
+      SET suspended_until = GREATEST(suspended_until, v_expires_at),
+          suspension_reason = CASE
+            WHEN v_held_banned OR (v_held_until IS NOT NULL AND v_held_until >= v_expires_at) THEN suspension_reason
+            WHEN p_action = 'mute_user' THEN 'Muted: ' || p_reason
+            ELSE p_reason END
       WHERE id = v_target_user_id;
 
     WHEN 'ban' THEN
@@ -5495,11 +6545,6 @@ BEGIN
       SET is_banned = true, banned_at = now(), suspension_reason = 'PERMANENT EXILE: ' || p_reason
       WHERE id = v_target_user_id;
 
-    WHEN 'mute_user' THEN
-      UPDATE profiles
-      SET suspended_until = v_expires_at, suspension_reason = 'Muted: ' || p_reason
-      WHERE id = v_target_user_id;
-
     WHEN 'delete_content' THEN
       -- Whether the piece still stands, asked of the tables that hold it before anything is taken:
       -- a filing is never deleted, only emptied (dispatch_no_hard_delete answers its DELETE with no
@@ -5509,19 +6554,28 @@ BEGIN
       IF NOT public.piece_stands(v_content_type, v_content_id) THEN
         RAISE EXCEPTION 'PIECE_GONE' USING ERRCODE = 'P0002';
       END IF;
-      CASE v_content_type
-        WHEN 'log'             THEN DELETE FROM logs              WHERE id = v_content_id;
-        WHEN 'list'            THEN DELETE FROM lists             WHERE id = v_content_id;
-        WHEN 'log_comment'     THEN DELETE FROM log_comments      WHERE id = v_content_id;
-        WHEN 'list_comment'    THEN DELETE FROM list_comments     WHERE id = v_content_id;
-        WHEN 'dossier'         THEN DELETE FROM dispatch_dossiers WHERE id = v_content_id;
-        WHEN 'dossier_comment' THEN DELETE FROM dossier_comments  WHERE id = v_content_id;
-        WHEN 'dispatch_post'    THEN DELETE FROM dispatch_posts    WHERE id = v_content_id;
-        WHEN 'dispatch_comment' THEN DELETE FROM dispatch_comments WHERE id = v_content_id;
-        WHEN 'lounge_message' THEN
+      -- A log, a stack, a critique or a filing is withheld whole, once the verdict's row names it (below):
+      -- read by its author and the Tribunal alone until its appeal is upheld or 30 days pass unappealed,
+      -- and only then deleted as before; given back whole if the verdict is overturned (H-B10).
+      CASE
+        WHEN public.withheld_kind(v_content_type) IS NOT NULL THEN
+          NULL;
+        WHEN v_content_type = 'lounge_message' THEN
           UPDATE lounge_messages
              SET content = '', deleted_at = now()
            WHERE id = v_content_id AND deleted_at IS NULL;
+        -- A page is a member's, not a piece: what is taken is what they wrote on it, never the page.
+        -- Its words, the name it shows, its picture and its links; its handle stays (a ban answers that).
+        WHEN v_content_type = 'profile' THEN
+          UPDATE profiles
+             SET bio = NULL, display_name = NULL, avatar_url = NULL, social_links = '{}'::jsonb
+           WHERE id = v_content_id;
+        -- A salon is a place: what is taken is what it is called and shows, never its rooms or the
+        -- words members left in it.
+        WHEN v_content_type = 'lounge' THEN
+          UPDATE lounges
+             SET name = 'An Unnamed Salon', description = '', cover_image = NULL
+           WHERE id = v_content_id;
         ELSE
           RAISE EXCEPTION 'Cannot remove content of type %', COALESCE(v_content_type, 'unknown')
             USING ERRCODE = 'P0001';
@@ -5537,7 +6591,13 @@ BEGIN
   INSERT INTO mod_actions (report_id, target_user_id, admin_id, action, reason,
                            duration_hours, expires_at, content_snapshot)
   VALUES (p_report_id, v_target_user_id, v_admin_id, p_action, p_reason,
-          p_duration_hours, v_expires_at, v_snapshot);
+          p_duration_hours, v_expires_at, v_snapshot)
+  RETURNING id INTO v_action_id;
+
+  -- Withheld under the verdict that names it, which keys its register (H-B10).
+  IF p_action = 'delete_content' AND public.withheld_kind(v_content_type) IS NOT NULL THEN
+    PERFORM public.withhold_piece(v_action_id, public.withheld_kind(v_content_type), v_content_id);
+  END IF;
 
   IF p_notify_user THEN
     IF v_reporter_id IS NOT NULL THEN
@@ -5559,9 +6619,22 @@ BEGIN
         WHEN 'mute_user' THEN 'After reviewing a report, the house has muted your account for a time.'
         WHEN 'ban' THEN 'After reviewing a report, the house has closed your membership until further notice.'
         WHEN 'permanent_exile' THEN 'After reviewing a report, the house has permanently closed your membership.'
-        WHEN 'delete_content' THEN 'After reviewing a report, the house has removed a piece of your content.'
+        WHEN 'delete_content' THEN CASE v_content_type
+          WHEN 'profile' THEN 'After reviewing a report, the house has cleared the words and picture on your page.'
+          WHEN 'lounge' THEN 'After reviewing a report, the house has cleared the name, description and cover of your salon.'
+          WHEN 'lounge_message' THEN 'After reviewing a report, the house has removed a piece of your content.'
+          ELSE 'After reviewing a report, the house has withheld a piece of your content: no one but you can see it. '
+               || 'It is kept whole for 30 days, and until your appeal is heard if you appeal; unappealed, it is deleted then. '
+               || 'Open this notice in the current app to read the verdict whole, the day and hour it is kept until, and to appeal.' END
         ELSE 'The house has reviewed a report concerning your account.'
-      END || ' Reason: ' || p_reason;
+      END
+      -- A shorter sentence than the one standing: the member is told the longer one stands, and to when.
+      || CASE WHEN p_action IN ('suspend', 'mute_user') AND NOT v_held_banned
+                   AND v_held_until IS NOT NULL AND v_held_until >= v_expires_at
+              THEN ' The longer pause already in place stands, to '
+                   || to_char(v_held_until AT TIME ZONE 'UTC', 'DD Mon YYYY HH24:MI "UTC"') || '.'
+              ELSE '' END
+      || ' Reason: ' || p_reason;
 
       INSERT INTO notifications (user_id, type, title, body, message, metadata)
       VALUES (
@@ -5570,7 +6643,7 @@ BEGIN
         'A Notice from the House',
         v_notice,
         v_notice,
-        jsonb_build_object('action', p_action, 'reason', p_reason, 'expires_at', v_expires_at)
+        jsonb_build_object('action', p_action, 'reason', p_reason, 'expires_at', v_expires_at, 'mod_action_id', v_action_id)
       );
     END IF;
   END IF;
@@ -5661,9 +6734,17 @@ CREATE TABLE public.lists (
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at timestamp with time zone DEFAULT now(),
     is_private boolean DEFAULT false,
+    withheld_at timestamp with time zone,
     CONSTRAINT lists_description_len CHECK ((char_length(description) <= 1000)),
     CONSTRAINT lists_title_len CHECK ((char_length(title) <= 100))
 );
+
+
+--
+-- Name: COLUMN lists.withheld_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.lists.withheld_at IS 'Withheld by the house (withheld_pieces): read by its author alone until deleted or given back. Written by the house alone.';
 
 
 --
@@ -5760,7 +6841,7 @@ BEGIN
   IF COALESCE(p_pattern, '') = '' THEN
     RETURN;
   END IF;
-  v_hidden := COALESCE((SELECT public.hidden_authors()), '{}'::uuid[]);
+  v_hidden := COALESCE((SELECT private.hidden_authors()), '{}'::uuid[]);
 
   -- 1. The members the handle finds.
   IF v_handle IS NOT NULL THEN
@@ -5775,7 +6856,7 @@ BEGIN
     FROM (SELECT r.id, r.created_at
             FROM (SELECT l.id, l.created_at, l.user_id, l.film_title, l.review
                     FROM public.logs l
-                   WHERE l.review IS NOT NULL AND l.review <> ''
+                   WHERE l.review IS NOT NULL AND l.review <> '' AND l.withheld_at IS NULL
                      AND (l.created_at, l.id) < (v_at, v_id)
                    ORDER BY l.created_at DESC, l.id DESC
                    LIMIT 5000) r
@@ -5785,7 +6866,7 @@ BEGIN
                   OR (v_many AND EXISTS (SELECT 1 FROM public.profiles pa
                                           WHERE pa.id = r.user_id AND pa.username ILIKE v_handle ESCAPE '\')))
              AND NOT (r.user_id = ANY (v_hidden))
-             AND (r.user_id = v_me OR NOT COALESCE(p.is_social_private, false) OR public.can_view_user_data(r.user_id))
+             AND (r.user_id = v_me OR NOT COALESCE(p.is_social_private, false) OR private.can_view_user_data(r.user_id))
            ORDER BY r.created_at DESC, r.id DESC
            LIMIT v_limit) w;
   IF COALESCE(cardinality(v_page), 0) >= v_limit THEN
@@ -5796,23 +6877,23 @@ BEGIN
       FROM (SELECT m.id, m.created_at
               FROM (SELECT l.id, l.created_at, l.user_id
                       FROM public.logs l
-                     WHERE l.review IS NOT NULL AND l.review <> ''
+                     WHERE l.review IS NOT NULL AND l.review <> '' AND l.withheld_at IS NULL
                        AND (l.film_title ILIKE v_words ESCAPE '\' OR l.review ILIKE v_words ESCAPE '\')
                     UNION
                     SELECT l.id, l.created_at, l.user_id
                       FROM public.logs l
                      WHERE NOT v_many AND l.user_id = ANY (v_authors)
-                       AND l.review IS NOT NULL AND l.review <> ''
+                       AND l.review IS NOT NULL AND l.review <> '' AND l.withheld_at IS NULL
                     UNION
                     SELECT l.id, l.created_at, l.user_id
                       FROM public.profiles pa
                       JOIN public.logs l ON l.user_id = pa.id
                      WHERE v_many AND pa.username ILIKE v_handle ESCAPE '\'
-                       AND l.review IS NOT NULL AND l.review <> '') m
+                       AND l.review IS NOT NULL AND l.review <> '' AND l.withheld_at IS NULL) m
               JOIN public.profiles p ON p.id = m.user_id
              WHERE (m.created_at, m.id) < (v_at, v_id)
                AND NOT (m.user_id = ANY (v_hidden))
-               AND (m.user_id = v_me OR NOT COALESCE(p.is_social_private, false) OR public.can_view_user_data(m.user_id))
+               AND (m.user_id = v_me OR NOT COALESCE(p.is_social_private, false) OR private.can_view_user_data(m.user_id))
              ORDER BY m.created_at DESC, m.id DESC
              LIMIT v_limit) w;
   ELSE
@@ -5824,13 +6905,13 @@ BEGIN
       FROM (SELECT l.id, l.created_at
               FROM public.logs l
               JOIN public.profiles p ON p.id = l.user_id
-             WHERE l.review IS NOT NULL AND l.review <> ''
+             WHERE l.review IS NOT NULL AND l.review <> '' AND l.withheld_at IS NULL
                AND (l.created_at, l.id) < (v_at, v_id)
                AND ((l.film_title || '') ILIKE v_words ESCAPE '\' OR (l.review || '') ILIKE v_words ESCAPE '\'
                     OR l.user_id = ANY (v_authors)
                     OR (v_many AND p.username ILIKE v_handle ESCAPE '\'))
                AND NOT (l.user_id = ANY (v_hidden))
-               AND (l.user_id = v_me OR NOT COALESCE(p.is_social_private, false) OR public.can_view_user_data(l.user_id))
+               AND (l.user_id = v_me OR NOT COALESCE(p.is_social_private, false) OR private.can_view_user_data(l.user_id))
              ORDER BY (l.created_at + interval '0 seconds') DESC, l.id DESC
              LIMIT v_limit) w;
   END IF;
@@ -5850,7 +6931,7 @@ END $$;
 --
 
 CREATE FUNCTION public.search_members(p_pattern text, p_handles_only boolean DEFAULT false, p_cursor_closeness integer DEFAULT NULL::integer, p_cursor_username text DEFAULT NULL::text, p_limit integer DEFAULT 20) RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness integer)
-    LANGUAGE plpgsql STABLE
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $_$
 DECLARE
@@ -5868,7 +6949,7 @@ BEGIN
   IF COALESCE(p_pattern, '') = '' THEN
     RETURN;
   END IF;
-  v_hidden := COALESCE((SELECT public.hidden_authors())::uuid[], '{}'::uuid[]);
+  v_hidden := COALESCE((SELECT private.hidden_authors())::uuid[], '{}'::uuid[]);
   -- Each closeness's own test, as the one read's CASE asked it. Plain, so the planner reads the words
   -- and their indexes: a WHERE drops a test that is unknown (a name not given), as the CASE did.
   -- The handle that is the words: words with no wildcard left once their escapes are read are one
@@ -5974,13 +7055,13 @@ BEGIN
   IF COALESCE(p_pattern, '') = '' THEN
     RETURN;
   END IF;
-  v_hidden := COALESCE((SELECT public.hidden_authors()), '{}'::uuid[]);
+  v_hidden := COALESCE((SELECT private.hidden_authors()), '{}'::uuid[]);
 
   -- 1. Counted by the trigram indexes, to 1,000.
   IF v_pieces THEN
     SELECT count(*) < 1000 INTO v_few
       FROM (SELECT 1 FROM public.lists l
-             WHERE l.is_private = false
+             WHERE l.is_private = false AND l.withheld_at IS NULL
                AND (l.title ILIKE v_words ESCAPE '\' OR l.description ILIKE v_words ESCAPE '\')
              LIMIT 1000) c;
   END IF;
@@ -5991,7 +7072,7 @@ BEGIN
       FROM (SELECT m.id, m.created_at
               FROM (SELECT l.id, l.created_at, l.user_id
                       FROM public.lists l
-                     WHERE l.is_private = false
+                     WHERE l.is_private = false AND l.withheld_at IS NULL
                        AND (l.title ILIKE v_words ESCAPE '\' OR l.description ILIKE v_words ESCAPE '\')
                        AND (l.created_at, l.id) < (v_at, v_id)
                     -- Read by the indexes and sorted before any stack is asked the rule.
@@ -6000,7 +7081,7 @@ BEGIN
              WHERE NOT (m.user_id = ANY (v_hidden))
                AND (m.user_id = v_me
                     OR (p.id IS NOT NULL AND NOT COALESCE(p.is_social_private, false))
-                    OR public.can_view_user_data(m.user_id))
+                    OR private.can_view_user_data(m.user_id))
              ORDER BY m.created_at DESC, m.id DESC
              LIMIT v_limit) w;
   ELSE
@@ -6009,13 +7090,13 @@ BEGIN
       FROM (SELECT l.id, l.created_at
               FROM public.lists l
               LEFT JOIN public.profiles p ON p.id = l.user_id
-             WHERE l.is_private = false
+             WHERE l.is_private = false AND l.withheld_at IS NULL
                AND (l.created_at, l.id) < (v_at, v_id)
                AND (l.title ILIKE v_words ESCAPE '\' OR l.description ILIKE v_words ESCAPE '\')
                AND NOT (l.user_id = ANY (v_hidden))
                AND (l.user_id = v_me
                     OR (p.id IS NOT NULL AND NOT COALESCE(p.is_social_private, false))
-                    OR public.can_view_user_data(l.user_id))
+                    OR private.can_view_user_data(l.user_id))
              ORDER BY l.created_at DESC, l.id DESC
              LIMIT v_limit) w;
   END IF;
@@ -6186,9 +7267,273 @@ BEGIN
     WHERE type IN ('follow', 'follow_request')
       AND ((user_id = NEW.blocker_id AND target_user_id = NEW.blocked_id)
         OR (user_id = NEW.blocked_id AND target_user_id = NEW.blocker_id));
+    -- Each one's seat in the other's salons, both ways (a ban stays the host's).
+    DELETE FROM public.lounge_members m
+     USING public.lounges l
+     WHERE l.id = m.lounge_id
+       AND m.status IN ('approved', 'muted', 'pending')
+       AND ((m.user_id = NEW.blocked_id AND l.creator_id = NEW.blocker_id)
+         OR (m.user_id = NEW.blocker_id AND l.creator_id = NEW.blocked_id));
   END IF;
   RETURN NEW;
 END $$;
+
+
+--
+-- Name: sign_in_attempt(text, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.sign_in_attempt(p_handle text, p_door text, p_device text) RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_uid    uuid;
+  v_door   text := NULLIF(left(coalesce(p_door, ''), 64), '');
+  v_known  boolean := false;
+  v_row    public.sign_in_doors;
+  v_pail   public.sign_in_handles;
+  v_tokens real;
+  v_free   constant integer := 5;     -- wrong passwords a door may try in a day before it rests
+  v_cap    constant real := 20;       -- the shared pail: attempts at once
+  v_every  constant integer := 300;   -- and one more every 300 seconds
+BEGIN
+  -- The member the handle names, as get_email_by_username finds them; none, nothing is counted.
+  SELECT p.id INTO v_uid
+    FROM public.profiles p JOIN auth.users au ON au.id = p.id
+   WHERE lower(p.username) = lower(coalesce(p_handle, ''))
+   LIMIT 1;
+  IF v_uid IS NULL THEN
+    RETURN jsonb_build_object('wait', 0, 'door', false, 'pail', false);
+  END IF;
+
+  -- Rows long quiet are let go, a few at a time, never waiting on one an attempt holds.
+  DELETE FROM public.sign_in_doors
+   WHERE (user_id, door) IN (SELECT d.user_id, d.door FROM public.sign_in_doors d
+                              WHERE d.last_at < now() - interval '1 day'
+                              ORDER BY d.last_at LIMIT 20 FOR UPDATE SKIP LOCKED);
+  DELETE FROM public.sign_in_devices
+   WHERE token_hash IN (SELECT v.token_hash FROM public.sign_in_devices v
+                         WHERE v.used_at < now() - interval '90 days'
+                         ORDER BY v.used_at LIMIT 20 FOR UPDATE SKIP LOCKED);
+
+  -- A phone the member's right password signed in on before: not held by the shared pail.
+  IF p_device IS NOT NULL AND char_length(p_device) BETWEEN 32 AND 128 THEN
+    v_known := EXISTS (SELECT 1 FROM public.sign_in_devices
+                        WHERE token_hash = sha256(convert_to(p_device, 'UTF8')) AND user_id = v_uid
+                          AND used_at >= now() - interval '90 days');
+  END IF;
+
+  -- 1. The door: resting, refused uncounted.
+  IF v_door IS NOT NULL THEN
+    IF NOT EXISTS (SELECT 1 FROM public.sign_in_doors WHERE user_id = v_uid AND door = v_door)
+       AND (SELECT count(*) FROM public.sign_in_doors WHERE user_id = v_uid) >= 64 THEN
+      -- At most 64 doors per member: the least recent is let go.
+      DELETE FROM public.sign_in_doors
+       WHERE (user_id, door) IN (SELECT d.user_id, d.door FROM public.sign_in_doors d WHERE d.user_id = v_uid
+                                  ORDER BY d.last_at LIMIT 1);
+    END IF;
+    INSERT INTO public.sign_in_doors (user_id, door, misses, last_at) VALUES (v_uid, v_door, 0, now())
+    ON CONFLICT (user_id, door) DO NOTHING;
+    SELECT * INTO v_row FROM public.sign_in_doors WHERE user_id = v_uid AND door = v_door FOR UPDATE;
+    IF v_row.paused_until IS NOT NULL AND v_row.paused_until > now() THEN
+      RETURN jsonb_build_object('wait', GREATEST(1, ceil(extract(epoch FROM v_row.paused_until - now()))::integer),
+                                'from', 'here', 'door', false, 'pail', false);
+    END IF;
+    IF v_row.last_at < now() - interval '1 day' THEN
+      v_row.misses := 0;  -- a day with no attempt from this door: its count starts again
+    END IF;
+  END IF;
+
+  -- 2. The pail every door not known to the member shares: empty, refused uncounted.
+  IF NOT v_known THEN
+    INSERT INTO public.sign_in_handles (user_id, tokens, refilled_at) VALUES (v_uid, v_cap, now())
+    ON CONFLICT (user_id) DO NOTHING;
+    SELECT * INTO v_pail FROM public.sign_in_handles WHERE user_id = v_uid FOR UPDATE;
+    v_tokens := LEAST(v_cap, v_pail.tokens + extract(epoch FROM now() - v_pail.refilled_at)::real / v_every);
+    IF v_tokens < 1 THEN
+      UPDATE public.sign_in_handles SET tokens = v_tokens, refilled_at = now() WHERE user_id = v_uid;
+      RETURN jsonb_build_object('wait', GREATEST(1, ceil((1 - v_tokens) * v_every))::integer,
+                                'from', 'elsewhere', 'door', false, 'pail', false);
+    END IF;
+    UPDATE public.sign_in_handles SET tokens = v_tokens - 1, refilled_at = now() WHERE user_id = v_uid;
+  END IF;
+
+  -- Counted at the door: from the fifth on, each rests it after, 1, 2, 4 ... 60 minutes.
+  IF v_door IS NOT NULL THEN
+    UPDATE public.sign_in_doors
+       SET misses = v_row.misses + 1,
+           last_at = now(),
+           paused_until = CASE WHEN v_row.misses + 1 >= v_free
+                               THEN now() + make_interval(mins => LEAST(60, power(2, LEAST(v_row.misses + 1 - v_free, 6))::integer))
+                               ELSE NULL END
+     WHERE user_id = v_uid AND door = v_door;
+  END IF;
+  RETURN jsonb_build_object('wait', 0, 'door', v_door IS NOT NULL, 'pail', NOT v_known);
+END;
+$$;
+
+
+--
+-- Name: FUNCTION sign_in_attempt(p_handle text, p_door text, p_device text); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.sign_in_attempt(p_handle text, p_door text, p_device text) IS 'Counts one sign-in attempt on a member''s handle, per door (5 a day, then rests of 1 to 60 minutes) and in the pail every unknown door shares (20, one more every 5 minutes; a phone holding its key is not held by it). Answers {wait, from: here|elsewhere, door, pail}: what was counted, to give back if the house could not answer. Nothing for a handle no one holds. The service role''s alone.';
+
+
+--
+-- Name: sign_in_cleared(text, text, boolean, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.sign_in_cleared(p_handle text, p_door text, p_pail boolean, p_device text) RETURNS text
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_uid  uuid;
+  v_key  text;
+  v_hash bytea;
+BEGIN
+  -- The right password: this door's count goes, the member's own attempt is given back to the pail,
+  -- and the phone is handed its key (the one it holds, if it is still theirs, or a new one).
+  SELECT p.id INTO v_uid
+    FROM public.profiles p JOIN auth.users au ON au.id = p.id
+   WHERE lower(p.username) = lower(coalesce(p_handle, ''))
+   LIMIT 1;
+  IF v_uid IS NULL THEN
+    RETURN NULL;
+  END IF;
+  IF NULLIF(p_door, '') IS NOT NULL THEN
+    DELETE FROM public.sign_in_doors WHERE user_id = v_uid AND door = left(p_door, 64);
+  END IF;
+  IF coalesce(p_pail, false) THEN
+    UPDATE public.sign_in_handles SET tokens = LEAST(20, tokens + 1) WHERE user_id = v_uid;
+  END IF;
+
+  IF p_device IS NOT NULL AND char_length(p_device) BETWEEN 32 AND 128 THEN
+    v_hash := sha256(convert_to(p_device, 'UTF8'));
+    UPDATE public.sign_in_devices SET used_at = now() WHERE token_hash = v_hash AND user_id = v_uid;
+    IF FOUND THEN
+      RETURN p_device;
+    END IF;
+  END IF;
+  -- 244 random bits (two version-4 ids), kept only as its hash.
+  v_key := replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
+  INSERT INTO public.sign_in_devices (token_hash, user_id, made_at, used_at)
+  VALUES (sha256(convert_to(v_key, 'UTF8')), v_uid, now(), now());
+  -- Ten phones per member at most: the least recently used is let go.
+  DELETE FROM public.sign_in_devices
+   WHERE user_id = v_uid
+     AND token_hash NOT IN (SELECT v.token_hash FROM public.sign_in_devices v WHERE v.user_id = v_uid
+                             ORDER BY v.used_at DESC LIMIT 10);
+  RETURN v_key;
+END;
+$$;
+
+
+--
+-- Name: FUNCTION sign_in_cleared(p_handle text, p_door text, p_pail boolean, p_device text); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.sign_in_cleared(p_handle text, p_door text, p_pail boolean, p_device text) IS 'After the right password: lets the door''s count go, gives the attempt back to the pail, and answers the phone''s key (its own, still the member''s, or a new one; only hashes kept, ten per member). The service role''s alone.';
+
+
+--
+-- Name: sign_in_unasked(text, text, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.sign_in_unasked(p_handle text, p_door text, p_pail boolean) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_uid uuid;
+BEGIN
+  -- An attempt the house or Auth could not answer: what it counted is given back, and any rest it
+  -- earned with it (a rest earned before it had already ended, or the attempt would not have run).
+  SELECT p.id INTO v_uid
+    FROM public.profiles p JOIN auth.users au ON au.id = p.id
+   WHERE lower(p.username) = lower(coalesce(p_handle, ''))
+   LIMIT 1;
+  IF v_uid IS NULL THEN
+    RETURN;
+  END IF;
+  IF NULLIF(p_door, '') IS NOT NULL THEN
+    UPDATE public.sign_in_doors SET misses = GREATEST(0, misses - 1), paused_until = NULL
+     WHERE user_id = v_uid AND door = left(p_door, 64);
+  END IF;
+  IF coalesce(p_pail, false) THEN
+    UPDATE public.sign_in_handles SET tokens = LEAST(20, tokens + 1) WHERE user_id = v_uid;
+  END IF;
+END;
+$$;
+
+
+--
+-- Name: FUNCTION sign_in_unasked(p_handle text, p_door text, p_pail boolean); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.sign_in_unasked(p_handle text, p_door text, p_pail boolean) IS 'Gives back what sign_in_attempt counted for an attempt the house or Auth could not answer, and the rest it earned. The service role''s alone.';
+
+
+--
+-- Name: standing_from_verdicts(uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.standing_from_verdicts(p_user uuid, p_what text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_ban       public.mod_actions%ROWTYPE;
+  v_susp      public.mod_actions%ROWTYPE;
+  v_banned    boolean;
+  v_banned_at timestamptz;
+  v_until     timestamptz;
+  v_said      text;
+BEGIN
+  SELECT coalesce(is_banned, false), banned_at, suspended_until, suspension_reason
+    INTO v_banned, v_banned_at, v_until, v_said
+    FROM public.profiles WHERE id = p_user FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN;
+  END IF;
+
+  -- The verdicts that still hold: never lifted, never overturned (an overturned one is lifted too).
+  SELECT * INTO v_ban FROM public.mod_actions
+   WHERE target_user_id = p_user AND action IN ('ban', 'permanent_exile') AND lifted_at IS NULL
+   ORDER BY (action = 'permanent_exile') DESC, created_at DESC, id DESC LIMIT 1;
+  SELECT * INTO v_susp FROM public.mod_actions
+   WHERE target_user_id = p_user AND action IN ('suspend', 'mute_user') AND lifted_at IS NULL AND expires_at > now()
+   ORDER BY expires_at DESC, created_at DESC, id DESC LIMIT 1;
+
+  -- 'ban' reads the ban again, 'suspension' the suspension, 'all' both: a part not asked of is left as
+  -- it stands, so a verdict overturned never touches a standing it did not make.
+  IF p_what IN ('ban', 'all') THEN
+    v_banned := v_ban.id IS NOT NULL;
+    v_banned_at := v_ban.created_at;
+  END IF;
+  IF p_what IN ('suspension', 'all') THEN
+    v_until := v_susp.expires_at;
+  END IF;
+
+  -- The reason on the member's page is the one of what governs: a ban's while one stands, else the
+  -- longest suspension's; none when nothing stands.
+  v_said := CASE
+    WHEN v_banned AND v_ban.id IS NOT NULL AND p_what IN ('ban', 'all')
+      THEN CASE WHEN v_ban.action = 'permanent_exile' THEN 'PERMANENT EXILE: ' ELSE '' END || v_ban.reason
+    WHEN v_banned THEN v_said
+    WHEN v_until > now() AND v_susp.id IS NOT NULL
+      THEN CASE WHEN v_susp.action = 'mute_user' THEN 'Muted: ' ELSE '' END || v_susp.reason
+    WHEN v_until > now() THEN v_said
+    ELSE NULL
+  END;
+
+  UPDATE public.profiles
+     SET is_banned = v_banned, banned_at = v_banned_at, suspended_until = v_until, suspension_reason = v_said
+   WHERE id = p_user;
+END;
+$$;
 
 
 --
@@ -6204,6 +7549,7 @@ DECLARE
   v_report_id uuid;
   v_recent_count int;
   v_target uuid;
+  v_words jsonb;
 BEGIN
   IF v_reporter_id IS NULL THEN
     RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
@@ -6244,6 +7590,13 @@ BEGIN
   EXCEPTION WHEN unique_violation THEN
     RAISE EXCEPTION 'Already reported' USING ERRCODE = '23505';
   END;
+
+  -- The words reported, as they stand now: whatever their author does before the verdict, the
+  -- Tribunal reads what was reported beside what is left (get_report_evidence).
+  v_words := public.piece_as_it_stands(p_content_type, p_content_id);
+  IF coalesce((v_words ->> 'found')::boolean, false) THEN
+    INSERT INTO public.reported_words (report_id, words) VALUES (v_report_id, v_words - 'found');
+  END IF;
 
   RETURN v_report_id;
 END;
@@ -6289,6 +7642,8 @@ CREATE FUNCTION public.taste_shape(p_user_id uuid) RETURNS jsonb
     SELECT round(rating) AS reel,
            CASE WHEN year::text ~ '^\d{1,4}$' THEN (year::text::int / 10) * 10 END AS decade
       FROM public.logs WHERE user_id = p_user_id
+        -- a log the house withholds counts for its author alone (H-B10)
+        AND (withheld_at IS NULL OR user_id = auth.uid())
   )
   SELECT jsonb_build_object(
     'logs', (SELECT count(*) FROM l),
@@ -6361,7 +7716,8 @@ BEGIN
   -- names it: a certification of a critique by the critique (its group key is the filing's), every
   -- other certification by its group key; a follow or a follow request by the one followed; a
   -- request to enter a salon by the salon (an admission, sent by the host, is no request); a
-  -- critique taken as the answer by the critique.
+  -- critique taken as the answer by the critique; any other critique by the member it is to, once
+  -- within the hour, whatever piece it is on.
   IF NEW.from_user_id IS NOT NULL THEN
     v_thing := CASE
       WHEN NEW.type = 'endorse' THEN
@@ -6373,6 +7729,8 @@ BEGIN
         THEN 'salon_request:' || NEW.related_lounge_id
       WHEN NEW.type = 'comment' AND NEW.metadata ? 'answer' AND NEW.metadata ? 'comment_id'
         THEN 'answer:' || (NEW.metadata ->> 'comment_id')
+      WHEN NEW.type = 'comment'
+        THEN 'critique_to:' || NEW.user_id
       ELSE NULL
     END;
     IF v_thing IS NOT NULL AND char_length(v_thing) <= 200 THEN
@@ -6382,6 +7740,12 @@ BEGIN
         VALUES (NEW.from_user_id, NEW.user_id, v_thing)
         ON CONFLICT (from_user_id, thing) DO UPDATE SET pushed_at = now()
           WHERE public.certifications_pushed.pushed_at < now() - interval '30 days';
+      ELSIF v_thing LIKE 'critique_to:%' THEN
+        -- A member's critiques to another are told again once an hour has passed since one was last pushed.
+        INSERT INTO public.certifications_pushed (from_user_id, user_id, thing)
+        VALUES (NEW.from_user_id, NEW.user_id, v_thing)
+        ON CONFLICT (from_user_id, thing) DO UPDATE SET pushed_at = now()
+          WHERE public.certifications_pushed.pushed_at < now() - interval '1 hour';
       ELSE
         INSERT INTO public.certifications_pushed (from_user_id, user_id, thing)
         VALUES (NEW.from_user_id, NEW.user_id, v_thing)
@@ -6465,6 +7829,33 @@ CREATE FUNCTION public.toggle_dossier_certify(dossier_uuid uuid) RETURNS boolean
         RETURN TRUE;
       END IF;
     END $$;
+
+
+--
+-- Name: tribunal_waiting(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.tribunal_waiting() RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_admin_id uuid := auth.uid();
+BEGIN
+  IF v_admin_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = v_admin_id AND role = 'admin') THEN
+    RAISE EXCEPTION 'Unauthorized: admin role required' USING ERRCODE = '42501';
+  END IF;
+  -- The cases pending, and the appeals this moderator may hear (never those of their own verdicts, nor of
+  -- verdicts about themselves: a_judge_is_refused).
+  RETURN jsonb_build_object(
+    'cases', (SELECT count(*) FROM public.reports WHERE status = 'pending'),
+    'appeals', (SELECT count(*) FROM public.mod_actions
+                 WHERE appeal_status = 'pending' AND private.a_judge_is_refused(v_admin_id, admin_id, target_user_id) IS NULL));
+END;
+$$;
 
 
 --
@@ -6663,6 +8054,29 @@ $_$;
 
 
 --
+-- Name: whose_words_a_message_carries(uuid, text, jsonb, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.whose_words_a_message_carries(p_writer uuid, p_type text, p_metadata jsonb, p_reply_to_id uuid) RETURNS uuid[]
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  -- The members whose words a message carries besides its writer's: the writer of the message it
+  -- answers (its quote), the author of its own card, and the author of a card it answers (a caption
+  -- the website wrote carries the stack's title and its curator). NULL: none but its writer's.
+  SELECT nullif(ARRAY(
+    SELECT DISTINCT w.id
+      FROM (SELECT public.a_cards_author(p_type, p_metadata) AS id
+            UNION ALL
+            SELECT q.user_id FROM public.lounge_messages q WHERE q.id = p_reply_to_id
+            UNION ALL
+            SELECT public.a_cards_author(q.type, q.metadata) FROM public.lounge_messages q WHERE q.id = p_reply_to_id) w
+     WHERE w.id IS NOT NULL AND w.id IS DISTINCT FROM p_writer
+     ORDER BY w.id), '{}'::uuid[])
+$$;
+
+
+--
 -- Name: withdraw_lounge_message(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -6683,6 +8097,116 @@ END $$;
 
 
 --
+-- Name: withheld_kind(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.withheld_kind(p_content_type text) RETURNS text
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  -- The kind of piece a report's content type names, as the house withholds it; none for a kind it
+  -- does not withhold (a salon message, a page, a salon: each has its own way back).
+  SELECT CASE p_content_type
+    WHEN 'log'              THEN 'log'
+    WHEN 'list'             THEN 'list'
+    WHEN 'log_comment'      THEN 'log_comment'
+    WHEN 'list_comment'     THEN 'list_comment'
+    WHEN 'dossier_comment'  THEN 'dispatch_comment'
+    WHEN 'dispatch_comment' THEN 'dispatch_comment'
+    WHEN 'dossier'          THEN 'dispatch_post'
+    WHEN 'dispatch_post'    THEN 'dispatch_post'
+  END
+$$;
+
+
+--
+-- Name: withhold_piece(uuid, text, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.withhold_piece(p_action_id uuid, p_kind text, p_id uuid) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_author  uuid;
+  v_film    integer;
+  v_parent  uuid;
+  v_at      timestamptz;
+  v_notices jsonb := '[]'::jsonb;
+BEGIN
+  -- The piece, withheld where it stands; one already withheld or gone is not withheld again.
+  IF p_kind = 'log' THEN
+    UPDATE public.logs SET withheld_at = now() WHERE id = p_id AND withheld_at IS NULL RETURNING user_id, film_id INTO v_author, v_film;
+  ELSIF p_kind = 'list' THEN
+    UPDATE public.lists SET withheld_at = now() WHERE id = p_id AND withheld_at IS NULL RETURNING user_id INTO v_author;
+  ELSIF p_kind = 'log_comment' THEN
+    UPDATE public.log_comments SET withheld_at = now() WHERE id = p_id AND withheld_at IS NULL RETURNING user_id, log_id, created_at INTO v_author, v_parent, v_at;
+  ELSIF p_kind = 'list_comment' THEN
+    UPDATE public.list_comments SET withheld_at = now() WHERE id = p_id AND withheld_at IS NULL RETURNING user_id, list_id, created_at INTO v_author, v_parent, v_at;
+  ELSIF p_kind = 'dispatch_comment' THEN
+    UPDATE public.dispatch_comments SET withheld_at = now() WHERE id = p_id AND withheld_at IS NULL RETURNING user_id, post_id INTO v_author, v_parent;
+  ELSIF p_kind = 'dispatch_post' THEN
+    UPDATE public.dispatch_posts SET withheld_at = now() WHERE id = p_id AND withheld_at IS NULL AND ended_at IS NULL RETURNING user_id INTO v_author;
+  ELSE
+    RETURN false;
+  END IF;
+  IF NOT FOUND THEN
+    RETURN false;
+  END IF;
+
+  -- Its cards in the salons, gone with it, live.
+  PERFORM private.a_withheld_piece_turns_its_cards(p_kind, p_id, true);
+
+  -- The counts that held it leave it out; the notices of it other members held are set aside, whole.
+  IF p_kind = 'log' THEN
+    PERFORM public.refresh_film_verdict(v_film);
+  ELSIF p_kind = 'log_comment' THEN
+    UPDATE public.log_counts SET critique_count = GREATEST(0, critique_count - 1) WHERE log_id = v_parent;
+    WITH gone AS (
+      DELETE FROM public.notifications n
+       WHERE n.from_user_id = v_author AND n.type = 'comment' AND n.group_key = 'endorse:log:' || v_parent
+         AND n.created_at = v_at AND n.user_id IS DISTINCT FROM v_author
+      RETURNING n.*)
+    SELECT coalesce(jsonb_agg(to_jsonb(gone)), '[]'::jsonb) INTO v_notices FROM gone;
+  ELSIF p_kind = 'list_comment' THEN
+    WITH gone AS (
+      DELETE FROM public.notifications n
+       WHERE n.from_user_id = v_author AND n.type = 'comment' AND n.group_key = 'endorse:list:' || v_parent
+         AND n.created_at = v_at AND n.user_id IS DISTINCT FROM v_author
+      RETURNING n.*)
+    SELECT coalesce(jsonb_agg(to_jsonb(gone)), '[]'::jsonb) INTO v_notices FROM gone;
+  ELSIF p_kind = 'dispatch_comment' THEN
+    UPDATE public.dispatch_posts SET comment_count = GREATEST(0, comment_count - 1) WHERE id = v_parent;
+    -- Told of it by its writer (the critique), of its taking as the answer, of a mark on it: each names it.
+    WITH gone AS (
+      DELETE FROM public.notifications n
+       WHERE n.metadata ->> 'comment_id' = p_id::text AND n.user_id IS DISTINCT FROM v_author
+         AND (n.from_user_id = v_author
+              OR n.user_id IN (SELECT p.user_id FROM public.dispatch_posts p WHERE p.id = v_parent))
+      RETURNING n.*)
+    SELECT coalesce(jsonb_agg(to_jsonb(gone)), '[]'::jsonb) INTO v_notices FROM gone;
+  ELSIF p_kind = 'dispatch_post' THEN
+    -- Told to the members it touched: its critics (an answer, a mark on their critique) and its voters
+    -- (a ballot's close). Each notice names the filing; its author's own stay.
+    WITH gone AS (
+      DELETE FROM public.notifications n
+       WHERE n.user_id IN (SELECT c.user_id FROM public.dispatch_comments c WHERE c.post_id = p_id
+                           UNION SELECT v.user_id FROM public.dispatch_votes v WHERE v.post_id = p_id)
+         AND n.user_id IS DISTINCT FROM v_author
+         AND n.metadata ->> 'dispatch_post_id' = p_id::text
+      RETURNING n.*)
+    SELECT coalesce(jsonb_agg(to_jsonb(gone)), '[]'::jsonb) INTO v_notices FROM gone;
+  END IF;
+
+  INSERT INTO public.withheld_pieces (mod_action_id, kind, piece_id, author_id, delete_after, notices)
+  VALUES (p_action_id, p_kind, p_id, v_author, now() + interval '30 days', v_notices)
+  ON CONFLICT (mod_action_id) DO NOTHING;
+  RETURN true;
+END;
+$$;
+
+
+--
 -- Name: year_viewings(uuid, integer, date, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -6698,6 +8222,17 @@ CREATE FUNCTION public.year_viewings(p_user_id uuid, p_year integer, p_before_da
    ORDER BY v.day DESC, v.viewing_id DESC
    LIMIT 1000;
 $$;
+
+
+--
+-- Name: analytics_budget; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.analytics_budget (
+    user_id uuid NOT NULL,
+    day date NOT NULL,
+    n integer DEFAULT 0 NOT NULL
+);
 
 
 --
@@ -6732,7 +8267,21 @@ CREATE TABLE public.certifications_pushed (
 -- Name: TABLE certifications_pushed; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.certifications_pushed IS 'The house''s memory of the pushes sent for the acts one member may repeat at another at will: a certification (its notice''s group key, a critique''s by the critique), a follow or follow request (follow:<recipient>, renewed after 30 days), a request to enter a salon (salon_request:<salon>), a critique taken as the answer (answer:<critique>). Written by tg_notify_push alone; no client reads or writes it.';
+COMMENT ON TABLE public.certifications_pushed IS 'The house''s memory of the pushes sent for the acts one member may repeat at another at will: a certification (its notice''s group key, a critique''s by the critique), a follow or follow request (follow:<recipient>, renewed after 30 days), a request to enter a salon (salon_request:<salon>), a critique taken as the answer (answer:<critique>), a member''s critiques to another (critique_to:<recipient>, renewed after an hour). Written by tg_notify_push alone; no client reads or writes it.';
+
+
+--
+-- Name: critique_budget; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.critique_budget (
+    user_id uuid NOT NULL,
+    tokens real NOT NULL,
+    refilled_at timestamp with time zone NOT NULL,
+    day date NOT NULL,
+    n integer DEFAULT 0 NOT NULL,
+    swept_at timestamp with time zone NOT NULL
+);
 
 
 --
@@ -6762,9 +8311,17 @@ CREATE TABLE public.dispatch_comments (
     certify_count integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     edited_at timestamp with time zone,
+    withheld_at timestamp with time zone,
     CONSTRAINT critique_ceiling CHECK ((char_length(body) <= 2000)),
     CONSTRAINT handle_ceiling CHECK ((char_length(author_username) <= 100))
 );
+
+
+--
+-- Name: COLUMN dispatch_comments.withheld_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.dispatch_comments.withheld_at IS 'Withheld by the house (withheld_pieces): read by its author alone until deleted or given back. Written by the house alone.';
 
 
 --
@@ -7074,6 +8631,42 @@ CREATE TABLE public.founding_seat_counter (
 
 
 --
+-- Name: gate_counted; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gate_counted (
+    day date NOT NULL,
+    who bytea NOT NULL,
+    counter text NOT NULL,
+    CONSTRAINT gate_counted_counter_len CHECK ((char_length(counter) <= 200))
+);
+
+
+--
+-- Name: TABLE gate_counted; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.gate_counted IS 'Which counters each member has added to today, as a fingerprint keyed by the day''s key (gate_day): no member id. Written by record_gate_event alone; earlier days deleted at the first count of a new day.';
+
+
+--
+-- Name: gate_day; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gate_day (
+    day date NOT NULL,
+    salt bytea NOT NULL
+);
+
+
+--
+-- Name: TABLE gate_day; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.gate_day IS 'The key of one house day, drawn at random, that record_gate_event fingerprints a member with for that day alone; let go when the next day begins.';
+
+
+--
 -- Name: gate_metrics; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -7168,8 +8761,16 @@ CREATE TABLE public.list_comments (
     content text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now(),
+    withheld_at timestamp with time zone,
     CONSTRAINT list_comments_content_len CHECK ((char_length(content) <= 2000))
 );
+
+
+--
+-- Name: COLUMN list_comments.withheld_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.list_comments.withheld_at IS 'Withheld by the house (withheld_pieces): read by its author alone until deleted or given back. Written by the house alone.';
 
 
 --
@@ -7246,9 +8847,17 @@ CREATE TABLE public.log_comments (
     body text NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    withheld_at timestamp with time zone,
     CONSTRAINT log_comments_body_len CHECK ((char_length(body) <= 2000)),
     CONSTRAINT log_comments_username_len CHECK ((char_length(username) <= 100))
 );
+
+
+--
+-- Name: COLUMN log_comments.withheld_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.log_comments.withheld_at IS 'Withheld by the house (withheld_pieces): read by its author alone until deleted or given back. Written by the house alone.';
 
 
 --
@@ -7325,35 +8934,6 @@ ALTER TABLE ONLY public.lounge_message_reactions REPLICA IDENTITY FULL;
 --
 
 COMMENT ON CONSTRAINT lounge_message_reactions_reaction_curated ON public.lounge_message_reactions IS 'The five curated reactions. Kept in step with LOUNGE_REACTIONS in src/stores/lounge.ts; a guard test asserts the two lists are identical, so adding one here without the other fails the build.';
-
-
---
--- Name: lounge_messages; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.lounge_messages (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    lounge_id uuid NOT NULL,
-    user_id uuid,
-    content text DEFAULT ''::text,
-    type text DEFAULT 'text'::text,
-    metadata jsonb DEFAULT '{}'::jsonb,
-    reply_to_id uuid,
-    reply_to_content text,
-    reply_to_username text,
-    created_at timestamp with time zone DEFAULT now(),
-    deleted_at timestamp with time zone,
-    film_id integer,
-    film_title text,
-    film_poster text,
-    CONSTRAINT lounge_messages_content_len CHECK ((char_length(content) <= 2000)),
-    CONSTRAINT lounge_messages_film_poster_len CHECK ((char_length(film_poster) <= 2048)),
-    CONSTRAINT lounge_messages_film_title_len CHECK ((char_length(film_title) <= 300)),
-    CONSTRAINT lounge_messages_metadata_len CHECK ((char_length((metadata)::text) <= 8000)),
-    CONSTRAINT lounge_messages_reply_to_content_len CHECK ((char_length(reply_to_content) <= 2000)),
-    CONSTRAINT lounge_messages_reply_to_username_len CHECK ((char_length(reply_to_username) <= 100)),
-    CONSTRAINT lounge_messages_type_len CHECK ((char_length(type) <= 100))
-);
 
 
 --
@@ -7449,8 +9029,23 @@ CREATE TABLE public.mod_actions (
     expires_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     content_snapshot jsonb,
+    appeal text,
+    appeal_filed_at timestamp with time zone,
+    appeal_status text,
+    appeal_judged_by uuid,
+    appeal_judged_at timestamp with time zone,
+    appeal_note text,
+    lifted_at timestamp with time zone,
+    lifted_by uuid,
+    lift_reason text,
+    appeal_put_back boolean,
     CONSTRAINT mod_actions_action_check CHECK ((action = ANY (ARRAY['dismiss'::text, 'delete_content'::text, 'warn'::text, 'mute_user'::text, 'suspend'::text, 'ban'::text, 'permanent_exile'::text]))),
-    CONSTRAINT mod_actions_content_snapshot_len CHECK ((char_length((content_snapshot)::text) <= 30000)),
+    CONSTRAINT mod_actions_appeal_len CHECK ((char_length(appeal) <= 1000)),
+    CONSTRAINT mod_actions_appeal_note_len CHECK ((char_length(appeal_note) <= 2000)),
+    CONSTRAINT mod_actions_appeal_status_check CHECK (((appeal_status IS NULL) OR (appeal_status = ANY (ARRAY['pending'::text, 'upheld'::text, 'overturned'::text])))),
+    CONSTRAINT mod_actions_appeal_whole CHECK ((((appeal IS NULL) = (appeal_filed_at IS NULL)) AND ((appeal IS NULL) = (appeal_status IS NULL)))),
+    CONSTRAINT mod_actions_content_snapshot_len CHECK ((char_length((content_snapshot)::text) <= 200000)),
+    CONSTRAINT mod_actions_lift_reason_len CHECK ((char_length(lift_reason) <= 2000)),
     CONSTRAINT mod_actions_reason_len CHECK ((char_length(reason) <= 2000))
 );
 
@@ -7460,6 +9055,27 @@ CREATE TABLE public.mod_actions (
 --
 
 COMMENT ON COLUMN public.mod_actions.content_snapshot IS 'What was removed, captured before deletion. Without it an appeal has nothing to look at, because get_report_evidence resolves the row live and returns found:false once it is gone.';
+
+
+--
+-- Name: COLUMN mod_actions.appeal; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.mod_actions.appeal IS 'The member''s one appeal of this verdict, in their words (file_appeal). appeal_status: pending, upheld or overturned (judge_appeal, by a moderator other than admin_id).';
+
+
+--
+-- Name: COLUMN mod_actions.lifted_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.mod_actions.lifted_at IS 'When this verdict stopped holding the member''s standing: a ban or suspension lifted by an admin (lift_sanction), or any verdict overturned on appeal.';
+
+
+--
+-- Name: COLUMN mod_actions.appeal_put_back; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.mod_actions.appeal_put_back IS 'Whether the overturn of a removal put the piece back where it stood (judge_appeal). Read by the member''s verdict sheet.';
 
 
 --
@@ -7655,6 +9271,25 @@ COMMENT ON TABLE public.rank_grants IS 'One rank per member per source (store, w
 
 
 --
+-- Name: reported_words; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.reported_words (
+    report_id uuid NOT NULL,
+    words jsonb NOT NULL,
+    taken_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT reported_words_words_len CHECK ((char_length((words)::text) <= 200000))
+);
+
+
+--
+-- Name: TABLE reported_words; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.reported_words IS 'The words a report is about, as they stood when it was filed (submit_report). Read by the Tribunal beside the piece as it stands now (get_report_evidence). The house''s alone: no client reads or writes it.';
+
+
+--
 -- Name: reports; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -7687,6 +9322,17 @@ CREATE TABLE public.reports (
 
 
 --
+-- Name: salon_budget; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.salon_budget (
+    user_id uuid NOT NULL,
+    day date NOT NULL,
+    n integer DEFAULT 0 NOT NULL
+);
+
+
+--
 -- Name: salon_typing_sent; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -7695,6 +9341,64 @@ CREATE TABLE public.salon_typing_sent (
     user_id uuid NOT NULL,
     sent_at timestamp with time zone NOT NULL
 );
+
+
+--
+-- Name: sign_in_devices; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sign_in_devices (
+    token_hash bytea NOT NULL,
+    user_id uuid NOT NULL,
+    made_at timestamp with time zone DEFAULT now() NOT NULL,
+    used_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: TABLE sign_in_devices; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.sign_in_devices IS 'A hash of each key a member''s right password handed a phone (never the key): a phone sending it is not held by the shared pail. Ten per member, kept 90 days from last use. Written by sign_in_attempt and sign_in_cleared alone.';
+
+
+--
+-- Name: sign_in_doors; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sign_in_doors (
+    user_id uuid NOT NULL,
+    door text NOT NULL,
+    misses integer DEFAULT 0 NOT NULL,
+    last_at timestamp with time zone DEFAULT now() NOT NULL,
+    paused_until timestamp with time zone,
+    CONSTRAINT sign_in_doors_door_len CHECK ((char_length(door) <= 64))
+);
+
+
+--
+-- Name: TABLE sign_in_doors; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.sign_in_doors IS 'Per member and door (the vouched address, IPv6 by its /64): wrong passwords tried from it within a day and the rest they earned. Written by sign_in_attempt, sign_in_unasked and sign_in_cleared alone.';
+
+
+--
+-- Name: sign_in_handles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sign_in_handles (
+    user_id uuid NOT NULL,
+    tokens real NOT NULL,
+    refilled_at timestamp with time zone NOT NULL
+);
+
+
+--
+-- Name: TABLE sign_in_handles; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.sign_in_handles IS 'Per member, the attempts every door not known to them shares (20 at once, one more every 5 minutes). Written by sign_in_attempt, sign_in_unasked and sign_in_cleared alone.';
 
 
 --
@@ -7774,6 +9478,38 @@ CREATE TABLE public.watchlists (
 
 
 --
+-- Name: withheld_pieces; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.withheld_pieces (
+    mod_action_id uuid NOT NULL,
+    kind text NOT NULL,
+    piece_id uuid NOT NULL,
+    author_id uuid,
+    withheld_at timestamp with time zone DEFAULT now() NOT NULL,
+    delete_after timestamp with time zone,
+    notices jsonb DEFAULT '[]'::jsonb NOT NULL,
+    CONSTRAINT withheld_pieces_kind_check CHECK ((kind = ANY (ARRAY['log'::text, 'list'::text, 'log_comment'::text, 'list_comment'::text, 'dispatch_comment'::text, 'dispatch_post'::text]))),
+    CONSTRAINT withheld_pieces_notices_len CHECK ((char_length((notices)::text) <= 200000))
+);
+
+
+--
+-- Name: TABLE withheld_pieces; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.withheld_pieces IS 'Each piece a REMOVE CONTENT withholds (a log, a stack, a critique, a filing): kept whole, seen by its author and the Tribunal alone, until its appeal is upheld or 30 days pass unappealed (then deleted), or the verdict is overturned (then given back whole, with the notices set aside here). The house''s alone.';
+
+
+--
+-- Name: analytics_budget analytics_budget_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.analytics_budget
+    ADD CONSTRAINT analytics_budget_pkey PRIMARY KEY (user_id);
+
+
+--
 -- Name: analytics_events analytics_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7787,6 +9523,14 @@ ALTER TABLE ONLY public.analytics_events
 
 ALTER TABLE ONLY public.certifications_pushed
     ADD CONSTRAINT certifications_pushed_pkey PRIMARY KEY (from_user_id, thing);
+
+
+--
+-- Name: critique_budget critique_budget_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.critique_budget
+    ADD CONSTRAINT critique_budget_pkey PRIMARY KEY (user_id);
 
 
 --
@@ -7891,6 +9635,22 @@ ALTER TABLE ONLY public.films
 
 ALTER TABLE ONLY public.founding_seat_counter
     ADD CONSTRAINT founding_seat_counter_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: gate_counted gate_counted_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gate_counted
+    ADD CONSTRAINT gate_counted_pkey PRIMARY KEY (day, who, counter);
+
+
+--
+-- Name: gate_day gate_day_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gate_day
+    ADD CONSTRAINT gate_day_pkey PRIMARY KEY (day);
 
 
 --
@@ -8182,6 +9942,14 @@ ALTER TABLE ONLY public.rank_grants
 
 
 --
+-- Name: reported_words reported_words_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reported_words
+    ADD CONSTRAINT reported_words_pkey PRIMARY KEY (report_id);
+
+
+--
 -- Name: reports reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8190,11 +9958,43 @@ ALTER TABLE ONLY public.reports
 
 
 --
+-- Name: salon_budget salon_budget_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.salon_budget
+    ADD CONSTRAINT salon_budget_pkey PRIMARY KEY (user_id);
+
+
+--
 -- Name: salon_typing_sent salon_typing_sent_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.salon_typing_sent
     ADD CONSTRAINT salon_typing_sent_pkey PRIMARY KEY (lounge_id, user_id);
+
+
+--
+-- Name: sign_in_devices sign_in_devices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sign_in_devices
+    ADD CONSTRAINT sign_in_devices_pkey PRIMARY KEY (token_hash);
+
+
+--
+-- Name: sign_in_doors sign_in_doors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sign_in_doors
+    ADD CONSTRAINT sign_in_doors_pkey PRIMARY KEY (user_id, door);
+
+
+--
+-- Name: sign_in_handles sign_in_handles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sign_in_handles
+    ADD CONSTRAINT sign_in_handles_pkey PRIMARY KEY (user_id);
 
 
 --
@@ -8259,6 +10059,14 @@ ALTER TABLE ONLY public.watchlists
 
 ALTER TABLE ONLY public.watchlists
     ADD CONSTRAINT watchlists_user_id_film_id_key UNIQUE (user_id, film_id);
+
+
+--
+-- Name: withheld_pieces withheld_pieces_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.withheld_pieces
+    ADD CONSTRAINT withheld_pieces_pkey PRIMARY KEY (mod_action_id);
 
 
 --
@@ -8857,6 +10665,13 @@ CREATE INDEX interactions_followers_newest ON public.interactions USING btree (t
 
 
 --
+-- Name: interactions_following_newest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX interactions_following_newest ON public.interactions USING btree (user_id, created_at DESC, target_user_id DESC) WHERE (type = 'follow'::text);
+
+
+--
 -- Name: interactions_regard_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9011,6 +10826,13 @@ CREATE INDEX lounge_messages_room_newest ON public.lounge_messages USING btree (
 
 
 --
+-- Name: mod_actions_appeals_waiting; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX mod_actions_appeals_waiting ON public.mod_actions USING btree (appeal_filed_at, id) WHERE (appeal_status = 'pending'::text);
+
+
+--
 -- Name: notifications_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9029,6 +10851,13 @@ CREATE INDEX notifications_member_newest ON public.notifications USING btree (us
 --
 
 CREATE INDEX notifications_member_unread ON public.notifications USING btree (user_id) INCLUDE (from_user_id) WHERE (is_read = false);
+
+
+--
+-- Name: profiles_admins; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX profiles_admins ON public.profiles USING btree (id) WHERE (role = 'admin'::text);
 
 
 --
@@ -9060,6 +10889,13 @@ CREATE INDEX profiles_tier_idx ON public.profiles USING btree (tier);
 
 
 --
+-- Name: profiles_under_sanction; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX profiles_under_sanction ON public.profiles USING btree (lower(COALESCE(username, ''::text)), id) WHERE (is_banned OR (suspended_until IS NOT NULL));
+
+
+--
 -- Name: profiles_username_lower_unique; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9088,10 +10924,59 @@ CREATE UNIQUE INDEX reports_one_pending_per_member ON public.reports USING btree
 
 
 --
+-- Name: sign_in_devices_used_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX sign_in_devices_used_at ON public.sign_in_devices USING btree (used_at);
+
+
+--
+-- Name: sign_in_devices_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX sign_in_devices_user ON public.sign_in_devices USING btree (user_id, used_at);
+
+
+--
+-- Name: sign_in_doors_last_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX sign_in_doors_last_at ON public.sign_in_doors USING btree (last_at);
+
+
+--
+-- Name: sign_in_handles_refilled_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX sign_in_handles_refilled_at ON public.sign_in_handles USING btree (refilled_at);
+
+
+--
 -- Name: viewings_log_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX viewings_log_idx ON public.viewings USING btree (log_id);
+
+
+--
+-- Name: withheld_pieces_author; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX withheld_pieces_author ON public.withheld_pieces USING btree (author_id);
+
+
+--
+-- Name: withheld_pieces_due; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX withheld_pieces_due ON public.withheld_pieces USING btree (delete_after) WHERE (delete_after IS NOT NULL);
+
+
+--
+-- Name: withheld_pieces_piece; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX withheld_pieces_piece ON public.withheld_pieces USING btree (kind, piece_id);
 
 
 --
@@ -9315,28 +11200,28 @@ CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.interactions FOR EACH 
 -- Name: list_comments a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.list_comments FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('list_id', 'user_id', 'created_at');
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.list_comments FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('list_id', 'user_id', 'created_at', 'withheld_at');
 
 
 --
 -- Name: lists a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.lists FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'created_at');
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.lists FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'created_at', 'withheld_at');
 
 
 --
 -- Name: log_comments a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('log_id', 'user_id', 'created_at');
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('log_id', 'user_id', 'created_at', 'withheld_at');
 
 
 --
 -- Name: logs a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.logs FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'created_at');
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.logs FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'created_at', 'withheld_at');
 
 
 --
@@ -9350,7 +11235,7 @@ CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.lounge_members FOR EAC
 -- Name: lounge_messages a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.lounge_messages FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('lounge_id', 'user_id', 'content', 'type', 'metadata', 'reply_to_id', 'reply_to_content', 'reply_to_username', 'film_id', 'film_title', 'film_poster', 'created_at', 'deleted_at');
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.lounge_messages FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('lounge_id', 'user_id', 'content', 'type', 'metadata', 'reply_to_id', 'reply_to_content', 'reply_to_username', 'film_id', 'film_title', 'film_poster', 'created_at', 'deleted_at', 'carries_words_of');
 
 
 --
@@ -9400,6 +11285,13 @@ CREATE TRIGGER a_lpn_belongs_to_its_viewing BEFORE INSERT OR UPDATE ON public.lo
 --
 
 CREATE TRIGGER a_notice_gone_is_told AFTER DELETE ON public.notifications REFERENCING OLD TABLE AS gone FOR EACH STATEMENT EXECUTE FUNCTION public.a_notice_gone_is_told();
+
+
+--
+-- Name: lounge_messages a_piece_withheld_is_not_shared; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_piece_withheld_is_not_shared BEFORE INSERT ON public.lounge_messages FOR EACH ROW WHEN ((new.type = ANY (ARRAY['log_share'::text, 'list_share'::text, 'dossier_share'::text]))) EXECUTE FUNCTION private.a_piece_withheld_is_not_shared();
 
 
 --
@@ -9466,6 +11358,13 @@ CREATE TRIGGER a_sealed_stack_takes_its_cards AFTER UPDATE OF is_private ON publ
 
 
 --
+-- Name: lounge_messages a_shared_card_is_the_houses; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_shared_card_is_the_houses BEFORE INSERT ON public.lounge_messages FOR EACH ROW EXECUTE FUNCTION public.a_shared_card_is_the_houses();
+
+
+--
 -- Name: dispatch_posts a_spoiler_take_veils_its_cards; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -9491,6 +11390,13 @@ CREATE TRIGGER count_cert AFTER INSERT OR DELETE ON public.dispatch_certificatio
 --
 
 CREATE TRIGGER count_comment AFTER INSERT OR DELETE ON public.dispatch_comments FOR EACH ROW EXECUTE FUNCTION public.dispatch_count_comment();
+
+
+--
+-- Name: analytics_events daily_ceiling; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER daily_ceiling BEFORE INSERT ON public.analytics_events FOR EACH ROW EXECUTE FUNCTION public.analytics_events_daily_ceiling();
 
 
 --
@@ -10180,6 +12086,42 @@ CREATE TRIGGER z_counts_its_words BEFORE INSERT OR UPDATE ON public.dispatch_pos
 
 
 --
+-- Name: dispatch_comments zz_a_critique_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_critique_is_paced BEFORE INSERT ON public.dispatch_comments FOR EACH ROW EXECUTE FUNCTION public.check_critique_pace();
+
+
+--
+-- Name: list_comments zz_a_critique_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_critique_is_paced BEFORE INSERT ON public.list_comments FOR EACH ROW EXECUTE FUNCTION public.check_critique_pace();
+
+
+--
+-- Name: log_comments zz_a_critique_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_critique_is_paced BEFORE INSERT ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.check_critique_pace();
+
+
+--
+-- Name: lounge_messages zz_a_salon_day_has_a_ceiling; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_salon_day_has_a_ceiling BEFORE INSERT ON public.lounge_messages FOR EACH ROW EXECUTE FUNCTION public.lounge_messages_daily_ceiling();
+
+
+--
+-- Name: analytics_budget analytics_budget_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.analytics_budget
+    ADD CONSTRAINT analytics_budget_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: analytics_events analytics_events_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10209,6 +12151,14 @@ ALTER TABLE ONLY public.certifications_pushed
 
 ALTER TABLE ONLY public.certifications_pushed
     ADD CONSTRAINT certifications_pushed_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: critique_budget critique_budget_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.critique_budget
+    ADD CONSTRAINT critique_budget_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -10652,6 +12602,14 @@ ALTER TABLE ONLY public.rank_grants
 
 
 --
+-- Name: reported_words reported_words_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reported_words
+    ADD CONSTRAINT reported_words_report_id_fkey FOREIGN KEY (report_id) REFERENCES public.reports(id) ON DELETE CASCADE;
+
+
+--
 -- Name: reports reports_reporter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10668,6 +12626,14 @@ ALTER TABLE ONLY public.reports
 
 
 --
+-- Name: salon_budget salon_budget_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.salon_budget
+    ADD CONSTRAINT salon_budget_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: salon_typing_sent salon_typing_sent_lounge_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10681,6 +12647,30 @@ ALTER TABLE ONLY public.salon_typing_sent
 
 ALTER TABLE ONLY public.salon_typing_sent
     ADD CONSTRAINT salon_typing_sent_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: sign_in_devices sign_in_devices_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sign_in_devices
+    ADD CONSTRAINT sign_in_devices_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: sign_in_doors sign_in_doors_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sign_in_doors
+    ADD CONSTRAINT sign_in_doors_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: sign_in_handles sign_in_handles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sign_in_handles
+    ADD CONSTRAINT sign_in_handles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -10737,6 +12727,14 @@ ALTER TABLE ONLY public.warnings
 
 ALTER TABLE ONLY public.watchlists
     ADD CONSTRAINT watchlists_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: withheld_pieces withheld_pieces_mod_action_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.withheld_pieces
+    ADD CONSTRAINT withheld_pieces_mod_action_id_fkey FOREIGN KEY (mod_action_id) REFERENCES public.mod_actions(id) ON DELETE CASCADE;
 
 
 --
@@ -11169,6 +13167,12 @@ CREATE POLICY admins_select_mod_actions ON public.mod_actions FOR SELECT USING (
 
 
 --
+-- Name: analytics_budget; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.analytics_budget ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: analytics_events; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -11289,7 +13293,7 @@ CREATE POLICY certs_ban_insert ON public.dispatch_certifications AS RESTRICTIVE 
 -- Name: dispatch_certifications certs_block; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY certs_block ON public.dispatch_certifications AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
+CREATE POLICY certs_block ON public.dispatch_certifications AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((user_id = ANY (( SELECT private.hidden_authors() AS hidden_authors)::uuid[])), false)));
 
 
 --
@@ -11303,9 +13307,11 @@ CREATE POLICY certs_delete_own ON public.dispatch_certifications FOR DELETE TO a
 -- Name: dispatch_certifications certs_open_post; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY certs_open_post ON public.dispatch_certifications AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (((post_id IS NULL) OR (EXISTS ( SELECT 1
+CREATE POLICY certs_open_post ON public.dispatch_certifications AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK ((((post_id IS NULL) OR (EXISTS ( SELECT 1
    FROM public.dispatch_posts p
-  WHERE ((p.id = dispatch_certifications.post_id) AND (p.ended_at IS NULL) AND (p.withheld_at IS NULL))))));
+  WHERE ((p.id = dispatch_certifications.post_id) AND (p.ended_at IS NULL) AND (p.withheld_at IS NULL))))) AND ((comment_id IS NULL) OR (EXISTS ( SELECT 1
+   FROM public.dispatch_comments c
+  WHERE ((c.id = dispatch_certifications.comment_id) AND (c.withheld_at IS NULL)))))));
 
 
 --
@@ -11321,6 +13327,12 @@ CREATE POLICY certs_read ON public.dispatch_certifications FOR SELECT TO authent
 
 CREATE POLICY certs_write_own ON public.dispatch_certifications FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
 
+
+--
+-- Name: critique_budget; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.critique_budget ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: dispatch_comments critiques_ban_delete; Type: POLICY; Schema: public; Owner: -
@@ -11347,7 +13359,9 @@ CREATE POLICY critiques_ban_update ON public.dispatch_comments AS RESTRICTIVE FO
 -- Name: dispatch_comments critiques_block; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY critiques_block ON public.dispatch_comments AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
+CREATE POLICY critiques_block ON public.dispatch_comments AS RESTRICTIVE FOR SELECT TO authenticated USING (((NOT COALESCE((user_id = ANY (( SELECT private.hidden_authors() AS hidden_authors)::uuid[])), false)) AND ((withheld_at IS NULL) OR (user_id = ( SELECT auth.uid() AS uid))) AND ((post_id IS NULL) OR COALESCE(( SELECT true AS readable
+   FROM public.dispatch_posts p
+  WHERE (p.id = dispatch_comments.post_id)), false))));
 
 
 --
@@ -11408,6 +13422,13 @@ ALTER TABLE public.dispatch_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.dispatch_dossiers_legacy ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: dispatch_dossiers_legacy dispatch_dossiers_legacy_hide_from_the_blocked; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY dispatch_dossiers_legacy_hide_from_the_blocked ON public.dispatch_dossiers_legacy AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((user_id = ANY (( SELECT private.members_blocking_me() AS members_blocking_me)::uuid[])), false)));
+
+
+--
 -- Name: dispatch_posts; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -11432,10 +13453,17 @@ ALTER TABLE public.dispatch_votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.dossier_certifications_legacy ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: dossier_certifications_legacy dossier_certifications_legacy_hide_from_the_blocked; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY dossier_certifications_legacy_hide_from_the_blocked ON public.dossier_certifications_legacy AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((user_id = ANY (( SELECT private.members_blocking_me() AS members_blocking_me)::uuid[])), false)));
+
+
+--
 -- Name: dossier_comments_legacy dossier_comments_hide_blocked; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY dossier_comments_hide_blocked ON public.dossier_comments_legacy AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
+CREATE POLICY dossier_comments_hide_blocked ON public.dossier_comments_legacy AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT private.hidden_authors() AS hidden_authors)::uuid[])), false)));
 
 
 --
@@ -11468,6 +13496,18 @@ CREATE POLICY films_public_read ON public.films FOR SELECT TO authenticated, ano
 --
 
 ALTER TABLE public.founding_seat_counter ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: gate_counted; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.gate_counted ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: gate_day; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.gate_day ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: gate_metrics; Type: ROW SECURITY; Schema: public; Owner: -
@@ -11510,7 +13550,18 @@ CREATE POLICY interactions_endorse_gate ON public.interactions AS RESTRICTIVE FO
 -- Name: interactions interactions_select_authorized; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY interactions_select_authorized ON public.interactions FOR SELECT USING (((auth.uid() = user_id) OR (auth.uid() = target_user_id) OR ((type <> 'follow_request'::text) AND (public.can_view_user_data(user_id) OR public.can_view_user_data(target_user_id)))));
+CREATE POLICY interactions_select_authorized ON public.interactions FOR SELECT USING (((( SELECT auth.uid() AS uid) = user_id) OR (( SELECT auth.uid() AS uid) = target_user_id) OR ((type <> 'follow_request'::text) AND
+CASE
+    WHEN private.can_view_user_data(user_id) THEN (((target_user_id IS NOT NULL) AND private.can_view_user_data(target_user_id)) OR private.no_block_stands_with(user_id, target_user_id))
+    ELSE ((target_user_id IS NOT NULL) AND private.can_view_user_data(target_user_id) AND private.no_block_stands_with(user_id, target_user_id))
+END)));
+
+
+--
+-- Name: interactions interactions_withheld_marks; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY interactions_withheld_marks ON public.interactions AS RESTRICTIVE FOR SELECT TO authenticated, anon USING (((type <> ALL (ARRAY['endorse_log'::text, 'endorse_list'::text])) OR ((NOT ((target_log_id IS NOT NULL) AND private.a_withheld_piece_holds_it('log'::text, target_log_id))) AND (NOT ((target_list_id IS NOT NULL) AND private.a_withheld_piece_holds_it('list'::text, target_list_id))))));
 
 
 --
@@ -11530,7 +13581,7 @@ CREATE POLICY list_comments_annotate_gate ON public.list_comments AS RESTRICTIVE
 -- Name: list_comments list_comments_hide_blocked; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY list_comments_hide_blocked ON public.list_comments AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
+CREATE POLICY list_comments_hide_blocked ON public.list_comments AS RESTRICTIVE FOR SELECT TO authenticated, anon USING (((NOT COALESCE((user_id = ANY (( SELECT private.hidden_authors() AS hidden_authors)::uuid[])), false)) AND ((withheld_at IS NULL) OR (user_id = ( SELECT auth.uid() AS uid))) AND (NOT private.a_withheld_piece_holds_it('list'::text, list_id))));
 
 
 --
@@ -11539,7 +13590,7 @@ CREATE POLICY list_comments_hide_blocked ON public.list_comments AS RESTRICTIVE 
 
 CREATE POLICY list_comments_select_authorized ON public.list_comments FOR SELECT USING ((EXISTS ( SELECT 1
    FROM public.lists l
-  WHERE ((l.id = list_comments.list_id) AND ((auth.uid() = l.user_id) OR (public.can_view_user_data(l.user_id) AND (COALESCE(l.is_private, false) = false)))))));
+  WHERE ((l.id = list_comments.list_id) AND ((auth.uid() = l.user_id) OR (private.can_view_user_data(l.user_id) AND (COALESCE(l.is_private, false) = false)))))));
 
 
 --
@@ -11554,7 +13605,7 @@ ALTER TABLE public.list_items ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY list_items_select_authorized ON public.list_items FOR SELECT USING ((EXISTS ( SELECT 1
    FROM public.lists l
-  WHERE ((l.id = list_items.list_id) AND ((auth.uid() = l.user_id) OR (public.can_view_user_data(l.user_id) AND (COALESCE(l.is_private, false) = false)))))));
+  WHERE ((l.id = list_items.list_id) AND ((auth.uid() = l.user_id) OR (private.can_view_user_data(l.user_id) AND (COALESCE(l.is_private, false) = false)))))));
 
 
 --
@@ -11567,14 +13618,14 @@ ALTER TABLE public.lists ENABLE ROW LEVEL SECURITY;
 -- Name: lists lists_hide_blocked; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY lists_hide_blocked ON public.lists AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
+CREATE POLICY lists_hide_blocked ON public.lists AS RESTRICTIVE FOR SELECT TO authenticated, anon USING (((NOT COALESCE((user_id = ANY (( SELECT private.hidden_authors() AS hidden_authors)::uuid[])), false)) AND ((withheld_at IS NULL) OR (user_id = ( SELECT auth.uid() AS uid)))));
 
 
 --
 -- Name: lists lists_select_authorized; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY lists_select_authorized ON public.lists FOR SELECT USING (((auth.uid() = user_id) OR (public.can_view_user_data(user_id) AND (COALESCE(is_private, false) = false))));
+CREATE POLICY lists_select_authorized ON public.lists FOR SELECT USING (((auth.uid() = user_id) OR (private.can_view_user_data(user_id) AND (COALESCE(is_private, false) = false))));
 
 
 --
@@ -11613,7 +13664,7 @@ CREATE POLICY log_comments_annotate_gate ON public.log_comments AS RESTRICTIVE F
 -- Name: log_comments log_comments_hide_blocked; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY log_comments_hide_blocked ON public.log_comments AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
+CREATE POLICY log_comments_hide_blocked ON public.log_comments AS RESTRICTIVE FOR SELECT TO authenticated, anon USING (((NOT COALESCE((user_id = ANY (( SELECT private.hidden_authors() AS hidden_authors)::uuid[])), false)) AND ((withheld_at IS NULL) OR (user_id = ( SELECT auth.uid() AS uid))) AND (NOT private.a_withheld_piece_holds_it('log'::text, log_id))));
 
 
 --
@@ -11622,7 +13673,7 @@ CREATE POLICY log_comments_hide_blocked ON public.log_comments AS RESTRICTIVE FO
 
 CREATE POLICY log_comments_select_authorized ON public.log_comments FOR SELECT USING ((EXISTS ( SELECT 1
    FROM public.logs l
-  WHERE ((l.id = log_comments.log_id) AND public.can_view_user_data(l.user_id)))));
+  WHERE ((l.id = log_comments.log_id) AND private.can_view_user_data(l.user_id)))));
 
 
 --
@@ -11656,7 +13707,7 @@ ALTER TABLE public.logs ENABLE ROW LEVEL SECURITY;
 -- Name: logs logs_hide_blocked; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY logs_hide_blocked ON public.logs AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
+CREATE POLICY logs_hide_blocked ON public.logs AS RESTRICTIVE FOR SELECT TO authenticated, anon USING (((NOT COALESCE((user_id = ANY (( SELECT private.hidden_authors() AS hidden_authors)::uuid[])), false)) AND ((withheld_at IS NULL) OR (user_id = ( SELECT auth.uid() AS uid)))));
 
 
 --
@@ -11670,7 +13721,7 @@ CREATE POLICY logs_insert_rate_limit ON public.logs AS RESTRICTIVE FOR INSERT TO
 -- Name: logs logs_select_authorized; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY logs_select_authorized ON public.logs FOR SELECT USING (public.can_view_user_data(user_id));
+CREATE POLICY logs_select_authorized ON public.logs FOR SELECT USING (private.can_view_user_data(user_id));
 
 
 --
@@ -11680,10 +13731,24 @@ CREATE POLICY logs_select_authorized ON public.logs FOR SELECT USING (public.can
 ALTER TABLE public.lounge_members ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: lounge_members lounge_members_hide_from_the_blocked; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY lounge_members_hide_from_the_blocked ON public.lounge_members AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((user_id = ANY (( SELECT private.members_blocking_me() AS members_blocking_me)::uuid[])), false)));
+
+
+--
 -- Name: lounge_message_reactions; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
 ALTER TABLE public.lounge_message_reactions ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: lounge_message_reactions lounge_message_reactions_hide_from_the_blocked; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY lounge_message_reactions_hide_from_the_blocked ON public.lounge_message_reactions AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((user_id = ANY (( SELECT private.members_blocking_me() AS members_blocking_me)::uuid[])), false)));
+
 
 --
 -- Name: lounge_messages; Type: ROW SECURITY; Schema: public; Owner: -
@@ -11695,7 +13760,7 @@ ALTER TABLE public.lounge_messages ENABLE ROW LEVEL SECURITY;
 -- Name: lounge_messages lounge_messages_hide_blocked; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY lounge_messages_hide_blocked ON public.lounge_messages AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
+CREATE POLICY lounge_messages_hide_blocked ON public.lounge_messages AS RESTRICTIVE FOR SELECT TO authenticated USING (((NOT COALESCE((user_id = ANY (( SELECT private.hidden_authors() AS hidden_authors)::uuid[])), false)) AND ((user_id = ( SELECT auth.uid() AS uid)) OR (NOT COALESCE((carries_words_of && ( SELECT private.hidden_authors() AS hidden_authors)), false)))));
 
 
 --
@@ -11709,6 +13774,13 @@ ALTER TABLE public.lounge_sanctions ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.lounges ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: lounges lounges_hide_from_the_blocked; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY lounges_hide_from_the_blocked ON public.lounges AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((creator_id = ANY (( SELECT private.members_blocking_me() AS members_blocking_me)::uuid[])), false)));
+
 
 --
 -- Name: log_private_notes lpn_delete; Type: POLICY; Schema: public; Owner: -
@@ -11788,7 +13860,7 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 -- Name: notifications notifications_hide_blocked; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY notifications_hide_blocked ON public.notifications AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((from_user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
+CREATE POLICY notifications_hide_blocked ON public.notifications AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((from_user_id = ANY (( SELECT private.hidden_authors() AS hidden_authors)::uuid[])), false)));
 
 
 --
@@ -11824,7 +13896,7 @@ ALTER TABLE public.physical_archive ENABLE ROW LEVEL SECURITY;
 -- Name: physical_archive physical_archive_select_authorized; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY physical_archive_select_authorized ON public.physical_archive FOR SELECT USING (public.can_view_user_data(user_id));
+CREATE POLICY physical_archive_select_authorized ON public.physical_archive FOR SELECT USING (private.can_view_user_data(user_id));
 
 
 --
@@ -11852,7 +13924,7 @@ CREATE POLICY posts_ban_update ON public.dispatch_posts AS RESTRICTIVE FOR UPDAT
 -- Name: dispatch_posts posts_block; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY posts_block ON public.dispatch_posts AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
+CREATE POLICY posts_block ON public.dispatch_posts AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT private.hidden_authors() AS hidden_authors)::uuid[])), false)));
 
 
 --
@@ -11911,6 +13983,13 @@ CREATE POLICY posts_write_own ON public.dispatch_posts FOR INSERT TO authenticat
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: profiles profiles_hide_from_the_blocked; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY profiles_hide_from_the_blocked ON public.profiles AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((id = ANY (( SELECT private.members_blocking_me() AS members_blocking_me)::uuid[])), false)));
+
+
+--
 -- Name: push_subscriptions; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -11943,10 +14022,22 @@ CREATE POLICY push_tokens_select_own ON public.push_tokens FOR SELECT USING ((us
 ALTER TABLE public.rank_grants ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: reported_words; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.reported_words ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: reports; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: salon_budget; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.salon_budget ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: salon_typing_sent; Type: ROW SECURITY; Schema: public; Owner: -
@@ -11960,6 +14051,24 @@ ALTER TABLE public.salon_typing_sent ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY saves_own ON public.dispatch_saves TO authenticated USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
 
+
+--
+-- Name: sign_in_devices; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.sign_in_devices ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: sign_in_doors; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.sign_in_doors ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: sign_in_handles; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.sign_in_handles ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: house_settings the floor is read by everyone; Type: POLICY; Schema: public; Owner: -
@@ -12116,8 +14225,14 @@ ALTER TABLE public.watchlists ENABLE ROW LEVEL SECURITY;
 -- Name: watchlists watchlists_select_authorized; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY watchlists_select_authorized ON public.watchlists FOR SELECT USING (public.can_view_user_data(user_id));
+CREATE POLICY watchlists_select_authorized ON public.watchlists FOR SELECT USING (private.can_view_user_data(user_id));
 
+
+--
+-- Name: withheld_pieces; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.withheld_pieces ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: -
@@ -12130,11 +14245,28 @@ GRANT USAGE ON SCHEMA public TO service_role;
 
 
 --
+-- Name: TABLE lounge_messages; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lounge_messages TO anon;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lounge_messages TO authenticated;
+GRANT ALL ON TABLE public.lounge_messages TO service_role;
+
+
+--
 -- Name: FUNCTION a_block_stands_between(p_one uuid, p_other uuid); Type: ACL; Schema: public; Owner: -
 --
 
 REVOKE ALL ON FUNCTION public.a_block_stands_between(p_one uuid, p_other uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.a_block_stands_between(p_one uuid, p_other uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION a_cards_author(p_type text, p_metadata jsonb); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.a_cards_author(p_type text, p_metadata jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.a_cards_author(p_type text, p_metadata jsonb) TO service_role;
 
 
 --
@@ -12202,6 +14334,14 @@ GRANT ALL ON FUNCTION public.a_notice_gone_is_told() TO service_role;
 
 
 --
+-- Name: FUNCTION a_rank_is_counted(p_event text, p_rank text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.a_rank_is_counted(p_event text, p_rank text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.a_rank_is_counted(p_event text, p_rank text) TO service_role;
+
+
+--
 -- Name: FUNCTION a_reaction_is_in_its_message_salon(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -12258,6 +14398,14 @@ GRANT ALL ON FUNCTION public.a_sealed_stack_takes_its_cards() TO service_role;
 
 
 --
+-- Name: FUNCTION a_shared_card_is_the_houses(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.a_shared_card_is_the_houses() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.a_shared_card_is_the_houses() TO service_role;
+
+
+--
 -- Name: FUNCTION a_spoiler_take_veils_its_cards(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -12280,6 +14428,14 @@ GRANT ALL ON FUNCTION public.a_withdrawn_message_leaves_its_quotes() TO service_
 REVOKE ALL ON FUNCTION public.accept_follow_request(requester_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.accept_follow_request(requester_id uuid) TO service_role;
 GRANT ALL ON FUNCTION public.accept_follow_request(requester_id uuid) TO authenticated;
+
+
+--
+-- Name: FUNCTION analytics_events_daily_ceiling(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.analytics_events_daily_ceiling() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.analytics_events_daily_ceiling() TO service_role;
 
 
 --
@@ -12370,9 +14526,15 @@ GRANT ALL ON FUNCTION public.can_endorse_content(p_actor uuid, p_type text, p_lo
 --
 
 REVOKE ALL ON FUNCTION public.can_view_user_data(target_uid uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.can_view_user_data(target_uid uuid) TO anon;
-GRANT ALL ON FUNCTION public.can_view_user_data(target_uid uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.can_view_user_data(target_uid uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION check_critique_pace(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.check_critique_pace() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.check_critique_pace() TO service_role;
 
 
 --
@@ -12626,6 +14788,13 @@ GRANT SELECT(viewing_id) ON TABLE public.logs TO anon;
 
 
 --
+-- Name: COLUMN logs.withheld_at; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(withheld_at) ON TABLE public.logs TO anon;
+
+
+--
 -- Name: FUNCTION critiques_seen(l public.logs); Type: ACL; Schema: public; Owner: -
 --
 
@@ -12668,6 +14837,14 @@ GRANT ALL ON FUNCTION public.decline_lounge_member(p_lounge_id uuid, p_user_id u
 REVOKE ALL ON FUNCTION public.delete_list_cascade(p_list_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.delete_list_cascade(p_list_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.delete_list_cascade(p_list_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION delete_withheld_piece(p_action_id uuid, p_due boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.delete_withheld_piece(p_action_id uuid, p_due boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.delete_withheld_piece(p_action_id uuid, p_due boolean) TO service_role;
 
 
 --
@@ -13003,6 +15180,23 @@ GRANT ALL ON FUNCTION public.error_logs_daily_ceiling() TO service_role;
 
 
 --
+-- Name: FUNCTION expire_withheld_pieces(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.expire_withheld_pieces() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.expire_withheld_pieces() TO service_role;
+
+
+--
+-- Name: FUNCTION file_appeal(p_action_id uuid, p_appeal text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.file_appeal(p_action_id uuid, p_appeal text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.file_appeal(p_action_id uuid, p_appeal text) TO service_role;
+GRANT ALL ON FUNCTION public.file_appeal(p_action_id uuid, p_appeal text) TO authenticated;
+
+
+--
 -- Name: FUNCTION forget_other_devices(p_keep_token text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -13108,8 +15302,44 @@ GRANT ALL ON FUNCTION public.get_marks_ledger() TO authenticated;
 --
 
 REVOKE ALL ON FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer) TO authenticated;
 GRANT ALL ON FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer) TO service_role;
+GRANT ALL ON FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer) TO authenticated;
+
+
+--
+-- Name: FUNCTION get_my_verdict(p_action_id uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.get_my_verdict(p_action_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_my_verdict(p_action_id uuid) TO service_role;
+GRANT ALL ON FUNCTION public.get_my_verdict(p_action_id uuid) TO authenticated;
+
+
+--
+-- Name: FUNCTION get_my_verdicts(p_cursor_at timestamp with time zone, p_cursor_id uuid, p_limit integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.get_my_verdicts(p_cursor_at timestamp with time zone, p_cursor_id uuid, p_limit integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_my_verdicts(p_cursor_at timestamp with time zone, p_cursor_id uuid, p_limit integer) TO service_role;
+GRANT ALL ON FUNCTION public.get_my_verdicts(p_cursor_at timestamp with time zone, p_cursor_id uuid, p_limit integer) TO authenticated;
+
+
+--
+-- Name: FUNCTION get_my_withheld_pieces(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.get_my_withheld_pieces() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_my_withheld_pieces() TO service_role;
+GRANT ALL ON FUNCTION public.get_my_withheld_pieces() TO authenticated;
+
+
+--
+-- Name: FUNCTION get_pending_appeals(p_cursor_at timestamp with time zone, p_cursor_id uuid, p_limit integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.get_pending_appeals(p_cursor_at timestamp with time zone, p_cursor_id uuid, p_limit integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_pending_appeals(p_cursor_at timestamp with time zone, p_cursor_id uuid, p_limit integer) TO service_role;
+GRANT ALL ON FUNCTION public.get_pending_appeals(p_cursor_at timestamp with time zone, p_cursor_id uuid, p_limit integer) TO authenticated;
 
 
 --
@@ -13171,6 +15401,15 @@ GRANT ALL ON FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[]) TO serv
 
 
 --
+-- Name: FUNCTION get_sanctioned_members(p_cursor_name text, p_cursor_id uuid, p_limit integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.get_sanctioned_members(p_cursor_name text, p_cursor_id uuid, p_limit integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_sanctioned_members(p_cursor_name text, p_cursor_id uuid, p_limit integer) TO service_role;
+GRANT ALL ON FUNCTION public.get_sanctioned_members(p_cursor_name text, p_cursor_id uuid, p_limit integer) TO authenticated;
+
+
+--
 -- Name: FUNCTION get_taste_match(p_user_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -13204,6 +15443,14 @@ GRANT ALL ON FUNCTION public.get_user_analytics(p_user_id uuid) TO service_role;
 REVOKE ALL ON FUNCTION public.get_user_blocks(p_user_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_user_blocks(p_user_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_user_blocks(p_user_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION give_back_withheld_piece(p_action_id uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.give_back_withheld_piece(p_action_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.give_back_withheld_piece(p_action_id uuid) TO service_role;
 
 
 --
@@ -13278,8 +15525,6 @@ GRANT ALL ON FUNCTION public.has_tier_at_least(min_weight integer) TO service_ro
 --
 
 REVOKE ALL ON FUNCTION public.hidden_authors() FROM PUBLIC;
-GRANT ALL ON FUNCTION public.hidden_authors() TO anon;
-GRANT ALL ON FUNCTION public.hidden_authors() TO authenticated;
 GRANT ALL ON FUNCTION public.hidden_authors() TO service_role;
 
 
@@ -13298,8 +15543,6 @@ GRANT ALL ON FUNCTION public.increment_dossier_views(dossier_uuid uuid) TO servi
 --
 
 REVOKE ALL ON FUNCTION public.is_hidden_by(viewer_id uuid, author_id uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.is_hidden_by(viewer_id uuid, author_id uuid) TO anon;
-GRANT ALL ON FUNCTION public.is_hidden_by(viewer_id uuid, author_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.is_hidden_by(viewer_id uuid, author_id uuid) TO service_role;
 
 
@@ -13331,6 +15574,24 @@ REVOKE ALL ON FUNCTION public.join_public_lounge(p_lounge_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.join_public_lounge(p_lounge_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.join_public_lounge(p_lounge_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.join_public_lounge(p_lounge_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION judge_appeal(p_action_id uuid, p_outcome text, p_note text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.judge_appeal(p_action_id uuid, p_outcome text, p_note text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.judge_appeal(p_action_id uuid, p_outcome text, p_note text) TO service_role;
+GRANT ALL ON FUNCTION public.judge_appeal(p_action_id uuid, p_outcome text, p_note text) TO authenticated;
+
+
+--
+-- Name: FUNCTION lift_sanction(p_user_id uuid, p_reason text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.lift_sanction(p_user_id uuid, p_reason text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.lift_sanction(p_user_id uuid, p_reason text) TO service_role;
+GRANT ALL ON FUNCTION public.lift_sanction(p_user_id uuid, p_reason text) TO authenticated;
 
 
 --
@@ -13436,6 +15697,14 @@ GRANT ALL ON FUNCTION public.logs_register_viewings() TO service_role;
 
 REVOKE ALL ON FUNCTION public.lounge_members_read_by_the_house() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.lounge_members_read_by_the_house() TO service_role;
+
+
+--
+-- Name: FUNCTION lounge_messages_daily_ceiling(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.lounge_messages_daily_ceiling() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.lounge_messages_daily_ceiling() TO service_role;
 
 
 --
@@ -13570,6 +15839,14 @@ GRANT ALL ON FUNCTION public.notify_on_log_comment() TO service_role;
 
 
 --
+-- Name: FUNCTION piece_as_it_stands(p_type text, p_id uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.piece_as_it_stands(p_type text, p_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.piece_as_it_stands(p_type text, p_id uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION piece_stands(p_type text, p_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -13649,7 +15926,6 @@ GRANT ALL ON FUNCTION public.rate_limit_check(table_name text, user_col text, ma
 --
 
 REVOKE ALL ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text) TO anon;
 GRANT ALL ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text) TO authenticated;
 GRANT ALL ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text) TO service_role;
 
@@ -13871,6 +16147,38 @@ GRANT ALL ON FUNCTION public.sever_follows_on_block() TO service_role;
 
 
 --
+-- Name: FUNCTION sign_in_attempt(p_handle text, p_door text, p_device text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.sign_in_attempt(p_handle text, p_door text, p_device text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.sign_in_attempt(p_handle text, p_door text, p_device text) TO service_role;
+
+
+--
+-- Name: FUNCTION sign_in_cleared(p_handle text, p_door text, p_pail boolean, p_device text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.sign_in_cleared(p_handle text, p_door text, p_pail boolean, p_device text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.sign_in_cleared(p_handle text, p_door text, p_pail boolean, p_device text) TO service_role;
+
+
+--
+-- Name: FUNCTION sign_in_unasked(p_handle text, p_door text, p_pail boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.sign_in_unasked(p_handle text, p_door text, p_pail boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.sign_in_unasked(p_handle text, p_door text, p_pail boolean) TO service_role;
+
+
+--
+-- Name: FUNCTION standing_from_verdicts(p_user uuid, p_what text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.standing_from_verdicts(p_user uuid, p_what text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.standing_from_verdicts(p_user uuid, p_what text) TO service_role;
+
+
+--
 -- Name: FUNCTION submit_report(p_reporter_id uuid, p_content_id uuid, p_content_type text, p_reason text, p_details text, p_target_user_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -13922,6 +16230,15 @@ GRANT ALL ON FUNCTION public.tier_weight(t text) TO service_role;
 REVOKE ALL ON FUNCTION public.toggle_dossier_certify(dossier_uuid uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.toggle_dossier_certify(dossier_uuid uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.toggle_dossier_certify(dossier_uuid uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION tribunal_waiting(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.tribunal_waiting() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.tribunal_waiting() TO service_role;
+GRANT ALL ON FUNCTION public.tribunal_waiting() TO authenticated;
 
 
 --
@@ -13998,6 +16315,14 @@ GRANT ALL ON FUNCTION public.viewing_set_list() TO service_role;
 
 
 --
+-- Name: FUNCTION whose_words_a_message_carries(p_writer uuid, p_type text, p_metadata jsonb, p_reply_to_id uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.whose_words_a_message_carries(p_writer uuid, p_type text, p_metadata jsonb, p_reply_to_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.whose_words_a_message_carries(p_writer uuid, p_type text, p_metadata jsonb, p_reply_to_id uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION withdraw_lounge_message(p_message_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -14007,12 +16332,35 @@ GRANT ALL ON FUNCTION public.withdraw_lounge_message(p_message_id uuid) TO servi
 
 
 --
+-- Name: FUNCTION withheld_kind(p_content_type text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.withheld_kind(p_content_type text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.withheld_kind(p_content_type text) TO service_role;
+
+
+--
+-- Name: FUNCTION withhold_piece(p_action_id uuid, p_kind text, p_id uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.withhold_piece(p_action_id uuid, p_kind text, p_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.withhold_piece(p_action_id uuid, p_kind text, p_id uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION year_viewings(p_user_id uuid, p_year integer, p_before_day date, p_before_viewing uuid); Type: ACL; Schema: public; Owner: -
 --
 
 REVOKE ALL ON FUNCTION public.year_viewings(p_user_id uuid, p_year integer, p_before_day date, p_before_viewing uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.year_viewings(p_user_id uuid, p_year integer, p_before_day date, p_before_viewing uuid) TO service_role;
 GRANT ALL ON FUNCTION public.year_viewings(p_user_id uuid, p_year integer, p_before_day date, p_before_viewing uuid) TO authenticated;
+
+
+--
+-- Name: TABLE analytics_budget; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.analytics_budget TO service_role;
 
 
 --
@@ -14029,6 +16377,13 @@ GRANT ALL ON TABLE public.analytics_events TO service_role;
 --
 
 GRANT ALL ON TABLE public.certifications_pushed TO service_role;
+
+
+--
+-- Name: TABLE critique_budget; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.critique_budget TO service_role;
 
 
 --
@@ -14078,8 +16433,6 @@ GRANT ALL ON TABLE public.dispatch_dossiers TO service_role;
 -- Name: TABLE dispatch_dossiers_legacy; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT ON TABLE public.dispatch_dossiers_legacy TO anon;
-GRANT SELECT ON TABLE public.dispatch_dossiers_legacy TO authenticated;
 GRANT ALL ON TABLE public.dispatch_dossiers_legacy TO service_role;
 
 
@@ -14112,8 +16465,6 @@ GRANT ALL ON TABLE public.dossier_certifications TO service_role;
 -- Name: TABLE dossier_certifications_legacy; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT ON TABLE public.dossier_certifications_legacy TO anon;
-GRANT SELECT ON TABLE public.dossier_certifications_legacy TO authenticated;
 GRANT ALL ON TABLE public.dossier_certifications_legacy TO service_role;
 
 
@@ -14130,8 +16481,6 @@ GRANT ALL ON TABLE public.dossier_comments TO service_role;
 -- Name: TABLE dossier_comments_legacy; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT ON TABLE public.dossier_comments_legacy TO anon;
-GRANT SELECT ON TABLE public.dossier_comments_legacy TO authenticated;
 GRANT ALL ON TABLE public.dossier_comments_legacy TO service_role;
 
 
@@ -14158,6 +16507,20 @@ GRANT SELECT ON TABLE public.films TO authenticated;
 --
 
 GRANT ALL ON TABLE public.founding_seat_counter TO service_role;
+
+
+--
+-- Name: TABLE gate_counted; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.gate_counted TO service_role;
+
+
+--
+-- Name: TABLE gate_day; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.gate_day TO service_role;
 
 
 --
@@ -14323,15 +16686,6 @@ GRANT ALL ON TABLE public.lounge_members TO service_role;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lounge_message_reactions TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lounge_message_reactions TO authenticated;
 GRANT ALL ON TABLE public.lounge_message_reactions TO service_role;
-
-
---
--- Name: TABLE lounge_messages; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lounge_messages TO anon;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lounge_messages TO authenticated;
-GRANT ALL ON TABLE public.lounge_messages TO service_role;
 
 
 --
@@ -14689,6 +17043,13 @@ GRANT ALL ON TABLE public.rank_grants TO service_role;
 
 
 --
+-- Name: TABLE reported_words; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.reported_words TO service_role;
+
+
+--
 -- Name: TABLE reports; Type: ACL; Schema: public; Owner: -
 --
 
@@ -14698,10 +17059,38 @@ GRANT ALL ON TABLE public.reports TO service_role;
 
 
 --
+-- Name: TABLE salon_budget; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.salon_budget TO service_role;
+
+
+--
 -- Name: TABLE salon_typing_sent; Type: ACL; Schema: public; Owner: -
 --
 
 GRANT ALL ON TABLE public.salon_typing_sent TO service_role;
+
+
+--
+-- Name: TABLE sign_in_devices; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.sign_in_devices TO service_role;
+
+
+--
+-- Name: TABLE sign_in_doors; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.sign_in_doors TO service_role;
+
+
+--
+-- Name: TABLE sign_in_handles; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.sign_in_handles TO service_role;
 
 
 --
@@ -14743,6 +17132,13 @@ GRANT ALL ON TABLE public.warnings TO service_role;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.watchlists TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.watchlists TO authenticated;
 GRANT ALL ON TABLE public.watchlists TO service_role;
+
+
+--
+-- Name: TABLE withheld_pieces; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.withheld_pieces TO service_role;
 
 
 --

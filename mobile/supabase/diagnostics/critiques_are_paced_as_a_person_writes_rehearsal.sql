@@ -1,9 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- critiques_are_paced_as_a_person_writes_rehearsal.sql — 20261120_08. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs critiques_are_paced_as_a_person_writes_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs critiques_are_paced_as_a_person_writes_rehearsal.sql
 --
--- The train applies 20261120_08 here (with_train), 20261120_00 to 20261120_07 already applied; a sealed copy already holds it.
+-- 20261120_08 is applied on production (the train of 2026-11-22); this shows it still holds there, and on every sealed copy.
 -- Then the house and members in good standing, acting as themselves, find what it fixes holding (review round 14).
 -- Every row here is undone with the transaction. Read each NOTICE as  case|expected|got ; the last line
 -- is the verdict, and any miss makes psql exit non-zero.
@@ -29,12 +29,6 @@ CREATE TEMP TABLE ha3_hint (k text PRIMARY KEY, hint text) ON COMMIT DROP;
 CREATE TEMP TABLE ha3_queued (n serial, what text, queued bigint) ON COMMIT DROP;
 GRANT SELECT ON ha3_ids TO authenticated;
 GRANT ALL ON ha3_hint TO authenticated;
-
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261120_08_critiques_are_paced_as_a_person_writes.sql
-\endif
 
 -- ── H-A3.locks ──
 RESET ROLE;

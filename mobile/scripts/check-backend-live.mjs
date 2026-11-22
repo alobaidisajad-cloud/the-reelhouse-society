@@ -470,8 +470,10 @@ if (DB_URL) {
       increment_dossier_views: 'live web caller; moves a view counter and nothing else',
       rls_auto_enable: 'event trigger, not callable',
       like_escape: 'pure string helper, no data',
-      // Strangers meeting a rope ARE the count; at worst it lies (500 rows a day cap).
-      record_gate_event: 'aggregate counter; names no actor and touches no member row',
+      // A phone whose session has ended forgets its own token: it names the token, which only it holds.
+      forget_push_token: 'deletes one push token, only when the caller names the token and its member both',
+      // Names no actor: whom the rule hides is asked of the caller inside (private.hidden_authors).
+      search_members: 'takes no member id; the caller is read by the private helpers it asks',
     };
     const rows = sh(
       `psql "${DB_URL}" -tAc "SELECT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prosecdef AND p.prorettype <> 'trigger'::regtype AND has_function_privilege('anon', p.oid, 'EXECUTE') AND p.prosrc NOT ILIKE '%auth.uid()%' ORDER BY 1"`,
@@ -730,7 +732,7 @@ if (DB_URL) {
           `SELECT COALESCE(string_agg(p.proname, ', ' ORDER BY p.proname), '') FROM pg_proc p ` +
             `WHERE p.pronamespace='public'::regnamespace AND p.prosrc LIKE '%pg_input_is_valid(%' ` +
             `AND (length(p.prosrc) - length(replace(p.prosrc, 'pg_input_is_valid(', ''))) / length('pg_input_is_valid(') ` +
-            `<> (SELECT count(*) FROM regexp_matches(p.prosrc, 'pg_input_is_valid\\([^()]*,\\s*''[a-zA-Z ]+''\\s*\\)', 'g'))`,
+            `<> (SELECT count(*) FROM regexp_matches(p.prosrc, 'pg_input_is_valid\\((?:[^()]|\\([^()]*\\))*,\\s*''[a-zA-Z ]+''\\s*\\)', 'g'))`,
         );
         if (guessy) {
           posture.push(

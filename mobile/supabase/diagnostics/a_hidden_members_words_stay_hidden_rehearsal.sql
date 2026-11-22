@@ -1,9 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_hidden_members_words_stay_hidden_rehearsal.sql — 20261120_20. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_hidden_members_words_stay_hidden_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_hidden_members_words_stay_hidden_rehearsal.sql
 --
--- The train applies 20261120_20 here (with_train), 20261120_00 to 20261120_19 already applied; a sealed copy already holds it.
+-- 20261120_20 is applied on production (the train of 2026-11-22); this shows it still holds there, and on every sealed copy.
 -- Then the house and members in good standing, acting as themselves, find what it fixes holding (review round 14).
 -- Every row here is undone with the transaction. Read each NOTICE as  case|expected|got ; the last line
 -- is the verdict, and any miss makes psql exit non-zero.
@@ -27,12 +27,6 @@ GRANT SELECT ON rehearsal_members TO anon, authenticated;
 CREATE TEMP TABLE hb3_ids (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
 GRANT SELECT ON hb3_ids TO authenticated;
 GRANT INSERT ON hb3_ids TO authenticated;
-
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261120_20_a_hidden_members_words_stay_hidden.sql
-\endif
 
 -- ── H-B3 ──
 RESET ROLE;

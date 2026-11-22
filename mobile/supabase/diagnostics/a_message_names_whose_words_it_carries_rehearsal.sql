@@ -1,9 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_message_names_whose_words_it_carries_rehearsal.sql — 20261120_19. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_message_names_whose_words_it_carries_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_message_names_whose_words_it_carries_rehearsal.sql
 --
--- The train applies 20261120_19 here (with_train), 20261120_00 to 20261120_18 already applied; a sealed copy already holds it.
+-- 20261120_19 is applied on production (the train of 2026-11-22); this shows it still holds there, and on every sealed copy.
 -- Then the house and members in good standing, acting as themselves, find what it fixes holding (review round 14).
 -- Every row here is undone with the transaction. Read each NOTICE as  case|expected|got ; the last line
 -- is the verdict, and any miss makes psql exit non-zero.
@@ -26,12 +26,6 @@ GRANT SELECT ON rehearsal_members TO anon, authenticated;
 -- The piece's own tables, made before the train, empty: the piece fills them as it runs.
 CREATE TEMP TABLE hb3c_ids (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
 GRANT SELECT ON hb3c_ids TO authenticated;
-
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261120_19_a_message_names_whose_words_it_carries.sql
-\endif
 
 -- ── H-B3.column ──
 RESET ROLE;

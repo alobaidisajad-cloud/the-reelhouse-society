@@ -9080,25 +9080,25 @@ mutants:
     class: DB-a-column-the-planner-never-counted
     source: shape
     edits:
-      - file: ../supabase/migrations/20261120_31_a_withheld_piece_is_read_by_its_author_alone.sql
-        find: "ANALYZE public.logs (withheld_at), public.lists (withheld_at),"
-        replace: "ANALYZE public.lists (withheld_at),"
-    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "can run on the repo as it is: every pending migration has its one rehearsal and passes the lint" }
+      - file: scripts/migration-lint.cjs
+        find: "      .filter(Boolean).map((column) => ({ table: altered[1], column }));\n"
+        replace: "      .filter(() => false).map((column) => ({ table: altered[1], column }));\n"
+    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "asks each column added to, or filled in, a table that holds rows to be analyzed after it" }
 
   - id: shape-a-fill-never-counted-again
     class: DB-a-column-the-planner-never-counted
     source: shape
     edits:
-      - file: ../supabase/migrations/20261120_20_a_hidden_members_words_stay_hidden.sql
-        find: "-- filter on it.\nANALYZE public.lounge_messages (carries_words_of);\n"
-        replace: "-- filter on it.\n"
-    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "can run on the repo as it is: every pending migration has its one rehearsal and passes the lint" }
+      - file: scripts/migration-lint.cjs
+        find: "      const counted = all.slice(at + 1).some((a) =>"
+        replace: "      const counted = all.some((a) =>"
+    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "asks each column added to, or filled in, a table that holds rows to be analyzed after it" }
 
   - id: shape-a-count-from-nowhere
     class: DB-a-count-that-starts-nowhere
     source: shape
     edits:
-      - file: ../supabase/migrations/20261120_20_a_hidden_members_words_stay_hidden.sql
+      - file: supabase/schema/live-schema.sql
         find: "             AND m.created_at > r.last_read_at\n"
         replace: "             AND (r.last_read_at IS NULL OR m.created_at > r.last_read_at)\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "counts from a reading moment by the index: no count asks \"never read, or since\" of a joined row in one test" }
@@ -9107,7 +9107,7 @@ mutants:
     class: DB-the-rule-asked-twice-a-row
     source: shape
     edits:
-      - file: ../supabase/migrations/20261120_02_no_member_asks_who_blocked_them.sql
+      - file: supabase/schema/live-schema.sql
         find: "        AND NOT COALESCE(lm.user_id = ANY (reader.hidden), false)\n"
         replace: "        AND NOT public.is_hidden_by(auth.uid(), lm.user_id)\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks each rule where it lives: no function asks hidden_authors, is_hidden_by or can_view_user_data by its public name, two calls where one is the rule" }
@@ -9116,7 +9116,7 @@ mutants:
     class: DB-the-rule-asked-twice-a-row
     source: shape
     edits:
-      - file: ../supabase/migrations/20261120_32_a_removed_piece_waits_for_its_appeal.sql
+      - file: supabase/schema/live-schema.sql
         find: "        AND private.can_view_user_data(l.user_id)\n"
         replace: "        AND public.can_view_user_data(l.user_id)\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks each rule where it lives: no function asks hidden_authors, is_hidden_by or can_view_user_data by its public name, two calls where one is the rule" }
@@ -9125,7 +9125,7 @@ mutants:
     class: DB-a-rule-asked-of-every-follow
     source: shape
     edits:
-      - file: ../supabase/migrations/20261120_32_a_removed_piece_waits_for_its_appeal.sql
+      - file: supabase/schema/live-schema.sql
         find: "       AND EXISTS (SELECT 1 FROM public.profiles fp WHERE fp.id = i.target_user_id)\n"
         replace: "       AND private.can_view_user_data(i.target_user_id)\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks no call of a member's file for each follow in the following feed: the read already holds its answer" }
@@ -9134,7 +9134,7 @@ mutants:
     class: DB-a-rule-folded-into-every-row
     source: shape
     edits:
-      - file: ../supabase/migrations/20261120_20_a_hidden_members_words_stay_hidden.sql
+      - file: supabase/schema/live-schema.sql
         find: "  WITH me AS (SELECT auth.uid() AS id, (SELECT private.hidden_authors()) AS hidden)\n  SELECT l.id, newest.created_at\n"
         replace: "  WITH me AS (SELECT auth.uid() AS id, private.hidden_authors() AS hidden)\n  SELECT l.id, newest.created_at\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks hidden_authors() once a read, as an InitPlan, never plain where the planner folds it into every row" }
@@ -9143,7 +9143,7 @@ mutants:
     class: DB-the-caller-met-after-the-rules
     source: shape
     edits:
-      - file: ../supabase/migrations/20261120_32_a_removed_piece_waits_for_its_appeal.sql
+      - file: supabase/schema/live-schema.sql
         find: "    (auth.uid() IS NOT NULL AND EXISTS (\n      SELECT 1 FROM interactions im\n       WHERE im.target_log_id = l.id AND im.user_id = (SELECT auth.uid()) AND im.type = 'endorse_log'\n"
         replace: "    (auth.uid() IS NOT NULL AND EXISTS (\n      SELECT 1 FROM interactions im\n       WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "compares a row with the caller as (SELECT auth.uid()) in every function run as the caller, so the row rules meet only the caller's rows" }
@@ -9152,34 +9152,34 @@ mutants:
     class: DB-a-rule-hashes-a-whole-table
     source: shape
     edits:
-      - file: ../supabase/migrations/20261120_31_a_withheld_piece_is_read_by_its_author_alone.sql
-        find: "     AND ((post_id IS NULL) OR COALESCE(( SELECT true AS readable FROM public.dispatch_posts p WHERE (p.id = dispatch_comments.post_id)), false)));\n"
-        replace: "     AND ((post_id IS NULL) OR (EXISTS ( SELECT 1 FROM public.dispatch_posts p WHERE (p.id = dispatch_comments.post_id)))));\n"
+      - file: supabase/schema/live-schema.sql
+        find: "AND ((post_id IS NULL) OR COALESCE(( SELECT true AS readable\n   FROM public.dispatch_posts p\n  WHERE (p.id = dispatch_comments.post_id)), false))));\n"
+        replace: "AND ((post_id IS NULL) OR (EXISTS ( SELECT 1\n   FROM public.dispatch_posts p\n  WHERE (p.id = dispatch_comments.post_id))))));\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "writes no rule that asks EXISTS of another table: each asks by its key" }
 
   - id: shape-the-follows-rule-asks-twice
     class: DB-a-rule-asks-one-test-twice
     source: shape
     edits:
-      - file: ../supabase/migrations/20261120_04_a_follow_is_not_read_across_a_block.sql
-        find: "              AND CASE WHEN private.can_view_user_data(user_id)\n                       THEN (((target_user_id IS NOT NULL) AND private.can_view_user_data(target_user_id))\n                             OR private.no_block_stands_with(user_id, target_user_id))\n                       ELSE ((target_user_id IS NOT NULL) AND private.can_view_user_data(target_user_id)\n                             AND private.no_block_stands_with(user_id, target_user_id))\n                  END)));\n"
-        replace: "              AND ((private.can_view_user_data(user_id) AND private.can_view_user_data(target_user_id))\n                   OR ((private.can_view_user_data(user_id) OR private.can_view_user_data(target_user_id))\n                       AND private.no_block_stands_with(user_id, target_user_id))))));\n"
+      - file: supabase/schema/live-schema.sql
+        find: "CASE\n    WHEN private.can_view_user_data(user_id) THEN (((target_user_id IS NOT NULL) AND private.can_view_user_data(target_user_id)) OR private.no_block_stands_with(user_id, target_user_id))\n    ELSE ((target_user_id IS NOT NULL) AND private.can_view_user_data(target_user_id) AND private.no_block_stands_with(user_id, target_user_id))\nEND)));\n"
+        replace: "((private.can_view_user_data(user_id) AND private.can_view_user_data(target_user_id)) OR ((private.can_view_user_data(user_id) OR private.can_view_user_data(target_user_id)) AND private.no_block_stands_with(user_id, target_user_id)))));\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "writes no rule that asks one test of one column twice on a path" }
 
   - id: shape-the-marks-ask-of-no-piece
     class: DB-a-rule-asks-of-a-key-not-held
     source: shape
     edits:
-      - file: ../supabase/migrations/20261120_31_a_withheld_piece_is_read_by_its_author_alone.sql
-        find: "           AND (NOT ((target_list_id IS NOT NULL) AND private.a_withheld_piece_holds_it('list'::text, target_list_id))))));\n"
-        replace: "           AND (NOT private.a_withheld_piece_holds_it('list'::text, target_list_id)))));\n"
+      - file: supabase/schema/live-schema.sql
+        find: "AND (NOT ((target_list_id IS NOT NULL) AND private.a_withheld_piece_holds_it('list'::text, target_list_id))))));\n"
+        replace: "AND (NOT private.a_withheld_piece_holds_it('list'::text, target_list_id)))));\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "writes no rule that asks a test of a key the row may not hold" }
 
   - id: shape-the-counts-read-twice
     class: DB-the-same-rows-read-twice
     source: shape
     edits:
-      - file: ../supabase/migrations/20261120_32_a_removed_piece_waits_for_its_appeal.sql
+      - file: supabase/schema/live-schema.sql
         find: "    'logs_count',      CASE WHEN me.open THEN mine.logs ELSE 0 END,\n"
         replace: "    'logs_count',      CASE WHEN me.open THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id AND (withheld_at IS NULL OR user_id = me.id)) ELSE 0 END,\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "reads a member's records once for their counts" }
@@ -9188,7 +9188,7 @@ mutants:
     class: DB-words-read-past-a-row-rule
     source: shape
     edits:
-      - file: ../supabase/migrations/20261120_02_no_member_asks_who_blocked_them.sql
+      - file: supabase/schema/live-schema.sql
         find: "RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness integer)\n    LANGUAGE plpgsql STABLE SECURITY DEFINER\n"
         replace: "RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness integer)\n    LANGUAGE plpgsql STABLE\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "finds members by the words of a handle or a name only as the house, past the profiles rule that would take their indexes" }

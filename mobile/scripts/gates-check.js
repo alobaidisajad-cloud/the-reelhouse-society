@@ -299,8 +299,20 @@ if (!fnSrc.trim()) {
     const sqlEvents = [...vocabulary[1].matchAll(/'(\w+)'/g)].map((m) => m[1]);
     const seam = fs.readFileSync(path.join(MOBILE, 'src/utils/gateTelemetry.ts'), 'utf8');
     const tsEvents = [...seam.matchAll(/^\s*\|\s*'(\w+)'/gm)].map((m) => m[1]);
+    // A rank bought or ended is counted by the house from its own record (grant_entitlement,
+    // since 20261120_18), never from a member's call: the sink sends neither, and the live
+    // function must refuse both from a member and the live grant_entitlement must count both.
+    const sink = fs.readFileSync(path.join(MOBILE, 'src/lib/gateMetricsSink.ts'), 'utf8');
+    const byTheHouse = [...(/COUNTED_BY_THE_HOUSE[^=]*=\s*\[([^\]]*)\]/.exec(sink)?.[1] ?? '').matchAll(/'(\w+)'/g)].map((m) => m[1]);
+    for (const e of byTheHouse) {
+      if (!tsEvents.includes(e)) problems.push(`the sink names '${e}' as the house's to count, and the app has no such event`);
+      if (sqlEvents.includes(e)) problems.push(`the server still counts '${e}' from a member's call, which the house alone may count`);
+      const counted = q(`SELECT (prosrc LIKE '%a_rank_is_counted(''${e}''%')::text FROM pg_proc
+                          WHERE oid = 'public.grant_entitlement(uuid,text,text)'::regprocedure`)[0]?.[0];
+      if (counted !== 'true') problems.push(`'${e}' is the house's to count, and the live grant_entitlement does not count it`);
+    }
     for (const e of tsEvents) {
-      if (!sqlEvents.includes(e)) {
+      if (!sqlEvents.includes(e) && !byTheHouse.includes(e)) {
         problems.push(`the app sends '${e}' and the server drops it on the floor`);
       }
     }
