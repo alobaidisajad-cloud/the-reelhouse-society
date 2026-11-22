@@ -304,14 +304,12 @@ const KEEPS: Record<string, { by: string; in?: string; why: string }> = {
   'src/hooks/useProfileData.ts archiveLogs in profileReducer': { by: 'readOnAsFar\\(.*logsAsFar\\.current\\)', in: 'fetchUserData', why: 'a file read again lays its logs read as far as the reader had read (readOnAsFar)' },
   'src/hooks/useProfileData.ts ledgerLogs in profileReducer': { by: 'readOnAsFar\\(.*logsAsFar\\.current\\)', in: 'fetchUserData', why: 'a file read again lays its logs read as far as the reader had read (readOnAsFar)' },
   'src/stores/domain/logSlice/helpers/logOperations.ts logs in fetchLogsOp': { by: 'readOnAsFar\\(readPage, Math\\.max\\(PAGE_SIZE, state\\.logs\\.length\\)\\)', why: 'a read from the top reads as far as the logs are held (readOnAsFar)' },
+  'src/stores/notificationStore.ts notifications in fetchNotifications': { by: 'how\\?\\.fromTop \\? PAGE_SIZE : Math\\.min\\(LOCAL_NOTIFICATION_CAP, Math\\.max\\(PAGE_SIZE, state\\.notifications\\.length\\)\\)', why: 'read again as far as the board was read; from its top on a pull, the newest asked for' },
   'app/(admin)/tribunal.tsx priorityItems in TribunalScreen': { by: 'readAsFar\\(readPriority, priorityCursorOf, priorityAsFar\\.current', why: 'read again as far as the moderator had read (readAsFar)' },
 };
 
 /** Found and not yet mended: each comes off as it is fixed. */
-const STILL_TO_FIX: string[] = [
-  // The app come back to, or its channel back: the board is read again at its first page alone.
-  'src/stores/notificationStore.ts notifications in fetchNotifications',
-];
+const STILL_TO_FIX: string[] = [];
 
 /** Whether a kept write still holds the name that keeps it, in the function it stands in. */
 function keeps(hit: PageHit, app: { file: string; text: string }[]): boolean {
