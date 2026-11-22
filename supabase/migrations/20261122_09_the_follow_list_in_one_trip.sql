@@ -30,7 +30,7 @@ CREATE FUNCTION public.get_my_follows() RETURNS jsonb
    WHERE i.user_id = (SELECT auth.uid())
      AND i.type IN ('follow', 'follow_request');
 $$;
--- add-only (1): no shipped client uses it: a function this piece makes, for members alone
+-- add-only (1): no shipped client uses it: a function this piece makes, for members alone (TestFlight build 41 and the website read the pages)
 REVOKE ALL ON FUNCTION public.get_my_follows() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_my_follows() TO authenticated;
 COMMENT ON FUNCTION public.get_my_follows() IS 'The caller''s follow list in one read, for the phone at launch: the handles they follow and the handles they asked to follow, each in the order made. Runs as the caller, under the interactions'' and profiles'' own rules.';

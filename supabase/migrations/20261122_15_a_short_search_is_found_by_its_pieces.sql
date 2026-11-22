@@ -19,7 +19,7 @@ SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 
 -- As 20261122_12 left it, but a search without a trigram is counted and read by its short pieces.
--- add-only (3): it only fixes: the same stacks in the same order for every search (the rehearsal compares it with the old reading); TestFlight build 41 and the website read it as before
+-- add-only (3): it only fixes: the same stacks in the same order for every search (the rehearsal replays each search and compares it with the old reading); TestFlight build 41 and the website read it as before
 CREATE OR REPLACE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT ''::text, p_filter_following boolean DEFAULT false, p_limit integer DEFAULT 60, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid, p_poster_count integer DEFAULT 4) RETURNS TABLE(id uuid, title text, description text, username text, user_id uuid, created_at timestamp with time zone, films jsonb, film_count bigint, certify_count bigint, is_ranked boolean)
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
@@ -169,7 +169,7 @@ CREATE OR REPLACE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search te
 $$;
 
 -- As 20261120_32 left it, but a search without a trigram is counted and read by its short pieces.
--- add-only (3): it only fixes: the same stacks in the same order for every search (the rehearsal compares it with the old reading); TestFlight build 41 and the website read it as before
+-- add-only (3): it only fixes: the same stacks in the same order for every search (the rehearsal replays each search and compares it with the old reading); TestFlight build 41 and the website read it as before
 CREATE OR REPLACE FUNCTION public.search_stacks(p_pattern text, p_cursor_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid, p_limit integer DEFAULT 20)
 RETURNS TABLE(id uuid, user_id uuid, title text, description text, is_ranked boolean, created_at timestamp with time zone)
     LANGUAGE plpgsql STABLE SECURITY DEFINER
@@ -258,7 +258,7 @@ BEGIN
 END $$;
 
 -- As 20261120_02 left it, but a search without a trigram gathers its members by their short pieces.
--- add-only (3): it only fixes: the same members in the same order for every search (the rehearsal compares it with the old reading); TestFlight build 41 and the website read it as before
+-- add-only (3): it only fixes: the same members in the same order for every search (the rehearsal replays each search and compares it with the old reading); TestFlight build 41 and the website read it as before
 CREATE OR REPLACE FUNCTION public.search_members(p_pattern text, p_handles_only boolean DEFAULT false, p_cursor_closeness integer DEFAULT NULL::integer, p_cursor_username text DEFAULT NULL::text, p_limit integer DEFAULT 20)
 RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness integer)
     LANGUAGE plpgsql STABLE SECURITY DEFINER

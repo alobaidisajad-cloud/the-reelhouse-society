@@ -17,7 +17,7 @@ SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 
 -- As the snapshot holds them, each notice now naming its critique.
--- add-only (3): it only fixes: the notice is written as before, with the critique's id in its metadata, which no shipped client reads for a critique notice (TestFlight build 41: comment_id is read for certifications only; the website reads no metadata)
+-- add-only (3): it only fixes: the notice is written as before, with the critique's id in its metadata, which no shipped client reads for a critique notice (TestFlight build 41: comment_id is read for certifications only; the website reads no metadata; replayed in the rehearsal, a critique written and its notice read)
 CREATE OR REPLACE FUNCTION public.notify_on_list_comment() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
@@ -42,7 +42,7 @@ BEGIN
 END;
 $$;
 
--- add-only (3): it only fixes: as above, for a record's critique
+-- add-only (3): it only fixes: as above, for a record's critique (replayed in the rehearsal)
 CREATE OR REPLACE FUNCTION public.notify_on_log_comment() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
@@ -67,7 +67,7 @@ BEGIN
 END;
 $$;
 
--- add-only (1): no shipped client uses it: a trigger's function this piece makes, dropped first so it is made new (no grant it did not ask for), called by no client
+-- add-only (1): no shipped client uses it: a trigger's function this piece makes, dropped first so it is made new (no grant it did not ask for), called by no client (TestFlight build 41 and the website checked)
 DROP FUNCTION IF EXISTS public.a_critique_takes_its_notice();
 CREATE FUNCTION public.a_critique_takes_its_notice() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
@@ -109,7 +109,7 @@ BEGIN
   END IF;
   RETURN NULL;
 END $$;
--- add-only (1): no shipped client uses it: a trigger's function this piece makes, called by no client
+-- add-only (1): no shipped client uses it: a trigger's function this piece makes, called by no client (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION public.a_critique_takes_its_notice() FROM PUBLIC, anon, authenticated;
 
 -- The notices already orphaned: a critique notice whose member has no critique left on its piece
@@ -133,15 +133,17 @@ DELETE FROM public.notifications n
          AND NOT EXISTS (SELECT 1 FROM public.dispatch_comments c
                           WHERE c.id = CASE WHEN n.metadata ->> 'comment_id' ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN (n.metadata ->> 'comment_id')::uuid END)));
 
--- add-only (3): it only fixes: a critique is deleted as before, its notice with it
+-- add-only (3): it only fixes: a critique is deleted as before, its notice with it (replayed in the rehearsal on a record, a stack and a filing)
 CREATE OR REPLACE TRIGGER a_critique_takes_its_notice
   AFTER DELETE ON public.log_comments
   FOR EACH ROW
   EXECUTE FUNCTION public.a_critique_takes_its_notice();
+-- add-only (3): it only fixes: as the trigger above, on this table's critiques (replayed in the rehearsal)
 CREATE OR REPLACE TRIGGER a_critique_takes_its_notice
   AFTER DELETE ON public.list_comments
   FOR EACH ROW
   EXECUTE FUNCTION public.a_critique_takes_its_notice();
+-- add-only (3): it only fixes: as the trigger above, on this table's critiques (replayed in the rehearsal)
 CREATE OR REPLACE TRIGGER a_critique_takes_its_notice
   AFTER DELETE ON public.dispatch_comments
   FOR EACH ROW

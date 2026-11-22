@@ -59,23 +59,41 @@ REVOKE ALL ON FUNCTION public.a_new_row_is_dated() FROM PUBLIC, anon, authentica
 -- The rule on each table a member inserts into that keeps a date.
 -- add-only (3): it only fixes: a member's row lands as before, dated as it lands (TestFlight build 41 writes no date but an imported archive's, which is kept, never after now; replayed in the rehearsal as members)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.analytics_events FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.dispatch_certifications FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.dispatch_comments FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.dispatch_posts FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.dispatch_saves FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.dispatch_votes FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.interactions FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.list_comments FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.lounge_message_reactions FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.lounge_messages FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.lounges FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.push_subscriptions FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.user_blocks FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.logs FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('not_after');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.lists FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('not_after');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.list_items FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('not_after');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.watchlists FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('not_after');
+-- add-only (3): it only fixes: the dating above, on this table too (one function, replayed in the rehearsal on records, stacks and critiques; it sets only a new row's dates)
 CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.physical_archive FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('not_after');
 
 -- The records' pace, kept by check_write_pace: a new kind.
@@ -197,9 +215,9 @@ CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.logs
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
--- add-only (3): it only fixes: the records' old paces, which counted by the date a member writes, taken off for the one above
+-- add-only (3): it only fixes: the records' old paces, which counted by the date a member writes, taken off for the one above (replayed in the rehearsal as members)
 DROP POLICY IF EXISTS logs_insert_rate_limit ON public.logs;
--- add-only (3): it only fixes: the records' old paces, which counted by the date a member writes, taken off for the one above
+-- add-only (3): it only fixes: the records' old paces, which counted by the date a member writes, taken off for the one above (replayed in the rehearsal as members)
 DROP TRIGGER IF EXISTS tr_log_insert_ceiling ON public.logs;
 -- add-only (1): no shipped client uses it: the old ceiling's trigger function, called by no client (TestFlight build 41 and the website checked)
 DROP FUNCTION IF EXISTS public.enforce_log_insert_ceiling();

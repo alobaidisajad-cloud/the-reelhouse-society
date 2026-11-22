@@ -83,11 +83,11 @@ BEGIN
   END LOOP;
   RETURN CASE WHEN cardinality(v_out) = 0 THEN NULL ELSE v_out END;
 END $$;
--- add-only (1): no shipped client uses it: functions this car makes, called by no client
+-- add-only (1): no shipped client uses it: functions this car makes, called by no client (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION private.short_grams(text), private.search_grams(text, text), private.pattern_grams(text) FROM PUBLIC, anon, authenticated;
 
 -- As 20261120_32 left it, but the stacks of a member whose handle holds the words are read by their own index.
--- add-only (3): it only fixes: the same stacks in the same order for every search (the rehearsal compares it with the old reading); TestFlight build 41 and the website read it as before
+-- add-only (3): it only fixes: the same stacks in the same order for every search (the rehearsal replays each search and compares it with the old reading); TestFlight build 41 and the website read it as before
 CREATE OR REPLACE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT ''::text, p_filter_following boolean DEFAULT false, p_limit integer DEFAULT 60, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid, p_poster_count integer DEFAULT 4) RETURNS TABLE(id uuid, title text, description text, username text, user_id uuid, created_at timestamp with time zone, films jsonb, film_count bigint, certify_count bigint, is_ranked boolean)
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
@@ -195,7 +195,7 @@ CREATE OR REPLACE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search te
 $$;
 
 -- As 20261120_32 left it, but the member's records are read once: every figure is counted from that one read.
--- add-only (3): it only fixes: the same answer, every field as before, its records read once instead of seven times (the rehearsal compares it with the old reading, field by field); TestFlight build 41 and the website read it as before
+-- add-only (3): it only fixes: the same answer, every field as before, its records read once instead of seven times (the rehearsal replays it and compares it with the old reading, field by field); TestFlight build 41 and the website read it as before
 CREATE OR REPLACE FUNCTION public.get_user_analytics(p_user_id uuid) RETURNS json
     LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
@@ -322,14 +322,14 @@ $_$;
 -- its join (`lounge_messages.lounge_id IS NOT NULL`, always true: lounge_id is never empty), which
 -- the planner cannot turn into a table of every salon: it is asked of each word read, by its salon's
 -- own row, so a page of a hundred words reads a hundred salon rows at any size of the house.
--- add-only (3): it only fixes: every reader reads every word they read before, and no other (the rehearsal reads an open room, a closed room from a seat, a closed room from none, and a muted seat, as the members themselves)
+-- add-only (3): it only fixes: every reader reads every word they read before, and no other (the rehearsal replays the reads of an open room, a closed room from a seat, a closed room from none, and a muted seat, as the members themselves)
 DROP POLICY "Lounge messages readable" ON public.lounge_messages;
 CREATE POLICY "Lounge messages readable" ON public.lounge_messages FOR SELECT TO authenticated USING (((EXISTS ( SELECT 1
    FROM public.lounges l
   WHERE ((l.id = lounge_messages.lounge_id) AND (l.is_private = false) AND (lounge_messages.lounge_id IS NOT NULL)))) OR (EXISTS ( SELECT 1
    FROM public.lounge_members m
   WHERE ((m.lounge_id = lounge_messages.lounge_id) AND (m.user_id = ( SELECT auth.uid() AS uid)) AND (m.status = ANY (ARRAY['approved'::text, 'muted'::text])))))));
--- add-only (3): it only fixes: as the words' rule, for their reactions (the rehearsal reads them as the members themselves)
+-- add-only (3): it only fixes: as the words' rule, for their reactions (the rehearsal replays their reads as the members themselves)
 DROP POLICY "Reactions readable" ON public.lounge_message_reactions;
 CREATE POLICY "Reactions readable" ON public.lounge_message_reactions FOR SELECT TO authenticated USING (((EXISTS ( SELECT 1
    FROM public.lounges l

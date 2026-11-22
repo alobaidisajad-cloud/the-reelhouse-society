@@ -16,7 +16,7 @@ SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 
 -- As 20261120_32 left it, a case about the moderator refused.
--- add-only (3): it only fixes: every verdict is given as before, but one on a case about the moderator, which is refused as OWN_CASE (TestFlight build 41 says it "could not be executed"; this build says the case is the moderator's own, for another to judge)
+-- add-only (3): it only fixes: every verdict is given as before, but one on a case about the moderator, which is refused as OWN_CASE (TestFlight build 41 says it "could not be executed"; this build says the case is the moderator's own, for another to judge; replayed in the rehearsal, a verdict given and one refused)
 CREATE OR REPLACE FUNCTION public.resolve_moderation_report_v2(p_report_id uuid, p_action text, p_admin_id uuid, p_reason text, p_duration_hours integer DEFAULT NULL::integer, p_notify_user boolean DEFAULT true) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
@@ -239,7 +239,7 @@ END;
 $$;
 
 -- As 20261120_29 left it, a case about the moderator left pending.
--- add-only (3): it only fixes: every case dismissed as before but one about the moderator, left pending and not counted
+-- add-only (3): it only fixes: every case dismissed as before but one about the moderator, left pending and not counted (replayed in the rehearsal)
 CREATE OR REPLACE FUNCTION public.bulk_dismiss_reports(p_report_ids uuid[], p_admin_id uuid, p_reason text DEFAULT 'Bulk dismissed'::text) RETURNS integer
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'

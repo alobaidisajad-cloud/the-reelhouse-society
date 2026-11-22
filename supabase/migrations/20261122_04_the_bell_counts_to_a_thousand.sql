@@ -17,7 +17,7 @@
 SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 
--- add-only (3): it only fixes: the board's rows as before, its unread count read to 1,000 with whether there are more (TestFlight build 41 reads 'unread' alone: under 1,000 the same number, past it 1,000)
+-- add-only (3): it only fixes: the board's rows as before, its unread count read to 1,000 with whether there are more (TestFlight build 41 reads 'unread' alone: under 1,000 the same number, past it 1,000; replayed in the rehearsal, under and past a thousand)
 CREATE OR REPLACE FUNCTION public.notices_page(p_limit integer DEFAULT 30) RETURNS jsonb
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'

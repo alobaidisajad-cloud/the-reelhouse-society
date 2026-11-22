@@ -13,6 +13,7 @@
 import * as path from 'path';
 import { readCode } from '@/test-utils/readCode';
 import { files as universe } from '@/test-utils/universe';
+import { read as readHouse } from '@/test-utils/house';
 
 const SRC = path.join(__dirname, '..', '..');
 
@@ -144,7 +145,10 @@ describe('the id-list ceiling · a request that cannot be sent', () => {
   it('follow-graph hydration joins instead of listing ids', () => {
     const f = FILES.find(x => x.path === 'src/stores/domain/socialSlice.ts')!;
     expect(f.code).not.toMatch(/\.in\('id', targetIds\)/);
-    expect(f.code).toMatch(/profiles!interactions_target_user_id_fkey\(username\)/);
+    // The handles come from the house in the one read, get_my_follows, which joins each follow to its profile.
+    expect(f.code).toMatch(/supabase\.rpc\('get_my_follows'\)/);
+    const fn = readHouse().functions.get('public.get_my_follows');
+    expect(fn?.body).toMatch(/JOIN public\.profiles p ON p\.id = i\.target_user_id/);
   });
 
   it('a log\'s critiques join their authors, not a list of ids after them', () => {

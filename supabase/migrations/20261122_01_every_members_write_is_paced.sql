@@ -52,7 +52,7 @@ CREATE TABLE public.write_budget (
       'save', 'vote', 'block', 'watchlist_entry', 'shelf_entry', 'draft', 'push_address', 'seat']))
 );
 ALTER TABLE public.write_budget ENABLE ROW LEVEL SECURITY;
--- add-only (1): no shipped client uses it: the house's own table, no member's to read or write
+-- add-only (1): no shipped client uses it: the house's own table, no member's to read or write (TestFlight build 41 and the website checked)
 REVOKE ALL ON TABLE public.write_budget FROM anon, authenticated;
 COMMENT ON TABLE public.write_budget IS 'Each member''s room, per kind, to write what they may repeat at will (stacks and their entries, filings, salons, reactions, certifications, saves, votes, blocks, watchlist and shelf entries, drafts, push addresses), refilled with time, and the count of the house''s day: written by check_write_pace alone; no client reads or writes it.';
 
@@ -167,54 +167,67 @@ CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.lists
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
+-- add-only (3): it only fixes: the pace above, on this table too (replayed in the rehearsal for this kind, as members)
 CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.list_items
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
+-- add-only (3): it only fixes: the pace above, on this table too (replayed in the rehearsal for this kind, as members)
 CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.dispatch_posts
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
+-- add-only (3): it only fixes: the pace above, on this table too (replayed in the rehearsal for this kind, as members)
 CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.lounges
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
+-- add-only (3): it only fixes: the pace above, on this table too (replayed in the rehearsal for this kind, as members)
 CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.lounge_message_reactions
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
+-- add-only (3): it only fixes: the pace above, on this table too (replayed in the rehearsal for this kind, as members)
 CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.dispatch_certifications
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
+-- add-only (3): it only fixes: the pace above, on this table too (replayed in the rehearsal for this kind, as members)
 CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.dispatch_saves
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
+-- add-only (3): it only fixes: the pace above, on this table too (replayed in the rehearsal for this kind, as members)
 CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.dispatch_votes
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
+-- add-only (3): it only fixes: the pace above, on this table too (replayed in the rehearsal for this kind, as members)
 CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.user_blocks
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
+-- add-only (3): it only fixes: the pace above, on this table too (replayed in the rehearsal for this kind, as members)
 CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.watchlists
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
+-- add-only (3): it only fixes: the pace above, on this table too (replayed in the rehearsal for this kind, as members)
 CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.physical_archive
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
+-- add-only (3): it only fixes: the pace above, on this table too (replayed in the rehearsal for this kind, as members)
 CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.member_drafts
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
+-- add-only (3): it only fixes: the pace above, on this table too (replayed in the rehearsal for this kind, as members)
 CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.push_subscriptions
   FOR EACH ROW
   EXECUTE FUNCTION public.check_write_pace();
+-- add-only (3): it only fixes: the pace above, on this table too (replayed in the rehearsal for this kind, as members)
 CREATE OR REPLACE TRIGGER zz_a_write_is_paced
   BEFORE INSERT ON public.lounge_members
   FOR EACH ROW
