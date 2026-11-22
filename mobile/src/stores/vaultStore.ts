@@ -85,11 +85,11 @@ function keptOrPutBack(
   e: unknown,
   tap: Tap,
   viewingId: string,
-  queued: Parameters<typeof enqueueMutation>[0],
+  enqueue: () => boolean,
   putBack: () => void,
 ): { queuedOffline: boolean } {
   if (isNetworkError(e)) {
-    if (enqueueMutation(queued)) queueTap('note', viewingId, tap);
+    if (enqueue()) queueTap('note', viewingId, tap);
     else withdrawTap('note', viewingId, tap);
     return { queuedOffline: true };
   }
@@ -236,7 +236,8 @@ export const useVaultStore = create<VaultState>()(
         } catch (e) {
           // Nothing is queued or put back into a Vault that now belongs to someone else.
           if (!stillSignedIn(askedBy)) { withdrawTap('note', viewingId, tap); throw e; }
-          return keptOrPutBack(e, tap, viewingId, queued, () => {
+          const enqueue = () => enqueueMutation({ type: text ? 'set_viewing_note' : 'remove_viewing_note', payload: queued.payload });
+          return keptOrPutBack(e, tap, viewingId, enqueue, () => {
             // Put back exactly what was there. A refusal — the rank, most likely —
             // must not leave the screen showing writing the Vault does not hold.
             if (before === undefined) get().forgetNote(viewingId);
@@ -261,7 +262,8 @@ export const useVaultStore = create<VaultState>()(
           return { queuedOffline: false };
         } catch (e) {
           if (!stillSignedIn(askedBy)) { withdrawTap('note', viewingId, tap); throw e; }
-          return keptOrPutBack(e, tap, viewingId, queued, () => {
+          const enqueue = () => enqueueMutation({ type: 'remove_viewing_note', payload: queued.payload });
+          return keptOrPutBack(e, tap, viewingId, enqueue, () => {
             if (before !== undefined) get().rememberNote(viewingId, before, logId);
           });
         }
