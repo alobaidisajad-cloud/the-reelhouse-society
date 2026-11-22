@@ -322,11 +322,11 @@ export const PaperComposer = memo(function PaperComposer({
 const s = StyleSheet.create({
   readingBox: {
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.30)', borderRadius: 2,
-    paddingHorizontal: 12, paddingVertical: 10, marginTop: 4,
+    paddingHorizontal: 12, paddingVertical: 12, marginTop: 4,
   },
   readingHead: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
     color: colors.parchment, includeFontPadding: false,
   },
-  readingAgain: { marginTop: 10, alignSelf: 'flex-start' },
+  readingAgain: { marginTop: 8, alignSelf: 'flex-start' },
 });
