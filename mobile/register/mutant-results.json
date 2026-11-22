@@ -1172,7 +1172,7 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-docket-copied-after-paint",
     "proof": "m20",
-    "commit": "eed955898ac349a698c8fc42ea03541cca655fb6",
+    "commit": "edc52db4810a1c7df07ebf2681f00e9280e7dc0f",
     "verdict": "caught"
   },
   {
@@ -7969,7 +7969,7 @@
     "class": "STATE-a-request-held-after-its-answer",
     "mutant": "shape-refresh-left-turning",
     "proof": "m5",
-    "commit": "cc179b81e6a718389d04f50ea3e2f8d8bccb31f2",
+    "commit": "edc52db4810a1c7df07ebf2681f00e9280e7dc0f",
     "verdict": "caught"
   },
   {
@@ -8194,6 +8194,76 @@
     "mutant": "shape-pages-finder-trusts-a-keep",
     "proof": "m11",
     "commit": "f99dad105912e50a1c1fbd508da9582206f88551",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-pages-read-past-the-first-dropped",
+    "mutant": "shape-tribunal-docket-read-again-from-the-top",
+    "proof": "m13",
+    "commit": "edc52db4810a1c7df07ebf2681f00e9280e7dc0f",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-pages-read-past-the-first-dropped",
+    "mutant": "shape-tribunal-docket-forgets-how-far",
+    "proof": "m13",
+    "commit": "edc52db4810a1c7df07ebf2681f00e9280e7dc0f",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-pages-read-past-the-first-dropped",
+    "mutant": "shape-tribunal-urgent-read-again-from-the-top",
+    "proof": "m14",
+    "commit": "edc52db4810a1c7df07ebf2681f00e9280e7dc0f",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-pages-read-past-the-first-dropped",
+    "mutant": "shape-member-file-read-again-from-the-top",
+    "proof": "m15",
+    "commit": "edc52db4810a1c7df07ebf2681f00e9280e7dc0f",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-pages-read-past-the-first-dropped",
+    "mutant": "shape-own-logs-read-again-from-the-top",
+    "proof": "m16",
+    "commit": "edc52db4810a1c7df07ebf2681f00e9280e7dc0f",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-pages-read-past-the-first-dropped",
+    "mutant": "shape-read-on-as-far-stops-at-one-read",
+    "proof": "m20",
+    "commit": "edc52db4810a1c7df07ebf2681f00e9280e7dc0f",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-pages-read-past-the-first-dropped",
+    "mutant": "shape-board-read-again-from-the-top",
+    "proof": "m17",
+    "commit": "edc52db4810a1c7df07ebf2681f00e9280e7dc0f",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-pages-read-past-the-first-dropped",
+    "mutant": "shape-board-read-past-one-read-dropped",
+    "proof": "m21",
+    "commit": "edc52db4810a1c7df07ebf2681f00e9280e7dc0f",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-pages-read-past-the-first-dropped",
+    "mutant": "shape-board-cut-short-on-a-failed-page",
+    "proof": "m19",
+    "commit": "edc52db4810a1c7df07ebf2681f00e9280e7dc0f",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-pages-read-past-the-first-dropped",
+    "mutant": "shape-board-pull-reads-as-far",
+    "proof": "m18",
+    "commit": "edc52db4810a1c7df07ebf2681f00e9280e7dc0f",
     "verdict": "caught"
   }
 ]
