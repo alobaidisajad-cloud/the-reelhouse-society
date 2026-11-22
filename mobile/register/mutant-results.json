@@ -885,7 +885,7 @@
     "class": "DATA-older-words-without-reactions",
     "mutant": "shape-older-page-without-reactions",
     "proof": "m1",
-    "commit": "92e5558d503debebf0e61e705e4d3781b16a28cb",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
     "verdict": "caught"
   },
   {
@@ -1144,21 +1144,21 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-follows-never-held",
     "proof": "m17",
-    "commit": "ec22079f00f66bb86a9bba5a5d3d629cb8fc5c4d",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-follows-never-failed",
     "proof": "m18",
-    "commit": "ec22079f00f66bb86a9bba5a5d3d629cb8fc5c4d",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-follows-held-after-sign-out",
     "proof": "m19",
-    "commit": "eed955898ac349a698c8fc42ea03541cca655fb6",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
     "verdict": "caught"
   },
   {
@@ -3657,14 +3657,14 @@
     "class": "STATE-a-follow-the-house-ended-held-on",
     "mutant": "shape-follow-reread-joins-the-old",
     "proof": "m3",
-    "commit": "ec22079f00f66bb86a9bba5a5d3d629cb8fc5c4d",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-request-shown-as-follow",
     "proof": "m70",
-    "commit": "d13986c7e5c8bce008c238781eef7295fef9cc66",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
     "verdict": "caught"
   },
   {
@@ -4329,7 +4329,7 @@
     "class": "READ-a-reread-that-drops-waiting-writes",
     "mutant": "shape-withdrawal-under-the-list",
     "proof": "m17",
-    "commit": "40b6252683750883e8ee377a5393507707a301c6",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
     "verdict": "caught"
   },
   {
@@ -4672,7 +4672,7 @@
     "class": "COPY-a-refusal-told-as-anothers",
     "mutant": "shape-follow-standing-said-try-again",
     "proof": "m4",
-    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
     "verdict": "caught"
   },
   {
@@ -4770,7 +4770,7 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-follow-filed-as-request-shown-following",
     "proof": "m73",
-    "commit": "d13986c7e5c8bce008c238781eef7295fef9cc66",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
     "verdict": "caught"
   },
   {
@@ -5288,7 +5288,7 @@
     "class": "WRITE-an-older-write-sent-over-a-newer",
     "mutant": "shape-unfollow-door-unkeyed",
     "proof": "m16",
-    "commit": "424c7d7b94da97e1e81c1134c7cbac0bd5ab2aca",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
     "verdict": "caught"
   },
   {
@@ -5484,7 +5484,7 @@
     "class": "CODE-a-members-words-in-an-error",
     "mutant": "shape-gone-handle-thrown-to-sentry",
     "proof": "m1",
-    "commit": "424c7d7b94da97e1e81c1134c7cbac0bd5ab2aca",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
     "verdict": "caught"
   },
   {
@@ -7284,6 +7284,34 @@
     "mutant": "shape-the-block-finder-takes-one-side",
     "proof": "m2",
     "commit": "aecf4a7b0ece8070c103afaf16021c7241f906e0",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-launch-read-walks-page-by-page",
+    "mutant": "past-the-follow-list-walked-page-by-page",
+    "proof": "m1",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-launch-read-walks-page-by-page",
+    "mutant": "past-a-salon-caught-up-page-by-page",
+    "proof": "m1",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-launch-read-walks-page-by-page",
+    "mutant": "shape-the-walk-finder-reads-no-while",
+    "proof": "m2",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-launch-read-walks-page-by-page",
+    "mutant": "shape-the-walk-finder-follows-no-import",
+    "proof": "m5",
+    "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
     "verdict": "caught"
   }
 ]
