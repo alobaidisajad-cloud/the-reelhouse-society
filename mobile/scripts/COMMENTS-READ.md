@@ -2161,3 +2161,4 @@ files of the reading map this one does not.
 | src/hooks/__tests__/aMemberFileReadAgainKeepsItsLaterPages.test.tsx | — |  |
 | src/stores/domain/__tests__/theOwnLogsReadAgainKeepTheirLaterPages.test.ts | — |  |
 | src/stores/__tests__/theBoardReadAgainKeepsItsLaterPages.test.ts | — |  |
+| src/hooks/__tests__/everyWordWrittenIsKept.guard.test.ts | — |  |
