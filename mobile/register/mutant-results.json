@@ -6827,92 +6827,92 @@
   {
     "class": "DB-a-column-the-planner-never-counted",
     "mutant": "shape-a-new-column-never-counted",
-    "proof": "m2",
-    "commit": "759265fb00d2a5f92e6d39fa08a690e9a0fd5f19",
+    "proof": "m1",
+    "commit": "7f71b2acfd8081934fa816bb9cbcfbc93f977de6",
     "verdict": "caught"
   },
   {
     "class": "DB-a-column-the-planner-never-counted",
     "mutant": "shape-a-fill-never-counted-again",
-    "proof": "m2",
-    "commit": "759265fb00d2a5f92e6d39fa08a690e9a0fd5f19",
+    "proof": "m1",
+    "commit": "7f71b2acfd8081934fa816bb9cbcfbc93f977de6",
     "verdict": "caught"
   },
   {
     "class": "DB-a-count-that-starts-nowhere",
     "mutant": "shape-a-count-from-nowhere",
     "proof": "m1",
-    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
+    "commit": "7f71b2acfd8081934fa816bb9cbcfbc93f977de6",
     "verdict": "caught"
   },
   {
     "class": "DB-the-rule-asked-twice-a-row",
     "mutant": "shape-the-faces-ask-the-rule-twice",
     "proof": "m1",
-    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
+    "commit": "7f71b2acfd8081934fa816bb9cbcfbc93f977de6",
     "verdict": "caught"
   },
   {
     "class": "DB-the-rule-asked-twice-a-row",
     "mutant": "shape-the-stacks-ask-the-file-twice",
     "proof": "m1",
-    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
+    "commit": "7f71b2acfd8081934fa816bb9cbcfbc93f977de6",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-asked-of-every-follow",
     "mutant": "shape-the-feed-asks-each-follow",
     "proof": "m1",
-    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
+    "commit": "7f71b2acfd8081934fa816bb9cbcfbc93f977de6",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-folded-into-every-row",
     "mutant": "shape-the-last-words-ask-each-row",
     "proof": "m1",
-    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
+    "commit": "7f71b2acfd8081934fa816bb9cbcfbc93f977de6",
     "verdict": "caught"
   },
   {
     "class": "DB-the-caller-met-after-the-rules",
     "mutant": "shape-the-feed-meets-every-mark",
     "proof": "m1",
-    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
+    "commit": "7f71b2acfd8081934fa816bb9cbcfbc93f977de6",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-hashes-a-whole-table",
     "mutant": "shape-the-critiques-hash-every-filing",
     "proof": "m1",
-    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
+    "commit": "c10f381bda2d6fe383297829d407b6d039fb0835",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-asks-one-test-twice",
     "mutant": "shape-the-follows-rule-asks-twice",
     "proof": "m1",
-    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
+    "commit": "c10f381bda2d6fe383297829d407b6d039fb0835",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-asks-of-a-key-not-held",
     "mutant": "shape-the-marks-ask-of-no-piece",
     "proof": "m1",
-    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
+    "commit": "c10f381bda2d6fe383297829d407b6d039fb0835",
     "verdict": "caught"
   },
   {
     "class": "DB-the-same-rows-read-twice",
     "mutant": "shape-the-counts-read-twice",
     "proof": "m1",
-    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
+    "commit": "7f71b2acfd8081934fa816bb9cbcfbc93f977de6",
     "verdict": "caught"
   },
   {
     "class": "DB-words-read-past-a-row-rule",
     "mutant": "shape-the-search-reads-as-the-caller",
     "proof": "m1",
-    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
+    "commit": "7f71b2acfd8081934fa816bb9cbcfbc93f977de6",
     "verdict": "caught"
   },
   {
