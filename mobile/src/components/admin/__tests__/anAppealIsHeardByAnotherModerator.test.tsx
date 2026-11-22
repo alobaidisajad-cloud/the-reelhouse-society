@@ -13,6 +13,7 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { testQueryClient } from '@/test-utils/testQueryClient';
 import { AppealsDocket, hearingRefusal, overturnSays, waitingForAnotherSays } from '../AppealsDocket';
 import reelToast from '@/src/utils/reelToast';
+import { ONE_PRESS_MS } from '@/src/utils/onePress';
 
 const mockGetPendingAppeals = jest.fn();
 const mockJudgeAppeal = jest.fn();
@@ -162,4 +163,49 @@ it('the house’s only moderator reads which appeals wait for another: each card
   expect(waitingForAnotherSays([{ refused: 'OWN_CASE', ruled_by_you: false }, { refused: 'OWN_VERDICT', ruled_by_you: true }]))
     .toBe('2 appeals here wait for another moderator: you may not hear them.');
   expect(waitingForAnotherSays([{ refused: null, ruled_by_you: false }])).toBeNull();
+});
+
+/** Stage C, every word written is kept: a sheet closed emptied the word for the member. */
+describe('the word for the member', () => {
+  const { useAuthStore } = require('@/src/stores/auth');
+  const { readDraft } = require('@/src/utils/memberDrafts');
+  const kept = (at: string) => readDraft('admin-1', 'hearing', at)?.data.body;
+  const box = (r: ReturnType<typeof render>) => r.getByLabelText('your word to the member');
+  const close = async (r: ReturnType<typeof render>) => {
+    const xs = r.getAllByLabelText('Close');
+    await act(async () => { await fireEvent.press(xs[xs.length - 1]!); });
+  };
+  beforeEach(() => {
+    require('@/src/stores/mmkv-storage').storage.clearAll();
+    useAuthStore.setState({ user: { id: 'admin-1', username: 'moderator_one' } });
+  });
+  afterEach(() => { useAuthStore.setState({ user: null }); });
+
+  it('is kept per hearing: closed and opened again, the sheet opens on it; the other hearing on its own', async () => {
+    const r = mount();
+    await waitFor(() => expect(r.getByLabelText('Overturn the verdict')).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText('Overturn the verdict')); });
+    await act(async () => { await fireEvent.changeText(box(r), 'The provocation was plain in the room.'); });
+    await close(r);
+    expect(kept('verdict-1:overturned')).toBe('The provocation was plain in the room.');
+    await act(async () => { await fireEvent.press(r.getByLabelText('Uphold the verdict')); });
+    expect(box(r).props.value).toBe('');
+    await close(r);
+    // A press on the same act again is heard once the one-press window has passed (onePress).
+    await act(async () => { await new Promise((done) => setTimeout(done, ONE_PRESS_MS)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Overturn the verdict')); });
+    expect(box(r).props.value).toBe('The provocation was plain in the room.');
+  });
+
+  it('is let go once the hearing is heard', async () => {
+    const r = mount();
+    await waitFor(() => expect(r.getByLabelText('Overturn the verdict')).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText('Overturn the verdict')); });
+    await act(async () => { await fireEvent.changeText(box(r), 'The provocation was plain in the room.'); });
+    mockGetPendingAppeals.mockResolvedValue([]);
+    const acts = r.getAllByRole('button', { name: 'Overturn the verdict' });
+    await act(async () => { await fireEvent.press(acts[acts.length - 1]!); });
+    await waitFor(() => expect(r.getByText('No appeal waits. The house rests.')).toBeTruthy());
+    expect(kept('verdict-1:overturned')).toBeUndefined();
+  });
 });

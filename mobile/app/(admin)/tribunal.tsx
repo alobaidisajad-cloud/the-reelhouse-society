@@ -53,6 +53,7 @@ import { HOURS_DIGITS } from '@/src/constants/inputLimits';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { AppealsDocket } from '@/src/components/admin/AppealsDocket';
 import { SanctionsList } from '@/src/components/admin/SanctionsList';
+import { putBackWords, useKeptWords } from '@/src/hooks/useKeptWords';
 import type { PieceWords } from '@/src/services/ModerationService';
 
 interface TribunalTarget {
@@ -303,20 +304,18 @@ function ActionModal({
   onClose: () => void;
   onSubmit: (action: EnforcementAction, reason: string, durationHours?: number) => void;
 }) {
-  const [reason, setReason] = useState('');
+  // The reason is kept per case as it is written: a sheet closed, or a verdict the house refused,
+  // opens on it again. Let go once sent; the Tribunal puts it back if the house refuses it.
+  const userId = useAuthStore((st) => st.user?.id);
+  const [reason, setReason, letGoReason] = useKeptWords(userId, 'verdict', state.report?.id);
   const [durationHours, setDurationHours] = useState('');
   const reasonRef = useRef<TextInput>(null);
   const sheetFoot = useSheetBottom();
 
-  const reset = useCallback(() => {
-    setReason('');
-    setDurationHours('');
-  }, []);
-
   const handleClose = useCallback(() => {
-    reset();
+    setDurationHours('');
     onClose();
-  }, [onClose, reset]);
+  }, [onClose]);
 
   const handleSubmit = useCallback(() => {
     if (!state.action || !reason.trim()) return;
@@ -327,8 +326,9 @@ function ActionModal({
     }
     // Told to the member in their notice: cleaned, and kept to what that notice can hold.
     onSubmit(state.action, sanitizeInput(reason, 'modReason'), hours);
-    reset();
-  }, [state.action, reason, durationHours, onSubmit, reset]);
+    letGoReason();
+    setDurationHours('');
+  }, [state.action, reason, durationHours, onSubmit, letGoReason]);
 
   // Two colours per verdict, because the verdict is drawn twice. `color` is the
   // FILL of the button — crimson pigment, with parchment on it at 4.74:1. `ink`
@@ -720,7 +720,7 @@ function TribunalScreen() {
       TactileEngine.success();
       reelToast('Directive executed. Action recorded in the archives.');
     },
-    onError: (err: unknown, { reportId }) => {
+    onError: (err: unknown, { reportId, reason }) => {
       const refused = verdictRefusal(err);
       // Judged by another moderator meanwhile (or a bulk dismissal): the case is settled, so it
       // leaves the docket, and both dockets are read again for whatever else changed (review round 11).
@@ -736,6 +736,8 @@ function TribunalScreen() {
       // The piece was deleted before the verdict: nothing was removed, recorded or told, and the
       // case stays. Its evidence now reads as destroyed, so REMOVE CONTENT is no longer offered; the
       // words as reported stay beside it, to judge the member on (round 14).
+      // The case stays: its reason is put back, to open on again.
+      putBackWords(user?.id, 'verdict', reportId, reason);
       if (refused === 'PIECE_GONE') {
         setEvidence(prev => ({ ...prev, [reportId]: { loading: false, data: { found: false, reported: prev[reportId]?.data?.reported } } }));
         reelToast.error('The piece is already gone. Dismiss the case, or judge the member.');

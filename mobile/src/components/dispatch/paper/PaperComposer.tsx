@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { RemoteImage } from '@/src/components/Picture';
 import { StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -48,9 +48,11 @@ import { DeskDoc } from './PaperDeskDoc';
  */
 export const PaperComposer = memo(function PaperComposer({
   kind, me, hour, body, film, remaining, spoiler, source,
-  onBody, onBack, onFile, onFilm, onStill, onSpoiler, onSource, ready, sending, amending, reading,
+  onBody, onBack, onFile, onFilm, onStill, onSpoiler, onSource, ready, sending, amending, reading, takenUp,
 }: {
   kind: string;
+  /** The line over a draft the desk took up, with START CLEAN, as the ballot's desk draws it. */
+  takenUp?: ReactNode;
   me: PaperAuthor;
   /** A wire's provenance. Ignored by every other kind, required by this one. */
   source?: string;
@@ -135,6 +137,7 @@ export const PaperComposer = memo(function PaperComposer({
 
       {/* The document, filling the room — the same frame the feed uses. */}
       <DeskDoc>
+        {takenUp}
         <View style={p.postRow}>
           <View style={p.margin}>
             <Text style={p.marginValue} {...decorativeTextProps}>{hour}</Text>

@@ -38,7 +38,7 @@ jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHouse.clien
 
 const mockAuthStore = { user: { id: 'admin-uuid-001', role: 'admin', username: 'tribunal_admin' } };
 jest.mock('@/src/stores/auth', () => ({
-  useAuthStore: (sel?: (s: unknown) => unknown) => (sel ? sel(mockAuthStore) : mockAuthStore),
+  useAuthStore: Object.assign((sel?: (s: unknown) => unknown) => (sel ? sel(mockAuthStore) : mockAuthStore), { getState: () => mockAuthStore }),
 }));
 jest.mock('react-native-gesture-handler', () => {
   const React = require('react');

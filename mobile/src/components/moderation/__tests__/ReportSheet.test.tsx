@@ -66,7 +66,7 @@ jest.mock('@/src/utils/reelToast', () => {
 // Mock auth store
 const mockUser = { id: 'reporter-uuid-1234-5678-abcd', role: 'member' };
 jest.mock('@/src/stores/auth', () => ({
-  useAuthStore: jest.fn((selector: any) => selector({ user: mockUser })),
+  useAuthStore: Object.assign(jest.fn((selector: any) => selector({ user: mockUser })), { getState: () => ({ user: mockUser }) }),
 }));
 
 // Mock report store
@@ -90,6 +90,9 @@ const defaultProps = {
   targetUsername: 'cinephile42',
   onDismiss: jest.fn(),
 };
+
+// Each test opens on a piece with no details kept for it: the details are kept per piece.
+beforeEach(() => { require('@/src/stores/mmkv-storage').storage.clearAll(); });
 
 describe('ReportSheet', () => {
   beforeEach(() => {
@@ -353,5 +356,34 @@ describe('ReportSheet with the keyboard up', () => {
     expect(form).toBeDefined();
     await act(async () => { (form!.props.onLayout as (e: unknown) => void)({ nativeEvent: { layout: { x: 0, y: 0, width: 340, height: 230 } } }); });
     expect(scrollTo).toHaveBeenLastCalledWith({ y: 508, animated: false });
+  });
+});
+
+/** Stage C, every word written is kept: the details were cleared on every opening. */
+describe('the details of a report', () => {
+  const kept = () => require('@/src/utils/memberDrafts').readDraft(mockUser.id, 'report', `log:${defaultProps.contentId}`)?.data.body;
+
+  it('are kept per piece as they are written: closed and opened again, the sheet opens on them', async () => {
+    const r = render(<ReportSheet {...defaultProps} />);
+    await act(async () => { await fireEvent.press(r.getAllByRole('radio')[0]!); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Additional details'), 'It copies my review word for word.'); });
+    // Kept at once as the sheet closes, not a second later.
+    await act(async () => { r.rerender(<ReportSheet {...defaultProps} visible={false} />); });
+    expect(kept()).toBe('It copies my review word for word.');
+    r.unmount();
+    const again = render(<ReportSheet {...defaultProps} />);
+    await act(async () => { await fireEvent.press(again.getAllByRole('radio')[0]!); });
+    expect(again.getByLabelText('Additional details').props.value).toBe('It copies my review word for word.');
+  });
+
+  it('are let go once the house holds the report, and kept when it did not take it', async () => {
+    mockSubmitReport.mockResolvedValueOnce({ status: 'failed' });
+    const r = render(<ReportSheet {...defaultProps} />);
+    await act(async () => { await fireEvent.press(r.getAllByRole('radio')[0]!); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Additional details'), 'It copies my review word for word.'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('File report')); });
+    expect(r.getByLabelText('Additional details').props.value).toBe('It copies my review word for word.');
+    await act(async () => { await fireEvent.press(r.getByLabelText('File report')); });
+    expect(kept()).toBeUndefined();
   });
 });

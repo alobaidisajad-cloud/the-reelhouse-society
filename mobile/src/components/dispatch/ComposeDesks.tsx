@@ -8,11 +8,13 @@
  *
  * A ballot has its own, because two to six films is a different shape.
  *
- * ── A DRAFT ONLY WHERE IT IS WORK ───────────────────────────────────────────
- * A take is a sentence: restored days later into a desk opened for something
- * else, it would be the app putting words in a member's mouth, so the short
- * desk keeps no draft. A ballot (a question and up to six film searches) is an
- * evening's fiddling, and keeps one, as the essay does.
+ * ── EVERY DESK KEEPS ITS DRAFT ──────────────────────────────────────────────
+ * Nothing a member types is lost. The short desk keeps its draft as the essay
+ * and the ballot keep theirs: kept as it is written, one for each form (a take
+ * is never opened into a seeking's desk) and one for each amend, by its filing;
+ * taken up when the desk opens again, said by the line every writing room draws
+ * (TakenUpLine), with START CLEAN to let it go; and gone once the house, or the
+ * queue, has the filing.
  *
  * ── A DESK WITH NOBODY AT IT ────────────────────────────────────────────────
  * The picker is reachable signed out (the Concierge is in the bar for everyone):
@@ -22,7 +24,7 @@
 import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { characterCount } from '@/src/utils/text';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import { houseNow } from '@/src/lib/houseClock';
@@ -53,7 +55,8 @@ import { useClock } from '@/src/hooks/useClock';
 import Animated from 'react-native-reanimated';
 import { UnderSheet } from '@/src/components/layout/UnderSheet';
 import { nav } from '@/src/utils/typedRouter';
-import { useAskBeforeLeaving, useHoldWhileSending } from '@/src/hooks/useAskBeforeLeaving';
+import { useHoldWhileSending } from '@/src/hooks/useAskBeforeLeaving';
+import { KEPT_WORDS_REST_MS } from '@/src/hooks/useKeptWords';
 import { useStillHere } from '@/src/hooks/useStillHere';
 import { TakenUpLine } from '@/src/components/TakenUpLine';
 
@@ -158,20 +161,96 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
   /** Filed or amended: the desk is leaving, and asks nothing on its way out. */
   const [done, setDone] = useState<'filed' | 'amended' | null>(null);
 
-  /**
-   * What would be lost by leaving. This desk keeps no draft, so every way out with words in it
-   * asks first: swiped down, Android's back, BACK to the forms. An amend loses only its changes.
-   */
-  const unsaved = !done && !sending && (amending
-    ? body !== (existing?.body ?? '') || source !== (existing?.source ?? '') || spoiler !== !!existing?.spoilerLabel
-    : !!(body.trim() || source.trim() || film));
-  const LEAVE_TITLE = amending ? 'Discard these amendments?' : 'Discard what you wrote?';
-  const LEAVE_WORDS = amending
-    ? 'It stays as it was filed. The changes made here will be lost.'
-    : 'This desk keeps no draft. Leave now and these words are gone.';
-  useAskBeforeLeaving(unsaved, { title: LEAVE_TITLE, message: LEAVE_WORDS });
-  // Held while FILE IT is on its way: this desk keeps no draft, so a leave mid-send left the words to a
-  // refusal, said to a desk already gone.
+  // ── THE DRAFT ──
+  // A new filing's by its form ('short', its kind); an amend's by its filing ('edit', its id), as the
+  // essay keeps an amend's. Every way out keeps it, so none asks first.
+  const userId = useAuthStore((st) => st.user?.id);
+  /** When the draft taken up was kept; null once it is touched, or for a fresh desk. */
+  const [takenUpAt, setTakenUpAt] = useState<string | null>(null);
+  /** An amend left as it was filed: nothing to keep. */
+  const asFiled = amending && body === (existing?.body ?? '') && source === (existing?.source ?? '')
+    && spoiler === !!existing?.spoilerLabel;
+  // Taken up as it renders, once per member and filing in hand, so the desk's first frame is the
+  // draft; an amend's once its filing is here, over the words as filed.
+  const takeUpFor = userId && amendRead === 'held' ? `${userId}:${editId ?? kind}` : null;
+  const [takenFor, setTakenFor] = useState<string | null>(null);
+  if (takeUpFor && takenFor !== takeUpFor) {
+    setTakenFor(takeUpFor);
+    if (editId) {
+      const held = readDraft(userId, 'edit', editId);
+      if (held && held.data.content !== undefined) {
+        setBody(held.data.content);
+        setSource(held.data.source ?? '');
+        setSpoiler(!!held.data.spoiler);
+        setTakenUpAt(held.savedAt ?? '');
+      }
+    } else {
+      const held = readDraft(userId, 'short', kind);
+      if (held && (held.data.body?.trim() || held.data.source?.trim() || held.data.film)) {
+        setBody(held.data.body ?? '');
+        setSource(held.data.source ?? '');
+        setFilm(held.data.film ?? null);
+        setFilmId(held.data.filmId ?? null);
+        setSpoiler(!!held.data.spoiler);
+        setTakenUpAt(held.savedAt ?? '');
+      }
+    }
+  }
+
+  /** The desk as it stands, kept on the phone (or let go, when empty or as filed): true once kept. */
+  const keep = useCallback((): boolean => {
+    if (!userId || useAuthStore.getState().user?.id !== userId) return false;
+    if (editId) {
+      if (asFiled) { clearDraft(userId, 'edit', editId); return true; }
+      return writeDraft(userId, 'edit', { content: body, source, spoiler }, editId);
+    }
+    if (!body.trim() && !source.trim() && !film) { clearDraft(userId, 'short', kind); return true; }
+    return writeDraft(userId, 'short', { body, source, film, filmId, spoiler }, kind);
+  }, [userId, editId, asFiled, body, source, spoiler, film, filmId, kind]);
+
+  // Kept once the desk rests a second, and at once if it closes first (the last second's words).
+  const unkept = useRef<(() => boolean) | null>(null);
+  useEffect(() => {
+    if (amendRead !== 'held' || done) return undefined;
+    unkept.current = keep;
+    const t = setTimeout(() => { unkept.current = null; keep(); }, KEPT_WORDS_REST_MS);
+    return () => clearTimeout(t);
+  }, [keep, amendRead, done]);
+  useEffect(() => () => {
+    const kept = unkept.current;
+    unkept.current = null;
+    kept?.();
+  }, []);
+
+  /** Lets the draft taken up go: a new desk empty, an amend as filed. */
+  const startClean = useCallback(() => {
+    unkept.current = null;
+    if (editId) {
+      clearDraft(userId, 'edit', editId);
+      setBody(existing?.body ?? '');
+      setSource(existing?.source ?? '');
+      setSpoiler(!!existing?.spoilerLabel);
+    } else {
+      clearDraft(userId, 'short', kind);
+      setBody('');
+      setSource('');
+      setFilm(null);
+      setFilmId(null);
+      setSpoiler(false);
+    }
+    setTakenUpAt(null);
+  }, [userId, editId, existing, kind]);
+  /** Any change lets the line about the draft taken up go, as the essay's does on a keystroke. */
+  const touched = <A extends unknown[]>(act: (...a: A) => void) => (...a: A) => { setTakenUpAt(null); act(...a); };
+  /** The house, or the queue, has it: the draft goes. */
+  const letGo = useCallback(() => {
+    unkept.current = null;
+    if (editId) clearDraft(userId, 'edit', editId);
+    else clearDraft(userId, 'short', kind);
+  }, [userId, editId, kind]);
+
+  // Held while FILE IT is on its way: the draft goes only once the house has the filing, so a desk
+  // opened again meanwhile would take up words already on their way.
   useHoldWhileSending(sending);
 
   // The way out once the house has it: an amend back to the filing it amended; a filing to the
@@ -183,18 +262,13 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
   }, [done]);
 
   /**
-   * BACK, on screen and Android's: a new filing goes back to the choice of form (asked first
-   * when it holds words); an amend has no form to choose, and goes back to the filing.
+   * BACK, on screen and Android's: a new filing goes back to the choice of form, its draft kept; an
+   * amend has no form to choose, and goes back to the filing.
    */
   const onBack = useCallback(() => {
     if (amending) { nav.back(); return; }
-    const toForms = () => router.setParams({ kind: '' });
-    if (!unsaved) { toForms(); return; }
-    Alert.alert(LEAVE_TITLE, LEAVE_WORDS, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: toForms },
-    ]);
-  }, [amending, unsaved, LEAVE_TITLE, LEAVE_WORDS]);
+    router.setParams({ kind: '' });
+  }, [amending]);
   useBackCloses(!amending && !finding, onBack);
 
   const remaining = MAX_LENGTHS.filingBody - body.length;
@@ -216,11 +290,13 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
           spoilerLabel: spoiler ? 'SPOILERS' : null,
           source: kind === 'wire' ? (source.trim() || null) : null,
         });
+        letGo();
         // Queued is not gone, as the essay's desk says it.
         reelToast.success(amended?.offline ? 'Amended. It goes out when the wire is back.' : 'Amended');
         setDone('amended');
       } catch (e) {
-        // the new words are still in the field
+        // The new words are still in the field, and kept on the phone.
+        keep();
         reelToast.error(isChangedSince(e) ? FILING_CHANGED_SINCE : 'It could not be amended.');
       } finally {
         setSending(false);
@@ -243,15 +319,18 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
           }
           : null,
       });
+      letGo();
       reelToast.success(filedSaid(filed, 'Filed'));
       setDone('filed');
     } catch {
-      // "Still here", not "kept": this desk keeps no draft, so said only while the desk stands.
-      reelToast.error(stillHere() ? 'It did not go. Your words are still here.' : 'It did not go.');
+      // Kept on the phone at once, as the essay's are. A phone that cannot keep them (writeDraft
+      // says no) has them in the field alone: "still here", said only while the desk stands.
+      if (keep()) reelToast.error('It did not go. Your words are kept.');
+      else reelToast.error(stillHere() ? 'It did not go. Your words are still here.' : 'It did not go.');
     } finally {
       setSending(false);
     }
-  }, [ready, sending, kind, body, spoiler, film, filmId, source, amending, editId, stillHere]);
+  }, [ready, sending, kind, body, spoiler, film, filmId, source, amending, editId, stillHere, keep, letGo]);
 
   // Sent back by the hook above; this render is the one frame before it lands.
   if (!me) return null;
@@ -274,8 +353,9 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
           amending={amending}
           reading={amendRead === 'held' ? null : { state: amendRead, onReadAgain: readFiled }}
           source={source}
-          onSource={kind === 'wire' ? setSource : undefined}
-          onBody={setBody}
+          onSource={kind === 'wire' ? touched(setSource) : undefined}
+          onBody={touched(setBody)}
+          takenUp={takenUpAt !== null ? <TakenUpLine savedAt={takenUpAt || null} onStartClean={startClean} /> : null}
           // BACK returns to the choice of form, not out of the modal (an amend, to its filing).
           onBack={onBack}
           onFile={onFile}
@@ -284,13 +364,13 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
           onStill={() => (film
             ? reelToast.success('The film’s own still is used.')
             : reelToast.error('Name a film first — the still comes with it.'))}
-          onSpoiler={() => setSpoiler((s) => !s)}
+          onSpoiler={touched(() => setSpoiler((s) => !s))}
         />
       </UnderSheet>
       <FilmPicker
         visible={finding}
         onClose={() => setFinding(false)}
-        onPick={(f, id) => { setFilm(f); setFilmId(id); setFinding(false); }}
+        onPick={(f, id) => { setTakenUpAt(null); setFilm(f); setFilmId(id); setFinding(false); }}
         bottomInset={edge}
       />
     </View>

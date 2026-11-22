@@ -123,12 +123,13 @@ describe('the two sentences a refusal gets', () => {
     expect(room).toContain('your phone is out of space');
   });
 
-  it('the take says they are STILL HERE, because that desk keeps no draft', () => {
-    // "Kept" would be a promise this form does not make, and the member would
-    // find out by closing the desk.
-    const desks = read('src/components/dispatch/ComposeDesks.tsx');
-    expect(desks).toContain('It did not go. Your words are still here.');
-    expect(desks).not.toContain('Your words are kept');
+  it('the take says KEPT only once the phone holds its draft, and STILL HERE when the phone cannot keep it', () => {
+    // The short desk keeps its draft as the essay does (stage C): "kept" is said only after the
+    // phone took it (keep() said so), and a phone that could not keep it says the words are in
+    // the field, while the desk stands.
+    const desks = stripComments(read('src/components/dispatch/ComposeDesks.tsx'), 'ComposeDesks.tsx');
+    expect(desks).toContain("if (keep()) reelToast.error('It did not go. Your words are kept.');");
+    expect(desks).toContain("reelToast.error(stillHere() ? 'It did not go. Your words are still here.' : 'It did not go.')");
   });
 
   it('and neither of them says "Transmission failed" any more', () => {

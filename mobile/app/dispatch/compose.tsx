@@ -171,6 +171,11 @@ function KindPicker() {
         () => readDraft(user?.id, 'ballot') !== null,
         [user?.id],
     );
+    /** The short forms with a draft kept: a take, a seeking, a wire, each its own. */
+    const shortDrafts = useMemo(
+        () => new Set(['take', 'seeking', 'wire'].filter((k) => readDraft(user?.id, 'short', k) !== null)),
+        [user?.id],
+    );
 
     return (
         <View style={p.screen}>
@@ -191,8 +196,9 @@ function KindPicker() {
                     forms={FORMS.map((f) => ({
                         ...f,
                         locked: f.locked ? !holds(f.kind) : false,
-                        // The rooms keep ONE unfinished essay and ONE ballot; the picker says so.
-                        inProgress: (f.kind === 'dossier' && hasDossierDraft) || (f.kind === 'ballot' && hasBallotDraft),
+                        // Each form keeps ONE unfinished piece; the picker says which wait.
+                        inProgress: (f.kind === 'dossier' && hasDossierDraft) || (f.kind === 'ballot' && hasBallotDraft)
+                            || shortDrafts.has(f.kind),
                     }))}
                     onPick={(k) => router.setParams({ kind: k })}
                     onLocked={(k) => (k === 'ballot' ? ballots.open() : essays.open())}

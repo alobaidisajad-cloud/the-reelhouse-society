@@ -120,3 +120,41 @@ it('a share that crashes says the house\'s sentence, never the code\'s', async (
   expect(said).toHaveBeenCalledWith('Signal failed to transmit. Try again.');
   said.mockRestore();
 });
+
+/** Stage C, every word written is kept: the message was the sheet's alone, gone with it. */
+describe('the message written with a share', () => {
+  const draft = () => require('@/src/utils/memberDrafts').readDraft('me', 'share', '631|||')?.data.body;
+  beforeEach(() => { require('@/src/stores/mmkv-storage').storage.clearAll(); });
+
+  it('is kept as it is written: the sheet closed and opened again on the piece opens on it', async () => {
+    useLoungeStore.setState({
+      lounges: [room('Seated', { membership_status: 'approved', unread_count: 0 })],
+      loungesFailed: false, loungesLoading: false, loungesRead: true, fetchLounges,
+    } as never);
+    const r = await open();
+    await act(async () => { await fireEvent.press(r.getByText('Seated')); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Share message'), 'Watch the last reel twice.'); });
+    await act(async () => { r.unmount(); });
+    expect(draft()).toBe('Watch the last reel twice.');
+    const again = await open();
+    await act(async () => { await fireEvent.press(again.getByText('Seated')); });
+    expect(again.getByLabelText('Share message').props.value).toBe('Watch the last reel twice.');
+  });
+
+  it('is let go once sent, and put back when the house refuses it', async () => {
+    let answer: (v: boolean) => void = () => {};
+    const sendMessage = jest.fn(() => new Promise<boolean>((res) => { answer = res; }));
+    useLoungeStore.setState({
+      lounges: [room('Seated', { membership_status: 'approved', unread_count: 0 })],
+      loungesFailed: false, loungesLoading: false, loungesRead: true, fetchLounges, sendMessage,
+    } as never);
+    const r = await open();
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Share message'), 'Watch the last reel twice.'); });
+    await act(async () => { await fireEvent.press(r.getByText('Seated')); });
+    await act(async () => { await fireEvent.press(r.getByText('SHARE TO LOUNGE')); });
+    await act(async () => { r.unmount(); });
+    expect(draft()).toBeUndefined();
+    await act(async () => { answer(false); });
+    expect(draft()).toBe('Watch the last reel twice.');
+  });
+});

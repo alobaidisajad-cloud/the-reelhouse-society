@@ -25,6 +25,7 @@ import { useStruck } from '@/src/components/StruckWords';
 import { clipToSentence } from '@/src/components/dispatch/paper/paperText';
 import { ToastHost } from '@/src/components/ToastHost';
 import { TryAgainLine } from '@/src/components/TryAgain';
+import { putBackWords, useKeptWords } from '@/src/hooks/useKeptWords';
 
 interface ShareToLoungeProps {
     visible: boolean;
@@ -119,7 +120,11 @@ function ShareSheet({
     const loungesFailed = useLoungeStore(s => s.loungesFailed);
     // Only the salons the house lets this member speak in: a pending or muted seat is refused.
     const lounges = allLounges.filter(canPostIn);
-    const [message, setMessage] = useState('');
+    // The message is kept per piece shared as it is written: a sheet closed opens on it again. Let
+    // go once sent; put back if the house refused it.
+    const me = useAuthStore((s) => s.user?.id);
+    const sharing = [filmId, logId, listId, dossierId].join('|');
+    const [message, setMessage, letGoMessage] = useKeptWords(me, 'share', sharing);
     // What is shared, as the sheet names it: each slur struck for a reader who asked. Only the
     // words drawn here: what is sent to the room goes as it was written.
     const struck = useStruck();
@@ -173,17 +178,22 @@ function ShareSheet({
         }
 
         const content = message.trim() || '';
+        letGoMessage();
 
         // Sent without waiting. sendMessage says every refusal itself; its one silent `false`
-        // is a double-tap into the same room, which the per-room throttle keeps quiet.
+        // is a double-tap into the same room, which the per-room throttle keeps quiet. A message
+        // refused is put back for the next opening on this piece.
         useLoungeStore.getState().sendMessage(
             selectedLounge,
             content,
             shareType,
             payload
-        ).catch((e: unknown) => {
+        ).then((sent) => {
+            if (sent === false) putBackWords(me, 'share', sharing, content);
+        }, (e: unknown) => {
             // Only a crash reaches here: reported, and the member hears the house, not code.
             captureError(e, { where: 'shareToLounge.send', shareType });
+            putBackWords(me, 'share', sharing, content);
             reelToast.error('Signal failed to transmit. Try again.');
         });
 

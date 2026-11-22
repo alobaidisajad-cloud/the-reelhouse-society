@@ -199,21 +199,7 @@ const KEPT: Record<string, { file: string; by: string }> = {
 };
 
 /** Found and not yet mended: each comes off as it is fixed. */
-const STILL_TO_FIX: string[] = [
-  // A moderator's reason for a verdict, and the word given at a hearing.
-  'app/(admin)/tribunal.tsx reason',
-  'src/components/admin/HearingSheet.tsx word',
-  // A report's details, and the message sent with a film shared to a salon.
-  'src/components/moderation/ReportSheet.tsx details',
-  'src/components/ShareToLoungeModal.tsx message',
-  // A salon founded: its name and what it is for.
-  'src/components/lounge/CreateLoungeSheet.tsx name',
-  'src/components/lounge/CreateLoungeSheet.tsx description',
-  // The Dispatch's short desk (ComposeDesks says it keeps no draft) and a new series' name.
-  'src/components/dispatch/paper/PaperComposer.tsx body',
-  'src/components/dispatch/paper/PaperComposer.tsx source',
-  'src/components/dispatch/SeriesPicker.tsx newTitle',
-];
+const STILL_TO_FIX: string[] = [];
 
 /** The boxes holding words that nothing keeps, over an app. */
 export function openOf(app: Src[]): string[] {

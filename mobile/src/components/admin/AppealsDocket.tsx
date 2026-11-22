@@ -17,6 +17,7 @@ import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
 import { RemoteImage } from '@/src/components/Picture';
 import { HearingSheet, type Hearing } from '@/src/components/admin/HearingSheet';
+import { useKeptWords } from '@/src/hooks/useKeptWords';
 import { ModerationService, type PendingAppeal } from '@/src/services/ModerationService';
 import { verdictHeading } from '@/src/components/moderation/VerdictSheet';
 import { colors, fonts, radii } from '@/src/theme/theme';
@@ -127,6 +128,8 @@ export function AppealsDocket({ adminId, end }: { adminId: string; end: number }
   });
 
   const [pending, setPending] = useState<Pending | null>(null);
+  // The word for the member, kept per hearing as it is written; let go once the hearing is settled.
+  const [word, setWord, letGoWord] = useKeptWords(adminId, 'hearing', pending ? `${pending.appeal.id}:${pending.outcome}` : null);
   const leave = useCallback((id: string) => setItems((prev) => prev.filter((a) => a.id !== id)), []);
   const rereadAll = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ['admin', 'appeals'] });
@@ -139,6 +142,7 @@ export function AppealsDocket({ adminId, end }: { adminId: string; end: number }
       ModerationService.judgeAppeal(appeal.id, outcome, note),
     onSuccess: (_answer, { appeal, outcome }) => {
       leave(appeal.id);
+      letGoWord();
       setPending(null);
       rereadAll();
       TactileEngine.success();
@@ -148,12 +152,15 @@ export function AppealsDocket({ adminId, end }: { adminId: string; end: number }
       const refused = hearingRefusal(err);
       if (refused === 'ALREADY_JUDGED' || refused === 'VERDICT_GONE') {
         leave(appeal.id);
+        letGoWord();
         setPending(null);
         rereadAll();
         reelToast(refused === 'ALREADY_JUDGED' ? 'Already heard by another moderator.' : 'This verdict is no longer on the record.');
         return;
       }
+      // Never this moderator's to hear: the word goes with the sheet.
       if (refused === 'OWN_VERDICT' || refused === 'OWN_CASE') {
+        letGoWord();
         setPending(null);
         reelToast.error(refused === 'OWN_CASE'
           ? 'This verdict is about you: another moderator must hear its appeal.'
@@ -226,6 +233,8 @@ export function AppealsDocket({ adminId, end }: { adminId: string; end: number }
       </ScrollView>
       <HearingSheet
         hearing={pending?.hearing ?? null}
+        word={word}
+        onWord={setWord}
         busy={judge.isPending}
         onClose={() => setPending(null)}
         onSubmit={(note) => { if (pending) judge.mutate({ appeal: pending.appeal, outcome: pending.outcome, note }); }}

@@ -103,6 +103,8 @@ beforeEach(() => {
   mockFiled.length = 0;
   mockResults = [];
   mockToast.error.mockClear(); mockToast.success.mockClear();
+  // Each desk opens with no draft kept from the last test: every desk keeps its own.
+  require('@/src/stores/mmkv-storage').storage.clearAll();
   jest.useFakeTimers({ doNotFake: ['nextTick'] });
 });
 afterEach(() => { jest.useRealTimers(); });
@@ -352,14 +354,13 @@ describe('a filing that does not go', () => {
     await typeAndFile(r, 'take');
 
     /**
-     * "Still here", not "kept" — and the difference is the point. This desk
-     * keeps no draft on purpose, so the words survive only because the desk is
-     * still open with them in the field. The essay's message says KEPT because
-     * the essay is on the phone. One sentence for both would be a promise this
-     * form does not make.
+     * "Kept", as the essay says it: the desk keeps its draft on the phone at
+     * once, so the words survive the desk closing too. A phone that cannot keep
+     * a draft says "still here" instead (nothingIsLostQuietly).
      */
     expect(String(mockToast.error.mock.calls[0]?.[0]))
-      .toBe('It did not go. Your words are still here.');
+      .toBe('It did not go. Your words are kept.');
+    expect(require('@/src/utils/memberDrafts').readDraft('u1', 'short', 'take')?.data.body).toBe('Ozu never once stood up.');
     // The sentence survives. Without this the member types it again from memory.
     expect(r.getByLabelText('Your take').props.value).toBe('Ozu never once stood up.');
     // And they are still at the desk — no navigation on a failure.

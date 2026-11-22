@@ -4,7 +4,7 @@
  * scrim, the handle, the title in the act's ink, a reason, one act 48 tall); the word is required,
  * cleaned and kept to what the member's notice holds.
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, StyleSheet, View } from 'react-native';
 import { X } from 'lucide-react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -31,22 +31,21 @@ export interface Hearing {
   actSaid: string;
 }
 
-export function HearingSheet({ hearing, busy, onClose, onSubmit }: {
-  hearing: Hearing | null; busy: boolean; onClose: () => void; onSubmit: (word: string) => void;
+/**
+ * The word is held by the docket that opens the sheet, kept per hearing as it is written
+ * (useKeptWords, 'hearing'): closed, it opens on it again; each hearing opens on its own word or
+ * none, so the word for one member is never carried to the next; the docket lets it go once the
+ * house has heard it.
+ */
+export function HearingSheet({ hearing, word, onWord, busy, onClose, onSubmit }: {
+  hearing: Hearing | null; word: string; onWord: (word: string) => void;
+  busy: boolean; onClose: () => void; onSubmit: (word: string) => void;
 }) {
-  const [word, setWord] = useState('');
-  // Each hearing opens on an empty box: the word for one member is never carried to the next.
-  const [heard, setHeard] = useState(hearing);
-  if (hearing !== heard) {
-    setHeard(hearing);
-    setWord('');
-  }
   const sheetFoot = useSheetBottom();
   const ready = !!word.trim() && !busy;
 
   const close = useCallback(() => {
     if (busy) return;
-    setWord('');
     onClose();
   }, [busy, onClose]);
 
@@ -75,7 +74,7 @@ export function HearingSheet({ hearing, busy, onClose, onSubmit }: {
             <TextInput
               style={st.input}
               value={word}
-              onChangeText={setWord}
+              onChangeText={onWord}
               placeholder={hearing.placeholder}
               placeholderTextColor={colors.fog}
               selectionColor={colors.selection}
