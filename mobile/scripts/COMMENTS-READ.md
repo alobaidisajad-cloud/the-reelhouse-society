@@ -2118,3 +2118,4 @@ files of the reading map this one does not.
 | src/utils/__tests__/wordsLeaveOnlyVeiled.guard.test.ts | — |  |
 | src/stores/__tests__/theFollowListIsOneTrip.test.ts | — |  |
 | src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts | — |  |
+| src/utils/__tests__/everyHouseReadIsProbed.guard.test.ts | — |  |

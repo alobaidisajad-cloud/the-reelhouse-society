@@ -9732,3 +9732,57 @@ mutants:
         find: "    reelToast.error(saidOfAFailure(e, 'That could not be done.', 'The house did not accept that.'));"
         replace: "    reelToast.error('The house did not accept that.');"
     proof: { file: src/stores/__tests__/dispatchGuards.test.ts, test: "says a fault of the house as what failed, never as a refusal" }
+
+  - id: shape-a-walk-stopped-past-the-floor
+    class: SPEED-a-read-that-grows-with-the-house
+    source: shape
+    edits:
+      - file: e2e/load/plan-shape.cjs
+        find: "        stopped: underLimit && removed * loops <= FLOOR });"
+        replace: "        stopped: underLimit });"
+    proof: { file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "says yes to a walk its limit stopped at once, and no to one that threw rows away past the floor or fed a sort" }
+
+  - id: shape-a-sorted-walk-taken-as-stopped
+    class: SPEED-a-read-that-grows-with-the-house
+    source: shape
+    edits:
+      - file: e2e/load/plan-shape.cjs
+        find: "    const passes = type === 'Limit' || ((type === 'Gather' || type === 'Gather Merge') && underLimit);"
+        replace: "    const passes = type === 'Limit' || underLimit;"
+    proof: { file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "says yes to a walk its limit stopped at once, and no to one that threw rows away past the floor or fed a sort" }
+
+  - id: shape-a-probes-index-not-asked
+    class: SPEED-a-read-that-grows-with-the-house
+    source: shape
+    edits:
+      - file: e2e/load/plan-shape.cjs
+        find: "  if (index && !plans.some((p) => indexesOf(p.Plan ?? p).has(index)))"
+        replace: "  if (false && index && !plans.some((p) => indexesOf(p.Plan ?? p).has(index)))"
+    proof: { file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "says no to a read held to an index whose plans read by another way, a bitmap's index found under its heap scan" }
+
+  - id: shape-the-read-finder-reads-the-whole-lab
+    class: SPEED-a-read-that-grows-with-the-house
+    source: shape
+    edits:
+      - file: src/utils/__tests__/everyHouseReadIsProbed.guard.test.ts
+        find: "  const list = start < 0 ? '' : probeText.slice(start, probeText.indexOf('\\n];', start));"
+        replace: "  const list = probeText;"
+    proof: { file: src/utils/__tests__/everyHouseReadIsProbed.guard.test.ts, test: "says no to a read with no probe, a name not written or not in the house, and a judgment gone stale" }
+
+  - id: shape-the-read-finder-takes-every-read-as-probed
+    class: SPEED-a-read-that-grows-with-the-house
+    source: shape
+    edits:
+      - file: src/utils/__tests__/everyHouseReadIsProbed.guard.test.ts
+        find: "    else if (!writes.has(name) && !probed.has(name) && !(name in judged)) faults.push("
+        replace: "    else if (!writes.has(name) && !probed.has(name) && !(name in judged) && name === '') faults.push("
+    proof: { file: src/utils/__tests__/everyHouseReadIsProbed.guard.test.ts, test: "says no to a read with no probe, a name not written or not in the house, and a judgment gone stale" }
+
+  - id: shape-the-read-finder-keeps-a-stale-judgment
+    class: SPEED-a-read-that-grows-with-the-house
+    source: shape
+    edits:
+      - file: src/utils/__tests__/everyHouseReadIsProbed.guard.test.ts
+        find: "    else if (probed.has(name)) faults.push(`${name}: judged, but probed now: take the judgment out`);"
+        replace: "    else if (probed.has(name) && name === '') faults.push(`${name}: judged, but probed now: take the judgment out`);"
+    proof: { file: src/utils/__tests__/everyHouseReadIsProbed.guard.test.ts, test: "says no to a read with no probe, a name not written or not in the house, and a judgment gone stale" }

@@ -164,7 +164,7 @@ function writeSites(repo = ROOT) {
 /** The kept list, keyed. */
 const kept = () => (fs.existsSync(KEPT) ? JSON.parse(fs.readFileSync(KEPT, 'utf8')).sites : []);
 
-module.exports = { functionBodies, writingFunctions, sitesIn, writeSites, kept, KEPT };
+module.exports = { databaseSql, functionBodies, writingFunctions, sitesIn, writeSites, kept, KEPT };
 
 if (require.main === module) {
   const list = writeSites(ROOT);

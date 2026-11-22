@@ -70,6 +70,16 @@ const PROBES = [
   // The whale's 10,000 records read once (20261122_12), every figure counted from that one read.
   { screen: 'Profile', what: 'the projector room, of the whale', as: WHALE, sql: `SELECT public.get_user_analytics('${WHALE}')` },
   { screen: 'Profile', what: 'the taste profile, of the whale', as: MEMBER, sql: `SELECT public.get_taste_profile('${WHALE}')` },
+  // The year's grid of nights (calendar_days), the Year in Cinema's first page (year_viewings), and how a
+  // member's taste meets the whale's (get_taste_match), each as the profile asks it.
+  { screen: 'Profile', what: 'the calendar of nights, of the whale', as: MEMBER, sql: `SELECT * FROM public.calendar_days('${WHALE}')` },
+  { screen: 'Profile', what: 'the Year in Cinema, first page, of the whale', as: WHALE, sql: `SELECT * FROM public.year_viewings('${WHALE}', EXTRACT(year FROM now())::int)` },
+  { screen: 'Profile', what: 'the taste match, with the whale', as: MEMBER, sql: `SELECT public.get_taste_match('${WHALE}')` },
+  // The rank the member holds and where it came from, as sign-in asks it.
+  { screen: 'Launch', what: 'where the member\'s rank came from (my_entitlement_source)', as: MEMBER, sql: 'SELECT public.my_entitlement_source()' },
+  // A stack's certifications counted, as its page asks it: of a member's newest stack.
+  { screen: 'Reel', what: 'a stack\'s certifications counted', as: MEMBER,
+    sql: `SELECT public.list_certify_count((SELECT id FROM public.lists WHERE user_id = '${MEMBER}' ORDER BY created_at DESC, id DESC LIMIT 1))` },
   { screen: 'Profile', what: 'the Archive, first page, of the whale', as: MEMBER,
     sql: `SELECT id, film_id, film_title, rating, watched_date, status FROM public.logs WHERE user_id = '${WHALE}' ORDER BY watched_date DESC NULLS LAST, id DESC LIMIT 50` },
   { screen: 'Profile', what: 'the Ledger at one rating chip, of the whale', as: MEMBER,
@@ -98,6 +108,8 @@ const PROBES = [
   // The Dispatch
   { screen: 'Dispatch', what: 'the door (dispatch_door)', as: MEMBER, sql: 'SELECT public.dispatch_door()' },
   { screen: 'Dispatch', what: 'a member\'s room totals', as: MEMBER, sql: `SELECT public.dispatch_room_totals('${CELEBRITY}')` },
+  // The archive's films searched by a word, as the Dispatch archive asks it.
+  { screen: 'Dispatch', what: 'the archive\'s films, searched (dispatch_archive_films)', as: MEMBER, sql: "SELECT * FROM public.dispatch_archive_films('the')" },
   // as useMemberRoom asks it, for a member whose one filing is the house's oldest (post 2999): read
   // newest first, the paper's own index would walk past every other filing to reach it
   { screen: 'Dispatch', what: 'a member\'s room, first page', as: MEMBER,

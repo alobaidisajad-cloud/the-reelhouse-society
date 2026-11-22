@@ -535,3 +535,9 @@ record taken from the reader's own work log, or "—" for a file never read.
 | supabase/migrations/20261122_14_a_member_is_found_by_their_short_words.sql | — |  |
 | supabase/migrations/20261122_15_a_short_search_is_found_by_its_pieces.sql | — |  |
 | supabase/migrations/20261122_16_the_newest_salons_are_read_first.sql | — |  |
+| mobile/supabase/diagnostics/a_members_name_is_found_by_its_beginning_rehearsal.sql | — |  |
+| mobile/supabase/diagnostics/a_names_beginning_is_read_as_a_range_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261122_17_a_members_name_is_found_by_its_beginning.sql | — |  |
+| mobile/supabase/migrations-down/20261122_18_a_names_beginning_is_read_as_a_range.sql | — |  |
+| supabase/migrations/20261122_17_a_members_name_is_found_by_its_beginning.sql | — |  |
+| supabase/migrations/20261122_18_a_names_beginning_is_read_as_a_range.sql | — |  |
