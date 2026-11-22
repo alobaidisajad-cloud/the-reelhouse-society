@@ -2142,3 +2142,4 @@ files of the reading map this one does not.
 | src/stores/__tests__/aFilingFoundGoneLeavesEveryList.test.ts | — |  |
 | src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts | — |  |
 | src/utils/__tests__/aQueuedWriteReadsItsPageAgain.test.ts | — |  |
+| src/utils/__tests__/aNoticeOpensWhatItIsAbout.guard.test.ts | — |  |
