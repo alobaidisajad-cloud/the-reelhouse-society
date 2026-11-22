@@ -113,7 +113,7 @@
     "mobile/__tests__/utils/mutationExecutor.test.ts": 12,
     "mobile/app/(admin)/__tests__/tribunal.test.tsx": 10,
     "mobile/app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts": 2,
-    "mobile/app/(admin)/tribunal.tsx": 4,
+    "mobile/app/(admin)/tribunal.tsx": 2,
     "mobile/app/(modals)/list-modal.tsx": 3,
     "mobile/app/(modals)/membership.tsx": 2,
     "mobile/app/(modals)/notifications-modal.tsx": 3,
