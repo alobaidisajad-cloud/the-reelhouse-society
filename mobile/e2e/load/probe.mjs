@@ -60,10 +60,12 @@ const PROBES = [
   { screen: 'Reel', what: 'stacks, first page', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('', false, 60)" },
   { screen: 'Reel', what: 'stacks, searched', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('stack 12', false, 60)" },
   // A word every stack has (the walk's best case, a search's worst), and a member's handle (the seed's 'm' || n).
-  { screen: 'Reel', what: 'stacks, searched for a word every stack has', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('stack', false, 60)" },
+  // Walked newest first, each stack of the page read by its id (20261122_26), never every stack hashed.
+  { screen: 'Reel', what: 'stacks, searched for a word every stack has', as: MEMBER, index: ['idx_lists_created_at_id_desc', 'lists_pkey'], sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('stack', false, 60)" },
   // The handle's members' stacks read by each member's own index (20261122_12), never every stack joined.
   { screen: 'Reel', what: 'stacks, searched by an author\'s handle', as: MEMBER, index: 'idx_lists_user_created_id', sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('m2001', false, 60)" },
-  { screen: 'Reel', what: 'stacks, searched by a handle many members share', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('m1', false, 60)" },
+  // Many asked of the newest 300 stacks first (20261122_26), so no index that gathers every holder is read.
+  { screen: 'Reel', what: 'stacks, searched by a handle many members share', as: MEMBER, index: ['idx_lists_created_at_id_desc', 'lists_pkey'], sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('m1', false, 60)" },
   // Two letters no stack and no handle holds: found absent from the short pieces' index (20261122_13, _15), not walked.
   { screen: 'Reel', what: 'stacks, searched for two letters none holds', as: MEMBER, index: 'lists_short_grams', sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('zq', false, 60)" },
   // The same, by the search under measurement (e2e/load/proposed.sql), when it is there.
@@ -186,7 +188,8 @@ const PROBES = [
   // Two letters no stack holds: found absent from the short pieces' index (20261122_13, _15), not walked through every stack.
   { screen: 'Search', what: 'stacks, two letters (search_stacks)', as: MEMBER, index: 'lists_short_grams', sql: "SELECT * FROM public.search_stacks('m1', NULL, NULL, 21)" },
   // A ballot counted, as a member who voted reads it: the hot ballot, one member in five voted (seed.sql).
-  { screen: 'Dispatch', what: 'the hot ballot counted, as a voter (ballot_tally)', as: mid(10), sql: `SELECT public.ballot_tally('${HOT_BALLOT}')` },
+  // Each option's votes as counted when cast (20261122_27), never the ballot's every vote read again.
+  { screen: 'Dispatch', what: 'the hot ballot counted, as a voter (ballot_tally)', as: mid(10), index: 'ballot_counts_pkey', sql: `SELECT public.ballot_tally('${HOT_BALLOT}')` },
   // A member's blocks and mutes, read whole as Settings reads them: the whale keeps 500.
   { screen: 'Settings', what: 'the whale\'s 500 blocks (get_user_blocks)', as: WHALE, sql: `SELECT * FROM public.get_user_blocks('${WHALE}')` },
   // The Tribunal as a member meets it: a verdict on them, their verdicts' first page, their withheld pieces
