@@ -2859,7 +2859,7 @@
     "class": "STATE-a-request-held-after-its-answer",
     "mutant": "shape-request-held-after-the-roster",
     "proof": "m1",
-    "commit": "92e5558d503debebf0e61e705e4d3781b16a28cb",
+    "commit": "986cc5e29eb181887ad389dd7f7b3af24567d58b",
     "verdict": "caught"
   },
   {
@@ -7956,6 +7956,34 @@
     "mutant": "shape-lookup-way-trusted",
     "proof": "m8",
     "commit": "7ba4adb7bd252e9f91a58c586190fe2d47cb766f",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-a-request-held-after-its-answer",
+    "mutant": "shape-request-waits-for-no-later-roster",
+    "proof": "m6",
+    "commit": "986cc5e29eb181887ad389dd7f7b3af24567d58b",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-a-request-held-after-its-answer",
+    "mutant": "shape-refresh-left-turning",
+    "proof": "m5",
+    "commit": "986cc5e29eb181887ad389dd7f7b3af24567d58b",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-sent-message-taken-off-the-screen",
+    "mutant": "shape-sent-again-marked-on-screen-alone",
+    "proof": "m8",
+    "commit": "986cc5e29eb181887ad389dd7f7b3af24567d58b",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-sent-message-taken-off-the-screen",
+    "mutant": "shape-sending-mark-unread",
+    "proof": "m6",
+    "commit": "986cc5e29eb181887ad389dd7f7b3af24567d58b",
     "verdict": "caught"
   }
 ]
