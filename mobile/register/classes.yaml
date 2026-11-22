@@ -4045,6 +4045,7 @@ classes:
       - { kind: static, file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "says no to a read past its bound, the default or its probe's own, over every statement a function ran" }
       - { kind: static, file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "says no to a read whose rows grew with the house between two sizes, and yes to one that stayed" }
       - { kind: static, file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "says no to a read held to an index whose plans read by another way, a bitmap's index found under its heap scan" }
+      - { kind: static, file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "holds a read to every index of its list: the calendar reads a last viewing by its day and a film seen again by its month" }
       - { kind: static, file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "says yes to a walk its limit stopped at once, and no to one that threw rows away past the floor or fed a sort" }
       - { kind: static, file: src/utils/__tests__/everyHouseReadIsProbed.guard.test.ts, test: "probes every read the app makes through a house function, or judges why not" }
       - { kind: static, file: src/utils/__tests__/everyHouseReadIsProbed.guard.test.ts, test: "says no to a read with no probe, a name not written or not in the house, and a judgment gone stale" }
@@ -4056,6 +4057,28 @@ classes:
       found: "8 reads at 100,000 (load 44965893141): the Reel's stacks by an author's handle (every stack joined), the projector room (the member's records read seven times), notices_page for the celebrity (every notice gathered and sorted for a page), the Lounge corridor three times (every salon sorted for the newest), the busiest room's last 100 words (every salon read into a table by the room rule), search_members and search_stacks for two letters (no trigram: the table walked)"
       fixed: "8: 20261122_12 (the handle's stacks by each member's index, the records read once, the room rule asked per word, the short-word pieces), 20261122_04 (the board's page from its index), 20261122_16 (the newest salons' index), 20261122_13 and _14 (the short pieces' indexes) and 20261122_15 (the searches read by them); each fixed probe names its index"
       proofs: "planted plans in the test; the Load runs at 100,000 and 500,000 on plant/kindsC4-load-100k and -500k (44971727092, 44971729459), rows compared by rowsAtSizes"
+    places: [none]
+
+  - id: SPEED-an-index-refuses-the-writes-it-serves
+    title: "An index made for speed works its expression out for every row written, as the member writing it, and nothing asked whether the member may run the functions in it: 20261122_12 kept the short pieces' functions from members while 20261122_13 and _14 indexed the stacks and the members by them, so a member saving a stack or their own name was refused (permission denied for function search_grams), found by the train's rehearsals on a CI-shaped copy before any of it reached production"
+    seriousness: behaviour
+    area: speed
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "stage C, the kinds pass (kind 13), 2026-11-22: found running the pending train locally (what_happened_meanwhile_is_told's rename refused)" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/anIndexsFunctionsRunForItsWriters.guard.test.ts, test: "lets a member run every function an index of the house works out, and every function those call" }
+      - { kind: static, file: src/utils/__tests__/anIndexsFunctionsRunForItsWriters.guard.test.ts, test: "says no to an index whose function, or a function it calls, no member may run, and yes once it is granted" }
+    fix: "20261122_12 grants private.short_grams and private.search_grams to members (the private schema, never served by the API); 20261122_19 grants private.viewing_months, which 20261122_20's index works out, from the start. The rehearsals of 13, 14 and 20 write a stack, a name and a log as the member (red before the grant). A finder reads the house as production will hold it, statement by statement: each index left standing, the house functions its expression and WHERE call and the functions those call, and whether a signed-in member may run each when the last migration is done"
+    sweep:
+      finder: src/utils/__tests__/anIndexsFunctionsRunForItsWriters.guard.test.ts
+      read: [snapshot, migrations]
+      found: 2
+      fixed: 2
+      judged: 0
+      commit: d515e487
+      result: "every index of the snapshot and the pending migrations, its functions and theirs: two indexes refused their writers (lists_short_grams, profiles_short_grams, each through private.search_grams and private.short_grams), both fixed by car 12's grant; every other index's functions are a member's to run"
+      proofs: "planted SQL in the test; car 12's grant taken out finds the four (past-the-short-pieces-kept-from-members); green with it; the finder weakened two ways (shape-the-index-finder-reads-no-inner-call, shape-the-index-finder-takes-a-revoke-as-a-grant)"
     places: [none]
 
   - id: SPEED-a-launch-read-walks-page-by-page

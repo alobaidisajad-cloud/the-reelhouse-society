@@ -94,6 +94,23 @@ ON CONFLICT (user_id, film_id) DO NOTHING;
 INSERT INTO public.viewings (viewing_id, log_id)
 SELECT viewing_id, id FROM public.logs;
 
+-- The whale has seen a fifth of its films more than once: each such log holds one or two earlier
+-- viewings (viewing_history), a year apart and before its last, each on its own day, as
+-- log_viewing_add leaves them. The calendar and the Year in Cinema count each as a night of its own.
+UPDATE public.logs l
+   SET viewing_history = h.history, view_count = jsonb_array_length(h.history) + 1
+  FROM (SELECT x.id, jsonb_agg(jsonb_build_object('viewingId', gen_random_uuid(),
+                                                  'date', to_char(x.watched_date - j * 365 - x.film_id % 90, 'YYYY-MM-DD'),
+                                                  'rating', 3.5) ORDER BY j) AS history
+          FROM public.logs x, generate_series(1, 1 + x.film_id % 2) j
+         WHERE x.user_id = pg_temp.mid(1) AND x.film_id % 5 = 0
+         GROUP BY x.id) h
+ WHERE l.id = h.id;
+INSERT INTO public.viewings (viewing_id, log_id)
+SELECT (e->>'viewingId')::uuid, l.id
+  FROM public.logs l, jsonb_array_elements(l.viewing_history) e
+ WHERE l.user_id = pg_temp.mid(1) AND l.viewing_history <> '[]'::jsonb;
+
 -- ── follows: ~25 each; a third of the house follows the celebrity ─────────────
 INSERT INTO public.interactions (user_id, target_user_id, type, created_at)
 SELECT pg_temp.mid(n), pg_temp.mid(((n * 31 + j * 7919) % :members) + 1), 'follow', now() - (j % 500) * interval '1 hour'
@@ -211,6 +228,80 @@ SELECT pg_temp.mid(t), (ARRAY['follow','endorse','comment'])[1 + k % 3], 'm' || 
 INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, created_at, is_read)
 SELECT pg_temp.mid(2), 'follow', 'm' || k, pg_temp.mid(k), 'm' || k || ' follows you.', now() - k * interval '1 minute', false
   FROM generate_series(3, 50000) k;
+
+-- ── blocks and ballots ───────────────────────────────────────────────────────
+-- One member in fifty blocks or mutes three others; the whale keeps 500 (the list a member reads whole).
+INSERT INTO public.user_blocks (blocker_id, blocked_id, type, created_at)
+SELECT pg_temp.mid(n), pg_temp.mid(((n * 37 + j * 7919) % :members) + 1), CASE WHEN j = 1 THEN 'mute' ELSE 'block' END,
+       now() - (n % 400) * interval '1 hour'
+  FROM generate_series(50, :members, 50) n, generate_series(1, 3) j
+ WHERE ((n * 37 + j * 7919) % :members) + 1 <> n
+ON CONFLICT DO NOTHING;
+INSERT INTO public.user_blocks (blocker_id, blocked_id, type, created_at)
+SELECT pg_temp.mid(1), pg_temp.mid(50000 + j), 'block', now() - j * interval '1 minute'
+  FROM generate_series(1, 500) j
+ON CONFLICT DO NOTHING;
+-- 2,000 ballots of four choices (a tenth still open); the first, open, is the house's hot ballot: one
+-- member in five has voted in it.
+INSERT INTO public.dispatch_posts (id, kind, user_id, author_username, title, body, options, closes_at, created_at)
+SELECT ('00000000-0000-4000-9300-' || lpad(to_hex(b), 12, '0'))::uuid, 'ballot',
+       pg_temp.mid(((b * 17) % :members) + 1), 'm' || (((b * 17) % :members) + 1),
+       'A ballot, number ' || b, 'Which of the four, number ' || b || '?',
+       '["The first", "The second", "The third", "The fourth"]'::jsonb,
+       CASE WHEN b % 10 = 1 THEN now() + interval '3 days' ELSE now() - (b % 300) * interval '1 hour' END,
+       now() - (b % 3000) * interval '1 hour'
+  FROM generate_series(1, 2000 * :scale) b;
+INSERT INTO public.dispatch_votes (post_id, user_id, option_index, created_at)
+SELECT '00000000-0000-4000-9300-000000000001'::uuid, pg_temp.mid(n), n % 4, now() - (n % 3000) * interval '1 minute'
+  FROM generate_series(5, :members, 5) n;
+INSERT INTO public.dispatch_votes (post_id, user_id, option_index, created_at)
+SELECT ('00000000-0000-4000-9300-' || lpad(to_hex(b), 12, '0'))::uuid, pg_temp.mid(((b * 101 + v * 7919) % :members) + 1), v % 4,
+       now() - (b % 3000) * interval '1 hour'
+  FROM generate_series(2, 2000 * :scale) b, generate_series(1, 25) v
+ON CONFLICT DO NOTHING;
+
+-- ── the Tribunal: two moderators, reports, verdicts, appeals, withheld pieces, sanctions ──
+-- Members 3 and 6 are moderators. Reports in proportion to the house: 1,000 waiting and 9,000 settled
+-- per 100,000 members, on members' logs; one log, the hot case, reported by 300.
+UPDATE public.profiles SET role = 'admin' WHERE id IN (pg_temp.mid(3), pg_temp.mid(6));
+INSERT INTO public.reports (id, reporter_id, content_type, content_id, reason, details, status, created_at, target_user_id)
+SELECT ('00000000-0000-4000-b000-' || lpad(to_hex(r), 12, '0'))::uuid, pg_temp.mid(((r * 53) % :members) + 1), 'log', l.id::text,
+       (ARRAY['spoiler_unmarked', 'harassment', 'spam', 'inappropriate', 'other'])[1 + r % 5], 'Reported for the load test.',
+       CASE WHEN r % 10 = 0 THEN 'pending' ELSE 'resolved' END, now() - (r % 2000) * interval '1 hour', l.user_id
+  FROM generate_series(1, 10000 * :scale) r
+ CROSS JOIN LATERAL (SELECT x.id, x.user_id FROM public.logs x WHERE x.user_id = pg_temp.mid(((r * 29) % :members) + 1) ORDER BY x.id LIMIT 1) l;
+INSERT INTO public.reports (id, reporter_id, content_type, content_id, reason, details, status, created_at, target_user_id)
+SELECT ('00000000-0000-4000-b300-' || lpad(to_hex(k), 12, '0'))::uuid, pg_temp.mid(1000 + k), 'log', (SELECT id::text FROM public.logs WHERE user_id = pg_temp.mid(2) ORDER BY id LIMIT 1), 'harassment',
+       'The hot case.', 'pending', now() - k * interval '1 minute', pg_temp.mid(2)
+  FROM generate_series(1, 300) k;
+-- A verdict on each settled report but one in nine, by member 6; a fifth of them appealed and waiting.
+-- The whale is the target of 40, each on a log of its own withheld while the verdict stands.
+INSERT INTO public.mod_actions (id, report_id, target_user_id, admin_id, action, reason, duration_hours, expires_at, created_at,
+                                appeal, appeal_filed_at, appeal_status)
+SELECT ('00000000-0000-4000-b100-' || lpad(to_hex(r), 12, '0'))::uuid, ('00000000-0000-4000-b000-' || lpad(to_hex(r), 12, '0'))::uuid,
+       pg_temp.mid(((r * 29) % :members) + 1), pg_temp.mid(6),
+       (ARRAY['warn', 'delete_content', 'mute_user', 'suspend'])[1 + r % 4], 'A verdict for the load test.',
+       CASE WHEN r % 4 IN (2, 3) THEN 72 END, CASE WHEN r % 4 IN (2, 3) THEN now() + interval '3 days' END,
+       now() - (r % 2000) * interval '1 hour' + interval '1 hour',
+       CASE WHEN r % 5 = 1 THEN 'I ask the Tribunal to hear me.' END,
+       CASE WHEN r % 5 = 1 THEN now() - (r % 2000) * interval '1 minute' END,
+       CASE WHEN r % 5 = 1 THEN 'pending' END
+  FROM generate_series(1, 10000 * :scale) r
+ WHERE r % 10 <> 0 AND r % 9 <> 0;
+INSERT INTO public.mod_actions (id, target_user_id, admin_id, action, reason, created_at)
+SELECT ('00000000-0000-4000-b200-' || lpad(to_hex(k), 12, '0'))::uuid, pg_temp.mid(1), pg_temp.mid(6), 'delete_content',
+       'A verdict on the whale, number ' || k || '.', now() - k * interval '1 day'
+  FROM generate_series(1, 40) k;
+INSERT INTO public.withheld_pieces (mod_action_id, kind, piece_id, author_id, withheld_at, delete_after)
+SELECT ('00000000-0000-4000-b200-' || lpad(to_hex(w.k), 12, '0'))::uuid, 'log', w.id, pg_temp.mid(1), now() - w.k * interval '1 day',
+       now() + interval '30 days' - w.k * interval '1 day'
+  FROM (SELECT x.id, row_number() OVER (ORDER BY x.id) AS k FROM public.logs x WHERE x.user_id = pg_temp.mid(1) ORDER BY x.id LIMIT 40) w;
+UPDATE public.logs SET withheld_at = w.withheld_at FROM public.withheld_pieces w WHERE w.kind = 'log' AND public.logs.id = w.piece_id;
+-- Sanctions: one member in 200 suspended for a week, one in 1,000 banned (never a member a probe reads as).
+UPDATE public.profiles SET suspended_until = now() + interval '7 days', suspension_reason = 'Suspended for the load test.'
+ WHERE id IN (SELECT pg_temp.mid(n) FROM generate_series(207, :members, 200) n);
+UPDATE public.profiles SET is_banned = true, banned_at = now(), ban_reason = 'Banned for the load test.'
+ WHERE id IN (SELECT pg_temp.mid(n) FROM generate_series(1013, :members, 1000) n);
 
 -- ── what the triggers would have made ────────────────────────────────────────
 SET session_replication_role = origin;

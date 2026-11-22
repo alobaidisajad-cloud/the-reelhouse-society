@@ -13,8 +13,9 @@
  *     once: a letter every member's name holds);
  *   - all it reads of growing tables stays within its bound: BOUND, or the probe's own `rows`, said
  *     with why (the whale's own 10,000 films grow with a member's own record, not with the house);
- *   - a read held to an index (the probe's own `index`) reads by it: the plan that keeps it the size of
- *     its answer at every size, not one the planner may leave as the house grows.
+ *   - a read held to an index (the probe's own `index`, one name or a list of them) reads by each: the
+ *     plan that keeps it the size of its answer at every size, not one the planner may leave as the
+ *     house grows.
  * And measured at two sizes (rowsAtSizes), a read whose rows read grow with the house fails however
  * small it is.
  *
@@ -98,7 +99,9 @@ function shapeFaults(plans, bound = BOUND, index = null) {
   const faults = scans.filter((s) => s.node === 'Seq Scan' && grows(s.relation) && s.read > FLOOR && !s.stopped)
     .map((s) => `reads ${s.relation} whole (a sequential scan of ${s.read} rows): it grows with the house`);
   if (grown > bound) faults.push(`reads ${grown} rows of tables that grow with the house, past its bound of ${bound}`);
-  if (index && !plans.some((p) => indexesOf(p.Plan ?? p).has(index))) faults.push(`does not read by its index, ${index}`);
+  for (const one of [index ?? []].flat()) {
+    if (!plans.some((p) => indexesOf(p.Plan ?? p).has(one))) faults.push(`does not read by its index, ${one}`);
+  }
   return faults;
 }
 

@@ -9756,9 +9756,45 @@ mutants:
     source: shape
     edits:
       - file: e2e/load/plan-shape.cjs
-        find: "  if (index && !plans.some((p) => indexesOf(p.Plan ?? p).has(index)))"
-        replace: "  if (false && index && !plans.some((p) => indexesOf(p.Plan ?? p).has(index)))"
+        find: "    if (!plans.some((p) => indexesOf(p.Plan ?? p).has(one)))"
+        replace: "    if (false && !plans.some((p) => indexesOf(p.Plan ?? p).has(one)))"
     proof: { file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "says no to a read held to an index whose plans read by another way, a bitmap's index found under its heap scan" }
+
+  - id: shape-a-probes-index-list-asks-its-first
+    class: SPEED-a-read-that-grows-with-the-house
+    source: shape
+    edits:
+      - file: e2e/load/plan-shape.cjs
+        find: "  for (const one of [index ?? []].flat()) {"
+        replace: "  for (const one of [index ?? []].flat().slice(0, 1)) {"
+    proof: { file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "holds a read to every index of its list: the calendar reads a last viewing by its day and a film seen again by its month" }
+
+  - id: past-the-short-pieces-kept-from-members
+    class: SPEED-an-index-refuses-the-writes-it-serves
+    source: past
+    edits:
+      - file: ../supabase/migrations/20261122_12_a_busy_read_reads_its_page.sql
+        find: "GRANT EXECUTE ON FUNCTION private.short_grams(text), private.search_grams(text, text) TO anon, authenticated, service_role;"
+        replace: "SELECT 1;"
+    proof: { file: src/utils/__tests__/anIndexsFunctionsRunForItsWriters.guard.test.ts, test: "lets a member run every function an index of the house works out, and every function those call" }
+
+  - id: shape-the-index-finder-reads-no-inner-call
+    class: SPEED-an-index-refuses-the-writes-it-serves
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anIndexsFunctionsRunForItsWriters.guard.test.ts
+        find: "      for (const inner of callsIn(house.bodies.get(fn) ?? '', known)) walk(inner);"
+        replace: ""
+    proof: { file: src/utils/__tests__/anIndexsFunctionsRunForItsWriters.guard.test.ts, test: "says no to an index whose function, or a function it calls, no member may run, and yes once it is granted" }
+
+  - id: shape-the-index-finder-takes-a-revoke-as-a-grant
+    class: SPEED-an-index-refuses-the-writes-it-serves
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anIndexsFunctionsRunForItsWriters.guard.test.ts
+        find: "(acl[1] ?? '').toUpperCase() === 'GRANT');"
+        replace: "true);"
+    proof: { file: src/utils/__tests__/anIndexsFunctionsRunForItsWriters.guard.test.ts, test: "says no to an index whose function, or a function it calls, no member may run, and yes once it is granted" }
 
   - id: shape-the-read-finder-reads-the-whole-lab
     class: SPEED-a-read-that-grows-with-the-house

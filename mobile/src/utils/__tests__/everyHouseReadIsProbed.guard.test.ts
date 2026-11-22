@@ -68,17 +68,6 @@ export function readFaults(calls: Map<string, string[]>, bodies: Map<string, str
  */
 const JUDGED: Record<string, string> = {
   increment_dossier_views: 'does nothing: its body only returns (a dossier\'s views are not counted)',
-  ballot_tally: 'owed: the load house plants no ballot and no vote (dispatch_votes)',
-  get_user_blocks: 'owed: the load house plants no block (user_blocks)',
-  get_my_verdict: 'owed: the load house plants no report and no verdict (reports, mod_actions)',
-  get_my_verdicts: 'owed: the load house plants no report and no verdict (reports, mod_actions)',
-  get_my_withheld_pieces: 'owed: the load house plants no withheld piece and no verdict (withheld_pieces, mod_actions)',
-  tribunal_waiting: 'owed: the load house plants no moderator and no report',
-  get_priority_reports: 'owed: the load house plants no moderator and no report',
-  get_report_evidence: 'owed: the load house plants no moderator and no report',
-  get_pending_appeals: 'owed: the load house plants no moderator and no appeal',
-  get_sanctioned_members: 'owed: the load house plants no moderator and no sanction',
-  get_moderation_history_for_users: 'owed: the load house plants no moderator and no verdict (mod_actions)',
 };
 
 const bodies = functionBodies(databaseSql());

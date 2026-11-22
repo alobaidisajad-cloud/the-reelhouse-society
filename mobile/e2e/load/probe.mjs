@@ -30,6 +30,11 @@ const CELEBRITY = mid(2);
 const MEMBER = mid(5000);
 const HOT_LOUNGE = '00000000-0000-4000-a000-000000000001';
 const HOT_POST = '00000000-0000-4000-9000-000000000001';
+const HOT_BALLOT = '00000000-0000-4000-9300-000000000001';
+/** A moderator (seed.sql: members 3 and 6; member 6 ruled every verdict, so member 3 may hear its appeals). */
+const MODERATOR = mid(3);
+/** The house's size, as the run names it. */
+const MEMBERS = Number(process.env.LOAD_MEMBERS ?? 100000);
 
 /** The budget, in milliseconds of database time, for a read a screen waits on. */
 const BUDGET = 100;
@@ -71,9 +76,14 @@ const PROBES = [
   { screen: 'Profile', what: 'the projector room, of the whale', as: WHALE, sql: `SELECT public.get_user_analytics('${WHALE}')` },
   { screen: 'Profile', what: 'the taste profile, of the whale', as: MEMBER, sql: `SELECT public.get_taste_profile('${WHALE}')` },
   // The year's grid of nights (calendar_days), the Year in Cinema's first page (year_viewings), and how a
-  // member's taste meets the whale's (get_taste_match), each as the profile asks it.
-  { screen: 'Profile', what: 'the calendar of nights, of the whale', as: MEMBER, sql: `SELECT * FROM public.calendar_days('${WHALE}')` },
-  { screen: 'Profile', what: 'the Year in Cinema, first page, of the whale', as: WHALE, sql: `SELECT * FROM public.year_viewings('${WHALE}', EXTRACT(year FROM now())::int)` },
+  // member's taste meets the whale's (get_taste_match), each as the profile asks it. The grid and the
+  // year read their span alone (20261122_21): each film's last viewing by its day, and the films seen
+  // again in the span by the months of their earlier viewings; bound to a year of the whale's own record
+  // (its 10,000 films over 2,000 days, about 1,830 a year, and its films seen again), never the whole.
+  { screen: 'Profile', what: 'the calendar of nights, of the whale', as: MEMBER, rows: 5000, index: ['idx_logs_user_watched_id', 'logs_seen_again_by_month'],
+    sql: `SELECT * FROM public.calendar_days('${WHALE}')` },
+  { screen: 'Profile', what: 'the Year in Cinema, first page, of the whale', as: WHALE, rows: 5000, index: ['idx_logs_user_watched_id', 'logs_seen_again_by_month'],
+    sql: `SELECT * FROM public.year_viewings('${WHALE}', EXTRACT(year FROM now())::int)` },
   { screen: 'Profile', what: 'the taste match, with the whale', as: MEMBER, sql: `SELECT public.get_taste_match('${WHALE}')` },
   // The rank the member holds and where it came from, as sign-in asks it.
   { screen: 'Launch', what: 'where the member\'s rank came from (my_entitlement_source)', as: MEMBER, sql: 'SELECT public.my_entitlement_source()' },
@@ -157,13 +167,16 @@ const PROBES = [
   // word few hold and for one many hold. A word in no review or stack ("tarkovsky") is the rare word's
   // worst case: every reader of the trigram indexes, none of the walk.
   { screen: 'Search', what: 'members, a handle few share (search_members)', as: MEMBER, sql: "SELECT * FROM public.search_members('m54321', false, NULL, NULL, 21)" },
-  // Two letters: who holds them anywhere gathered from the short pieces' index (20261122_14, _15), never read member by member.
-  { screen: 'Search', what: 'members, a handle many share (search_members)', as: MEMBER, index: 'profiles_short_grams', sql: "SELECT * FROM public.search_members('m1', false, NULL, NULL, 21)" },
+  // Two letters many hold: many or few asked first by a walk of 2,000 handles in their own order
+  // (20261122_23), so the handles are walked to the page and the short pieces' index, which gathers every
+  // holder, is not read; a handle's beginning read as one range of the handles' beginnings (20261122_22).
+  // Two letters none holds: found absent from the short pieces' index (20261122_14, _15), never read member by member.
+  { screen: 'Search', what: 'members, a handle many share (search_members)', as: MEMBER, index: ['profiles_username_unique', 'profiles_username_beginning'], sql: "SELECT * FROM public.search_members('m1', false, NULL, NULL, 21)" },
   { screen: 'Search', what: 'members, two letters none holds (search_members)', as: MEMBER, index: 'profiles_short_grams', sql: "SELECT * FROM public.search_members('zq', false, NULL, NULL, 21)" },
-  // One letter, as a member types the first: a name that begins with it read as one range of the names'
-  // beginnings (20261122_17, _18), never every name holding a word that starts with it; and a letter
-  // every handle and name holds, whose page is met at once.
-  { screen: 'Search', what: 'members, one letter no name begins with (search_members)', as: MEMBER, index: 'profiles_display_name_beginning', sql: "SELECT * FROM public.search_members('1', false, NULL, NULL, 21)" },
+  // One letter, as a member types the first: a handle or a name that begins with it read as one range of
+  // the beginnings (20261122_17, _18, _22, _23), never every one holding a word that starts with it; and a
+  // letter every handle and name holds, whose page is met at once.
+  { screen: 'Search', what: 'members, one letter no name begins with (search_members)', as: MEMBER, index: ['profiles_display_name_beginning', 'profiles_username_beginning'], sql: "SELECT * FROM public.search_members('1', false, NULL, NULL, 21)" },
   { screen: 'Search', what: 'members, one letter every member holds (search_members)', as: MEMBER, sql: "SELECT * FROM public.search_members('m', false, NULL, NULL, 21)" },
   { screen: 'Search', what: 'records, a word none holds (search_logs)', as: MEMBER, sql: "SELECT * FROM public.search_logs('tarkovsky', 'tarkovsky', NULL, NULL, 21)" },
   { screen: 'Search', what: 'records, a word many hold (search_logs)', as: MEMBER, sql: "SELECT * FROM public.search_logs('considered', 'considered', NULL, NULL, 21)" },
@@ -172,6 +185,25 @@ const PROBES = [
   { screen: 'Search', what: 'stacks, a word every stack holds (search_stacks)', as: MEMBER, sql: "SELECT * FROM public.search_stacks('stack', NULL, NULL, 21)" },
   // Two letters no stack holds: found absent from the short pieces' index (20261122_13, _15), not walked through every stack.
   { screen: 'Search', what: 'stacks, two letters (search_stacks)', as: MEMBER, index: 'lists_short_grams', sql: "SELECT * FROM public.search_stacks('m1', NULL, NULL, 21)" },
+  // A ballot counted, as a member who voted reads it: the hot ballot, one member in five voted (seed.sql).
+  { screen: 'Dispatch', what: 'the hot ballot counted, as a voter (ballot_tally)', as: mid(10), sql: `SELECT public.ballot_tally('${HOT_BALLOT}')` },
+  // A member's blocks and mutes, read whole as Settings reads them: the whale keeps 500.
+  { screen: 'Settings', what: 'the whale\'s 500 blocks (get_user_blocks)', as: WHALE, sql: `SELECT * FROM public.get_user_blocks('${WHALE}')` },
+  // The Tribunal as a member meets it: a verdict on them, their verdicts' first page, their withheld pieces
+  // (the whale: 40 verdicts, 40 withheld logs).
+  { screen: 'Tribunal', what: 'a verdict, as its member reads it (get_my_verdict)', as: WHALE, sql: "SELECT public.get_my_verdict('00000000-0000-4000-b200-000000000001')" },
+  { screen: 'Tribunal', what: 'the whale\'s verdicts, first page (get_my_verdicts)', as: WHALE, sql: 'SELECT public.get_my_verdicts()' },
+  { screen: 'Tribunal', what: 'the whale\'s withheld pieces (get_my_withheld_pieces)', as: WHALE, sql: 'SELECT public.get_my_withheld_pieces()' },
+  // The Tribunal as a moderator meets it: what waits, the reports most reported first, the hot case's
+  // evidence (300 reports of one log), the appeals waiting, the members under sanction, and twenty
+  // members' histories (reports and verdicts in proportion to the house, seed.sql).
+  { screen: 'Tribunal', what: 'what waits for a moderator (tribunal_waiting)', as: MODERATOR, sql: 'SELECT public.tribunal_waiting()' },
+  { screen: 'Tribunal', what: 'the reports, most reported first, first page (get_priority_reports)', as: MODERATOR, sql: 'SELECT * FROM public.get_priority_reports(20)' },
+  { screen: 'Tribunal', what: 'the hot case\'s evidence (get_report_evidence)', as: MODERATOR, sql: "SELECT public.get_report_evidence('00000000-0000-4000-b300-000000000001')" },
+  { screen: 'Tribunal', what: 'the appeals waiting, first page (get_pending_appeals)', as: MODERATOR, index: 'mod_actions_appeals_waiting', sql: 'SELECT public.get_pending_appeals()' },
+  { screen: 'Tribunal', what: 'the members under sanction, first page (get_sanctioned_members)', as: MODERATOR, index: 'profiles_under_sanction', sql: 'SELECT public.get_sanctioned_members()' },
+  { screen: 'Tribunal', what: 'twenty members\' histories (get_moderation_history_for_users)', as: MODERATOR,
+    sql: `SELECT * FROM public.get_moderation_history_for_users(ARRAY[${[1, ...Array.from({ length: 19 }, (_, r) => ((r + 1) * 29) % MEMBERS + 1)].map((n) => `'${mid(n)}'`).join(', ')}]::uuid[], 5)` },
 ];
 
 /** An annotation holds one message; GitHub encodes its line breaks as %0A. */

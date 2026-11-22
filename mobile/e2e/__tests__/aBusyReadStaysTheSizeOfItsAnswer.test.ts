@@ -58,6 +58,19 @@ describe('the shape of a read', () => {
     expect(shapeFaults(walked)).toEqual([]);
   });
 
+  it('holds a read to every index of its list: the calendar reads a last viewing by its day and a film seen again by its month', () => {
+    const byDay = plan(scan('Index Scan', 'logs', 1800, { 'Index Name': 'idx_logs_user_watched_id' }));
+    const byMonth = { Plan: { 'Node Type': 'Bitmap Heap Scan', 'Relation Name': 'logs', 'Actual Rows': 300, 'Actual Loops': 1,
+      Plans: [{ 'Node Type': 'Bitmap Index Scan', 'Index Name': 'logs_seen_again_by_month', 'Actual Rows': 300, 'Actual Loops': 1 }] } };
+    const both = ['idx_logs_user_watched_id', 'logs_seen_again_by_month'];
+    expect(shapeFaults([byDay, byMonth], 5000, both)).toEqual([]);
+    // The films seen again read through the member's whole record: the month's index is not read.
+    const whole = plan(scan('Index Scan', 'logs', 10000, { 'Index Name': 'idx_logs_user_id_created_at' }));
+    expect(shapeFaults([byDay, whole], 20000, both)).toEqual(['does not read by its index, logs_seen_again_by_month']);
+    expect(shapeFaults([whole], 20000, both)).toEqual([
+      'does not read by its index, idx_logs_user_watched_id', 'does not read by its index, logs_seen_again_by_month']);
+  });
+
   it('says yes to a walk its limit stopped at once, and no to one that threw rows away past the floor or fed a sort', () => {
     const walk = (removed: number) => scan('Seq Scan', 'profiles', 1001, { 'Rows Removed by Filter': removed });
     // A letter every member holds: the walk meets its 1,001 at once (search_members' gathering).
