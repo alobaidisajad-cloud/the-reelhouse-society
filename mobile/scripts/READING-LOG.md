@@ -458,3 +458,9 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/test-utils/libraries.json | — |  |
 | mobile/test-utils/test-weights.json | — |  |
 | supabase/functions/_shared/callerAddress.js | — |  |
+| mobile/supabase/diagnostics/a_moderators_words_are_cleaned_as_a_members_are_rehearsal.sql | — |  |
+| mobile/supabase/diagnostics/a_records_withholding_is_no_part_of_a_viewing_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261122_00_a_moderators_words_are_cleaned_as_a_members_are.sql | — |  |
+| mobile/supabase/migrations-down/20261122_01_a_records_withholding_is_no_part_of_a_viewing.sql | — |  |
+| supabase/migrations/20261122_00_a_moderators_words_are_cleaned_as_a_members_are.sql | — |  |
+| supabase/migrations/20261122_01_a_records_withholding_is_no_part_of_a_viewing.sql | — |  |

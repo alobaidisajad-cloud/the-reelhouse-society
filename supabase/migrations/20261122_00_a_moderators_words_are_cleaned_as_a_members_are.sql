@@ -293,6 +293,7 @@ BEGIN
   GET DIAGNOSTICS v_count = ROW_COUNT;
   RETURN v_made + v_count;
 END $$;
+-- add-only (1): no shipped client uses it: the pass this piece makes, closed to every member and visitor, asked by the house alone (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION private.the_moderators_words_made_clean() FROM PUBLIC, anon, authenticated;
 
 SELECT private.the_moderators_words_made_clean() AS made;
