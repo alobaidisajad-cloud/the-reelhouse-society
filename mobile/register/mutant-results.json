@@ -7061,5 +7061,12 @@
     "proof": "m2",
     "commit": "cc0ac759f9cb100ac228809da5e27cd53456855d",
     "verdict": "caught"
+  },
+  {
+    "class": "DB-extension-reach",
+    "mutant": "shape-a-push-claimed-twice",
+    "proof": "m2",
+    "commit": "9e79b461b95e4ffe72d2aaf52893578ce1c2cbe4",
+    "verdict": "caught"
   }
 ]
