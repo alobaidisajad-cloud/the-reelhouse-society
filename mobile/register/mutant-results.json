@@ -7353,7 +7353,35 @@
     "class": "SPEED-a-read-that-grows-with-the-house",
     "mutant": "shape-a-probes-index-not-asked",
     "proof": "m7",
-    "commit": "a9f135454470c6072126141f2da047944d437680",
+    "commit": "d7416916b4fd2845acd460b50a1009163eff7c09",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-read-that-grows-with-the-house",
+    "mutant": "shape-a-probes-index-list-asks-its-first",
+    "proof": "m8",
+    "commit": "d7416916b4fd2845acd460b50a1009163eff7c09",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-an-index-refuses-the-writes-it-serves",
+    "mutant": "past-the-short-pieces-kept-from-members",
+    "proof": "m1",
+    "commit": "d7416916b4fd2845acd460b50a1009163eff7c09",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-an-index-refuses-the-writes-it-serves",
+    "mutant": "shape-the-index-finder-reads-no-inner-call",
+    "proof": "m2",
+    "commit": "d7416916b4fd2845acd460b50a1009163eff7c09",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-an-index-refuses-the-writes-it-serves",
+    "mutant": "shape-the-index-finder-takes-a-revoke-as-a-grant",
+    "proof": "m2",
+    "commit": "d7416916b4fd2845acd460b50a1009163eff7c09",
     "verdict": "caught"
   },
   {
