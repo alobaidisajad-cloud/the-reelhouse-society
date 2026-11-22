@@ -112,6 +112,27 @@ END $$;
 -- add-only (1): no shipped client uses it: a trigger's function this piece makes, called by no client
 REVOKE ALL ON FUNCTION public.a_critique_takes_its_notice() FROM PUBLIC, anon, authenticated;
 
+-- The notices already orphaned: a critique notice whose member has no critique left on its piece
+-- (a filing's critique notice by the critique it names), each critique found by its index, in one
+-- pass over the notices. It runs before the triggers are made: making a trigger holds its table
+-- against every critique written or deleted until the car commits, so nothing slow may come after.
+-- add-only (3): it only fixes: takes only notices whose critique is gone, read by member and piece
+DELETE FROM public.notifications n
+ WHERE n.type = 'comment'
+   AND n.from_user_id IS NOT NULL
+   AND ((n.group_key LIKE 'endorse:log:%'
+         AND NOT EXISTS (SELECT 1 FROM public.log_comments c
+                          WHERE c.log_id = CASE WHEN substr(n.group_key, 13) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN substr(n.group_key, 13)::uuid END
+                            AND c.user_id = n.from_user_id))
+     OR (n.group_key LIKE 'endorse:list:%'
+         AND NOT EXISTS (SELECT 1 FROM public.list_comments c
+                          WHERE c.list_id = CASE WHEN substr(n.group_key, 14) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN substr(n.group_key, 14)::uuid END
+                            AND c.user_id = n.from_user_id))
+     OR (n.group_key LIKE 'endorse:post:%'
+         AND n.metadata ? 'comment_id'
+         AND NOT EXISTS (SELECT 1 FROM public.dispatch_comments c
+                          WHERE c.id = CASE WHEN n.metadata ->> 'comment_id' ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN (n.metadata ->> 'comment_id')::uuid END)));
+
 -- add-only (3): it only fixes: a critique is deleted as before, its notice with it
 CREATE OR REPLACE TRIGGER a_critique_takes_its_notice
   AFTER DELETE ON public.log_comments
@@ -125,28 +146,3 @@ CREATE OR REPLACE TRIGGER a_critique_takes_its_notice
   AFTER DELETE ON public.dispatch_comments
   FOR EACH ROW
   EXECUTE FUNCTION public.a_critique_takes_its_notice();
-
--- The notices already orphaned: a critique notice whose member has no critique left on its piece
--- (a filing's critique notice by the critique it names), each critique found by its index.
--- add-only (3): it only fixes: takes only notices whose critique is gone, read by member and piece
-DELETE FROM public.notifications n
- WHERE n.type = 'comment'
-   AND n.from_user_id IS NOT NULL
-   AND n.group_key LIKE 'endorse:log:%'
-   AND NOT EXISTS (SELECT 1 FROM public.log_comments c
-                    WHERE c.log_id = CASE WHEN substr(n.group_key, 13) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN substr(n.group_key, 13)::uuid END
-                      AND c.user_id = n.from_user_id);
-DELETE FROM public.notifications n
- WHERE n.type = 'comment'
-   AND n.from_user_id IS NOT NULL
-   AND n.group_key LIKE 'endorse:list:%'
-   AND NOT EXISTS (SELECT 1 FROM public.list_comments c
-                    WHERE c.list_id = CASE WHEN substr(n.group_key, 14) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN substr(n.group_key, 14)::uuid END
-                      AND c.user_id = n.from_user_id);
-DELETE FROM public.notifications n
- WHERE n.type = 'comment'
-   AND n.from_user_id IS NOT NULL
-   AND n.group_key LIKE 'endorse:post:%'
-   AND n.metadata ? 'comment_id'
-   AND NOT EXISTS (SELECT 1 FROM public.dispatch_comments c
-                    WHERE c.id = CASE WHEN n.metadata ->> 'comment_id' ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN (n.metadata ->> 'comment_id')::uuid END);

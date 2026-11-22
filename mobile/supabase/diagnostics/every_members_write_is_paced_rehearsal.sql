@@ -22,10 +22,32 @@ CREATE TEMP TABLE rehearsal_members ON COMMIT DROP AS
    ORDER BY u.created_at LIMIT 2;
 SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rehearsal_members), 2) AS done \gset rh_
 GRANT SELECT ON rehearsal_members TO anon, authenticated;
-SELECT pg_temp.rh_need('a filing to clone and certify', (SELECT count(*) FROM public.dispatch_posts WHERE kind = 'take'), 1) AS done \gset rh_
-SELECT pg_temp.rh_need('a salon message to react to', (SELECT count(*) FROM public.lounge_messages), 1) AS done \gset rh_
-SELECT pg_temp.rh_need('a salon to clone', (SELECT count(*) FROM public.lounges), 1) AS done \gset rh_
-SELECT pg_temp.rh_need('a ballot to vote on', (SELECT count(*) FROM public.dispatch_posts WHERE kind = 'ballot'), 1) AS done \gset rh_
+
+-- What member 1 writes on, planted as the house from member 2's hand: a take to clone, certify and save,
+-- an open ballot to vote on, and a salon with a message to clone and react to. Each write below names
+-- its planted row, so the rehearsal runs on any house, an empty one or a full one.
+CREATE TEMP TABLE wp_planted (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
+GRANT SELECT ON wp_planted TO anon, authenticated;
+WITH made AS (
+  INSERT INTO public.dispatch_posts (kind, user_id, author_username, title, body, is_published)
+  SELECT 'take', m.id, p.username, NULL, 'rh pace take', true
+    FROM rehearsal_members m JOIN public.profiles p ON p.id = m.id WHERE m.n = 2
+  RETURNING id)
+INSERT INTO wp_planted SELECT 'take', id FROM made;
+WITH made AS (
+  INSERT INTO public.dispatch_posts (kind, user_id, author_username, title, body, options, closes_at, is_published)
+  SELECT 'ballot', m.id, p.username, 'rh pace ballot', 'rh pace ballot',
+         '[{"film_id":1,"title":"rh one"},{"film_id":2,"title":"rh two"}]'::jsonb, now() + interval '3 days', true
+    FROM rehearsal_members m JOIN public.profiles p ON p.id = m.id WHERE m.n = 2
+  RETURNING id)
+INSERT INTO wp_planted SELECT 'ballot', id FROM made;
+WITH made AS (INSERT INTO public.lounges (name, creator_id, is_private)
+              VALUES ('rh pace salon to clone', (SELECT id FROM rehearsal_members WHERE n = 2), false) RETURNING id)
+INSERT INTO wp_planted SELECT 'salon', id FROM made;
+WITH made AS (INSERT INTO public.lounge_messages (lounge_id, user_id, content)
+              VALUES ((SELECT id FROM wp_planted WHERE what = 'salon'), (SELECT id FROM rehearsal_members WHERE n = 2), 'rh pace word') RETURNING id)
+INSERT INTO wp_planted SELECT 'message', id FROM made;
+SELECT pg_temp.rh_need('a take, a ballot, a salon and its message, planted', (SELECT count(id) FROM wp_planted), 4) AS done \gset rh_
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
@@ -78,15 +100,15 @@ CREATE FUNCTION pg_temp.wp_write(p_kind text) RETURNS text LANGUAGE sql AS $$
     WHEN 'stack' THEN format('INSERT INTO public.lists (id, user_id, title) VALUES (gen_random_uuid(), %L, %L)', (SELECT id FROM rehearsal_members WHERE n = 1), 'rh pace stack')
     WHEN 'stack_entry' THEN format('INSERT INTO public.list_items (list_id, film_id, film_title, rank_position) SELECT l.id, f.id, %L, 1 FROM public.lists l, public.films f WHERE l.user_id = %L AND NOT EXISTS (SELECT 1 FROM public.list_items i WHERE i.list_id = l.id AND i.film_id = f.id) LIMIT 1',
                                     'rh', (SELECT id FROM rehearsal_members WHERE n = 1))
-    WHEN 'filing' THEN format('INSERT INTO public.dispatch_posts SELECT (jsonb_populate_record(NULL::public.dispatch_posts, to_jsonb(p) || jsonb_build_object(%L, gen_random_uuid(), %L, %L::uuid))).* FROM public.dispatch_posts p WHERE p.kind = %L LIMIT 1',
-                              'id', 'user_id', (SELECT id FROM rehearsal_members WHERE n = 1), 'take')
-    WHEN 'salon' THEN format('INSERT INTO public.lounges SELECT (jsonb_populate_record(NULL::public.lounges, to_jsonb(l) || jsonb_build_object(%L, gen_random_uuid(), %L, %L::uuid, %L, NULL, %L, %L))).* FROM public.lounges l LIMIT 1',
-                             'id', 'creator_id', (SELECT id FROM rehearsal_members WHERE n = 1), 'invite_code', 'name', 'rh pace salon')
-    WHEN 'reaction' THEN format('INSERT INTO public.lounge_message_reactions (message_id, lounge_id, user_id, reaction) SELECT m.id, m.lounge_id, %L, r FROM public.lounge_messages m, unnest(ARRAY[%L, %L, %L, %L, %L]) r WHERE NOT EXISTS (SELECT 1 FROM public.lounge_message_reactions x WHERE x.message_id = m.id AND x.user_id = %L AND x.reaction = r) LIMIT 1',
-                                (SELECT id FROM rehearsal_members WHERE n = 1), 'bravo', 'adored', 'riveting', 'quoted', 'panned', (SELECT id FROM rehearsal_members WHERE n = 1))
-    WHEN 'certification' THEN format('INSERT INTO public.dispatch_certifications (id, user_id, post_id) SELECT gen_random_uuid(), %L, p.id FROM public.dispatch_posts p LIMIT 1', (SELECT id FROM rehearsal_members WHERE n = 1))
-    WHEN 'save' THEN format('INSERT INTO public.dispatch_saves (user_id, post_id) SELECT %1$L, p.id FROM public.dispatch_posts p WHERE NOT EXISTS (SELECT 1 FROM public.dispatch_saves s WHERE s.user_id = %1$L AND s.post_id = p.id) LIMIT 1', (SELECT id FROM rehearsal_members WHERE n = 1))
-    WHEN 'vote' THEN format('INSERT INTO public.dispatch_votes (post_id, user_id, option_index) SELECT p.id, %1$L, 0 FROM public.dispatch_posts p WHERE p.kind = %2$L AND NOT EXISTS (SELECT 1 FROM public.dispatch_votes v WHERE v.user_id = %1$L AND v.post_id = p.id) LIMIT 1', (SELECT id FROM rehearsal_members WHERE n = 1), 'ballot')
+    WHEN 'filing' THEN format('INSERT INTO public.dispatch_posts SELECT (jsonb_populate_record(NULL::public.dispatch_posts, to_jsonb(p) || jsonb_build_object(%L, gen_random_uuid(), %L, %L::uuid))).* FROM public.dispatch_posts p WHERE p.id = %L',
+                              'id', 'user_id', (SELECT id FROM rehearsal_members WHERE n = 1), (SELECT id FROM wp_planted WHERE what = 'take'))
+    WHEN 'salon' THEN format('INSERT INTO public.lounges SELECT (jsonb_populate_record(NULL::public.lounges, to_jsonb(l) || jsonb_build_object(%L, gen_random_uuid(), %L, %L::uuid, %L, NULL, %L, %L))).* FROM public.lounges l WHERE l.id = %L',
+                             'id', 'creator_id', (SELECT id FROM rehearsal_members WHERE n = 1), 'invite_code', 'name', 'rh pace salon', (SELECT id FROM wp_planted WHERE what = 'salon'))
+    WHEN 'reaction' THEN format('INSERT INTO public.lounge_message_reactions (message_id, lounge_id, user_id, reaction) SELECT m.id, m.lounge_id, %L, r FROM public.lounge_messages m, unnest(ARRAY[%L, %L, %L, %L, %L]) r WHERE m.id = %L AND NOT EXISTS (SELECT 1 FROM public.lounge_message_reactions x WHERE x.message_id = m.id AND x.user_id = %L AND x.reaction = r) LIMIT 1',
+                                (SELECT id FROM rehearsal_members WHERE n = 1), 'bravo', 'adored', 'riveting', 'quoted', 'panned', (SELECT id FROM wp_planted WHERE what = 'message'), (SELECT id FROM rehearsal_members WHERE n = 1))
+    WHEN 'certification' THEN format('INSERT INTO public.dispatch_certifications (id, user_id, post_id) VALUES (gen_random_uuid(), %L, %L)', (SELECT id FROM rehearsal_members WHERE n = 1), (SELECT id FROM wp_planted WHERE what = 'take'))
+    WHEN 'save' THEN format('INSERT INTO public.dispatch_saves (user_id, post_id) SELECT %1$L, p.id FROM public.dispatch_posts p WHERE p.id IN (SELECT id FROM wp_planted WHERE what IN (''take'', ''ballot'')) AND NOT EXISTS (SELECT 1 FROM public.dispatch_saves s WHERE s.user_id = %1$L AND s.post_id = p.id) LIMIT 1', (SELECT id FROM rehearsal_members WHERE n = 1))
+    WHEN 'vote' THEN format('INSERT INTO public.dispatch_votes (post_id, user_id, option_index) SELECT p.id, %1$L, 0 FROM public.dispatch_posts p WHERE p.id = %2$L AND NOT EXISTS (SELECT 1 FROM public.dispatch_votes v WHERE v.user_id = %1$L AND v.post_id = p.id)', (SELECT id FROM rehearsal_members WHERE n = 1), (SELECT id FROM wp_planted WHERE what = 'ballot'))
     WHEN 'block' THEN format('INSERT INTO public.user_blocks (blocker_id, blocked_id, type) SELECT %1$L, p.id, %2$L FROM public.profiles p WHERE p.id <> %1$L AND NOT EXISTS (SELECT 1 FROM public.user_blocks b WHERE b.blocker_id = %1$L AND b.blocked_id = p.id) LIMIT 1', (SELECT id FROM rehearsal_members WHERE n = 1), 'mute')
     WHEN 'watchlist_entry' THEN format('INSERT INTO public.watchlists (user_id, film_id, film_title) SELECT %1$L, f.id, %2$L FROM public.films f WHERE NOT EXISTS (SELECT 1 FROM public.watchlists w WHERE w.user_id = %1$L AND w.film_id = f.id) LIMIT 1', (SELECT id FROM rehearsal_members WHERE n = 1), 'rh')
     WHEN 'shelf_entry' THEN format('INSERT INTO public.physical_archive (user_id, film_id, film_title) SELECT %1$L, f.id, %2$L FROM public.films f WHERE NOT EXISTS (SELECT 1 FROM public.physical_archive w WHERE w.user_id = %1$L AND w.film_id = f.id) LIMIT 1', (SELECT id FROM rehearsal_members WHERE n = 1), 'rh')

@@ -7,7 +7,9 @@
 -- Then members in good standing, acting as themselves, critique a record, a stack and a filing and
 -- delete their critiques, and find each notice leave with its critique (stage C, the kinds pass).
 -- Every row here is undone with the transaction. Read each NOTICE as  case|expected|got ; the last
--- line is the verdict, and any miss makes psql exit non-zero.
+-- line is the verdict, and any miss makes psql exit non-zero. Each count of notices is read by its
+-- sender (their index), never over every notice: the car's triggers hold the critiques' tables until
+-- the transaction ends, so every case after the car is held to the time a member may wait.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
 BEGIN;
@@ -51,7 +53,8 @@ SELECT k.author, 'comment', c.critic, 'left a critique on your rehearsal piece (
 \if :{?with_train}
 \ir ../../../supabase/migrations/20261122_02_a_critique_takes_its_notice.sql
 SELECT pg_temp.rh_case('the notices of critiques already deleted are taken by the car', '0',
-  (SELECT count(*)::text FROM public.notifications WHERE message = 'left a critique on your rehearsal piece (orphaned).')) AS done \gset rh_
+  (SELECT count(*)::text FROM public.notifications
+    WHERE from_user_id IN (SELECT critic FROM ctn_critic) AND message = 'left a critique on your rehearsal piece (orphaned).')) AS done \gset rh_
 \endif
 
 -- ── a critique takes its notice ──
@@ -115,7 +118,9 @@ SELECT k.author, 'comment', c.critic, 'left a critique on your rehearsal piece (
 INSERT INTO ctn_ids SELECT k, 3, pg_temp.ctn_file(k, 'A third rehearsal critique.') FROM unnest(ARRAY['log', 'list']) k;
 SELECT pg_temp.ctn_delete(k, (SELECT id FROM ctn_ids WHERE kind = k AND n = 3)), NULL FROM unnest(ARRAY['log', 'list']) k;
 SELECT pg_temp.rh_case(k || ': an old notice stays while its member has a critique there', '1',
-         (SELECT count(*)::text FROM public.notifications WHERE message = 'left a critique on your rehearsal piece (old).' AND group_key LIKE 'endorse:' || k || ':%'))
+         (SELECT count(*)::text FROM public.notifications
+           WHERE from_user_id = (SELECT critic FROM ctn_critic WHERE kind = k)
+             AND message = 'left a critique on your rehearsal piece (old).' AND group_key LIKE 'endorse:' || k || ':%'))
   FROM unnest(ARRAY['log', 'list']) k;
 SELECT pg_temp.ctn_delete(k, (SELECT id FROM ctn_ids WHERE kind = k AND n = 2)), NULL FROM unnest(ARRAY['log', 'list', 'post']) k;
 SELECT pg_temp.rh_case(k || ': the member''s last critique there takes every notice of theirs on it', '0',
