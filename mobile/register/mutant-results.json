@@ -7318,7 +7318,7 @@
     "class": "COPY-a-refusal-told-as-anothers",
     "mutant": "shape-a-guest-refused-said-as-failed",
     "proof": "m26",
-    "commit": "7db58dc5bdb2576ece301b244d2d7304330bb227",
+    "commit": "f981b553df6be7b7a25465020f0176ea1d1fb603",
     "verdict": "caught"
   },
   {
