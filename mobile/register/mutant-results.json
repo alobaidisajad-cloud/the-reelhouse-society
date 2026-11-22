@@ -7908,5 +7908,26 @@
     "proof": "m6",
     "commit": "0315c51ec8ccc4a376db4a29bb9d52744e145abb",
     "verdict": "caught"
+  },
+  {
+    "class": "UI-notice-opens-elsewhere",
+    "mutant": "shape-salon-notice-opens-the-asker",
+    "proof": "m21",
+    "commit": "a8dea9a7a6c8587d2ebe4813df830c47e4aa4f13",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-notice-opens-elsewhere",
+    "mutant": "shape-log-critique-notice-unkeyed",
+    "proof": "m21",
+    "commit": "a8dea9a7a6c8587d2ebe4813df830c47e4aa4f13",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-notice-opens-elsewhere",
+    "mutant": "shape-notice-route-trusted",
+    "proof": "m19",
+    "commit": "a8dea9a7a6c8587d2ebe4813df830c47e4aa4f13",
+    "verdict": "caught"
   }
 ]
