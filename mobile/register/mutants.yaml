@@ -4552,8 +4552,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/dispatch/ComposeDesks.tsx
-        find: "          takenUp={takenUpAt !== null ? <TakenUpLine savedAt={takenUpAt || null} onStartClean={startClean} /> : null}"
-        replace: "          takenUp={null}"
+        find: "          onBack={toForms}\n          onFile={onFile}\n          takenUp={takenUpAt !== null ? <TakenUpLine savedAt={takenUpAt || null} onStartClean={startClean} /> : null}"
+        replace: "          onBack={toForms}\n          onFile={onFile}\n          takenUp={null}"
     proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "a ballot taken up says so, with START CLEAN, which empties the desk and the draft" }
 
   - id: shape-reopen-over-a-tapped-launch
@@ -4615,8 +4615,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/dispatch/ComposeDesks.tsx
-        find: "    if (amending) { nav.back(); return; }\n    const toForms"
-        replace: "    const toForms"
+        find: "    if (amending) { nav.back(); return; }\n    router.setParams({ kind: '' });"
+        replace: "    router.setParams({ kind: '' });"
     proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK goes back to the filing, never to another desk" }
 
   - id: shape-log-search-forgotten
@@ -4633,9 +4633,9 @@ mutants:
     source: shape
     edits:
       - file: src/components/dispatch/ComposeDesks.tsx
-        find: "    if (!unsaved) { toForms(); return; }"
-        replace: "    { toForms(); return; }"
-    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK with words asks first, and only a discard goes to the forms" }
+        find: "    const kept = unkept.current;\n    unkept.current = null;\n    kept?.();"
+        replace: "    unkept.current = null;"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK with words goes to the forms at once, asking nothing: the words are kept" }
 
   - id: shape-essay-last-second-dropped
     class: WRITE-words-lost-on-the-way-out
@@ -9269,8 +9269,11 @@ mutants:
     source: shape
     edits:
       - file: src/components/dispatch/ComposeDesks.tsx
-        find: "  const unsaved = !done && !sending && (amending"
-        replace: "  const unsaved = !done && (amending"
+        find: "import { useHoldWhileSending } from '@/src/hooks/useAskBeforeLeaving';"
+        replace: "import { useAskBeforeLeaving, useHoldWhileSending } from '@/src/hooks/useAskBeforeLeaving';"
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "  useHoldWhileSending(sending);"
+        replace: "  useHoldWhileSending(sending);\n  useAskBeforeLeaving(!!body.trim(), { title: 'Discard what you wrote?', message: 'These words are gone.' });"
     proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "3: no hold offers Discard over a save in flight, and work on its way is held or kept" }
 
   - id: shape-busy-row-held-as-one-id

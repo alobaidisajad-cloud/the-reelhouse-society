@@ -8265,5 +8265,159 @@
     "proof": "m18",
     "commit": "edc52db4810a1c7df07ebf2681f00e9280e7dc0f",
     "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-word-finder-passes-a-box-by-no-shape",
+    "proof": "m14",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-word-finder-trusts-every-screen-handing-a-box-in",
+    "proof": "m14",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-verdict-reason-held-by-the-sheet-alone",
+    "proof": "m17",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-verdict-reason-not-put-back",
+    "proof": "m18",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-hearing-word-held-by-the-sheet-alone",
+    "proof": "m20",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-hearing-word-kept-after-it-is-heard",
+    "proof": "m21",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-lift-word-held-by-the-sheet-alone",
+    "proof": "m22",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-report-details-held-by-the-sheet-alone",
+    "proof": "m23",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-report-details-kept-after-the-house-holds-it",
+    "proof": "m24",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-share-message-held-by-the-sheet-alone",
+    "proof": "m25",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-share-message-refused-not-put-back",
+    "proof": "m26",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-founding-words-held-by-the-sheet-alone",
+    "proof": "m27",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-founding-words-kept-after-the-room-is-made",
+    "proof": "m28",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-series-name-held-by-the-sheet-alone",
+    "proof": "m29",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-short-desk-keeps-no-draft",
+    "proof": "m30",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-short-desk-takes-up-nothing",
+    "proof": "m31",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-short-desk-draft-kept-after-filing",
+    "proof": "m33",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-amend-kept-as-a-new-take",
+    "proof": "m34",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-picker-blind-to-a-short-draft",
+    "proof": "m37",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-kept-words-taken-up-once-per-place",
+    "proof": "m38",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-words-let-go-kept-again-as-the-box-goes",
+    "proof": "m39",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-words-put-back-for-another-member",
+    "proof": "m40",
+    "commit": "b251af4607ea2425e255e25c845087be79bcbece",
+    "verdict": "caught"
   }
 ]
