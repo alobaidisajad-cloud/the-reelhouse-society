@@ -1340,7 +1340,7 @@
     "class": "UI-unknown-mark-drawn-as-off",
     "mutant": "shape-critique-mark-never-known",
     "proof": "m15",
-    "commit": "ec22079f00f66bb86a9bba5a5d3d629cb8fc5c4d",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
     "verdict": "caught"
   },
   {
@@ -1984,7 +1984,7 @@
     "class": "READ-a-page-ordered-by-a-key-rows-share",
     "mutant": "shape-stack-paged-by-rank-and-moment",
     "proof": "m1",
-    "commit": "eed955898ac349a698c8fc42ea03541cca655fb6",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
     "verdict": "caught"
   },
   {
@@ -3271,8 +3271,8 @@
   {
     "class": "READ-a-page-begun-past-its-row",
     "mutant": "shape-next-page-from-rows-held",
-    "proof": "m1",
-    "commit": "ec22079f00f66bb86a9bba5a5d3d629cb8fc5c4d",
+    "proof": "m2",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
     "verdict": "caught"
   },
   {
@@ -7676,6 +7676,174 @@
     "mutant": "shape-settings-filed-draft-kept",
     "proof": "m8",
     "commit": "b809322a41c95ecc9bc2c45431738474dd1da4fb",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-stack-page-from-the-top",
+    "proof": "m18",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-keyset-unranked-never-beyond",
+    "proof": "m19",
+    "commit": "813b2cb89db48ba55551f8c8748b83b1c688f34e",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-critique-page-from-the-top",
+    "proof": "m20",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-certified-page-keyed-on-two",
+    "proof": "m21",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-older-critique-read-laid",
+    "proof": "m22",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-replaced-read-leaves-more-spinning",
+    "proof": "m23",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-older-filing-read-laid",
+    "proof": "m24",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-filing-read-over-an-amend",
+    "proof": "m25",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-older-tally-laid",
+    "proof": "m26",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-mark-read-over-an-uncertify",
+    "proof": "m27",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-paper-act-kept-out-of-the-ledger",
+    "proof": "m27",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-queued-mark-read-over",
+    "proof": "m28",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-critique-mark-read-over-a-certify",
+    "proof": "m29",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-finder-per-thing-moment-unasked",
+    "proof": "m17",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-heart-read-over-a-take-back",
+    "proof": "m30",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-stack-heart-read-over-a-take-back",
+    "proof": "m31",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-older-heart-read-laid",
+    "proof": "m32",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-older-corridor-laid",
+    "proof": "m33",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-older-room-read-laid",
+    "proof": "m34",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-older-page-joined-to-a-new-read",
+    "proof": "m35",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-kept-room-drawn-unnumbered",
+    "proof": "m35",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-note-read-over-a-save",
+    "proof": "m36",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-note-read-over-a-take-back",
+    "proof": "m37",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-finder-key-mark-unseen",
+    "proof": "m38",
+    "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
     "verdict": "caught"
   }
 ]

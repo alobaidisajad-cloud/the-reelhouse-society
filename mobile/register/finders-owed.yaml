@@ -8,7 +8,6 @@ TOLD:
   - COPY-one-failure-said-twice
   - COPY-a-refusal-undone-unsaid
 LATE:
-  - LATE-an-answer-over-a-newer-state
   - READ-a-page-ordered-by-a-key-rows-share
   - WRITE-words-let-go-unsent
   - READ-an-answer-drawn-under-an-order-left
