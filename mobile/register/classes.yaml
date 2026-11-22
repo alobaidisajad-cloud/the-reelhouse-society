@@ -2471,6 +2471,10 @@ classes:
     methods:
       - { kind: running, file: src/components/darkroom/__tests__/theNextBatchSaysWhenItCouldNotBeDeveloped.test.tsx, test: "a batch that fails keeps the sheet whole, its page where it failed, and asks no earlier batch again" }
       - { kind: running, file: src/lib/__tests__/tmdb.test.ts, test: "a typo tier's answer is one page, so its next page is never asked for" }
+      - { kind: static, file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "1: a page number stepped back, by a setter, an assignment or a decrement" }
+      - { kind: static, file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "finds the instances it was made for, put back" }
+      - { kind: static, file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "1: no page number steps back" }
+    sweep: { read: [appCode], found: 0, fixed: 0, judged: 0, commit: e5689bb5, finder: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, result: "every app file read with TypeScript's parser for a page number moved back (a page setter handed a subtraction, an assignment of one, a decrement): none left; the Darkroom's setPage(page - 1), put back, is found. A next page's count taken from another source's answer (the typo tier's) has no static shape; its running test holds it" }
     fix: "a batch that failed is said at the sheet's foot with the page where it failed, and TRY AGAIN asks that page (developAgain); the spelling and keyword tiers answer one page, as they ask for one (mutants shape-a-failed-batch-steps-back, shape-a-typo-answer-pages-on)"
     places: [none]
 
@@ -2740,6 +2744,10 @@ classes:
       - { kind: running, file: src/services/__tests__/aDroppedRowEndsNoReel.test.ts, test: "the word is off the page’s items: a list or the saved cache reads only its rows" }
       - { kind: running, file: src/hooks/__tests__/useFeeds.test.ts, test: "short by a dropped row, continues from the cursor the server’s rows gave" }
       - { kind: running, file: src/hooks/__tests__/useFeeds.test.ts, test: "full, but the server said it was the last: stops" }
+      - { kind: static, file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "2: a page judged by rows kept after a filter or a parse; never by the rows sent" }
+      - { kind: static, file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "finds the instances it was made for, put back" }
+      - { kind: static, file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "2: every page is judged by the rows the house sent" }
+    sweep: { read: [appCode], found: 0, fixed: 0, judged: 0, commit: e5689bb5, finder: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, result: "every app file read for a page judged full or short (a length compared with a page size) by a list made by dropping rows (a filter, a parse, a flatMap): none left, every page judgement reads the rows sent; the Reel's items.length === FEED_PAGE, put back, is found" }
     fix: "each page carries the server's word (FeedPage's next: the cursor after the last row sent, or null for a short page), off its items, and the next page is asked by it; a page restored from the saved cache has none and is judged by its length (mutants shape-page-cursor-from-rows-kept, shape-next-page-by-length)"
     places: [none]
 
@@ -2876,6 +2884,10 @@ classes:
     methods:
       - { kind: running, file: src/stores/__tests__/aRefusedWriteIsNotSuccess.test.ts, test: "puts the room back where it stood when neither the delete nor the read back can reach the house" }
       - { kind: running, file: src/stores/__tests__/aRefusedWriteIsNotSuccess.test.ts, test: "puts the seat back as it was when neither the leave nor the read back can reach the house" }
+      - { kind: static, file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, test: "2: a change made before the wait, on failure only read again; never when the failure takes its own change back" }
+      - { kind: static, file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, test: "finds the instances it was made for, put back" }
+      - { kind: static, file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, test: "2: no failure is put back only by a read" }
+    sweep: { read: [appCode], found: 0, fixed: 0, judged: 0, commit: e5689bb5, finder: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, result: "every function of the app that changes state before its wait read for a failure (a catch, or a branch on the answer's error) that only reads again with no write of its own: none left; the salon leave's put-back by a read, put back, is found" }
     fix: "a failed leave or dissolve puts the room back as it stood before the act, then reads (mutants shape-leave-put-back-by-a-read, shape-dissolve-put-back-by-a-read)"
     places: [none]
 
@@ -3270,7 +3282,11 @@ classes:
       - { kind: running, file: src/stores/__tests__/aReadAllRefusedTakesBackWhatTheHouseHasNot.test.ts, test: "READ ALL unreached, the notice opened meanwhile taken: it alone is read, the bell at 1" }
       - { kind: running, file: src/hooks/__tests__/aFailedSaveLeavesNoOneBehind.test.tsx, test: "a save refused undoes only what it set: a change made since stands" }
       - { kind: running, file: src/hooks/__tests__/aFailedSaveLeavesNoOneBehind.test.tsx, test: "a field this save set, changed again since, keeps its newer value" }
-    fix: "each refused write undoes its own notices alone: read again, or put back in their places, and counted back (mutant shape-rollback-undoes-another); a READ ALL refused takes back only what the house has not marked: a notice opened meanwhile and taken stays read, whichever lands first (mutants shape-read-all-rollback-takes-the-opened, shape-opened-notice-unread-after-rollback); a profile save refused undoes only the fields it set, and only where they still hold its value, never the whole earlier copy over changes made since (mutant shape-failed-save-restores-the-whole-copy)"
+      - { kind: static, file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, test: "1: a whole copy of a store, a query or a store's field taken before the wait, written back after it" }
+      - { kind: static, file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, test: "finds the instances it was made for, put back" }
+      - { kind: static, file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, test: "1: no failed write puts back a whole copy over changes made since" }
+    sweep: { read: [appCode], found: 1, fixed: 1, judged: 0, commit: e5689bb5, finder: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, result: "every app file read with TypeScript's parser for a copy of live state (a store's get().x, getState().x, a query's getQueryData, a screen's own useState value) taken before a wait and written back whole after it: 1 found and fixed, the door's DECLINE ALL put its whole list back over any read since; the notices board's whole-list rollback, put back, is found" }
+    fix: "each refused write undoes its own notices alone: read again, or put back in their places, and counted back (mutant shape-rollback-undoes-another); a READ ALL refused takes back only what the house has not marked: a notice opened meanwhile and taken stays read, whichever lands first (mutants shape-read-all-rollback-takes-the-opened, shape-opened-notice-unread-after-rollback); a profile save refused undoes only the fields it set, and only where they still hold its value, never the whole earlier copy over changes made since (mutant shape-failed-save-restores-the-whole-copy); stage C: a refused DECLINE ALL at the door puts back the rows it cleared beside any read since, never over them (mutant shape-door-cleared-puts-back-the-whole-copy)"
     places: [none]
 
   - id: COPY-a-failure-said-of-a-read-not-asked

@@ -10616,3 +10616,48 @@ mutants:
         find: " || leavesItsArm(w, node)))"
         replace: "))"
     proof: { file: src/stores/__tests__/staleWriteGuard.test.ts, test: "a wait in an arm that leaves does not reach past it; one in a try whose finally holds the write does" }
+
+  - id: shape-a-page-setter-stepping-back-unseen
+    class: READ-the-next-page-asks-an-old-one
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts
+        find: "    if (ts.isCallExpression(n) && /^set\\w*Page$/i.test(n.expression.getText(sf).replace(/^.*\\./, '')) && n.arguments.some(subtracts)) out.push(`${file}:${AW.lineOf(sf, n)}`);\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "1: a page number stepped back, by a setter, an assignment or a decrement" }
+
+  - id: shape-a-page-judged-by-a-parse-unseen
+    class: READ-a-page-judged-by-the-rows-kept
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts
+        find: "const DROPS_ROWS = /\\.(?:filter|flatMap)\\(|\\b(?:safeParse|parse\\w*)\\(/;"
+        replace: "const DROPS_ROWS = /\\.(?:filter|flatMap)\\(/;"
+    proof: { file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "2: a page judged by rows kept after a filter or a parse; never by the rows sent" }
+
+  - id: shape-a-screens-copy-put-back-unseen
+    class: WRITE-a-rollback-that-undoes-another-write
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts
+        find: "      return LIVE.test(from) || drawn.has(from) ? m.name.text : null;"
+        replace: "      return LIVE.test(from) ? m.name.text : null;"
+    proof: { file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, test: "1: a whole copy of a store, a query or a store's field taken before the wait, written back after it" }
+
+  - id: shape-door-cleared-puts-back-the-whole-copy
+    class: WRITE-a-rollback-that-undoes-another-write
+    source: shape
+    edits:
+      - file: src/hooks/useFollowRequests.ts
+        find: "      setItems((now) => [...snapshot.filter((r) => !now.some((n) => n.requesterId === r.requesterId)), ...now]\n        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)));"
+        replace: "      setItems(snapshot);"
+    proof: { file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, test: "1: no failed write puts back a whole copy over changes made since" }
+
+  - id: shape-a-catch-that-only-reads-unseen
+    class: WRITE-a-failure-put-back-by-a-read
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts
+        find: "      if (ts.isCatchClause(m)) return m.block;\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, test: "2: a change made before the wait, on failure only read again; never when the failure takes its own change back" }

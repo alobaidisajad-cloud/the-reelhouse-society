@@ -9,11 +9,7 @@ TOLD:
   - COPY-a-refusal-undone-unsaid
 LATE:
   - WRITE-words-let-go-unsent
-  - READ-the-next-page-asks-an-old-one
-  - READ-a-page-judged-by-the-rows-kept
-  - WRITE-a-failure-put-back-by-a-read
   - STATE-an-unsent-write-left-off-a-redrawn-page
-  - WRITE-a-rollback-that-undoes-another-write
   - STATE-pages-read-past-the-first-dropped
   - READ-a-later-page-failing-in-silence
 COPY:
