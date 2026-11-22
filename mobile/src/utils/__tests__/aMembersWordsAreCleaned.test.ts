@@ -9,15 +9,17 @@
  * table, its columns the arguments of public.clean_member_words.
  *
  * A new column a member can write is a place the cleaning does not reach until
- * someone remembers it. So the columns are read from production's snapshot —
- * every text and jsonb column the API roles may insert or update — and each is
- * cleaned by its table's trigger or named below with the reason it is not. A
- * reason that no longer names a writable column is stale and fails too.
+ * someone remembers it. So the columns are read from the house as production
+ * will hold it — production's snapshot, then every pending migration in name
+ * order: every text and jsonb column the API roles may insert or update — and
+ * each is cleaned by its table's trigger (the last one written standing) or
+ * named below with the reason it is not. A gap a pending car closes passes; a
+ * gap no car closes fails. A reason that no longer names a writable column is
+ * stale and fails too.
  */
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { SNAPSHOT_SQL, PENDING_SQL } from '@/test-utils/schema';
 
-const SCHEMA = readFileSync(join(__dirname, '..', '..', '..', 'supabase', 'schema', 'live-schema.sql'), 'utf8').replace(/\r/g, '');
+const SCHEMA = `${SNAPSHOT_SQL()}\n${PENDING_SQL().replace(/\r/g, '')}`;
 
 /** Not a member's words, each for its reason. */
 const NOT_WORDS: Record<string, string[]> = {
@@ -55,26 +57,36 @@ const NOT_WORDS: Record<string, string[]> = {
     'dispatch_posts.frozen_totals', 'logs.autopsy', 'lounge_messages.metadata', 'mod_actions.content_snapshot',
   ],
   'a draft, cleaned when it is filed': ['member_drafts.payload'],
-  'cleaned by the one function that writes it (file_appeal, clean_member_text), no row rule letting a member write it': ['mod_actions.appeal'],
 };
 
-/** Each table's text-like columns and their types. */
+/** A text-like type, at the start of what follows a column's name. */
+const TEXT_TYPE = /^(text\[\]|text|character varying(?:\(\d+\))?|jsonb)(?=[ ,;]|$)/;
+
+/** Each table's text-like columns and their types: those it is made with, and those added to it later. */
 function columnTypes(): Map<string, string> {
   const out = new Map<string, string>();
-  for (const m of SCHEMA.matchAll(/CREATE TABLE public\.(\w+) \(\n([\s\S]*?)\n\);/g)) {
-    for (const line of m[2].split('\n')) {
-      const c = /^ {4}"?(\w+)"? (text\[\]|text|character varying(?:\(\d+\))?|jsonb)(?=[ ,]|$)/.exec(line);
-      if (c) out.set(`${m[1]}.${c[1]}`, c[2]);
+  for (const m of SCHEMA.matchAll(/CREATE TABLE (?:IF NOT EXISTS )?public\.(\w+) \(\n([\s\S]*?)\n\);/g)) {
+    for (const line of (m[2] ?? '').split('\n')) {
+      const c = /^ {4}"?(\w+)"? (.*)$/.exec(line);
+      const t = c && TEXT_TYPE.exec(c[2] ?? '');
+      if (c && t) out.set(`${m[1] ?? ''}.${c[1] ?? ''}`, t[1] ?? '');
+    }
+  }
+  for (const m of SCHEMA.matchAll(/^ALTER TABLE (?:ONLY )?public\.(\w+)\s+([^;]*\bADD COLUMN\b[^;]*);/gm)) {
+    for (const add of (m[2] ?? '').matchAll(/\bADD COLUMN (?:IF NOT EXISTS )?"?(\w+)"? ([^,]*)/g)) {
+      const t = TEXT_TYPE.exec(add[2] ?? '');
+      if (t) out.set(`${m[1] ?? ''}.${add[1] ?? ''}`, t[1] ?? '');
     }
   }
   return out;
 }
 
-/** The columns the API roles may insert or update, from the snapshot's grants. */
+/** The columns the API roles may insert or update, from the grants. */
 function writable(types: Map<string, string>): Set<string> {
   const out = new Set<string>();
-  for (const m of SCHEMA.matchAll(/^GRANT (.+) ON TABLE public\.(\w+) TO (anon|authenticated);$/gm)) {
-    const [, privileges, table] = m;
+  for (const m of SCHEMA.matchAll(/^GRANT (.+?) ON (?:TABLE )?public\.(\w+) TO ([\w, ]+);$/gm)) {
+    const [, privileges, table, roles] = m;
+    if (!(roles ?? '').split(',').some((r) => ['anon', 'authenticated'].includes(r.trim()))) continue;
     for (const p of privileges.split(/,(?![^(]*\))/)) {
       const columns = /^(INSERT|UPDATE)\(([^)]+)\)$/.exec(p);
       if (columns) {
@@ -89,14 +101,22 @@ function writable(types: Map<string, string>): Set<string> {
 
 type Cleaning = { table: string; updateOf: string[]; args: string[] };
 
-/** Each a_clean_member_text trigger: its table, its UPDATE OF columns, its arguments. */
+/**
+ * Each a_clean_member_text trigger as production will hold it: its table, its UPDATE OF columns, its
+ * arguments. A pending car's CREATE OR REPLACE replaces its table's, and a DROP takes it away.
+ */
 function cleanings(): Cleaning[] {
-  return [...SCHEMA.matchAll(/^CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF ([\w, ]+) ON public\.(\w+) FOR EACH ROW EXECUTE FUNCTION public\.clean_member_words\(([^)]*)\);$/gm)]
-    .map((m) => ({
-      table: m[2],
-      updateOf: m[1].split(',').map((c) => c.trim()),
-      args: [...m[3].matchAll(/'([^']+)'/g)].map((a) => a[1]),
-    }));
+  const byTable = new Map<string, Cleaning>();
+  const acts = /^(?:CREATE (?:OR REPLACE )?TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF ([\w, ]+) ON public\.(\w+) FOR EACH ROW EXECUTE FUNCTION public\.clean_member_words\(([^)]*)\)|DROP TRIGGER (?:IF EXISTS )?a_clean_member_text ON public\.(\w+));$/gm;
+  for (const m of SCHEMA.matchAll(acts)) {
+    if (m[4]) { byTable.delete(m[4]); continue; }
+    byTable.set(m[2] ?? '', {
+      table: m[2] ?? '',
+      updateOf: (m[1] ?? '').split(',').map((c) => c.trim()),
+      args: [...(m[3] ?? '').matchAll(/'([^']+)'/g)].map((a) => a[1] ?? ''),
+    });
+  }
+  return [...byTable.values()];
 }
 
 describe('every word a member can write is cleaned where it is kept', () => {

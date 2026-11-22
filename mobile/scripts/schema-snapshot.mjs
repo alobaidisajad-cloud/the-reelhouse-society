@@ -22,8 +22,10 @@
  * that switches RLS on for every new table. None of that is in `public`.
  *
  *   live-extensions.sql     the extensions, at their versions — run FIRST
- *   live-schema.sql         pg_dump of `public`: tables, columns, constraints,
- *                           indexes, RLS policies, functions, triggers, grants
+ *   live-schema.sql         pg_dump of `public` and `private` (the rules the
+ *                           house asks there, 20261120_02): tables, columns,
+ *                           constraints, indexes, RLS policies, functions,
+ *                           triggers, grants
  *   live-outside-public.sql everything else this app owns — run LAST
  *
  * The first and last are SQL, not a description, so the three together build
@@ -91,7 +93,7 @@ const stripSessionToken = (s) => s.split('\n').filter((l) => !/^\\(un)?restrict 
 
 function dumpSchema(url, pgDumpVersion) {
   const raw = run('pg_dump', [
-    url, '--schema-only', '--no-owner', '-n', 'public',
+    url, '--schema-only', '--no-owner', '-n', 'public', '-n', 'private',
     // `vault` is not listed, and cannot be: -n restricts to exactly what is named.
   ], { env: { ...process.env, PGCLIENTENCODING: 'UTF8' } });
   const body = stripSessionToken(undoHostNewlines(raw));
@@ -120,7 +122,7 @@ function dumpExtensions(url) {
 }
 
 /**
- * Everything this app owns outside `public`. Runs after live-schema.sql.
+ * Everything this app owns outside `public` and `private`. Runs after live-schema.sql.
  *
  * "Owns" is decided by what it points at, not by a list of names, so a new one
  * is picked up without anyone remembering to add it here:
@@ -144,7 +146,7 @@ function dumpOutside(url) {
       FROM pg_trigger t
       JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_namespace n ON n.oid = c.relnamespace
       JOIN pg_proc p ON p.oid = t.tgfoid JOIN pg_namespace pn ON pn.oid = p.pronamespace
-      WHERE NOT t.tgisinternal AND n.nspname <> 'public' AND pn.nspname = 'public'`)),
+      WHERE NOT t.tgisinternal AND n.nspname NOT IN ('public', 'private') AND pn.nspname IN ('public', 'private')`)),
 
     ...section('event triggers', q(`
       SELECT string_agg(format('CREATE EVENT TRIGGER %I ON %s%s EXECUTE FUNCTION %I.%I();%s',
@@ -155,7 +157,7 @@ function dumpOutside(url) {
             WHEN 'R' THEN format(' ALTER EVENT TRIGGER %I ENABLE REPLICA;', e.evtname) ELSE format(' ALTER EVENT TRIGGER %I ENABLE ALWAYS;', e.evtname) END),
         E'\\n' ORDER BY e.evtname)
       FROM pg_event_trigger e JOIN pg_proc p ON p.oid = e.evtfoid JOIN pg_namespace pn ON pn.oid = p.pronamespace
-      WHERE pn.nspname = 'public'`)),
+      WHERE pn.nspname IN ('public', 'private')`)),
 
     ...section('tables whose changes are published (live updates)', q(`
       SELECT string_agg(format('ALTER PUBLICATION %I ADD TABLE %I.%I%s%s;', pub.pubname, n.nspname, c.relname,
@@ -164,7 +166,7 @@ function dumpOutside(url) {
         E'\\n' ORDER BY pub.pubname, n.nspname, c.relname)
       FROM pg_publication_rel pr JOIN pg_publication pub ON pub.oid = pr.prpubid
       JOIN pg_class c ON c.oid = pr.prrelid JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname = 'public'`)),
+      WHERE n.nspname IN ('public', 'private')`)),
 
     ...section('storage buckets', q(`
       SELECT string_agg(format('INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types, avif_autodetection) VALUES (%L, %L, %L, %s, %s, %L);',
@@ -183,7 +185,7 @@ function dumpOutside(url) {
           CASE WHEN pol.polwithcheck IS NULL THEN '' ELSE ' WITH CHECK (' || pg_get_expr(pol.polwithcheck, pol.polrelid) || ')' END),
         E'\\n' ORDER BY n.nspname, c.relname, pol.polname)
       FROM pg_policy pol JOIN pg_class c ON c.oid = pol.polrelid JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname <> 'public'
+      WHERE n.nspname NOT IN ('public', 'private')
         AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_class'::regclass AND d.objid = c.oid AND d.deptype = 'e')`)),
 
     // `pg_dump -n public` never prints a default that names no schema, yet one decides

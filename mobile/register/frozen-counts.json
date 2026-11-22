@@ -314,7 +314,7 @@
     "mobile/src/theme/light.ts": 15,
     "mobile/src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts": 1,
     "mobile/src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts": 2,
-    "mobile/src/utils/__tests__/aMembersWordsAreCleaned.test.ts": 7,
+    "mobile/src/utils/__tests__/aMembersWordsAreCleaned.test.ts": 2,
     "mobile/src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts": 2,
     "mobile/src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts": 1,
     "mobile/src/utils/__tests__/addOnly.guard.test.ts": 1,

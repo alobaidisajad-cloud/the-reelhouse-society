@@ -1249,11 +1249,16 @@ classes:
     fix: "20261015_02 (PUBLIC loses EXECUTE on every public function; each is granted to the roles that call it) and 20261015_03 (a new function starts closed to anon and authenticated); applied by the train of 2026-10-16, read back by train_1_live_check.sql: 0 functions PUBLIC may run, 0 default grants"
 
   - id: DB-extension-reach
+    title: A push could be sent in the house's name with words it never wrote, by whoever held the push sender's secret
     area: database
     seriousness: serious
     status: OPEN
-    count: 1
-    open_in_production: true
+    count: 0
+    source: { kind: reviewer, ref: "decision 1 rehearsal on the sealed copy, db-integration 38701422233, 2026-10-15" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aPushIsTheHousesOwn.guard.test.ts, test: "takes a notice's id alone from its caller" }
+      - { kind: static, file: src/utils/__tests__/aPushIsTheHousesOwn.guard.test.ts, test: "claims the notice from the house once, while fresh, and pushes the row it claimed" }
+    fix: "notify-push v6 takes a notice's id alone, reads the notice from the house and claims it once while fresh (pushed_at, 20261111_01; a member's own update keeps it), letting it go when Expo refused the send: whoever holds the secret can push only a notice already due, in the house's words. Live since the train of 2026-11-11 and notify-push v6's deploy (functions:check: all 7 match the repo). Held by aPushIsTheHousesOwn.guard.test.ts, the rehearsal a_push_is_sent_once_rehearsal.sql and the functions world (e2e/functions/suites.mjs: a forged message, an unknown, a repeated and a late notice)"
 
   - id: DB-row-edited-past-its-gates
     title: A member's own row passed its gates when written, then was edited past them (gates on INSERT only; an UPDATE changed its kind, parties, place or time)
@@ -1327,7 +1332,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 1429
+    count: 1424
     source: { kind: reviewer, ref: P0.65 }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }

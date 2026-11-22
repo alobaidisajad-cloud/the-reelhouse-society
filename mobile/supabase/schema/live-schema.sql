@@ -35,6 +35,214 @@ CREATE SCHEMA public;
 COMMENT ON SCHEMA public IS 'standard public schema';
 
 
+--
+-- Name: private; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA private;
+
+
+--
+-- Name: SCHEMA private; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA private IS 'Functions the read rules and members'' own functions call as the member, and the API never serves: what a member must never ask directly.';
+
+
+--
+-- Name: a_card_cut(text); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.a_card_cut(p_line text) RETURNS text
+    LANGUAGE plpgsql IMMUTABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+DECLARE
+  -- JavaScript's whitespace (\s, and what trim() takes away).
+  c_ws       constant text := '[\u0009-\u000d\u0020\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]';
+  -- What may not be cut from the character before it.
+  c_joins    constant text := '^[̀-ͯ҃-҉֑-ׇֽֿׁׂׅׄؐ-ًؚ-ٰٟۖ-ۜ۟-۪ۤۧۨ-ۭऀ-ःऺ-ॏ॑-ॗॢॣঁ-ঃ়া-্ัิ-ฺ็-๎ᅠ-ᇿ᪰-᫿᷀-᷿‌‍⃐-⃿〪-゙゚〯︀-️︠-︯\U0001f3fb-\U0001f3ff\U000e0020-\U000e007f\U000e0100-\U000e01ef]$';
+  c_flag     constant text := '^[\U0001f1e6-\U0001f1ff]$';
+  c_max      constant integer := 180;
+  c_abbr     constant text[] := ARRAY['mr', 'mrs', 'ms', 'dr', 'prof', 'st', 'jr', 'sr', 'no', 'vs', 'etc',
+                                      'ie', 'eg', 'ca', 'approx', 'dir', 'ed', 'vol', 'pt', 'us', 'uk'];
+  c_dangling constant text[] := ARRAY['a', 'an', 'the', 'and', 'or', 'but', 'nor', 'so', 'yet', 'of', 'to', 'in',
+                                      'on', 'at', 'by', 'for', 'from', 'with', 'as', 'that', 'which', 'who',
+                                      'is', 'was', 'are', 'were', 'be', 'been', 'it', 'its', 'his', 'her', 'their'];
+  v_whole  text;
+  v_c      text[];
+  v_n      integer;
+  v_w      integer := 0;
+  v_units  integer := 0;
+  v_k      integer;
+  v_halves integer;
+  v_end    integer;
+  v_after  text;
+  v_word   text;
+  v_bare   text;
+  v_window text;
+  v_space  integer;
+  v_words  text[];
+  v_last   text;
+  v_text   text;
+BEGIN
+  v_whole := regexp_replace(coalesce(p_line, ''), '^' || c_ws || '+|' || c_ws || '+$', '', 'g');
+  IF v_whole = '' THEN
+    RETURN NULL;
+  END IF;
+  -- Up to 180 code units: whole.
+  IF char_length(v_whole) + char_length(regexp_replace(v_whole, '[^\U00010000-\U0010ffff]', '', 'g')) <= c_max THEN
+    RETURN v_whole;
+  END IF;
+  v_c := regexp_split_to_array(v_whole, '');
+  v_n := cardinality(v_c);
+  -- The window: whole characters within the first 180 code units (cutWhole).
+  WHILE v_w < v_n AND v_units + CASE WHEN ascii(v_c[v_w + 1]) > 65535 THEN 2 ELSE 1 END <= c_max LOOP
+    v_units := v_units + CASE WHEN ascii(v_c[v_w + 1]) > 65535 THEN 2 ELSE 1 END;
+    v_w := v_w + 1;
+  END LOOP;
+  LOOP
+    EXIT WHEN v_w = 0 OR v_w >= v_n;
+    IF v_c[v_w + 1] ~ c_joins OR v_c[v_w] = U&'\200D' THEN
+      v_w := v_w - 1;
+      CONTINUE;
+    END IF;
+    IF v_c[v_w + 1] ~ c_flag AND v_c[v_w] ~ c_flag THEN
+      v_halves := 0;
+      v_k := v_w;
+      WHILE v_k > 0 AND v_c[v_k] ~ c_flag LOOP v_halves := v_halves + 1; v_k := v_k - 1; END LOOP;
+      IF v_halves % 2 = 1 THEN v_w := v_w - 1; CONTINUE; END IF;
+    END IF;
+    EXIT;
+  END LOOP;
+
+  -- The last sentence that ends inside the window (clipToSentence).
+  FOR v_i IN REVERSE v_w..1 LOOP
+    CONTINUE WHEN v_c[v_i] NOT IN ('.', '!', '?');
+    v_end := v_i;
+    WHILE v_end < v_w AND v_c[v_end + 1] IN ('»', '”', '"', '''', ')', ']') LOOP v_end := v_end + 1; END LOOP;
+    -- A stop ends a sentence only where whitespace follows it in the whole line.
+    CONTINUE WHEN v_end < v_n AND v_c[v_end + 1] !~ ('^' || c_ws || '$');
+    -- ...and what follows begins one: a capital, an opening quote or bracket, or the end.
+    v_after := regexp_replace(array_to_string(v_c[v_end + 1:v_n], ''), '^' || c_ws || '+', '');
+    CONTINUE WHEN v_after <> '' AND left(v_after, 1) !~ '^[A-Z«“"''(\[]$';
+    -- ...and what precedes is no abbreviation, and no single letter.
+    v_word := substring(array_to_string(v_c[1:v_i - 1], '') FROM '([A-Za-z.]+)$');
+    v_bare := replace(coalesce(v_word, ''), '.', '');
+    CONTINUE WHEN char_length(v_bare) = 1 OR lower(v_bare) = ANY (c_abbr);
+    v_text := array_to_string(v_c[1:v_end], '');
+    RETURN CASE WHEN right(v_text, 1) = '…' THEN v_text ELSE v_text || '…' END;
+  END LOOP;
+
+  -- No sentence ended inside the window: the last whole word, a dangling one dropped.
+  v_window := array_to_string(v_c[1:v_w], '');
+  v_space := strpos(reverse(v_window), ' ');
+  IF v_space > 0 AND char_length(v_window) - v_space > 0 THEN
+    v_window := left(v_window, char_length(v_window) - v_space);
+  END IF;
+  v_window := regexp_replace(v_window, c_ws || '+$', '');
+  v_words := string_to_array(v_window, ' ');
+  WHILE cardinality(v_words) > 1 LOOP
+    v_last := lower(regexp_replace(v_words[cardinality(v_words)], '[^A-Za-z'']', '', 'g'));
+    EXIT WHEN NOT (v_last = ANY (c_dangling));
+    v_words := v_words[1:cardinality(v_words) - 1];
+  END LOOP;
+  RETURN regexp_replace(array_to_string(v_words, ' '), '[\u0009-\u000d\u0020\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff,;:\u2014-]+$', '') || '…';
+END $_$;
+
+
+--
+-- Name: a_filings_line(text, text, text, text, text); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.a_filings_line(p_kind text, p_title text, p_body text, p_spoiler text, p_film text) RETURNS text
+    LANGUAGE sql IMMUTABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT public.a_filings_shared_line(p_kind, p_title, p_body, p_spoiler, p_film)
+$$;
+
+
+--
+-- Name: a_judge_is_refused(uuid, uuid, uuid); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.a_judge_is_refused(p_judge uuid, p_ruler uuid, p_target uuid) RETURNS text
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  -- Why this judge may not judge this case, or nothing when they may: the member it is about is refused
+  -- (OWN_CASE), as the one who ruled is (OWN_VERDICT). A lift has no ruler to ask (p_ruler NULL).
+  SELECT CASE
+    WHEN p_judge IS NOT DISTINCT FROM p_target THEN 'OWN_CASE'
+    WHEN p_ruler IS NOT NULL AND p_judge IS NOT DISTINCT FROM p_ruler THEN 'OWN_VERDICT'
+  END
+$$;
+
+
+--
+-- Name: a_picture_is_held(text, text); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.a_picture_is_held(p_bucket text, p_name text) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+  -- A page's picture is kept in the bucket under its member's folder; asked by that member's key of the
+  -- reports still pending about their page (their words as reported) and of the verdicts that cleared it
+  -- (what puts it back), each by its own index.
+  SELECT p_bucket = 'avatars' AND split_part(p_name, '/', 1) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' AND (
+    EXISTS (SELECT 1 FROM public.reports r JOIN public.reported_words w ON w.report_id = r.id
+             WHERE r.status = 'pending' AND r.content_type = 'profile' AND r.content_id = split_part(p_name, '/', 1)
+               AND position(('/avatars/' || p_name) IN coalesce(w.words ->> 'avatar_url', '')) > 0)
+    OR EXISTS (SELECT 1 FROM public.mod_actions m
+                WHERE m.target_user_id = split_part(p_name, '/', 1)::uuid AND m.action = 'delete_content'
+                  AND coalesce(m.appeal_status, 'pending') = 'pending'
+                  AND position(('/avatars/' || p_name) IN coalesce(m.content_snapshot -> 'kept' ->> 'avatar_url', '')) > 0))
+$_$;
+
+
+--
+-- Name: FUNCTION a_picture_is_held(p_bucket text, p_name text); Type: COMMENT; Schema: private; Owner: -
+--
+
+COMMENT ON FUNCTION private.a_picture_is_held(p_bucket text, p_name text) IS 'avatars_held_as_evidence is not made: storage.objects is not postgres''s to rule';
+
+
+--
+-- Name: a_piece_withheld_is_not_shared(); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.a_piece_withheld_is_not_shared() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+DECLARE
+  v_named text := CASE NEW.type
+    WHEN 'log_share'     THEN coalesce(NEW.metadata ->> 'log_id', NEW.metadata ->> 'logId')
+    WHEN 'list_share'    THEN NEW.metadata ->> 'listId'
+    WHEN 'dossier_share' THEN coalesce(NEW.metadata ->> 'dossier_id', NEW.metadata ->> 'dossierId')
+  END;
+  v_withheld boolean;
+BEGIN
+  IF v_named IS NULL OR v_named !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN
+    RETURN NEW;
+  END IF;
+  -- Read as the house, whoever shares: the sharer may be the piece's author, who alone still reads it.
+  v_withheld := CASE NEW.type
+       WHEN 'log_share'     THEN EXISTS (SELECT 1 FROM public.logs l WHERE l.id = v_named::uuid AND l.withheld_at IS NOT NULL)
+       WHEN 'list_share'    THEN EXISTS (SELECT 1 FROM public.lists s WHERE s.id = v_named::uuid AND s.withheld_at IS NOT NULL)
+       WHEN 'dossier_share' THEN EXISTS (SELECT 1 FROM public.dispatch_posts d WHERE d.id = v_named::uuid AND d.withheld_at IS NOT NULL)
+       ELSE false
+     END;
+  IF v_withheld THEN
+    RAISE EXCEPTION '%', CASE NEW.type WHEN 'log_share' THEN 'LOG_GONE' WHEN 'list_share' THEN 'STACK_GONE' ELSE 'PIECE_GONE' END
+      USING ERRCODE = 'P0002';
+  END IF;
+  RETURN NEW;
+END $_$;
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -74,6 +282,466 @@ CREATE TABLE public.lounge_messages (
 --
 
 COMMENT ON COLUMN public.lounge_messages.carries_words_of IS 'The members whose words this message carries besides its writer''s: the author of the message it answers (its quote), the author of the piece its card shows, the author of a card it answers. Written by the house alone (a_reply_quotes_its_message on insert; a_keeps_what_it_is keeps it from its writer). NULL: none. lounge_messages_hide_blocked hides a message carrying the words of one hidden from the reader, unless it is the reader''s own.';
+
+
+--
+-- Name: a_shared_card(public.lounge_messages, boolean); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.a_shared_card(p_msg public.lounge_messages, p_refuse_gone boolean) RETURNS public.lounge_messages
+    LANGUAGE plpgsql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+DECLARE
+  -- What only the house may write on a card: a byline, a count, a kind, its pictures, its marks, and the
+  -- words the website's reader draws beside a title.
+  v_houses  text[] := ARRAY['author_username', 'owner_username', 'curator', 'filmCount', 'topPosters', 'kind',
+                            'gone', 'sealed', 'caption', 'subtitle', 'reviewer', 'author', 'excerpt', 'review',
+                            'rating', 'poster_path', 'backdrop_path', 'profile_path'];
+  v_meta    jsonb := coalesce(p_msg.metadata, '{}'::jsonb);
+  v_named   text;
+  v_film    text;
+  v_log     record;
+  v_post    record;
+  v_list    record;
+  v_known   record;
+BEGIN
+  IF p_msg.type = 'log_share' THEN
+    v_named := coalesce(v_meta ->> 'log_id', v_meta ->> 'logId');
+    IF v_named IS NULL THEN
+      -- A card that names no record keeps none of a card's words: it shows nothing.
+      p_msg.metadata := '{}'::jsonb; p_msg.film_id := NULL; p_msg.film_title := NULL; p_msg.film_poster := NULL;
+      RETURN p_msg;
+    END IF;
+    -- Read as the caller: a sharer may put on a card only a record they may read.
+    SELECT l.id, l.user_id, l.film_id, l.film_title, l.poster_path, l.alt_poster INTO v_log
+      FROM public.logs l
+     WHERE v_named ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+       AND l.id = v_named::uuid;
+    IF NOT FOUND THEN
+      IF p_refuse_gone THEN
+        RAISE EXCEPTION 'LOG_GONE' USING ERRCODE = 'P0002';
+      END IF;
+      p_msg.metadata := jsonb_build_object('log_id', v_named, 'gone', true);
+      p_msg.film_title := NULL; p_msg.film_poster := NULL;
+      RETURN p_msg;
+    END IF;
+    p_msg.film_id := v_log.film_id;
+    p_msg.film_title := private.a_card_cut(v_log.film_title);
+    -- The record's poster: the one its owner chose for it, or the film's.
+    p_msg.film_poster := CASE WHEN p_msg.film_poster IN (v_log.poster_path, v_log.alt_poster) THEN p_msg.film_poster
+                              ELSE v_log.poster_path END;
+    p_msg.metadata := jsonb_strip_nulls(jsonb_build_object(
+      'log_id', v_log.id::text,
+      'logId', CASE WHEN v_meta ? 'logId' THEN v_log.id::text END,
+      'title', p_msg.film_title,
+      'poster_path', p_msg.film_poster,
+      'owner_username', (SELECT p.username FROM public.profiles p WHERE p.id = v_log.user_id)));
+    RETURN p_msg;
+  END IF;
+
+  IF p_msg.type = 'dossier_share' THEN
+    v_named := coalesce(v_meta ->> 'dossier_id', v_meta ->> 'dossierId');
+    IF v_named IS NULL THEN
+      p_msg.metadata := '{}'::jsonb; p_msg.film_id := NULL; p_msg.film_title := NULL; p_msg.film_poster := NULL;
+      RETURN p_msg;
+    END IF;
+    -- Read as the caller: a draft, a withheld filing or a hidden author's is not theirs to show.
+    SELECT d.id, d.user_id, d.author_username, d.kind, d.title, d.body, d.spoiler_label, d.subject_kind,
+           d.subject_title, d.ended_at, d.is_published INTO v_post
+      FROM public.dispatch_posts d
+     WHERE v_named ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+       AND d.id = v_named::uuid;
+    IF NOT FOUND OR v_post.ended_at IS NOT NULL OR NOT v_post.is_published THEN
+      IF p_refuse_gone THEN
+        RAISE EXCEPTION 'PIECE_GONE' USING ERRCODE = 'P0002';
+      END IF;
+      -- As round 11 takes a filing's card down when the filing goes.
+      p_msg.film_title := NULL; p_msg.film_poster := NULL; p_msg.film_id := NULL;
+      p_msg.metadata := jsonb_build_object('dossier_id', v_named, 'gone', true);
+      RETURN p_msg;
+    END IF;
+    v_film := CASE WHEN v_post.subject_kind = 'film' THEN v_post.subject_title END;
+    -- The filing's line by the share's rule, cut as the phone cuts it: never where its sharer chose.
+    p_msg.film_title := private.a_filings_line(v_post.kind, v_post.title, v_post.body, v_post.spoiler_label, v_film);
+    p_msg.film_id := NULL;
+    p_msg.film_poster := NULL;
+    p_msg.metadata := jsonb_strip_nulls(jsonb_build_object(
+      'dossier_id', v_post.id::text,
+      'dossierId', CASE WHEN v_meta ? 'dossierId' THEN v_post.id::text END,
+      -- The website draws a card by its title: the same line, kept with the line on the phone.
+      'title', p_msg.film_title,
+      -- An account closed leaves its filings unsigned: no byline.
+      'author_username', CASE WHEN v_post.user_id IS NOT NULL THEN v_post.author_username END,
+      'kind', v_post.kind));
+    RETURN p_msg;
+  END IF;
+
+  IF p_msg.type = 'list_share' THEN
+    v_named := v_meta ->> 'listId';
+    IF v_named IS NULL THEN
+      p_msg.metadata := '{}'::jsonb; p_msg.film_id := NULL; p_msg.film_title := NULL; p_msg.film_poster := NULL;
+      RETURN p_msg;
+    END IF;
+    -- Read as the caller; a sealed stack was refused before this (a_sealed_stack_is_not_shared).
+    SELECT l.id, l.title, l.user_id INTO v_list
+      FROM public.lists l
+     WHERE v_named ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+       AND l.id = v_named::uuid;
+    IF NOT FOUND THEN
+      IF p_refuse_gone THEN
+        RAISE EXCEPTION 'STACK_GONE' USING ERRCODE = 'P0002';
+      END IF;
+      p_msg.metadata := jsonb_build_object('listId', v_named, 'gone', true);
+      p_msg.film_id := NULL; p_msg.film_title := NULL; p_msg.film_poster := NULL;
+      RETURN p_msg;
+    END IF;
+    -- As a_sealed_stack_takes_its_cards makes a card when a stack is opened again.
+    p_msg.film_id := NULL; p_msg.film_title := NULL; p_msg.film_poster := NULL;
+    p_msg.metadata := jsonb_build_object(
+      'listId', v_list.id::text,
+      'title', v_list.title,
+      'filmCount', (SELECT count(*) FROM public.list_items i WHERE i.list_id = v_list.id),
+      'curator', (SELECT p.username FROM public.profiles p WHERE p.id = v_list.user_id),
+      'topPosters', coalesce((SELECT jsonb_agg(x.poster_path ORDER BY x.place)
+                                FROM (SELECT i.poster_path,
+                                             row_number() OVER (ORDER BY i.rank_position NULLS LAST, i.created_at, i.id) AS place
+                                        FROM public.list_items i
+                                       WHERE i.list_id = v_list.id AND i.poster_path IS NOT NULL
+                                       ORDER BY i.rank_position NULLS LAST, i.created_at, i.id
+                                       LIMIT 4) x), '[]'::jsonb));
+    RETURN p_msg;
+  END IF;
+
+  -- A film's or a person's card: no byline, count, kind, picture or mark of the house, whatever was sent.
+  p_msg.metadata := v_meta - v_houses;
+  IF p_msg.type = 'film_share' THEN
+    SELECT f.title, f.poster_path, f.year INTO v_known
+      FROM public.films f
+     WHERE f.id = coalesce(p_msg.film_id,
+                           CASE WHEN (v_meta ->> 'filmId') ~ '^[0-9]{1,9}$' THEN (v_meta ->> 'filmId')::integer END)
+       AND nullif(btrim(coalesce(f.title, '')), '') IS NOT NULL;
+    IF FOUND THEN
+      -- The film as the house holds it: its title (cut as the phone cuts a card's), poster and year.
+      IF p_msg.film_title IS NOT NULL THEN
+        p_msg.film_title := private.a_card_cut(v_known.title);
+      END IF;
+      p_msg.film_poster := coalesce(v_known.poster_path, p_msg.film_poster);
+      p_msg.metadata := p_msg.metadata || jsonb_strip_nulls(jsonb_build_object(
+        'title', CASE WHEN p_msg.metadata ? 'title' THEN private.a_card_cut(v_known.title) END,
+        'poster_path', v_known.poster_path,
+        'subtitle', v_known.year::text));
+    END IF;
+  END IF;
+  RETURN p_msg;
+END $_$;
+
+
+--
+-- Name: a_withheld_piece_holds_it(text, uuid); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.a_withheld_piece_holds_it(p_kind text, p_id uuid) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  -- Whether a critique's piece is withheld from the reader (withheld, and not theirs): its critiques go
+  -- with it, the critic's own too (a critique's own reading rule lets its writer read it anywhere).
+  SELECT coalesce(CASE p_kind
+           WHEN 'log'  THEN (SELECT l.withheld_at IS NOT NULL AND l.user_id IS DISTINCT FROM (SELECT auth.uid()) FROM public.logs l WHERE l.id = p_id)
+           WHEN 'list' THEN (SELECT s.withheld_at IS NOT NULL AND s.user_id IS DISTINCT FROM (SELECT auth.uid()) FROM public.lists s WHERE s.id = p_id)
+         END, false)
+$$;
+
+
+--
+-- Name: a_withheld_piece_turns_its_cards(text, uuid, boolean); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.a_withheld_piece_turns_its_cards(p_kind text, p_id uuid, p_withheld boolean) RETURNS void
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+DECLARE
+  v_type    text := CASE p_kind WHEN 'log' THEN 'log_share' WHEN 'list' THEN 'list_share' WHEN 'dispatch_post' THEN 'dossier_share' END;
+  v_key     text := CASE p_kind WHEN 'log' THEN 'log_id' WHEN 'list' THEN 'listId' WHEN 'dispatch_post' THEN 'dossier_id' END;
+  v_alt     text := CASE p_kind WHEN 'log' THEN 'logId' WHEN 'dispatch_post' THEN 'dossierId' END;
+  v_cards   uuid[];
+  v_caption text;
+  v_list    record;
+BEGIN
+  IF v_type IS NULL THEN
+    RETURN;
+  END IF;
+  -- Run by the house's own functions, so a_keeps_what_it_is lets the write (the sharer's message is not
+  -- the house's). Asked as containment, so the cards' own index (lounge_messages_card_names) finds them.
+  IF p_withheld THEN
+    WITH turned AS (
+      UPDATE public.lounge_messages m
+         SET metadata = jsonb_build_object(v_key, p_id::text, 'gone', true, 'withheld', true)
+                        || CASE WHEN p_kind = 'list' AND (m.metadata @> '{"caption": true}'::jsonb OR (m.content <> '' AND (
+                          (m.metadata ? 'title' AND (m.content = m.metadata ->> 'title'
+                             OR left(m.content, char_length(m.metadata ->> 'title') + 3) = (m.metadata ->> 'title') || ' · '))
+                          OR m.content ~ ' · [0-9]+ films · by @[^ ]+$')))
+                                THEN '{"caption": true}'::jsonb ELSE '{}'::jsonb END,
+             content = CASE WHEN p_kind = 'list' AND m.content <> '' AND (
+                          (m.metadata ? 'title' AND (m.content = m.metadata ->> 'title'
+                             OR left(m.content, char_length(m.metadata ->> 'title') + 3) = (m.metadata ->> 'title') || ' · '))
+                          OR m.content ~ ' · [0-9]+ films · by @[^ ]+$') THEN '' ELSE m.content END,
+             film_id = CASE WHEN p_kind = 'log' THEN m.film_id END,
+             film_title = NULL,
+             film_poster = NULL
+       WHERE m.type = v_type
+         AND m.metadata <> '{}'::jsonb
+         AND (m.metadata @> jsonb_build_object(v_key, p_id::text)
+              OR (v_alt IS NOT NULL AND m.metadata @> jsonb_build_object(v_alt, p_id::text)))
+         AND NOT (m.metadata @> '{"gone": true}'::jsonb)
+      RETURNING m.id, m.metadata
+    )
+    SELECT array_agg(id) INTO v_cards FROM turned WHERE metadata @> '{"caption": true}'::jsonb;
+    -- The replies that quote a stack's caption taken: the quote goes with it.
+    IF v_cards IS NOT NULL THEN
+      UPDATE public.lounge_messages r SET reply_to_content = NULL
+       WHERE r.reply_to_id = ANY (v_cards) AND r.reply_to_content IS NOT NULL;
+    END IF;
+    RETURN;
+  END IF;
+
+  IF p_kind = 'list' THEN
+    SELECT l.title, l.user_id, coalesce(l.is_private, false) AS sealed INTO v_list FROM public.lists l WHERE l.id = p_id;
+    IF NOT FOUND THEN
+      RETURN;
+    END IF;
+    IF v_list.sealed THEN
+      -- Sealed by its curator meanwhile: its cards are sealed cards, opened again as a seal opens them.
+      UPDATE public.lounge_messages m
+         SET metadata = jsonb_build_object('listId', p_id::text, 'sealed', true)
+                        || CASE WHEN m.metadata @> '{"caption": true}'::jsonb THEN '{"caption": true}'::jsonb ELSE '{}'::jsonb END
+       WHERE m.type = 'list_share' AND m.metadata @> jsonb_build_object('listId', p_id::text, 'withheld', true);
+      RETURN;
+    END IF;
+    v_caption := v_list.title || ' · ' || (SELECT count(*) FROM public.list_items i WHERE i.list_id = p_id) || ' films'
+                 || coalesce(' · by @' || (SELECT p.username FROM public.profiles p WHERE p.id = v_list.user_id), '');
+  END IF;
+  WITH made AS MATERIALIZED (
+    SELECT x.id, (x.metadata @> '{"caption": true}'::jsonb) AS had_caption, private.a_shared_card(x, false) AS card
+      FROM public.lounge_messages x
+     WHERE x.type = v_type AND x.metadata @> jsonb_build_object(v_key, p_id::text, 'withheld', true)
+  ), turned AS (
+    UPDATE public.lounge_messages m
+       SET film_id = (c.card).film_id, film_title = (c.card).film_title, film_poster = (c.card).film_poster,
+           metadata = (c.card).metadata,
+           content = CASE WHEN c.had_caption AND v_caption IS NOT NULL THEN v_caption ELSE m.content END
+      FROM made c
+     WHERE m.id = c.id
+    RETURNING m.id, m.content, m.deleted_at
+  )
+  SELECT array_agg(id) INTO v_cards FROM turned WHERE v_caption IS NOT NULL AND content = v_caption AND deleted_at IS NULL;
+  -- The replies that quoted a stack's caption have it back.
+  IF v_cards IS NOT NULL THEN
+    UPDATE public.lounge_messages r SET reply_to_content = v_caption
+     WHERE r.reply_to_id = ANY (v_cards) AND r.reply_to_content IS NULL;
+  END IF;
+END;
+$_$;
+
+
+--
+-- Name: an_appeal_may_be_heard(uuid, uuid); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.an_appeal_may_be_heard(p_ruler uuid, p_target uuid) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT EXISTS (SELECT 1 FROM public.profiles p
+                  WHERE p.role = 'admin' AND private.a_judge_is_refused(p.id, p_ruler, p_target) IS NULL)
+$$;
+
+
+--
+-- Name: can_view_user_data(uuid); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.can_view_user_data(target_uid uuid) RETURNS boolean
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_me          uuid := auth.uid();
+  is_private    boolean;
+  profile_found boolean;
+  is_following  boolean;
+  across        boolean;
+BEGIN
+  IF v_me = target_uid THEN RETURN TRUE; END IF;
+
+  -- The member's row, and whether a block stands between them and the caller either way (the rule
+  -- of a_block_stands_between; a visitor, with no one signed in, has none).
+  SELECT p.is_social_private, TRUE,
+         EXISTS (SELECT 1 FROM public.user_blocks b
+                  WHERE b.blocker_id = v_me AND b.blocked_id = p.id AND b.type = 'block')
+      OR EXISTS (SELECT 1 FROM public.user_blocks b
+                  WHERE b.blocker_id = p.id AND b.blocked_id = v_me AND b.type = 'block')
+    INTO is_private, profile_found, across
+    FROM public.profiles p WHERE p.id = target_uid;
+
+  IF NOT COALESCE(profile_found, false) OR across THEN RETURN FALSE; END IF;
+  IF NOT COALESCE(is_private, false)   THEN RETURN TRUE;  END IF;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.interactions
+    WHERE type = 'follow' AND user_id = v_me AND target_user_id = target_uid
+  ) INTO is_following;
+
+  RETURN COALESCE(is_following, false);
+END $$;
+
+
+--
+-- Name: FUNCTION can_view_user_data(target_uid uuid); Type: COMMENT; Schema: private; Owner: -
+--
+
+COMMENT ON FUNCTION private.can_view_user_data(target_uid uuid) IS 'Whether the caller may read a member''s file: their own, an open member''s, a private member''s they follow, never one across a block. Asked by the read rules as the member; never served by the API, so no member can ask it of one member after another.';
+
+
+--
+-- Name: hidden_authors(); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.hidden_authors() RETURNS uuid[]
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT COALESCE(array_agg(DISTINCT h.author), '{}'::uuid[]) FROM (
+    SELECT b.blocked_id AS author FROM public.user_blocks b WHERE b.blocker_id = auth.uid()
+    UNION ALL
+    SELECT b.blocker_id FROM public.user_blocks b WHERE b.blocked_id = auth.uid() AND b.type = 'block'
+  ) h;
+$$;
+
+
+--
+-- Name: FUNCTION hidden_authors(); Type: COMMENT; Schema: private; Owner: -
+--
+
+COMMENT ON FUNCTION private.hidden_authors() IS 'The members whose words are hidden from the caller: those they blocked or muted, and those who blocked them. The same rule as is_hidden_by, asked once per statement. Called by the read rules and members'' own functions as the member; never served by the API, so no member can list who blocked them.';
+
+
+--
+-- Name: is_hidden_by(uuid, uuid); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.is_hidden_by(viewer_id uuid, author_id uuid) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  -- viewer_id is deliberately ignored; the session decides who the viewer is.
+  -- The second branch is intentionally narrower: only a 'block' is mutual.
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_blocks
+    WHERE (blocker_id = auth.uid()  AND blocked_id = author_id)
+       OR (blocker_id = author_id   AND blocked_id = auth.uid() AND type = 'block')
+  );
+$$;
+
+
+--
+-- Name: FUNCTION is_hidden_by(viewer_id uuid, author_id uuid); Type: COMMENT; Schema: private; Owner: -
+--
+
+COMMENT ON FUNCTION private.is_hidden_by(viewer_id uuid, author_id uuid) IS 'Whether an author is hidden from the caller (the session decides who the caller is; viewer_id is ignored). Never served by the API.';
+
+
+--
+-- Name: members_blocking_me(); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.members_blocking_me() RETURNS uuid[]
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  -- The members who have blocked the caller: for the read rules alone, which read each of them as no
+  -- one. None for a visitor (no one signed in), and none for an admin, who moderates every member.
+  -- Read as the house (the owner of the tables), so the profiles rule that asks it is not asked again.
+  SELECT CASE
+    WHEN (SELECT auth.uid()) IS NULL THEN '{}'::uuid[]
+    WHEN EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.role = 'admin') THEN '{}'::uuid[]
+    ELSE COALESCE((SELECT array_agg(b.blocker_id) FROM public.user_blocks b
+                    WHERE b.blocked_id = (SELECT auth.uid()) AND b.type = 'block'), '{}'::uuid[])
+  END;
+$$;
+
+
+--
+-- Name: FUNCTION members_blocking_me(); Type: COMMENT; Schema: private; Owner: -
+--
+
+COMMENT ON FUNCTION private.members_blocking_me() IS 'The members who have blocked the caller, for the read rules that read each of them as no one to the caller. Never served by the API.';
+
+
+--
+-- Name: no_block_stands_with(uuid, uuid); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.no_block_stands_with(p_one uuid, p_two uuid) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  -- Whether no block stands, either way, between the caller and either of two members: the follows
+  -- rule asks it of a follow whose one end's file is open to the caller. The blocks are read as the
+  -- house (a member may read only their own); a visitor has none.
+  SELECT NOT EXISTS (SELECT 1 FROM public.user_blocks b
+                      WHERE b.blocker_id = (SELECT auth.uid()) AND b.blocked_id IN (p_one, p_two) AND b.type = 'block')
+     AND NOT EXISTS (SELECT 1 FROM public.user_blocks b
+                      WHERE b.blocked_id = (SELECT auth.uid()) AND b.blocker_id IN (p_one, p_two) AND b.type = 'block');
+$$;
+
+
+--
+-- Name: FUNCTION no_block_stands_with(p_one uuid, p_two uuid); Type: COMMENT; Schema: private; Owner: -
+--
+
+COMMENT ON FUNCTION private.no_block_stands_with(p_one uuid, p_two uuid) IS 'Whether no block stands between the caller and either of two members, for the follows rule. Never served by the API.';
+
+
+--
+-- Name: the_cards_made_true(integer); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.the_cards_made_true(p_part integer) RETURNS integer
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  -- The part's ids: from x0000000-0000-0000-0000-000000000000 to xfffffff-ffff-ffff-ffff-ffffffffffff.
+  v_from uuid;
+  v_last uuid;
+  v_made integer;
+BEGIN
+  IF p_part IS NULL OR p_part NOT BETWEEN 0 AND 15 THEN
+    RAISE EXCEPTION 'A part is a figure from 0 to 15.' USING ERRCODE = '22023';
+  END IF;
+  v_from := (to_hex(p_part) || '0000000-0000-0000-0000-000000000000')::uuid;
+  v_last := (to_hex(p_part) || 'fffffff-ffff-ffff-ffff-ffffffffffff')::uuid;
+  WITH cards AS MATERIALIZED (
+    SELECT x.id, private.a_shared_card(x, false) AS card
+      FROM public.lounge_messages x
+     WHERE x.id BETWEEN v_from AND v_last
+       AND x.type IN ('film_share', 'person_share', 'log_share', 'list_share', 'dossier_share')
+       AND NOT (coalesce(x.metadata, '{}'::jsonb) @> '{"gone": true}'::jsonb)
+       AND NOT (coalesce(x.metadata, '{}'::jsonb) @> '{"sealed": true}'::jsonb)
+  )
+  UPDATE public.lounge_messages m
+     SET film_id = (c.card).film_id, film_title = (c.card).film_title, film_poster = (c.card).film_poster,
+         metadata = (c.card).metadata
+    FROM cards c
+   WHERE m.id = c.id
+     AND (m.film_id, m.film_title, m.film_poster, m.metadata)
+         IS DISTINCT FROM ((c.card).film_id, (c.card).film_title, (c.card).film_poster, (c.card).metadata);
+  GET DIAGNOSTICS v_made = ROW_COUNT;
+  RETURN v_made;
+END $$;
 
 
 --
@@ -14245,12 +14913,155 @@ GRANT USAGE ON SCHEMA public TO service_role;
 
 
 --
+-- Name: SCHEMA private; Type: ACL; Schema: -; Owner: -
+--
+
+GRANT USAGE ON SCHEMA private TO anon;
+GRANT USAGE ON SCHEMA private TO authenticated;
+GRANT USAGE ON SCHEMA private TO service_role;
+
+
+--
+-- Name: FUNCTION a_card_cut(p_line text); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.a_card_cut(p_line text) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.a_card_cut(p_line text) TO authenticated;
+GRANT ALL ON FUNCTION private.a_card_cut(p_line text) TO service_role;
+
+
+--
+-- Name: FUNCTION a_filings_line(p_kind text, p_title text, p_body text, p_spoiler text, p_film text); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.a_filings_line(p_kind text, p_title text, p_body text, p_spoiler text, p_film text) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.a_filings_line(p_kind text, p_title text, p_body text, p_spoiler text, p_film text) TO authenticated;
+GRANT ALL ON FUNCTION private.a_filings_line(p_kind text, p_title text, p_body text, p_spoiler text, p_film text) TO service_role;
+
+
+--
+-- Name: FUNCTION a_judge_is_refused(p_judge uuid, p_ruler uuid, p_target uuid); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.a_judge_is_refused(p_judge uuid, p_ruler uuid, p_target uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.a_judge_is_refused(p_judge uuid, p_ruler uuid, p_target uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION a_picture_is_held(p_bucket text, p_name text); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.a_picture_is_held(p_bucket text, p_name text) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.a_picture_is_held(p_bucket text, p_name text) TO authenticated;
+GRANT ALL ON FUNCTION private.a_picture_is_held(p_bucket text, p_name text) TO service_role;
+
+
+--
+-- Name: FUNCTION a_piece_withheld_is_not_shared(); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.a_piece_withheld_is_not_shared() FROM PUBLIC;
+
+
+--
 -- Name: TABLE lounge_messages; Type: ACL; Schema: public; Owner: -
 --
 
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lounge_messages TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.lounge_messages TO authenticated;
 GRANT ALL ON TABLE public.lounge_messages TO service_role;
+
+
+--
+-- Name: FUNCTION a_shared_card(p_msg public.lounge_messages, p_refuse_gone boolean); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.a_shared_card(p_msg public.lounge_messages, p_refuse_gone boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.a_shared_card(p_msg public.lounge_messages, p_refuse_gone boolean) TO authenticated;
+GRANT ALL ON FUNCTION private.a_shared_card(p_msg public.lounge_messages, p_refuse_gone boolean) TO service_role;
+
+
+--
+-- Name: FUNCTION a_withheld_piece_holds_it(p_kind text, p_id uuid); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.a_withheld_piece_holds_it(p_kind text, p_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.a_withheld_piece_holds_it(p_kind text, p_id uuid) TO anon;
+GRANT ALL ON FUNCTION private.a_withheld_piece_holds_it(p_kind text, p_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION private.a_withheld_piece_holds_it(p_kind text, p_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION a_withheld_piece_turns_its_cards(p_kind text, p_id uuid, p_withheld boolean); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.a_withheld_piece_turns_its_cards(p_kind text, p_id uuid, p_withheld boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.a_withheld_piece_turns_its_cards(p_kind text, p_id uuid, p_withheld boolean) TO service_role;
+
+
+--
+-- Name: FUNCTION an_appeal_may_be_heard(p_ruler uuid, p_target uuid); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.an_appeal_may_be_heard(p_ruler uuid, p_target uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.an_appeal_may_be_heard(p_ruler uuid, p_target uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION can_view_user_data(target_uid uuid); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.can_view_user_data(target_uid uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.can_view_user_data(target_uid uuid) TO anon;
+GRANT ALL ON FUNCTION private.can_view_user_data(target_uid uuid) TO authenticated;
+GRANT ALL ON FUNCTION private.can_view_user_data(target_uid uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION hidden_authors(); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.hidden_authors() FROM PUBLIC;
+GRANT ALL ON FUNCTION private.hidden_authors() TO anon;
+GRANT ALL ON FUNCTION private.hidden_authors() TO authenticated;
+GRANT ALL ON FUNCTION private.hidden_authors() TO service_role;
+
+
+--
+-- Name: FUNCTION is_hidden_by(viewer_id uuid, author_id uuid); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.is_hidden_by(viewer_id uuid, author_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.is_hidden_by(viewer_id uuid, author_id uuid) TO anon;
+GRANT ALL ON FUNCTION private.is_hidden_by(viewer_id uuid, author_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION private.is_hidden_by(viewer_id uuid, author_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION members_blocking_me(); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.members_blocking_me() FROM PUBLIC;
+GRANT ALL ON FUNCTION private.members_blocking_me() TO anon;
+GRANT ALL ON FUNCTION private.members_blocking_me() TO authenticated;
+GRANT ALL ON FUNCTION private.members_blocking_me() TO service_role;
+
+
+--
+-- Name: FUNCTION no_block_stands_with(p_one uuid, p_two uuid); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.no_block_stands_with(p_one uuid, p_two uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.no_block_stands_with(p_one uuid, p_two uuid) TO anon;
+GRANT ALL ON FUNCTION private.no_block_stands_with(p_one uuid, p_two uuid) TO authenticated;
+GRANT ALL ON FUNCTION private.no_block_stands_with(p_one uuid, p_two uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION the_cards_made_true(p_part integer); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.the_cards_made_true(p_part integer) FROM PUBLIC;
 
 
 --

@@ -9377,3 +9377,11 @@ mutants:
         find: "const order = [...items.filter((i) => isGenerator(i.key)).sort(byWeight), ...items.filter((i) => !isGenerator(i.key)).sort(byWeight)];"
         replace: "const order = [...items].sort(byWeight);"
     proof: { file: test-utils/__tests__/weightedSequencer.test.ts, test: "can say NO: a file heavier than all the rest together takes a part alone when the generators are not placed first" }
+  - id: shape-a-push-claimed-twice
+    class: DB-extension-reach
+    source: shape
+    edits:
+      - file: supabase/functions/notify-push/index.ts
+        find: ".eq('id', id).is('pushed_at', null).gte("
+        replace: ".eq('id', id).gte("
+    proof: { file: src/utils/__tests__/aPushIsTheHousesOwn.guard.test.ts, test: "claims the notice from the house once, while fresh, and pushes the row it claimed" }
