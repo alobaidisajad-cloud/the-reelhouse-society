@@ -332,6 +332,7 @@ describe('each rule says no to its planted shape', () => {
       const loadMore = async () => { more.current = true; try { await ask(); } finally { more.current = false; setLoadingMore(false); } };
       const readKind = async (k) => { if (k) { await ask(); } else { setBusy(true); } };
       const readOne = async (k) => { if (k) return note(await ask()); setBusy(true); };
+      const readCase = async (k) => { switch (k) { case 1: return note(await ask()); default: break; } setBusy(true); };
       const fetchFile = async () => { last.current?.abort(); const controller = new AbortController(); last.current = controller; const signal = controller.signal; const r = await ask(signal); if (signal.aborted) return; setRows(r); };
       return loadTab; }`)).toEqual([]);
   });
