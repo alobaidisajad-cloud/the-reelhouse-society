@@ -5,9 +5,9 @@
 --
 -- The train applies 20261122_27 here (with_train), every car before it already applied; a sealed copy
 -- already holds it. On a ballot it plants, voted in by five members, as a voter: the tally says each
--- option's votes as the votes counted again say them; every ballot of the house is counted as its votes
--- are; a vote taken back is taken off its option, and an option left with none is no longer named; the
--- totals frozen when the ballot closes are the votes counted again; no member reads the counts
+-- option's votes as the votes counted again say them; a hundred ballots of the house are counted as their
+-- votes are; a vote taken back is taken off its option, and an option left with none is no longer named; the
+-- totals the freeze reads when the ballot closes are the votes counted again; no member reads the counts
 -- themselves; and the tally and the freeze read the counts, never the votes.
 -- Every row here is undone with the transaction. Read each NOTICE as  case|expected|got ; the last line
 -- is the verdict, and any miss makes psql exit non-zero.
@@ -60,13 +60,16 @@ END $f$;
 
 SELECT pg_temp.rh_case('the tally says each option''s votes as the votes counted again say them', '{"total": 5, "counts": {"0": 3, "1": 1, "2": 1}}',
   (SELECT pg_temp.bc_tally('5eed0000-0000-4000-8000-0000000b0c27'))::text) AS done \gset rh_
-SELECT pg_temp.rh_case('every ballot of the house is counted as its votes are', 'none',
-  coalesce((SELECT string_agg(x.post_id::text || ':' || x.option_index, ', ')
-              FROM ((SELECT post_id, option_index, count(*)::integer AS n FROM public.dispatch_votes GROUP BY 1, 2
-                     EXCEPT SELECT post_id, option_index, n FROM private.ballot_counts WHERE n > 0)
-                    UNION ALL
-                    (SELECT post_id, option_index, n FROM private.ballot_counts WHERE n > 0
-                     EXCEPT SELECT post_id, option_index, count(*)::integer FROM public.dispatch_votes GROUP BY 1, 2)) x), 'none')) AS done \gset rh_
+-- The votes already cast, counted by the car's filling: a hundred ballots of the house, each by its own
+-- index (never every vote of the house read while the car holds the votes against new ones).
+CREATE TEMP TABLE bc_some ON COMMIT DROP AS
+  SELECT p.id FROM public.dispatch_posts p WHERE p.kind = 'ballot' ORDER BY p.id LIMIT 100;
+SELECT pg_temp.rh_case('the ballots of the house are counted as their votes are', 'none',
+  coalesce((SELECT string_agg(s.id::text, ', ') FROM bc_some s
+             WHERE pg_temp.bc_recount(s.id)
+                   IS DISTINCT FROM (SELECT jsonb_build_object('total', COALESCE(sum(c.n), 0),
+                                                               'counts', COALESCE(jsonb_object_agg(c.option_index, c.n), '{}'::jsonb))
+                                       FROM private.ballot_counts c WHERE c.post_id = s.id AND c.n > 0)), 'none')) AS done \gset rh_
 
 -- Member 6's vote taken back, as their leaving takes it: the third option is left with none.
 DELETE FROM public.dispatch_votes WHERE post_id = '5eed0000-0000-4000-8000-0000000b0c27' AND user_id = (SELECT id FROM bc_members WHERE n = 6);
@@ -74,11 +77,19 @@ SELECT pg_temp.rh_case('a vote taken back is taken off its option, and an option
   (SELECT pg_temp.bc_tally('5eed0000-0000-4000-8000-0000000b0c27'))::text || '|'
     || ((SELECT pg_temp.bc_tally('5eed0000-0000-4000-8000-0000000b0c27')) = (SELECT pg_temp.bc_recount('5eed0000-0000-4000-8000-0000000b0c27')))::text) AS done \gset rh_
 
--- The ballot closes: the totals frozen are the votes counted again.
+-- The ballot closes: the totals the freeze reads for it (each closing ballot's counts, by the ballot, as
+-- freeze_closed_ballots joins them) are the votes counted again. The freeze itself is not run here: it
+-- would close every ballot of the house waiting to close, and tell each voter, while the car holds the
+-- votes and the filings.
 UPDATE public.dispatch_posts SET closes_at = now() - interval '1 minute' WHERE id = '5eed0000-0000-4000-8000-0000000b0c27';
-SELECT public.freeze_closed_ballots() AS done \gset rh_
 SELECT pg_temp.rh_case('the totals frozen when the ballot closes are its votes counted again', 'true',
-  ((SELECT frozen_totals - 'frozen_at' FROM public.dispatch_posts WHERE id = '5eed0000-0000-4000-8000-0000000b0c27')
+  ((SELECT jsonb_build_object('total', coalesce(sum(v.n), 0),
+                              'counts', coalesce(jsonb_object_agg(v.option_index, v.n) FILTER (WHERE v.option_index IS NOT NULL), '{}'::jsonb))
+      FROM public.dispatch_posts p
+      LEFT JOIN LATERAL (SELECT c.option_index, c.n FROM private.ballot_counts c WHERE c.post_id = p.id AND c.n > 0 OFFSET 0) v ON true
+     WHERE p.id = '5eed0000-0000-4000-8000-0000000b0c27' AND p.kind = 'ballot' AND p.closes_at <= now()
+       AND p.frozen_totals IS NULL AND p.ended_at IS NULL
+     GROUP BY p.id)
      = (SELECT pg_temp.bc_recount('5eed0000-0000-4000-8000-0000000b0c27')))::text) AS done \gset rh_
 
 -- No member reads the counts themselves.

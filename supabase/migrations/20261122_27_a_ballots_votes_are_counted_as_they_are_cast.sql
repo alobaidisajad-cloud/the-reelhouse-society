@@ -17,10 +17,11 @@ SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 
 -- ── each option's votes, kept ──
---   One row per ballot and option, in private, which the API never serves; read only by the house's
---   own functions.
+--   One row per ballot and option with votes, in private, which the API never serves; read only by the
+--   house's own functions. No key to the filing: a ballot taken away takes its votes, and each vote its
+--   count, so the making takes no lock on the filings.
 CREATE TABLE IF NOT EXISTS private.ballot_counts (
-  post_id      uuid     NOT NULL REFERENCES public.dispatch_posts(id) ON DELETE CASCADE,
+  post_id      uuid     NOT NULL,
   option_index smallint NOT NULL,
   n            integer  NOT NULL CHECK (n >= 0),
   PRIMARY KEY (post_id, option_index)
@@ -35,6 +36,8 @@ CREATE OR REPLACE FUNCTION private.a_vote_is_counted() RETURNS trigger
     AS $$
 BEGIN
   IF TG_OP IN ('DELETE', 'UPDATE') THEN
+    -- An option's last vote takes its row with it.
+    DELETE FROM private.ballot_counts WHERE post_id = OLD.post_id AND option_index = OLD.option_index AND n <= 1;
     UPDATE private.ballot_counts SET n = n - 1
      WHERE post_id = OLD.post_id AND option_index = OLD.option_index;
   END IF;
