@@ -299,6 +299,23 @@ function serverHeld(msgs: LoungeMessage[]): LoungeMessage[] {
   return msgs.filter((m) => (m.status === undefined || m.status === 'sent') && !queued.has(m.id) && !m.id.startsWith('offline-'));
 }
 
+/**
+ * The messages this member withdrew that the queue still holds: drawn withdrawn, and taken out of
+ * every reply quoting them, however often the room is read again, until the queue sends it.
+ */
+function withdrawnInQueue(): Set<string> {
+  return new Set(getOfflineQueue()
+    .filter((q) => q.type === 'withdraw_lounge_message' || q.type === 'delete_lounge_message')
+    .map((q) => String(q.payload.message_id)));
+}
+
+/** A message read from the house, with a withdrawal still queued laid over it (withdrawnInQueue). */
+function asWithdrawnHere(m: LoungeMessage, withdrawn: ReadonlySet<string>): LoungeMessage {
+  if (withdrawn.has(m.id) && !m.deleted_at) return { ...m, content: '', deleted_at: houseIso(), reactions: [] };
+  if (m.reply_to_id && withdrawn.has(m.reply_to_id) && m.reply_to_content) return { ...m, reply_to_content: null };
+  return m;
+}
+
 /** A message's place in the (created_at, id) order every read of a room keeps. */
 const placeOf = (m: { created_at: string; id: string }) => [instantOf(m.created_at), m.id] as const;
 const before = (a: { created_at: string; id: string }, b: { created_at: string; id: string }) => {
@@ -942,7 +959,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         logger.error('[LoungeStore.fetchMessages] load failed:', error);
         failed = true;
       } else if (data) {
-        const messages = messagesOf(data as unknown as LoungeMessageRow[], useAuthStore.getState().user?.id);
+        // A withdrawal still queued is laid over the house's copy, which does not have it yet.
+        const withdrawn = withdrawnInQueue();
+        const messages = messagesOf(data as unknown as LoungeMessageRow[], useAuthStore.getState().user?.id)
+          .map((m) => asWithdrawnHere(m, withdrawn));
         // Offline Queue Stitching
         const queue = getOfflineQueue();
         const pendingMessages = queue.filter(q => q.type === 'send_lounge_message' && q.payload.lounge_id === loungeId);
@@ -1139,6 +1159,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Absent from a whole answer, a held message was taken down; a cut answer proves nothing.
       const answeredWhole = !!read && read.length < 1000;
       const heldIds = new Set(held.map((m) => m.id));
+      // Withdrawn here and still queued: the house's copy is not yet withdrawn, and is not laid back.
+      const withdrawnHere = withdrawnInQueue();
 
       set((s) => {
         if (s.currentLoungeId !== loungeId) return s;
@@ -1154,8 +1176,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           }
           const r = reactions.get(m.id);
           const withdrawn = !!mark.deleted_at && !m.deleted_at;
-          const putBack = !mark.deleted_at && !!m.deleted_at;
-          const quote = mark.reply_to_content ?? null;
+          const putBack = !mark.deleted_at && !!m.deleted_at && !withdrawnHere.has(m.id);
+          const quote = m.reply_to_id && withdrawnHere.has(m.reply_to_id) ? null : mark.reply_to_content ?? null;
           const requoted = quote !== (m.reply_to_content ?? null);
           const recarded = isCardOfAPiece(m.type) && !!mark.metadata && JSON.stringify(mark.metadata) !== JSON.stringify(m.metadata ?? null);
           if (!withdrawn && !putBack && !requoted && !recarded && JSON.stringify(r ?? null) === JSON.stringify(m.reactions ?? null)) return [m];

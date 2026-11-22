@@ -8271,8 +8271,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: "          const quote = mark.reply_to_content ?? null;"
-        replace: "          const quote = mark.reply_to_content ?? m.reply_to_content ?? null;"
+        find: "          const quote = m.reply_to_id && withdrawnHere.has(m.reply_to_id) ? null : mark.reply_to_content ?? null;"
+        replace: "          const quote = m.reply_to_id && withdrawnHere.has(m.reply_to_id) ? null : mark.reply_to_content ?? m.reply_to_content ?? null;"
     proof:
       file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts
       test: "back in a kept room after the removal, Cal's reply is read again without the words"

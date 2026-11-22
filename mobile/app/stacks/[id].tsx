@@ -38,7 +38,8 @@ import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 import { colors, fonts } from '@/src/theme/theme';
 import { UNINKED, UNREADY, UNREADY_INK } from '@/src/theme/unready';
 import { logger } from '@/src/utils/logger';
-import { enqueueMutation, flushOfflineQueue } from '@/src/utils/offlineQueue';
+import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
+import { filmsQueuedOff, overlayQueuedStack } from '@/src/stores/domain/queuedStack';
 import { isNetworkError } from '@/src/utils/networkError';
 import { saidOfARefusal } from '@/src/utils/saidOfARefusal';
 import { critiquePaceSaid } from '@/src/utils/housePace';
@@ -308,8 +309,15 @@ function StackDetailScreen({ id }: { id: string }) {
         // The shared store, which the Reel's card reads too.
         tellMarks('list', [{ id, certify: endorseCount, certified }], askedAt);
 
-        // Everything else, whole: a field copied by hand can be left behind.
-        const listDetail: ListDetail = stack;
+        // Everything else, whole: a field copied by hand can be left behind. The member's own changes
+        // to it still in the queue are laid over it (a film added or taken off, an edit), so a read
+        // again never drops one that waits to be sent.
+        const whole = stack.films.length >= (stack.filmCount ?? stack.films.length);
+        const laid = overlayQueuedStack(id, stack as ListDetail, getOfflineQueue(), useAuthStore.getState().user?.id,
+          (filmId, title, poster) => ({ id: filmId, title, poster_path: poster }), whole);
+        const listDetail: ListDetail = laid.sizeChange && laid.stack.filmCount != null
+          ? { ...laid.stack, filmCount: Math.max(0, laid.stack.filmCount + laid.sizeChange) }
+          : laid.stack;
         // Whether the member's own certification was answered: the heart is known only then.
         return { list: listDetail, endorseCount, certifiedKnown: typeof certified === 'boolean' };
       } catch (error) {
@@ -419,7 +427,8 @@ function StackDetailScreen({ id }: { id: string }) {
     readingMore.current = true;
     try {
       const page = await StackService.getStackItemsPage(id, films[films.length - 1]?.id ?? null);
-      const held = new Set(films.map((f) => f.id));
+      // A film taken off offline is still on the house's later pages until the queue sends it.
+      const held = new Set([...films.map((f) => f.id), ...filmsQueuedOff(id, getOfflineQueue(), useAuthStore.getState().user?.id)]);
       setLater((was) => ({ after: list.films, films: [...(was.after === list.films ? was.films : []), ...page.filter((f) => !held.has(f.id))] }));
       setMoreFailedFor(null);
     } catch (e) {

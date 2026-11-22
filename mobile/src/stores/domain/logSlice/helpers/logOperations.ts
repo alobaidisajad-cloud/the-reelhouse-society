@@ -141,10 +141,16 @@ export function overlayQueuedLogs(
         return owner === undefined || owner === memberId;
     });
     const removed = new Set(mine.filter((q) => q.type === 'remove_log').map((q) => q.payload.log_id));
-    const changes = mine.filter((q) => q.type === 'update_log');
+    // An edit, and a rewatch added or taken back (each moves the record's head: `head`, the fields it
+    // leaves; a rewatch an older build queued carries only its viewing's `fields`), in queue order.
+    const changes = mine.flatMap((q) => {
+        if (q.type === 'update_log') return [{ id: q.payload.id, updates: q.payload.updates }];
+        if (q.type === 'add_viewing' || q.type === 'remove_viewing') return [{ id: q.payload.log_id, updates: q.payload.head ?? q.payload.fields }];
+        return [];
+    });
     const changed = (row: Record<string, unknown>) => changes
-        .filter((c) => c.payload.id === row.id)
-        .reduce((acc, c) => ({ ...acc, ...(c.payload.updates as Record<string, unknown>) }), { ...row });
+        .filter((c) => c.id === row.id)
+        .reduce((acc, c) => ({ ...acc, ...((c.updates ?? {}) as Record<string, unknown>) }), { ...row });
     const queuedAdds = mine
         .filter((q) => (q.type === 'add_log' || q.type === 'mark_watched') && !removed.has(q.payload.id))
         .map((q) => mapLogRow(changed(q.payload) as never) as DomainLog);
@@ -754,8 +760,8 @@ export const updateLogOp = async (
                 const ofFilm = filmIdToUpdate != null ? { film_id: Number(filmIdToUpdate) } : {};
                 if (isNetworkError(error) && enqueueMutation(opts?.viewingOp
                         ? (opts.viewingOp.kind === 'add'
-                            ? { type: 'add_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId, fields: viewingFieldsOf(dbUpdates), ...ofFilm } }
-                            : { type: 'remove_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId, ...ofFilm } })
+                            ? { type: 'add_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId, fields: viewingFieldsOf(dbUpdates), head: dbUpdates, ...ofFilm } }
+                            : { type: 'remove_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId, head: dbUpdates, ...ofFilm } })
                         : { type: 'update_log', payload: { id, user_id: user.id, updates: dbUpdates, ...(was ? { was } : {}), ...ofFilm } })) {
                     // A STEP shows no toast either: its caller is told it queued, and
                     // says one true thing in its own verb.

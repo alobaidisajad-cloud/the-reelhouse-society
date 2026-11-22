@@ -305,3 +305,27 @@ describe('a page of critiques that could not be read', () => {
     expect(useDispatch.getState().critiques.p1?.map((c) => c.id)).toEqual(['c900', 'c901']);
   });
 });
+
+describe('a filing’s critiques read again, with the member’s own still queued', () => {
+  afterEach(() => {
+    const { useOfflineQueueStore } = require('../offlineQueueStore');
+    useOfflineQueueStore.setState({ queued: [] });
+  });
+
+  it('a critique filed offline leads the page, and one taken off offline stays off, until the queue sends them', async () => {
+    const { useOfflineQueueStore } = require('../offlineQueueStore');
+    useOfflineQueueStore.setState({ queued: [
+      { id: 'q1', type: 'add_critique', timestamp: Date.parse('2026-11-20T10:00:00Z'), owner: 'u1',
+        payload: { _tempId: 'mine-1', id: 'mine-1', post_id: 'p1', user_id: 'u1', author_username: 'me', body: 'Filed from a tunnel.' } },
+      { id: 'q2', type: 'remove_critique', timestamp: 2, owner: 'u1', payload: { id: 'c2', user_id: 'u1', post_id: 'p1' } },
+      // Another filing's, and another member's left on this phone: neither laid here.
+      { id: 'q3', type: 'add_critique', timestamp: 3, owner: 'u1', payload: { _tempId: 'x', post_id: 'p9', body: 'Elsewhere.' } },
+      { id: 'q4', type: 'add_critique', timestamp: 4, owner: 'u7', payload: { _tempId: 'y', post_id: 'p1', body: 'Not mine.' } },
+    ] });
+    mockRows = [[row(1), row(2), row(3)]];
+    await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
+    const drawn = useDispatch.getState().critiques.p1 ?? [];
+    expect(drawn.map((c) => c.id)).toEqual(['mine-1', 'c1', 'c3']);
+    expect(drawn[0]).toMatchObject({ body: 'Filed from a tunnel.', authorId: 'u1', certifyCount: 0 });
+  });
+});

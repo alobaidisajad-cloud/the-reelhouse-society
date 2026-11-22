@@ -2149,3 +2149,7 @@ files of the reading map this one does not.
 | src/utils/__tests__/aMarkInFlightEndsWithItsAnswer.guard.test.ts | — |  |
 | src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts | — |  |
 | src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts | — |  |
+| src/stores/__tests__/aQueuedShelfWriteStaysOnTheShelf.test.ts | — |  |
+| src/stores/__tests__/aQueuedStackChangeStaysOnTheStacks.test.ts | — |  |
+| src/stores/domain/queuedStack.ts | — |  |
+| src/utils/__tests__/everyQueuedWriteIsReadBack.guard.test.ts | — |  |

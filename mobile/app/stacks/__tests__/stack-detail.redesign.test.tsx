@@ -446,6 +446,46 @@ describe('the critiques action', () => {
     expect(answer.list.critiqueCount).toBe(7);
   });
 
+  it('read again, keeps the member’s queued changes to it: a film added and one taken off offline, and an edit', async () => {
+    const { StackService } = require('@/src/services/StackService');
+    const { getOfflineQueue } = jest.requireMock('@/src/utils/offlineQueue') as { getOfflineQueue: jest.Mock };
+    StackService.getStackFullPayload.mockResolvedValueOnce({
+      ...baseStack, endorseCount: 0, certified: false, filmCount: 2,
+      films: [{ id: 1, title: 'Film 1', poster_path: null }, { id: 2, title: 'Film 2', poster_path: null }],
+    });
+    getOfflineQueue.mockReturnValueOnce([
+      { type: 'add_film_to_list', owner: 'u1', payload: { list_id: STACK_ID, film_id: 9, film_title: 'Late Spring', poster_path: '/l.jpg' } },
+      { type: 'remove_film_from_list', owner: 'u1', payload: { list_id: STACK_ID, film_id: 1 } },
+      { type: 'update_list', owner: 'u1', payload: { list_id: STACK_ID, user_id: 'u1', updates: { title: 'Noir, Amended' } } },
+      // Another stack's, and another member's: neither laid on.
+      { type: 'add_film_to_list', owner: 'u1', payload: { list_id: 'other', film_id: 5, film_title: 'Elsewhere' } },
+      { type: 'add_film_to_list', owner: 'u2', payload: { list_id: STACK_ID, film_id: 6, film_title: 'Not mine' } },
+    ]);
+    mount();
+    const answer = await mockStackOpts!.queryFn();
+    expect(answer.list).toMatchObject({
+      title: 'Noir, Amended', filmCount: 2,
+      films: [{ id: 2, title: 'Film 2', poster_path: null }, { id: 9, title: 'Late Spring', poster_path: '/l.jpg' }],
+    });
+  });
+
+  it('a later page leaves out a film taken off offline, which the house still holds', async () => {
+    const { StackService } = jest.requireMock('@/src/services/StackService') as { StackService: { getStackItemsPage: jest.Mock } };
+    const { getOfflineQueue } = jest.requireMock('@/src/utils/offlineQueue') as { getOfflineQueue: jest.Mock };
+    StackService.getStackItemsPage.mockReset();
+    StackService.getStackItemsPage.mockResolvedValueOnce([{ id: 4, title: 'Film 4', poster_path: null }, { id: 5, title: 'Film 5', poster_path: null }]);
+    getOfflineQueue.mockReturnValue([{ type: 'remove_film_from_list', owner: 'u1', payload: { list_id: STACK_ID, film_id: 4 } }]);
+    try {
+      const r = mount({ films: [1, 2, 3].map((n) => ({ id: n, title: `Film ${n}`, poster_path: null })), filmCount: 4 });
+      await act(async () => {});
+      await act(async () => { await mockEndReached?.(); });
+      expect(r.queryByText('Film 4')).toBeNull();
+      expect(r.getByText('Film 5')).toBeTruthy();
+    } finally {
+      getOfflineQueue.mockReturnValue([]);
+    }
+  });
+
   it('is one source of truth, so a refetch cannot double-count', () => {
     // A second tally would double on a refetch; the cached payload is nudged.
     expect(SOURCE).toMatch(/bumpCritiqueCount/);

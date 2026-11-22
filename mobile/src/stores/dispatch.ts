@@ -1182,12 +1182,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       id,
       postId,
       authorId: user.id,
-      author: {
-        name: user.username ?? '',
-        memberNo: (user as { member_no?: number }).member_no ?? 0,
-        tier: paperTierOf(user),
-        avatar: (user as { avatar_url?: string | null }).avatar_url ?? null,
-      },
+      author: asAuthor(user),
       body: clean,
       certifyCount: 0,
       createdAt: houseIso(),
@@ -1594,6 +1589,40 @@ async function loadViewerState(
  * member has just written is already at the top, and the server will hand it back
  * in a later page.
  */
+/** The member as a critique's author is drawn. */
+function asAuthor(user: NonNullable<ReturnType<typeof useAuthStore.getState>['user']>): Critique['author'] {
+  return {
+    name: user.username ?? '',
+    memberNo: (user as { member_no?: number }).member_no ?? 0,
+    tier: paperTierOf(user),
+    avatar: (user as { avatar_url?: string | null }).avatar_url ?? null,
+  };
+}
+
+/**
+ * The member's own critiques of a filing still in the queue, newest first, and those they took off
+ * that the queue still holds: a page of critiques read again from the house, which has neither yet,
+ * lays the first at its head and leaves the second out, until the queue sends them.
+ */
+function queuedCritiques(postId: string): { filed: Critique[]; off: Set<string> } {
+  const user = useAuthStore.getState().user;
+  const filed: Critique[] = [];
+  const off = new Set<string>();
+  if (!user) return { filed, off };
+  for (const m of useOfflineQueueStore.getState().queued) {
+    const p = m.payload ?? {};
+    if (p.post_id !== postId || (m.owner !== undefined && m.owner !== user.id)) continue;
+    if (m.type === 'remove_critique') off.add(String(p.id));
+    else if (m.type === 'add_critique' && typeof p.body === 'string') {
+      filed.unshift({
+        id: String(p._tempId ?? p.id), postId, authorId: user.id, author: asAuthor(user), body: p.body,
+        certifyCount: 0, createdAt: new Date(m.timestamp).toISOString(), editedAt: null,
+      });
+    }
+  }
+  return { filed: filed.filter((c) => !off.has(c.id)), off };
+}
+
 async function readCritiquePage(
   postId: string,
   order: CritiqueOrder,
@@ -1632,9 +1661,11 @@ async function readCritiquePage(
       // An answer in an order no longer chosen is the other order's: the member switched while it
       // was on its way, and its rows would stand under the wrong heading.
       if ((st.critiquesOrder[postId] ?? order) !== order) return {};
-      const existing = after ? (st.critiques[postId] ?? []) : [];
+      // What the member filed or took off that the queue still holds, laid over the house's page.
+      const { filed, off } = queuedCritiques(postId);
+      const existing = after ? (st.critiques[postId] ?? []) : filed;
       const seen = new Set(existing.map((c) => c.id));
-      const merged = [...existing, ...critiques.filter((c) => !seen.has(c.id))];
+      const merged = [...existing, ...critiques.filter((c) => !seen.has(c.id) && !off.has(c.id))];
       return {
         critiques: { ...st.critiques, [postId]: merged },
         // A short page is the end of the list. A full one MIGHT be, and the next
