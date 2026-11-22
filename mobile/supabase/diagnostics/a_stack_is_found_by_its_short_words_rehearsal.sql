@@ -41,5 +41,24 @@ SELECT pg_temp.rh_case('a stack retitled is found by its new pair, not its old',
           || count(*) FILTER (WHERE private.search_grams(l.title, l.description) @> ARRAY['ǁǂ'])::text
      FROM public.lists l JOIN ssw_stacks s ON s.id = l.id WHERE l.is_private = false)) AS done \gset rh_
 
+-- The member writes their open stack's words as themselves: the index works out its pieces as the member.
+GRANT SELECT ON ssw_member, ssw_stacks TO authenticated;
+CREATE FUNCTION pg_temp.ssw_writes_own_stack() RETURNS text LANGUAGE plpgsql AS $$
+DECLARE v text;
+BEGIN
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM ssw_member), 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+  BEGIN
+    UPDATE public.lists SET description = 'Holds ǁǂ, written by its member.' WHERE id = (SELECT id FROM ssw_stacks WHERE what = 'open');
+    v := 'written';
+  EXCEPTION WHEN OTHERS THEN v := SQLERRM;
+  END;
+  PERFORM set_config('role', 'none', true);
+  PERFORM set_config('request.jwt.claims', '', true);
+  RETURN v;
+END $$;
+GRANT EXECUTE ON FUNCTION pg_temp.ssw_writes_own_stack() TO authenticated;
+SELECT pg_temp.rh_case('a member writes their own stack''s words, as themselves', 'written', (SELECT pg_temp.ssw_writes_own_stack())) AS done \gset rh_
+
 SELECT pg_temp.rh_verdict();
 ROLLBACK;

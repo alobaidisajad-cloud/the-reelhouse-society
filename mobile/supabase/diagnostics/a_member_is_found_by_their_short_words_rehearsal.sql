@@ -43,5 +43,24 @@ SELECT pg_temp.rh_case('the member whose handle holds it is found, and the one w
        || (SELECT string_agg(m.n::text, ',') FROM public.profiles p JOIN msw_members m ON m.id = p.id
             WHERE private.search_grams(p.username, p.display_name) @> ARRAY['ǁǂ']))) AS done \gset rh_
 
+-- A member writes their own name as themselves: the index works out its pieces as the member.
+GRANT SELECT ON msw_members TO authenticated;
+CREATE FUNCTION pg_temp.msw_writes_own_name() RETURNS text LANGUAGE plpgsql AS $$
+DECLARE v text;
+BEGIN
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM msw_members WHERE n = 2), 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+  BEGIN
+    UPDATE public.profiles SET display_name = 'Rh ǁǂ Again' WHERE id = (SELECT id FROM msw_members WHERE n = 2);
+    v := 'written';
+  EXCEPTION WHEN OTHERS THEN v := SQLERRM;
+  END;
+  PERFORM set_config('role', 'none', true);
+  PERFORM set_config('request.jwt.claims', '', true);
+  RETURN v;
+END $$;
+GRANT EXECUTE ON FUNCTION pg_temp.msw_writes_own_name() TO authenticated;
+SELECT pg_temp.rh_case('a member writes their own name, as themselves', 'written', (SELECT pg_temp.msw_writes_own_name())) AS done \gset rh_
+
 SELECT pg_temp.rh_verdict();
 ROLLBACK;

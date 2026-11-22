@@ -85,6 +85,11 @@ BEGIN
 END $$;
 -- add-only (1): no shipped client uses it: functions this car makes, called by no client (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION private.short_grams(text), private.search_grams(text, text), private.pattern_grams(text) FROM PUBLIC, anon, authenticated;
+-- The pieces are worked out by whoever writes a row the short pieces' indexes hold (20261122_13, _14): a
+-- member saving a stack or their own name, as themselves. So they may run them, inside the private
+-- schema the API never serves; without it, every such write was refused.
+-- add-only (1): no shipped client uses it: functions this car makes, run only by the indexes of 20261122_13 and _14 (TestFlight build 41 and the website checked)
+GRANT EXECUTE ON FUNCTION private.short_grams(text), private.search_grams(text, text) TO anon, authenticated, service_role;
 
 -- As 20261120_32 left it, but the stacks of a member whose handle holds the words are read by their own index.
 -- add-only (3): it only fixes: the same stacks in the same order for every search (the rehearsal replays each search and compares it with the old reading); TestFlight build 41 and the website read it as before
