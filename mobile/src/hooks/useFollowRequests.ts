@@ -220,8 +220,9 @@ export function useFollowRequests(enabled: boolean) {
     }
     if (!isMounted.current) return;
     if (n < 0) {
-      // Failure: restore, paging included.
-      setItems(snapshot);
+      // Failure: the rows it cleared come back, paging included, beside any read since (never over them).
+      setItems((now) => [...snapshot.filter((r) => !now.some((n) => n.requesterId === r.requesterId)), ...now]
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)));
       hasMoreRef.current = hadMore;
       setHasMore(hadMore);
     }

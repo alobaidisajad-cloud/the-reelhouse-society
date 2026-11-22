@@ -2147,3 +2147,5 @@ files of the reading map this one does not.
 | src/stores/__tests__/aRecordsFilmIsFoundPastThePages.test.ts | — |  |
 | src/utils/__tests__/aRecordIsFoundPastItsPages.guard.test.ts | — |  |
 | src/utils/__tests__/aMarkInFlightEndsWithItsAnswer.guard.test.ts | — |  |
+| src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts | — |  |
+| src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts | — |  |
