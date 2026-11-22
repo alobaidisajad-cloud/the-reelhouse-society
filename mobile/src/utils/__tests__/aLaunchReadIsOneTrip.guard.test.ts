@@ -82,8 +82,9 @@ export function importsOf(file: string, sf: ts.SourceFile, known: Set<string>): 
   });
   // require('…') and import('…') anywhere in the file.
   const walk = (n: ts.Node) => {
-    if (ts.isCallExpression(n) && n.arguments.length === 1 && ts.isStringLiteral(n.arguments[0])
-      && (n.expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(n.expression) && n.expression.text === 'require'))) add(n.arguments[0].text);
+    const only = ts.isCallExpression(n) && n.arguments.length === 1 ? n.arguments[0] : undefined;
+    if (ts.isCallExpression(n) && only && ts.isStringLiteral(only)
+      && (n.expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(n.expression) && n.expression.text === 'require'))) add(only.text);
     ts.forEachChild(n, walk);
   };
   walk(sf);
