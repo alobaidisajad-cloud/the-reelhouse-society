@@ -134,7 +134,8 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
   const readFiled = useCallback(() => {
     if (!editId) return;
     setAmendRead('reading');
-    void useDispatch.getState().hydrate(editId).then((got) => {
+    // A read that threw is one out of reach: the desk is never left reading.
+    void useDispatch.getState().hydrate(editId).catch(() => 'unreachable' as const).then((got) => {
       if (!stillHere()) return;
       if (got === 'unreachable') { setAmendRead('unreachable'); return; }
       // Gone, or not this member's filing of this kind: nothing here may be written over it.

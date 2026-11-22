@@ -372,7 +372,8 @@ function ComposeDossierScreen() {
     const readFiled = useCallback(() => {
         if (!edit) return;
         setAmendRead('reading');
-        void useDispatch.getState().hydrate(edit).then((got) => {
+        // A read that threw is one out of reach: the desk is never left reading.
+        void useDispatch.getState().hydrate(edit).catch(() => 'unreachable' as const).then((got) => {
             if (!isMounted.current) return;
             if (got === 'unreachable') { setAmendRead('unreachable'); return; }
             // Gone, or no longer an essay of this member's: nothing here may be filed over it.

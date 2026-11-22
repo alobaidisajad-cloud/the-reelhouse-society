@@ -21,7 +21,8 @@ const ROOM = {
   id: ROOM_ID, name: 'The Back Row', description: '', is_private: true,
   creator_id: HOST, created_at: '2026-01-01T00:00:00Z', member_count: 3,
 };
-let mockRoster: { user_id: string; status: string; username?: string }[] = [];
+/** The roster the house gives; null, a read that could not be reached. */
+let mockRoster: { user_id: string; status: string; username?: string }[] | null = [];
 /** The channel's word that the roster changed (subscribeToLounge's onMembership), as the salon gave it. */
 let mockOnMembership: (() => void) | null = null;
 let mockHouse = supabaseFake({ rows: { lounges: [ROOM] } });
@@ -126,7 +127,7 @@ it('the door is shown once: closed, a new roster read does not open it again', a
   expect(r.queryByText('At the Door')).toBeNull();
   // Another comes to the door, and the channel says so: the roster is read again, and the room
   // keeps its door shut, its count grown.
-  mockRoster = [...mockRoster, { user_id: '00000000-0000-4000-a000-0000000000dd', status: 'pending', username: 'orson' }];
+  mockRoster = [...(mockRoster ?? []), { user_id: '00000000-0000-4000-a000-0000000000dd', status: 'pending', username: 'orson' }];
   expect(mockOnMembership).not.toBeNull();
   await act(async () => { mockOnMembership?.(); });
   await settle();
@@ -154,6 +155,25 @@ it('a request the host declines is the door to ask again, never "with the host" 
   // heard is what asks the roster again.
   mockRoster = mockRoster.filter((m) => m.user_id !== ASKER);
   expect(mockOnMembership).toBeNull();
+  await act(async () => { useNotificationStore.setState({ noticesHeard: useNotificationStore.getState().noticesHeard + 1 }); });
+  await settle();
+  expect(r.queryByText('Your request is with the host.')).toBeNull();
+  expect(r.getByText('REQUEST A SEAT')).toBeTruthy();
+});
+
+it('a request whose first roster could not be read, then declined, is the door to ask again once a roster is read', async () => {
+  const ASKER = '00000000-0000-4000-a000-0000000000dd';
+  const seated = [{ user_id: HOST, status: 'approved', username: 'host' }, SEATED];
+  mockRoster = seated;
+  const r = await open(ASKER, {});
+  // Asked, and answered: the roster read after it is out of reach. The house holds the request.
+  mockRoster = null;
+  await act(async () => { await fireEvent.press(r.getByText('REQUEST A SEAT')); });
+  await settle();
+  expect(r.getByText('Your request is with the host.')).toBeTruthy();
+
+  // Declined before any roster held it: the next roster read ends the request in flight.
+  mockRoster = seated;
   await act(async () => { useNotificationStore.setState({ noticesHeard: useNotificationStore.getState().noticesHeard + 1 }); });
   await settle();
   expect(r.queryByText('Your request is with the host.')).toBeNull();

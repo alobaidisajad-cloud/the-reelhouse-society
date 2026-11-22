@@ -1749,11 +1749,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Sent: the queue holds it no longer, for this member or the next.
       if (held) letHeldGo(messageId);
       if (!memberUnchanged(startedAs)) return true;
-      set(s => ({
-        currentMessages: s.currentMessages.map(m =>
-          m.id === messageId ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const } : m
-        ),
-      }));
+      // Marked where it stands, on screen or kept for a room left meanwhile (as sendMessage does).
+      inRoomWords(msg.lounge_id, (words) => words.map(m =>
+        m.id === messageId ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const } : m
+      ));
       return true;
     } catch (e) {
       // Neither queued as the next member nor marked in their transcript.
@@ -1763,7 +1762,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         if (held) sendHeldAgain(messageId);
         else enqueueMutation({ type: 'send_lounge_message', payload: { ...payload, _tempId: payload.id } });
         flushOfflineQueue();
-        set(s => ({ currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'sending' as const } : m) }));
+        inRoomWords(msg.lounge_id, (words) => words.map(m => m.id === messageId ? { ...m, status: 'sending' as const } : m));
         return true;
       }
       // The stack sealed or gone since, or the record or filing (round 14): final, said, and the card
@@ -1771,11 +1770,11 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       const cardRefused = cardShareRefusal(e);
       if (cardRefused) {
         if (held) letHeldGo(messageId);
-        set(s => ({ currentMessages: s.currentMessages.filter(m => m.id !== messageId) }));
+        inRoomWords(msg.lounge_id, (words) => words.filter(m => m.id !== messageId));
         reelToast.error(saidOfCardShareRefusal(cardRefused));
         return false;
       }
-      set(s => ({ currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'failed' as const } : m) }));
+      inRoomWords(msg.lounge_id, (words) => words.map(m => m.id === messageId ? { ...m, status: 'failed' as const } : m));
       // "Try again" is the one thing that cannot help a member without the
       // rank — so a refusal gets the door, and only a real failure gets that.
       if (showTierDoor(e, { returnTo: `/lounge/${msg.lounge_id}` })) return false;

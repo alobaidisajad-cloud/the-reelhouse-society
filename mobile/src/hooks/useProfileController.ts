@@ -315,24 +315,28 @@ export function useProfileController(usernameOverride?: string) {
   const onRefresh = useCallback(async () => {
     setRefreshingLocal(true);
     TactileEngine.navigate();
-    // A request pending: answered since, the file opens (or the request is gone) on this pull.
-    if (isRequested) await hydrateFollowing();
-    // `false`: the member could not be read. The page stays as it was, and says so.
-    const read = await data.fetchUserData();
+    let read: Awaited<ReturnType<typeof data.fetchUserData>> | undefined;
+    try {
+      // A request pending: answered since, the file opens (or the request is gone) on this pull.
+      if (isRequested) await hydrateFollowing();
+      // `false`: the member could not be read. The page stays as it was, and says so.
+      read = await data.fetchUserData();
 
-    const room = roomOf(activeTab);
-    if (room && isNarrowed(room, roomFilters[room])) {
-      // A narrowed room refreshes its filtered read, never the plain one, which
-      // would fill a queue filtered to the 1970s with the whole queue while the
-      // 1970s chip stayed lit.
-      await data.refreshTabWithFilters(room, roomFilters[room], true);
-    } else if (activeTab && activeTab !== 'archive' && activeTab !== 'ledger') {
-      // (The archive and ledger at rest are the member's logs, read above.)
-      data.setTabDataLoaded(prev => ({ ...prev, [activeTab]: false }));
-      await data.loadTabData(activeTab, true);
+      const room = roomOf(activeTab);
+      if (room && isNarrowed(room, roomFilters[room])) {
+        // A narrowed room refreshes its filtered read, never the plain one, which
+        // would fill a queue filtered to the 1970s with the whole queue while the
+        // 1970s chip stayed lit.
+        await data.refreshTabWithFilters(room, roomFilters[room], true);
+      } else if (activeTab && activeTab !== 'archive' && activeTab !== 'ledger') {
+        // (The archive and ledger at rest are the member's logs, read above.)
+        data.setTabDataLoaded(prev => ({ ...prev, [activeTab]: false }));
+        await data.loadTabData(activeTab, true);
+      }
+    } finally {
+      // Lowered whatever the pull met: one that threw is never left turning.
+      setRefreshingLocal(false);
     }
-
-    setRefreshingLocal(false);
     if (read === false) reelToast.error(REFRESH_FAILED);
   }, [data, activeTab, roomFilters, isRequested]);
 

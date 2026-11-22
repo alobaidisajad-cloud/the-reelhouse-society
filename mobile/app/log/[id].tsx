@@ -558,8 +558,7 @@ function LogDetailScreen({ id }: { id: string }) {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await queryClient.invalidateQueries({ queryKey: ['log', id] });
-    setRefreshing(false);
+    try { await queryClient.invalidateQueries({ queryKey: ['log', id] }); } finally { setRefreshing(false); }
     // The page stays as it was; a pull that reached nothing says so, as every list does.
     if (queryClient.getQueryState(['log', id])?.status === 'error') reelToast.error(REFRESH_FAILED);
   }, [queryClient, id]);

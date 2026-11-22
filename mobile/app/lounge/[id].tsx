@@ -502,9 +502,14 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   useLayoutEffect(() => { shownRoomRef.current = id; });
 
   // ── Membership + roster refresh (also drives host's "At the Door") ──
+  // Each roster read numbered as it is asked, and the number reached when the member's request was
+  // answered: a read asked after it ends the request in flight.
+  const rosterAsked = useRef(0);
+  const requestAnsweredAt = useRef(Number.POSITIVE_INFINITY);
   // Asked for, and shown when the answer comes: nothing changes on screen in the asking.
   const refreshMembership = useCallback(() => {
     if (!id) return;
+    const asked = ++rosterAsked.current;
     void fetchMembers(id).then((roster) => {
       // Room A's roster must not become room B's (the screen is reused across rooms).
       if (shownRoomRef.current !== id) return;
@@ -515,6 +520,10 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
       setMembers(roster);
       const mine = userId ? roster.find(m => m.user_id === userId) : undefined;
       setMyStatus((mine?.status as LoungeMemberStatus) ?? 'none');
+      // A request just sent stands in only until a roster asked after its answer is read: from then
+      // the roster alone says, and a host's decline is the door to ask again, never "your request is
+      // with the host" for ever, even when the first read after it could not be reached.
+      if (asked > requestAnsweredAt.current) setPending(false);
     });
   }, [id, userId, fetchMembers]);
 
@@ -643,10 +652,6 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   // Neither known, the count is said not at all: a salon always holds its host, so "0 MEMBERS" is never true.
   const seated: number | null = (isApproved && members.filter(m => m.status === 'approved').length) || (typeof activeLounge?.member_count === 'number' ? activeLounge.member_count : null);
 
-  // A request just sent stands in only until the roster shows it: from then the roster says, and a
-  // host's decline is the door to ask again, never "your request is with the host" for ever.
-  if (pending && myStatus === 'pending') setPending(false);
-
   // What gate (if any) replaces the transcript.
   const gate: RoomGate = !activeLounge ? 'chat' : roomGate({
     isPrivate: !!activeLounge.is_private,
@@ -745,10 +750,11 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   }, [retryMessage, rereadRoom]);
 
   // A member waiting at a private door has no channel to hear the door open on;
-  // their admission arrives as a notice, so each new notice asks again.
+  // their admission arrives as a notice, so each new notice asks again: their request held by the
+  // roster, or still the one in flight when the roster read after it could not be reached.
   const noticesHeard = useNotificationStore((s) => s.noticesHeard);
   useEffect(() => {
-    if (myStatus === 'pending') refreshMembership();
+    if (myStatus === 'pending' || pending) refreshMembership();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noticesHeard]);
 
@@ -773,7 +779,10 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
     TactileEngine.mutate();
     const result = await requestMembership(id);
     // Refused, the room is asked again: a salon dissolved meanwhile draws "Signal Lost".
-    if (result === 'error') { setPending(false); rereadRoom(); } else refreshMembership();
+    if (result === 'error') { setPending(false); rereadRoom(); } else {
+      requestAnsweredAt.current = rosterAsked.current;
+      refreshMembership();
+    }
     // The door promises to let them in the moment they're admitted: the moment to ask to send word.
     if (result === 'requested' && userId) void offerWord('seat', userId);
     if (result === 'requested') setSeatAsked((n) => n + 1);

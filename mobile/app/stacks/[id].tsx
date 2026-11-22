@@ -246,9 +246,12 @@ function StackDetailScreen({ id }: { id: string }) {
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await queryClient.invalidateQueries({ queryKey: ['stack', id] });
-    await queryClient.invalidateQueries({ queryKey: ['stackComments', id] });
-    setRefreshing(false);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['stack', id] });
+      await queryClient.invalidateQueries({ queryKey: ['stackComments', id] });
+    } finally {
+      setRefreshing(false);
+    }
     // The page stays as it was; a pull that reached nothing says so, as every list does. The
     // critiques count only while their sheet asks for them: shut, their read is not refetched, and
     // its old failure once said "Could not refresh" over a stack read that worked.

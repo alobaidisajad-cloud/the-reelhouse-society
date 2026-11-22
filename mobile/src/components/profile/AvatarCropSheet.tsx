@@ -88,8 +88,7 @@ export default function AvatarCropSheet({ onClose, onSuccess, pending }: Props) 
   };
   const processAndUpload = async (uri: string) => {
     setUploading(true);
-    await prepare(uri);
-    setUploading(false);
+    try { await prepare(uri); } finally { setUploading(false); }
   };
 
   // The portrait the system kept for us: prepared once, as the sheet opens.

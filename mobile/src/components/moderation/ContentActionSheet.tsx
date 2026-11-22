@@ -94,7 +94,7 @@ export function ContentActionSheet({
   }
   const readBlocks = useCallback(() => {
     const me = useAuthStore.getState().user?.id;
-    void (me ? useBlockStore.getState().syncFromServer(me) : Promise.resolve()).then(() => setAskingBlocks(false));
+    void (me ? useBlockStore.getState().syncFromServer(me) : Promise.resolve()).finally(() => setAskingBlocks(false));
   }, []);
   useEffect(() => {
     // Not awaited: its answer lands in the store, which draws this sheet.
