@@ -22,6 +22,7 @@ LATE:
   - READ-a-later-page-failing-in-silence
   - AUTH-a-sign-out-undone-by-a-late-answer
 COPY:
+  - COPY-a-change-that-misses-a-holder
   - DATA-edit-sealed-over-an-unread-record
   - UI-notice-opens-elsewhere
   - STATE-a-request-held-after-its-answer

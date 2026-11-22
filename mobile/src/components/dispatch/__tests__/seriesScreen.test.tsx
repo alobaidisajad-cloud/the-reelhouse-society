@@ -33,6 +33,7 @@ import { TO_COME_INK } from '@/src/components/dispatch/paper/PaperEssay';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { colors } from '@/src/theme/theme';
 import { useBlockStore } from '@/src/stores/blockStore';
+import { useDispatch } from '@/src/stores/dispatch';
 
 // ── what the router heard ───────────────────────────────────────────────────
 // `mock`-prefixed, because jest hoists these factories above every import and
@@ -421,5 +422,38 @@ describe('the series of a member hidden since (review round 5)', () => {
     expect(r.getByText('The Empty Room')).toBeTruthy();
     await act(async () => { useBlockStore.setState({ muted: ['u9', 'u1'], _mutedIndex: new Set(['u9', 'u1']) } as never); });
     expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('a part changed since the series was read', () => {
+  const FIRST = '00000021-0000-4000-8000-000000000021';
+  const SECOND = '00000022-0000-4000-8000-000000000022';
+  const two = () => [part({ id: FIRST, part_number: 1, title: 'The Empty Room' }), part({ id: SECOND, part_number: 2, title: 'A Train Leaves' })];
+  afterEach(() => { useDispatch.setState({ acted: {}, gone: {} } as never); });
+
+  it('amended by its author here, prints the new title', async () => {
+    mockRows = two();
+    const r = await mount();
+    await act(async () => { useDispatch.setState({ acted: { [SECOND]: { title: 'A Train Returns' } } } as never); });
+    expect(r.queryByText('A Train Leaves')).toBeNull();
+    expect(r.getByText('A Train Returns')).toBeTruthy();
+  });
+
+  it('withdrawn by its author here, leaves the list and its count, as the read leaves out an ended part', async () => {
+    mockRows = two();
+    const r = await mount();
+    expect(r.getByText('2 OF 2')).toBeTruthy();
+    await act(async () => { useDispatch.setState({ acted: { [SECOND]: { endedAt: '2026-11-22T10:00:00Z', title: null } } } as never); });
+    expect(r.queryByText('A Train Leaves')).toBeNull();
+    expect(r.getByText('1 OF 1')).toBeTruthy();
+    expect(r.queryByText(/THE FIRST/)).toBeNull();
+  });
+
+  it('found gone by the reader, leaves the list', async () => {
+    mockRows = two();
+    const r = await mount();
+    await act(async () => { useDispatch.setState({ gone: { [FIRST]: 1 } } as never); });
+    expect(r.queryByText('The Empty Room')).toBeNull();
+    expect(r.getByText('A Train Leaves')).toBeTruthy();
   });
 });

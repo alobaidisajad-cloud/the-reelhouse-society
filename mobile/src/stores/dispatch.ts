@@ -24,6 +24,7 @@
  * editorial content, and a stale copy on disk is worse than a fetch on launch.
  */
 import * as Crypto from 'expo-crypto';
+import { useMemo } from 'react';
 import { create } from 'zustand';
 
 import { houseIso } from '@/src/lib/houseClock';
@@ -110,6 +111,16 @@ export interface DispatchState {
    * left. A list that holds its own copy (a room, an archive, a series) draws its rows through it.
    */
   acted: Record<string, Acted>;
+  /**
+   * The filings a read on this phone found the house no longer gives this member (withheld, withdrawn,
+   * or their author has blocked them since). The paper lets go of its copy at once; a list holding its
+   * own (a room, an archive, a series) draws through asTheHouseNowHolds, so the row leaves there too.
+   * Each mark is the goneMoment it was learned at: a list's read asked after it that gives the filing
+   * again (a verdict overturned) takes the mark away (givenAgain).
+   */
+  gone: Record<string, number>;
+  /** A list's read, asked at `asked` (goneMoment), gave these filings: a mark learned before it goes. */
+  givenAgain: (ids: readonly string[], asked: number) => void;
   /**
    * The critiques this member wrote (+1) or took back (-1) on this phone, by filing. A list holding
    * its own copy of a filing (a room, an archive) read its critique count once, and printed it still
@@ -401,6 +412,30 @@ const patchActed = (
   acted: { ...st.acted, [id]: actedOf(next(heldFiling(st, id) ?? base)) },
 });
 
+/** The order gone marks are learned in (DispatchState.gone): a count, never a clock. */
+let goneSeq = 0;
+/** The moment a list's read is asked at, for givenAgain. */
+export const goneMoment = (): number => goneSeq;
+
+const withoutKeys = <T,>(o: Record<string, T>, keys: readonly string[]): Record<string, T> => {
+  const next = { ...o };
+  for (const k of keys) delete next[k];
+  return next;
+};
+
+/**
+ * A list's own copy of filings as the phone now knows them: what the member withdrew or amended
+ * here laid over each, and those the house no longer gives left out.
+ */
+export function asTheHouseNowHolds(
+  filings: readonly Filing[],
+  st: Pick<DispatchState, 'acted' | 'gone'>,
+): Filing[] {
+  return filings
+    .filter((f) => st.gone[f.id] === undefined)
+    .map((f) => (st.acted[f.id] ? { ...f, ...st.acted[f.id] } : f));
+}
+
 /**
  * The page as drawn: the member's filings still queued (`queued`, the queue's ids) laid at its
  * head where they belong (this department; never under WHAT YOU KEPT), unless the page holds them.
@@ -445,6 +480,7 @@ const emptyState = () => ({
   filings: [] as Filing[],
   opened: {} as Record<string, Filing>,
   acted: {} as Record<string, Acted>,
+  gone: {} as Record<string, number>,
   critiqued: {} as Record<string, number>,
   unsent: [] as Filing[],
   section: 'ALL' as Section,
@@ -621,6 +657,11 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
   keepOpened: (one) => set((st) => ({ opened: capOpened(st.opened, one.id, one) })),
 
+  givenAgain: (ids, asked) => {
+    const back = ids.filter((id) => (get().gone[id] ?? Infinity) <= asked);
+    if (back.length) set((st) => ({ gone: withoutKeys(st.gone, back) }));
+  },
+
   hydrate: async (id) => {
     const startedAs = useAuthStore.getState().user?.id ?? null;
     // This read's number, and when it was asked: an older read of the filing landing after a newer
@@ -653,11 +694,11 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         const waiting = useOfflineQueueStore.getState().queued
           .some((m) => m.type === 'add_filing' && m.payload._tempId === id);
         if (!waiting) {
+          const at = ++goneSeq;
           set((st) => {
-            if (!st.filings.some((f) => f.id === id) && !st.opened[id]) return st;
             const opened = { ...st.opened };
             delete opened[id];
-            return { filings: st.filings.filter((f) => f.id !== id), opened };
+            return { filings: st.filings.filter((f) => f.id !== id), opened, gone: { ...st.gone, [id]: at } };
           });
         }
         return null;
@@ -671,6 +712,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
           : st.filings,
         // Recorded (bounded) whether or not the page holds it, so acts find it after a cold open.
         opened: capOpened(st.opened, id, one),
+        // Given again (a verdict overturned): no longer gone from the lists holding it.
+        ...(st.gone[id] !== undefined ? { gone: withoutKeys(st.gone, [id]) } : {}),
       }));
       // Not waited for: the reader shows the filing, its marks unknown until read. A ballot this
       // member has voted in, still open, has its running count read once the vote is known.
@@ -1302,6 +1345,13 @@ registerStoreReset(() => {
  * (leaveBehind), so only a sign-in from nobody is heard here. Heard from the app's start
  * (AppBootstrapper) until the returned unsubscribe.
  */
+/** asTheHouseNowHolds for a screen, drawn again whenever the member acts or a filing is found gone. */
+export function useAsTheHouseNowHolds(filings: readonly Filing[]): Filing[] {
+  const acted = useDispatch((s) => s.acted);
+  const gone = useDispatch((s) => s.gone);
+  return useMemo(() => asTheHouseNowHolds(filings, { acted, gone }), [filings, acted, gone]);
+}
+
 export function readMarksWhenAVisitorSignsIn(): () => void {
   return useAuthStore.subscribe((now, before) => {
     const memberId = now.user?.id ?? null;

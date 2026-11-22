@@ -19,6 +19,8 @@ const asks: (string | null)[] = [];
 let pages: Record<string, unknown>[][] = [];
 /** When set, the next page read is refused with this. */
 let refuseNext: { message: string } | null = null;
+/** The filings the dispatch store holds gone (a read found the house no longer gives them). */
+const mockGone = new Set<string>();
 
 const chain = (table: string) => {
   const c: Record<string, unknown> = {};
@@ -44,7 +46,10 @@ jest.mock('@/src/lib/supabase', () => ({
   },
 }));
 jest.mock('@/src/stores/dispatch', () => ({
-  useDispatch: { getState: () => ({ loadMarks: jest.fn(), certifiedIds: new Set<string>(), critiqued: {} }) },
+  useDispatch: { getState: () => ({ loadMarks: jest.fn(), certifiedIds: new Set<string>(), critiqued: {}, givenAgain: jest.fn() }) },
+  goneMoment: () => 0,
+  // The filings the store holds gone, as asTheHouseNowHolds leaves them out (its own test is the store's).
+  useAsTheHouseNowHolds: (filings: { id: string }[]) => filings.filter((f) => !mockGone.has(f.id)),
 }));
 jest.mock('@/src/utils/logger', () => ({
   logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
@@ -74,6 +79,7 @@ const page = (prefix: string, withMalformed: boolean) => {
 beforeEach(() => {
   asks.length = 0;
   pages = [];
+  mockGone.clear();
 });
 
 describe('a member’s room', () => {
@@ -109,5 +115,16 @@ describe('a next page that could not be read', () => {
     await act(async () => { result.current.loadMore(); });
     await waitFor(() => expect(result.current.filings.length).toBe(ROOM_PAGE * 2));
     expect(result.current.moreFailed).toBe(false);
+  });
+});
+
+describe('a filing changed since the room was read', () => {
+  it('found gone by the reader, leaves the room', async () => {
+    pages = [[good('a0'), good('a1')]];
+    const { result, rerender } = await renderHook(() => useMemberRoom('ana'));
+    await waitFor(() => expect(result.current.filings.map((f) => f.id)).toEqual(['a0', 'a1']));
+    mockGone.add('a0');
+    await act(async () => { await rerender({}); });
+    expect(result.current.filings.map((f) => f.id)).toEqual(['a1']);
   });
 });

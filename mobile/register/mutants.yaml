@@ -5029,7 +5029,7 @@ mutants:
     source: shape
     edits:
       - file: app/dispatch/series/[id].tsx
-        find: "useLeavesWhenHidden(parts.find((f) => !!f.authorId)?.authorId)"
+        find: "useLeavesWhenHidden(asRead.find((f) => !!f.authorId)?.authorId)"
         replace: "useLeavesWhenHidden(null)"
     proof: { file: src/components/dispatch/__tests__/seriesScreen.test.tsx, test: "a muted author leaves too; another author stays" }
 
@@ -10373,3 +10373,84 @@ mutants:
         find: "    for (const m of t.matchAll(/(\\w+):\\s*\\{\\s*\\.\\.\\.\\w+\\.\\1\\s*,\\s*\\[\\w+\\]:\\s*true\\s*\\}/g)) raised.add(m[1] ?? '');\n"
         replace: ""
     proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a read raising its own mark for one key, and leaving while that key's mark is up, is one at a time; without the leave it is not" }
+
+  - id: shape-queued-send-reads-no-page-again
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/utils/mutationExecutor.ts
+        find: "    if (page) void queryClient.invalidateQueries({ queryKey: page(mapped) });\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aQueuedWriteReadsItsPageAgain.test.ts, test: "a stack's critique sent by the queue reads the stack's critiques again" }
+
+  - id: shape-queued-stack-page-left-unread
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/utils/mutationExecutor.ts
+        find: "    update_list: (p) => ['stack', p.list_id],\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "2: every queued write does, once sent, what its online twin does once answered" }
+
+  - id: shape-gone-filing-kept-on-lists
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    .filter((f) => st.gone[f.id] === undefined)\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aFilingFoundGoneLeavesEveryList.test.ts, test: "a filing the reader finds gone leaves a list holding its own copy" }
+
+  - id: shape-series-deaf-to-acts
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: app/dispatch/series/[id].tsx
+        find: "  const parts = useAsTheHouseNowHolds(asRead).filter((f) => !f.endedAt);"
+        replace: "  const parts = useAsTheHouseNowHolds([]).concat(asRead);"
+    proof: { file: src/components/dispatch/__tests__/seriesScreen.test.tsx, test: "amended by its author here, prints the new title" }
+
+  - id: shape-room-keeps-a-gone-filing
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/hooks/useMemberRoom.ts
+        find: "    author, memberId, filings: held, filed,"
+        replace: "    author, memberId, filings, filed,"
+    proof: { file: src/hooks/__tests__/theRoomDoesNotRepeatItself.test.tsx, test: "found gone by the reader, leaves the room" }
+
+  - id: shape-given-again-never-heard
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    if (back.length) set((st) => ({ gone: withoutKeys(st.gone, back) }));\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aFilingFoundGoneLeavesEveryList.test.ts, test: "a list's read asked after the mark, giving the filing again, takes the mark away; one asked before does not" }
+
+  - id: shape-holder-trusted-by-its-name
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts
+        find: "      if ('follows' in h) for (const piece of h.follows) if (!code.includes(piece)) faults.push(`${key}: follows by ${piece}, which ${file} no longer holds`);\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "1: to a kept list of the house named nowhere, one whose way of following has gone, and one named but gone" }
+
+  - id: shape-twin-read-in-its-catch
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts
+        find: "    if (ts.isCatchClause(n)) return;\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "2: to a queued write that, once sent, skips what its online twin does once answered" }
+
+  - id: shape-channel-trusted-unpublished
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts
+        find: "      if (!published.has(t)) faults.push(`${t}: heard by its channel, but the house does not publish it`);\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "3: to an ended table named nowhere, a channel the house does not publish or the app does not hear, and a read again gone" }

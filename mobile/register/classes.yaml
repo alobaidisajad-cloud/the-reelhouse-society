@@ -5502,3 +5502,31 @@ classes:
     fix: "the snapshot carries the fill's row as production holds it (schema-snapshot.mjs, rows the cars lay as the house's state), complete on a copy built with no member, so every member a seed writes is listed as production lists one; the load seed and the speed lab's seed, which lay members with their triggers off, list them again from the first member as the car's job does, and the load seed counts its ballots' votes and its logs' certifications and critiques as the cars counted them; the car's rehearsal needs the row before it moves the fill. The finder reads every car: each table its own statements insert into (never a function's) is carried by the snapshot, kept (every seed laying a source with its triggers off makes it again), planted (the attack matrix's specimen and the rehearsals' seed) or moved once, and each job its DO blocks schedule stands in the snapshot or is a kept table's work (mutants shape-the-fill-row-left-out-of-the-snapshot, shape-the-load-house-votes-uncounted, shape-the-lab-members-unlisted)"
     sweep: { read: [migrations, snapshot, scripts], found: 18, fixed: 3, judged: 15, commit: f675618a, finder: e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts, result: "every car of both trees: 16 tables their own statements insert into (the cars' scratch tables aside) and 3 jobs their DO blocks schedule; 3 fixed (the fill's row carried; the load house's ballot counts and logs' counts, and the lists in both seeds that lay members with triggers off); the rest judged: 1 carried before (the avatars bucket), 4 kept and made again by every such seed, 2 planted, 8 moved once, 2 jobs standing in the snapshot" }
     places: [none]
+
+  - id: COPY-a-change-that-misses-a-holder
+    title: "A change to a row reaches only the copies its writer happened to tell: a screen's own list, a page the queue's send left drawing the phone's guess, or another phone holding a row the house ended, each kept printing the old"
+    seriousness: behaviour
+    area: [dispatch, stacks, log, lounge, tribunal]
+    status: OPEN
+    count: 21
+    source: { kind: reviewer, ref: "the kinds of mistake of review rounds 8 to 14 (stage C): r8 A2, A5, B1; r9 A2; r11 A1, A2, A5, A6, B3, B8, D5, D6, F4, F5, F15; r12 A2, B1, B3, B5; r14 B4, B10" }
+    folds: [STATE-a-copy-drawn-after-the-house-let-it-go, STATE-one-screen-changed-another-printing-the-old]
+    methods:
+      - { kind: static, file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "1: every list a screen or hook keeps follows a change, or holds no row the house changes" }
+      - { kind: static, file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "2: every queued write does, once sent, what its online twin does once answered" }
+      - { kind: static, file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "3: every table whose rows are ended is named with how another phone holding one learns" }
+      - { kind: static, file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "1: to a kept list of the house named nowhere, one whose way of following has gone, and one named but gone" }
+      - { kind: static, file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "2: to a queued write that, once sent, skips what its online twin does once answered" }
+      - { kind: static, file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "3: to an ended table named nowhere, a channel the house does not publish or the app does not hear, and a read again gone" }
+      - { kind: running, file: src/utils/__tests__/aQueuedWriteReadsItsPageAgain.test.ts, test: "a stack's critique sent by the queue reads the stack's critiques again" }
+      - { kind: running, file: src/utils/__tests__/aQueuedWriteReadsItsPageAgain.test.ts, test: "a write whose online twin reads no page again reads none" }
+      - { kind: running, file: src/stores/__tests__/aFilingFoundGoneLeavesEveryList.test.ts, test: "a filing the reader finds gone leaves a list holding its own copy" }
+      - { kind: running, file: src/stores/__tests__/aFilingFoundGoneLeavesEveryList.test.ts, test: "the member's own amendment is laid over a list's copy" }
+      - { kind: running, file: src/stores/__tests__/aFilingFoundGoneLeavesEveryList.test.ts, test: "a list's read asked after the mark, giving the filing again, takes the mark away; one asked before does not" }
+      - { kind: running, file: src/stores/__tests__/aFilingFoundGoneLeavesEveryList.test.ts, test: "the reader finding it again (a verdict overturned) takes the mark away too" }
+      - { kind: running, file: src/components/dispatch/__tests__/seriesScreen.test.tsx, test: "amended by its author here, prints the new title" }
+      - { kind: running, file: src/components/dispatch/__tests__/seriesScreen.test.tsx, test: "withdrawn by its author here, leaves the list and its count, as the read leaves out an ended part" }
+      - { kind: running, file: src/components/dispatch/__tests__/seriesScreen.test.tsx, test: "found gone by the reader, leaves the list" }
+      - { kind: running, file: src/hooks/__tests__/theRoomDoesNotRepeatItself.test.tsx, test: "found gone by the reader, leaves the room" }
+    fix: "every kept list of house rows is named with how it follows a change, and a series, a member room and a film archive draw their own copies through asTheHouseNowHolds (the member's withdrawals and amendments laid over, a filing the reader found gone left out until a read asked after gives it again); a write the queue sends reads again, once the house has it, the page its online twin reads (READ_AGAIN_ONCE_SENT); every table whose rows are ended names how another phone holding one learns (mutants shape-queued-send-reads-no-page-again, shape-queued-stack-page-left-unread, shape-gone-filing-kept-on-lists, shape-series-deaf-to-acts, shape-room-keeps-a-gone-filing, shape-given-again-never-heard, shape-holder-trusted-by-its-name, shape-twin-read-in-its-catch, shape-channel-trusted-unpublished)"
+    places: [none]

@@ -2139,3 +2139,6 @@ files of the reading map this one does not.
 | test-utils/postgrestFilter.ts | — |  |
 | src/stores/__tests__/aNoteWrittenWhileTheVaultIsReadStays.test.ts | — |  |
 | src/stores/__tests__/anOlderSalonReadIsNotLaidOver.test.ts | — |  |
+| src/stores/__tests__/aFilingFoundGoneLeavesEveryList.test.ts | — |  |
+| src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts | — |  |
+| src/utils/__tests__/aQueuedWriteReadsItsPageAgain.test.ts | — |  |
