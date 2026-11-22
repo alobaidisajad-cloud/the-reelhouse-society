@@ -40,6 +40,7 @@ import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
 import { keyOf, writeOnline } from '../utils/oneWritePerThing';
 import reelToast from '../utils/reelToast';
+import { saidOfAFailure } from '../utils/saidOfARefusal';
 import { sanitizeInput } from '../utils/sanitizeInput';
 import { withAbortSignal } from '../utils/withAbortSignal';
 import { withTimeout } from '../utils/withTimeout';
@@ -1289,7 +1290,7 @@ async function writeThrough(
     }
     undo();
     captureError(e, { where });
-    reelToast.error('The house did not accept that.');
+    reelToast.error(saidOfAFailure(e, 'That could not be done.', 'The house did not accept that.'));
   }
 }
 

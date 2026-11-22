@@ -17,6 +17,7 @@ import { sanitizeInput } from '../../utils/sanitizeInput';
 import { useAuthStore } from '../auth';
 import { stillSignedIn } from './helpers/sessionGuard';
 import { isRateLimited, writePaceSaid } from '../../utils/housePace';
+import { saidOfAFailure } from '../../utils/saidOfARefusal';
 import { dateOf } from '@/src/utils/instant';
 
 /**
@@ -425,7 +426,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                     return { lists: reverted };
                 });
             }
-            reelToast.error('Failed to delete list — please try again.');
+            reelToast.error(saidOfAFailure(e, 'Failed to delete list.'));
             throw e;
         }
     },
@@ -488,7 +489,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                 lists: state.lists.map((l) => l.id === listId ? { ...l, films: l.films.filter(f => f.id !== film.id) } : l),
             }));
             // Past the house's pace for a stack's films (check_write_pace): said as that, with its wait.
-            reelToast.error(writePaceSaid(e, 'films on stacks') ?? 'Failed to add film to stack.');
+            reelToast.error(writePaceSaid(e, 'films on stacks') ?? saidOfAFailure(e, 'Failed to add film to stack.'));
         }
     },
 
@@ -541,7 +542,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                     return { ...l, films: revertedFilms };
                 }),
             }));
-            reelToast.error('Failed to remove film from stack.');
+            reelToast.error(saidOfAFailure(e, 'Failed to remove film from stack.'));
         }
     },
 });

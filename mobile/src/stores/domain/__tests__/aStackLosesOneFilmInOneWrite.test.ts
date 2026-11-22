@@ -8,6 +8,7 @@
  * that one write is the only thing that restores the film.
  */
 import { create } from 'zustand';
+import reelToast from '@/src/utils/reelToast';
 import { createListSlice, type ListSlice } from '../listSlice';
 
 const mockWrites: { table: string; op: string }[] = [];
@@ -51,4 +52,11 @@ it('a refused removal puts the film back where it was', async () => {
   const s = store();
   await s.getState().removeFilmFromList('stack', 2);
   expect(s.getState().lists[0].films.map((f) => f.id)).toEqual([1, 2, 3]);
+});
+
+it('a refused removal is said as refused, never as a failure to try again', async () => {
+  mockDeleteError = { code: '42501', message: 'refused' };
+  jest.mocked(reelToast.error).mockClear();
+  await store().getState().removeFilmFromList('stack', 2);
+  expect(jest.mocked(reelToast.error).mock.calls.map((c) => c[0])).toEqual(['Failed to remove film from stack. The house did not allow it.']);
 });

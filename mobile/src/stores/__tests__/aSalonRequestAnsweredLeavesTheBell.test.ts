@@ -71,7 +71,7 @@ it('an answer the house did not take leaves the request standing, and says so', 
   await expect(useLoungeStore.getState().declineMember(SALON, AGNES)).resolves.toBe(false);
   expect(board()).toHaveLength(5);
   expect(bell()).toBe(5);
-  expect(mockToast.error.mock.calls.map(([w]) => w)).toEqual(['Could not admit this guest.', 'Could not decline this request.']);
+  expect(mockToast.error.mock.calls.map(([w]) => w)).toEqual(['Could not admit this guest. Check your connection and try again.', 'Could not decline this request. Check your connection and try again.']);
 });
 
 it('forgetSalonRequestNotices takes only that member’s requests to that salon, of either kind, read or unread', () => {

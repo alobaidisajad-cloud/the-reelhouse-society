@@ -72,13 +72,13 @@ describe('a word refused', () => {
   it('with the salon standing and the seat held, is the failure it was', async () => {
     mockHouse = house(ROOM, SEAT('approved'));
     await useLoungeStore.getState().sendMessage(SALON, `words ${n}`);
-    expect(said()).toEqual(['Failed to send message.']);
+    expect(said()).toEqual(['Failed to send message. The house did not allow it.']);
   });
 
   it('when the house cannot say why, is the failure it was', async () => {
     mockHouse = supabaseFake({ fail: { lounge_messages: REFUSED, lounges: { code: '08006', message: 'connection failure' }, lounge_members: { code: '08006', message: 'connection failure' } } });
     await useLoungeStore.getState().sendMessage(SALON, `words ${n}`);
-    expect(said()).toEqual(['Failed to send message.']);
+    expect(said()).toEqual(['Failed to send message. The house did not allow it.']);
   });
 
   it('tried again in a salon dissolved meanwhile, is said as gone, never "try again"', async () => {

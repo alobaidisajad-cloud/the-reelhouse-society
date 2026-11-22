@@ -1337,7 +1337,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // A refusal that says no more than 42501: the house is asked whether the salon still stands
       // and the seat is still this member's, and that is said (review round 11).
       if (!isNetworkError(error) && await saidWhyTheSalonRefused(loungeId, user.id)) return false;
-      reelToast.error('Failed to send message.');
+      reelToast.error(saidOfAFailure(error, 'Failed to send message.'));
       return false;
     }
   },
@@ -1387,7 +1387,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         // Past the house's pace for salons (check_write_pace): said as that, with its wait.
         const paced = writePaceSaid(error, 'salons');
         if (paced) reelToast.error(paced);
-        else if (!showTierDoor(error, { returnTo: '/lounge' })) reelToast.error('Failed to create lounge.');
+        else if (!showTierDoor(error, { returnTo: '/lounge' })) reelToast.error(saidOfAFailure(error, 'Failed to create lounge.'));
         return null;
       }
 
@@ -1445,7 +1445,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         if (loungeId in prevSet) coversSet[loungeId] = prevSet[loungeId] ?? null; else delete coversSet[loungeId];
         return { lounges: s.lounges.map(l => l.id === loungeId ? { ...l, cover_image: prev } : l), coversSet };
       });
-      reelToast.error('Could not update the salon cover.');
+      reelToast.error(saidOfAFailure(e, 'Could not update the salon cover.'));
       return false;
     }
   },
@@ -1544,7 +1544,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (error) throw error;
     } catch (e) {
       logger.error('[LoungeStore.approveMember] failed:', e);
-      reelToast.error('Could not admit this guest.');
+      reelToast.error(saidOfAFailure(e, 'Could not admit this guest.'));
       return false;
     }
     // The request answered: its notice leaves the bell now, as it has left the house.
@@ -1559,7 +1559,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (error) throw error;
     } catch (e) {
       logger.error('[LoungeStore.declineMember] failed:', e);
-      reelToast.error('Could not decline this request.');
+      reelToast.error(saidOfAFailure(e, 'Could not decline this request.'));
       return false;
     }
     // The request answered: its notice leaves the bell now, as it has left the house.
@@ -1574,7 +1574,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       return true;
     } catch (e) {
       logger.error('[LoungeStore.setMemberStatus] failed:', e);
-      reelToast.error('Could not update this member.');
+      reelToast.error(saidOfAFailure(e, 'Could not update this member.'));
       return false;
     }
   },
@@ -1586,7 +1586,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       return true;
     } catch (e) {
       logger.error('[LoungeStore.removeMember] failed:', e);
-      reelToast.error('Could not remove this member.');
+      reelToast.error(saidOfAFailure(e, 'Could not remove this member.'));
       return false;
     }
   },
@@ -1688,7 +1688,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         currentMessages: s.currentMessages.map(m => m.id === messageId ? target
           : quoted.has(m.id) && m.reply_to_content == null ? { ...m, reply_to_content: quoted.get(m.id) } : m),
       }));
-      reelToast.error('Could not withdraw this dispatch.');
+      reelToast.error(saidOfAFailure(e, 'Could not withdraw this dispatch.'));
     }
   },
 
@@ -1757,7 +1757,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (showTierDoor(e, { returnTo: `/lounge/${msg.lounge_id}` })) return false;
       // The salon gone, or the seat: said, never "try again" (review round 11).
       if (await saidWhyTheSalonRefused(msg.lounge_id, user.id)) return false;
-      reelToast.error('Still could not send. Try again.');
+      reelToast.error(saidOfAFailure(e, 'Still could not send.'));
       return false;
     }
   },
@@ -1818,7 +1818,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     if (error || !destroyed || destroyed.length === 0) {
       // Their failed act is not the next member's to see.
       if (!memberUnchanged(user.id)) return false;
-      reelToast.error('Failed to incinerate lounge.');
+      reelToast.error(saidOfAFailure(error, 'Failed to incinerate lounge.'));
       // Back where it stood, then read: a read that fails kept the room gone under the toast.
       if (room) {
         set(s => (s.lounges.some((l) => l.id === loungeId) ? {} : {

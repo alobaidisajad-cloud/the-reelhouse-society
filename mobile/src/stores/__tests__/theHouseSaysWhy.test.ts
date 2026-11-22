@@ -180,7 +180,7 @@ describe('the house says why', () => {
       // RANKS" there would be selling something that cannot help.
       result = { data: null, error: { code: '42501', message: 'new row violates row-level security policy for table "lounge_messages"' } };
       await useLoungeStore.getState().sendMessage(L1, 'Hello.');
-      expect(toastTexts()).toEqual(['Failed to send message.']);
+      expect(toastTexts()).toEqual(['Failed to send message. The house did not allow it.']);
       expect(toast.error.mock.calls[0]?.[1]).toBeUndefined();
       expect(toast.info).not.toHaveBeenCalled();
       expect(refusedEvents()).toHaveLength(0);
@@ -203,14 +203,14 @@ describe('the house says why', () => {
       expect(useLoungeStore.getState().currentMessages[0]).toMatchObject({ status: 'failed' });
     });
 
-    it('but a genuine failure still says to try again, because trying again can work', async () => {
+    it('but a failure the house\'s own rules make says what failed, never to try again what cannot work', async () => {
       useLoungeStore.setState({ currentMessages: [failedMessage()] } as never);
       // A check violation: not a network blip (those re-queue quietly — a
       // statement timeout was the first fixture here and never reached this
       // branch) and not a refusal. The plain failure branch, reached for real.
       result = { data: null, error: { code: '23514', message: 'new row violates check constraint' } };
       await useLoungeStore.getState().retryMessage(M1);
-      expect(toastTexts()).toEqual(['Still could not send. Try again.']);
+      expect(toastTexts()).toEqual(['Still could not send.']);
     });
   });
 

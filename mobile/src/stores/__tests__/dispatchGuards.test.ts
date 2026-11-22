@@ -15,7 +15,7 @@
 import { useDispatch } from '../dispatch';
 import type { Filing } from '../dispatchTypes';
 
-let mockOutcome: 'ok' | 'refused' | 'offline' | 'paced' = 'ok';
+let mockOutcome: 'ok' | 'refused' | 'offline' | 'paced' | 'broken' = 'ok';
 let mockRow: Record<string, unknown> | null = null;
 let mockViewer: Record<string, unknown[]> = {};
 /** When set, the member's marks are answered only once it settles: a read still on its way. */
@@ -33,6 +33,8 @@ const networkError = () => Object.assign(new TypeError('Network request failed')
 const answer = () => {
   if (mockOutcome === 'offline') return Promise.reject(networkError());
   if (mockOutcome === 'refused') return Promise.resolve(REFUSED);
+  // A fault of the house's own, which no rule of it made.
+  if (mockOutcome === 'broken') return Promise.resolve({ data: null, error: { message: 'internal error', code: 'XX000' } });
   // The house's pace with a wait longer than the phone waits (check_write_pace): an hour.
   if (mockOutcome === 'paced') return Promise.resolve({ data: null, error: { code: 'RH429', message: 'RATE_LIMITED', details: 'member', hint: '3600' } });
   return Promise.resolve({ data: [], error: null });
@@ -645,6 +647,16 @@ describe('an act the house refuses, with the member still here', () => {
     useDispatch.getState().certify('f1', true);
     await settle();
     expect(toast.error).toHaveBeenCalledWith('The house did not accept that.');
+  });
+
+  it('says a fault of the house as what failed, never as a refusal', async () => {
+    const toast = require('../../utils/reelToast').default;
+    toast.error.mockClear();
+    refused();
+    mockOutcome = 'broken';
+    useDispatch.getState().certify('f1', true);
+    await settle();
+    expect(toast.error.mock.calls.map((c: unknown[]) => c[0])).toEqual(['That could not be done.']);
   });
 });
 

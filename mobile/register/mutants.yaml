@@ -9705,3 +9705,30 @@ mutants:
         find: "    return p.imports.flatMap((f) => (byFile.get(f)?.units ?? []).filter((u) => u.name === name));\n"
         replace: "    return [];\n"
     proof: { file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "knows a walk launch reaches through the functions it calls, and one only a screen opens" }
+
+  - id: shape-a-guest-refused-said-as-failed
+    class: COPY-a-refusal-told-as-anothers
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      reelToast.error(saidOfAFailure(e, 'Could not admit this guest.'));"
+        replace: "      reelToast.error('Could not admit this guest.');"
+    proof: { file: src/stores/__tests__/aRefusedWriteIsNotSuccess.test.ts, test: "admitting a guest: refused, said as refused; unreached, said as the connection" }
+
+  - id: shape-a-stack-film-refused-said-as-failed
+    class: COPY-a-refusal-told-as-anothers
+    source: shape
+    edits:
+      - file: src/stores/domain/listSlice.ts
+        find: "            reelToast.error(saidOfAFailure(e, 'Failed to remove film from stack.'));"
+        replace: "            reelToast.error('Failed to remove film from stack.');"
+    proof: { file: src/stores/domain/__tests__/aStackLosesOneFilmInOneWrite.test.ts, test: "a refused removal is said as refused, never as a failure to try again" }
+
+  - id: shape-a-house-fault-said-as-refused
+    class: COPY-a-refusal-told-as-anothers
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    reelToast.error(saidOfAFailure(e, 'That could not be done.', 'The house did not accept that.'));"
+        replace: "    reelToast.error('The house did not accept that.');"
+    proof: { file: src/stores/__tests__/dispatchGuards.test.ts, test: "says a fault of the house as what failed, never as a refusal" }
