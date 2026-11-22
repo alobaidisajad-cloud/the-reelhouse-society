@@ -7353,21 +7353,21 @@
     "class": "SPEED-a-read-that-grows-with-the-house",
     "mutant": "shape-a-probes-index-not-asked",
     "proof": "m7",
-    "commit": "d7416916b4fd2845acd460b50a1009163eff7c09",
+    "commit": "8f9382eac1b9ae6194489089574ec115fbf85198",
     "verdict": "caught"
   },
   {
     "class": "SPEED-a-read-that-grows-with-the-house",
     "mutant": "shape-a-probes-index-list-asks-its-first",
-    "proof": "m8",
-    "commit": "d7416916b4fd2845acd460b50a1009163eff7c09",
+    "proof": "m12",
+    "commit": "8f9382eac1b9ae6194489089574ec115fbf85198",
     "verdict": "caught"
   },
   {
     "class": "SPEED-an-index-refuses-the-writes-it-serves",
     "mutant": "past-the-short-pieces-kept-from-members",
     "proof": "m1",
-    "commit": "d7416916b4fd2845acd460b50a1009163eff7c09",
+    "commit": "8f9382eac1b9ae6194489089574ec115fbf85198",
     "verdict": "caught"
   },
   {
