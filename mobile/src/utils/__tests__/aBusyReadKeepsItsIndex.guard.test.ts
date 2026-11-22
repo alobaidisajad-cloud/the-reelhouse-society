@@ -3,7 +3,7 @@
  * would read a page, or ask a rule once a row where once a read would do.
  * ─────────────────────────────────────────────────────────────────────────────
  * Each function as production will hold it (the snapshot, then every pending migration in name order,
- * the last definition of a name standing), and each row rule a pending migration writes, is held to the
+ * the last definition of a name standing), and each row rule as production will hold it, is held to the
  * rules the load lab (100,000 members) found broken by round 14's cars:
  *   - a count from a reading moment never asks "never read, or since" of a joined row in one test:
  *     the index cannot start at the moment, and every row of the room is read (a salon's unread
@@ -20,7 +20,7 @@
  *   - a function run as the caller compares a row with the caller as (SELECT auth.uid()): auth.uid()
  *     itself is too dear for the planner to ask before the row rules, so the rules are asked of every
  *     row the read meets, everyone's marks of a log for the one the caller made (the house feed);
- *   - a row rule a pending migration writes asks another table by its key, never EXISTS (the planner
+ *   - a row rule asks another table by its key, never EXISTS (the eleven written before excepted; the planner
  *     may hash the whole table under its own rules: 40,000 filings for a page of 30 critiques); asks
  *     each test of each column once on any path; and asks no test of a key the row does not hold;
  *   - a member's counts read their records once, and the following feed asks no call of a member's
@@ -227,10 +227,29 @@ describe('the rules, on planted text', () => {
   });
 });
 
-describe('every function as production will hold it, and every rule the pending cars write', () => {
+/**
+ * The rules that asked EXISTS of another table before round 14 found it slow: each is left as it was
+ * written until a car of its own rewrites it, and comes off this list then. No other may.
+ */
+const EXISTS_BEFORE_ROUND_14 = [
+  '"Lounge messages readable" on public.lounge_messages',
+  '"Reactions readable" on public.lounge_message_reactions',
+  'admins_select_all_reports on public.reports',
+  'admins_select_all_warnings on public.warnings',
+  'admins_select_mod_actions on public.mod_actions',
+  'critiques_update_own on public.dispatch_comments',
+  'list_comments_select_authorized on public.list_comments',
+  'list_items_select_authorized on public.list_items',
+  'log_comments_select_authorized on public.log_comments',
+  'log_counts_read on public.log_counts',
+  'owner_delete_dossier_comments on public.dossier_comments_legacy',
+];
+
+describe('every function and every row rule as production will hold it', () => {
   const house = `${SNAPSHOT_SQL()}\n${PENDING_SQL()}`;
   const fns = standing(house);
-  const pendingRules = rules(PENDING_SQL());
+  // The snapshot's rules, then each a pending car writes, the last written standing.
+  const houseRules = new Map([...rules(SNAPSHOT_SQL()), ...rules(PENDING_SQL())]);
 
   it('reads the functions the house holds, the reads the load lab timed among them', () => {
     expect(fns.size).toBeGreaterThan(150);
@@ -262,16 +281,19 @@ describe('every function as production will hold it, and every rule the pending 
   });
 
   it('writes no rule that asks EXISTS of another table: each asks by its key', () => {
-    expect(pendingRules.size + Number(PENDING_SQL() === '')).toBeGreaterThan(0);
-    expect(tablesAskedWhole(pendingRules)).toEqual([]);
+    expect(houseRules.size).toBeGreaterThan(80);
+    const whole = tablesAskedWhole(houseRules);
+    expect(whole.filter((n) => !EXISTS_BEFORE_ROUND_14.includes(n))).toEqual([]);
+    // A rule since rewritten comes off the list, so the list never excuses a new one of its name.
+    expect(EXISTS_BEFORE_ROUND_14.filter((n) => !whole.includes(n))).toEqual([]);
   });
 
   it('writes no rule that asks one test of one column twice on a path', () => {
-    expect(rulesAskingTwice(pendingRules)).toEqual([]);
+    expect(rulesAskingTwice(houseRules)).toEqual([]);
   });
 
   it('writes no rule that asks a test of a key the row may not hold', () => {
-    expect(keysAskedUnheld(pendingRules)).toEqual([]);
+    expect(keysAskedUnheld(houseRules)).toEqual([]);
   });
 
   it('asks no call of a member\'s file for each follow in the following feed: the read already holds its answer', () => {
