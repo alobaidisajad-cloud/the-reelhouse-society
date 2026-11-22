@@ -9,7 +9,9 @@
  * recheck took away, times the loops). A read is size-independent when:
  *   - no sequential scan reads a growing table past FLOOR rows (a whole table read, however fast now);
  *   - all it reads of growing tables stays within its bound: BOUND, or the probe's own `rows`, said
- *     with why (the whale's own 10,000 films grow with a member's own record, not with the house).
+ *     with why (the whale's own 10,000 films grow with a member's own record, not with the house);
+ *   - a read held to an index (the probe's own `index`) reads by it: the plan that keeps it the size of
+ *     its answer at every size, not one the planner may leave as the house grows.
  * And measured at two sizes (rowsAtSizes), a read whose rows read grow with the house fails however
  * small it is.
  *
@@ -48,6 +50,18 @@ function scansOf(plan) {
   return out;
 }
 
+/** Every index a plan tree read by, a bitmap's among them (its index scan names no table). */
+function indexesOf(plan) {
+  const out = new Set();
+  const walk = (n) => {
+    if (!n) return;
+    if (n['Index Name']) out.add(n['Index Name']);
+    for (const c of n.Plans ?? []) walk(c);
+  };
+  walk(plan);
+  return out;
+}
+
 /** What a read read of growing tables, over every statement's plan (each { Plan } as EXPLAIN's JSON gives it). */
 function readOf(plans) {
   const scans = plans.flatMap((p) => scansOf(p.Plan ?? p));
@@ -55,11 +69,12 @@ function readOf(plans) {
 }
 
 /** The faults of a read's shape, in words; [] when it stays the same size as the house grows. */
-function shapeFaults(plans, bound = BOUND) {
+function shapeFaults(plans, bound = BOUND, index = null) {
   const { scans, grown } = readOf(plans);
   const faults = scans.filter((s) => s.node === 'Seq Scan' && grows(s.relation) && s.read > FLOOR)
     .map((s) => `reads ${s.relation} whole (a sequential scan of ${s.read} rows): it grows with the house`);
   if (grown > bound) faults.push(`reads ${grown} rows of tables that grow with the house, past its bound of ${bound}`);
+  if (index && !plans.some((p) => indexesOf(p.Plan ?? p).has(index))) faults.push(`does not read by its index, ${index}`);
   return faults;
 }
 
@@ -73,4 +88,4 @@ function rowsAtSizes(small, large, slack = 1.25) {
     .map((k) => `${k}: ${small[k]} rows at the smaller house, ${large[k]} at the larger`);
 }
 
-module.exports = { FIXED, FLOOR, BOUND, grows, scansOf, readOf, shapeFaults, rowsAtSizes };
+module.exports = { FIXED, FLOOR, BOUND, grows, scansOf, indexesOf, readOf, shapeFaults, rowsAtSizes };

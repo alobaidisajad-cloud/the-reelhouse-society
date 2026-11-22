@@ -8,6 +8,10 @@
 --   Now the count reads at most 1,000 unread notices (the member's unread index, in order) and says
 --   whether there are more ('unread_more'), so the board's read is the same size at any house. A
 --   phone from before this car reads 'unread' as it did: the count, up to 1,000.
+--   And the board's page is read from the front of the member's newest-first index, the plan held
+--   (enable_bitmapscan off): planned for any member at once, the house guessed each holds a few dozen
+--   notices and gathered all of a member's to sort them, the celebrity's 50,000 for a page of 30
+--   (load 44965893141).
 -- Undo: mobile/supabase/migrations-down/20261122_04_the_bell_counts_to_a_thousand.sql
 -- ════════════════════════════════════════════════════════════════════════════
 SET LOCAL lock_timeout = '2s';
@@ -17,6 +21,9 @@ SET LOCAL statement_timeout = '30s';
 CREATE OR REPLACE FUNCTION public.notices_page(p_limit integer DEFAULT 30) RETURNS jsonb
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
+    -- The page is the front of notifications_member_newest, however many the member holds: never every
+    -- notice of theirs gathered (a bitmap) and sorted for it.
+    SET enable_bitmapscan TO 'off'
     AS $$
   WITH counted AS (
     SELECT count(*) AS n

@@ -9,7 +9,7 @@
  * between two sizes). Here its judge is fed planted plans, shaped as EXPLAIN's JSON and auto_explain's
  * are, so each rule is seen to say no.
  */
-const { FLOOR, BOUND, grows, readOf, rowsAtSizes, scansOf, shapeFaults } = require('../load/plan-shape.cjs');
+const { FLOOR, BOUND, grows, indexesOf, readOf, rowsAtSizes, scansOf, shapeFaults } = require('../load/plan-shape.cjs');
 
 type Node = Record<string, unknown> & { Plans?: Node[] };
 const scan = (type: string, relation: string, rows: number, extra: Partial<Record<string, number | string>> = {}): Node =>
@@ -46,5 +46,15 @@ describe('the shape of a read', () => {
     expect(rowsAtSizes(small, large)).toEqual(['the count: 30000 rows at the smaller house, 61000 at the larger']);
     // Below the floor, a read is too small to tell growth from noise.
     expect(rowsAtSizes({ x: 10 }, { x: 30 })).toEqual([]);
+  });
+
+  it('says no to a read held to an index whose plans read by another way, a bitmap\'s index found under its heap scan', () => {
+    const bitmap = { Plan: { 'Node Type': 'Bitmap Heap Scan', 'Relation Name': 'lists', 'Actual Rows': 3, 'Actual Loops': 1,
+      Plans: [{ 'Node Type': 'Bitmap Index Scan', 'Index Name': 'lists_short_grams', 'Actual Rows': 3, 'Actual Loops': 1 }] } };
+    expect([...indexesOf(bitmap.Plan)]).toEqual(['lists_short_grams']);
+    expect(shapeFaults([bitmap], BOUND, 'lists_short_grams')).toEqual([]);
+    const walked = [plan(scan('Index Scan', 'lists', 900, { 'Index Name': 'idx_lists_created_at_id_desc' }))];
+    expect(shapeFaults(walked, BOUND, 'lists_short_grams')).toEqual(['does not read by its index, lists_short_grams']);
+    expect(shapeFaults(walked)).toEqual([]);
   });
 });

@@ -56,14 +56,18 @@ const PROBES = [
   { screen: 'Reel', what: 'stacks, searched', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('stack 12', false, 60)" },
   // A word every stack has (the walk's best case, a search's worst), and a member's handle (the seed's 'm' || n).
   { screen: 'Reel', what: 'stacks, searched for a word every stack has', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('stack', false, 60)" },
-  { screen: 'Reel', what: 'stacks, searched by an author\'s handle', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('m2001', false, 60)" },
+  // The handle's members' stacks read by each member's own index (20261122_12), never every stack joined.
+  { screen: 'Reel', what: 'stacks, searched by an author\'s handle', as: MEMBER, index: 'idx_lists_user_created_id', sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('m2001', false, 60)" },
   { screen: 'Reel', what: 'stacks, searched by a handle many members share', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('m1', false, 60)" },
+  // Two letters no stack and no handle holds: found absent from the short pieces' index (20261122_13, _15), not walked.
+  { screen: 'Reel', what: 'stacks, searched for two letters none holds', as: MEMBER, index: 'lists_short_grams', sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('zq', false, 60)" },
   // The same, by the search under measurement (e2e/load/proposed.sql), when it is there.
   ...(PROPOSED_STACKS ? [['stack 12', 'a rare word'], ['stack', 'a word every stack has'], ['m2001', 'an author\'s handle'], ['m1', 'a handle many members share']].map(([q, what]) => (
     { screen: 'Reel', what: `stacks, searched for ${what}, as proposed`, as: MEMBER, sql: `SELECT * FROM public.get_filtered_stacks_proposed('${q.replace(/'/g, "''")}', false, 60)` })) : []),
   // A member's file
   { screen: 'Profile', what: 'the counts, of the whale', as: MEMBER, sql: `SELECT public.get_profile_counts('${WHALE}')` },
   { screen: 'Profile', what: 'the honours and passport, of the whale', as: MEMBER, sql: `SELECT public.get_public_profile_analytics('${WHALE}')` },
+  // The whale's 10,000 records read once (20261122_12), every figure counted from that one read.
   { screen: 'Profile', what: 'the projector room, of the whale', as: WHALE, sql: `SELECT public.get_user_analytics('${WHALE}')` },
   { screen: 'Profile', what: 'the taste profile, of the whale', as: MEMBER, sql: `SELECT public.get_taste_profile('${WHALE}')` },
   { screen: 'Profile', what: 'the Archive, first page, of the whale', as: MEMBER,
@@ -123,28 +127,34 @@ const PROBES = [
   { screen: 'Lounge', what: 'unread counts, for a member in 200 rooms', as: WHALE, sql: 'SELECT * FROM public.get_lounge_unread_counts()' },
   // The corridor in one trip (proposed.sql's get_lounge_list): for the member in 200 rooms, for one
   // in a few, and for the host of the busiest room.
-  { screen: 'Lounge', what: 'the corridor in one trip, for a member in 200 rooms', as: WHALE, sql: 'SELECT public.get_lounge_list()' },
-  { screen: 'Lounge', what: 'the corridor in one trip, for a member', as: MEMBER, sql: 'SELECT public.get_lounge_list()' },
-  { screen: 'Lounge', what: 'the corridor in one trip, for the busiest room\'s host', as: mid(((1 * 61) % 100000) + 1), sql: 'SELECT public.get_lounge_list()' },
-  { screen: 'Lounge', what: 'the busiest room\'s last 100 messages', as: mid(((1 * 61) % 100000) + 1),
+  // The newest salons from the front of their index (lounges_newest, 20261122_12), never every salon sorted.
+  { screen: 'Lounge', what: 'the corridor in one trip, for a member in 200 rooms', as: WHALE, index: 'lounges_newest', sql: 'SELECT public.get_lounge_list()' },
+  { screen: 'Lounge', what: 'the corridor in one trip, for a member', as: MEMBER, index: 'lounges_newest', sql: 'SELECT public.get_lounge_list()' },
+  { screen: 'Lounge', what: 'the corridor in one trip, for the busiest room\'s host', as: mid(((1 * 61) % 100000) + 1), index: 'lounges_newest', sql: 'SELECT public.get_lounge_list()' },
+  // The room's rule asked of each word read, by its salon's own row (20261122_12), never every salon read first.
+  { screen: 'Lounge', what: 'the busiest room\'s last 100 messages', as: mid(((1 * 61) % 100000) + 1), index: 'lounges_pkey',
     sql: `SELECT m.id, m.content, m.created_at, p.username FROM public.lounge_messages m LEFT JOIN public.profiles p ON p.id = m.user_id WHERE m.lounge_id = '${HOT_LOUNGE}' ORDER BY m.created_at DESC LIMIT 100` },
   // Notices
   { screen: 'Notices', what: 'the celebrity\'s first page', as: CELEBRITY,
     sql: `SELECT id, type, message, is_read, created_at FROM public.notifications WHERE user_id = '${CELEBRITY}' ORDER BY created_at DESC, id DESC LIMIT 30` },
   // The board and its bell in one read, as the phone asks it (notices_page): its count read to a thousand
   // (20261122_04), so the celebrity's 50,000 unread are never all read.
-  { screen: 'Notices', what: 'the celebrity\'s board and bell (notices_page)', as: CELEBRITY, sql: 'SELECT public.notices_page(30)' },
+  // Its page from the front of the member's newest-first index, the celebrity's 50,000 never gathered and sorted.
+  { screen: 'Notices', what: 'the celebrity\'s board and bell (notices_page)', as: CELEBRITY, index: 'notifications_member_newest', sql: 'SELECT public.notices_page(30)' },
   // Search: the house-wide search's three house sources, as the phone asks each (a page of 21), for a
   // word few hold and for one many hold. A word in no review or stack ("tarkovsky") is the rare word's
   // worst case: every reader of the trigram indexes, none of the walk.
   { screen: 'Search', what: 'members, a handle few share (search_members)', as: MEMBER, sql: "SELECT * FROM public.search_members('m54321', false, NULL, NULL, 21)" },
-  { screen: 'Search', what: 'members, a handle many share (search_members)', as: MEMBER, sql: "SELECT * FROM public.search_members('m1', false, NULL, NULL, 21)" },
+  // Two letters: who holds them anywhere gathered from the short pieces' index (20261122_14, _15), never read member by member.
+  { screen: 'Search', what: 'members, a handle many share (search_members)', as: MEMBER, index: 'profiles_short_grams', sql: "SELECT * FROM public.search_members('m1', false, NULL, NULL, 21)" },
+  { screen: 'Search', what: 'members, two letters none holds (search_members)', as: MEMBER, index: 'profiles_short_grams', sql: "SELECT * FROM public.search_members('zq', false, NULL, NULL, 21)" },
   { screen: 'Search', what: 'records, a word none holds (search_logs)', as: MEMBER, sql: "SELECT * FROM public.search_logs('tarkovsky', 'tarkovsky', NULL, NULL, 21)" },
   { screen: 'Search', what: 'records, a word many hold (search_logs)', as: MEMBER, sql: "SELECT * FROM public.search_logs('considered', 'considered', NULL, NULL, 21)" },
   { screen: 'Search', what: 'stacks, a word none holds (search_stacks)', as: MEMBER, sql: "SELECT * FROM public.search_stacks('tarkovsky', NULL, NULL, 21)" },
   { screen: 'Search', what: 'stacks, one member\'s (search_stacks)', as: MEMBER, sql: "SELECT * FROM public.search_stacks('stack 2001-', NULL, NULL, 21)" },
   { screen: 'Search', what: 'stacks, a word every stack holds (search_stacks)', as: MEMBER, sql: "SELECT * FROM public.search_stacks('stack', NULL, NULL, 21)" },
-  { screen: 'Search', what: 'stacks, two letters (search_stacks, walked)', as: MEMBER, sql: "SELECT * FROM public.search_stacks('m1', NULL, NULL, 21)" },
+  // Two letters no stack holds: found absent from the short pieces' index (20261122_13, _15), not walked through every stack.
+  { screen: 'Search', what: 'stacks, two letters (search_stacks)', as: MEMBER, index: 'lists_short_grams', sql: "SELECT * FROM public.search_stacks('m1', NULL, NULL, 21)" },
 ];
 
 /** An annotation holds one message; GitHub encodes its line breaks as %0A. */
@@ -240,7 +250,7 @@ for (const p of PROBES) {
     const plans = plansOf(p);
     const grown = readOf(plans).grown;
     readRows[`${p.screen} · ${p.what}`] = grown;
-    const faults = shapeFaults(plans, p.rows ?? BOUND);
+    const faults = shapeFaults(plans, p.rows ?? BOUND, p.index);
     const ok = median <= budget && !faults.length;
     if (!ok) over++;
     rows.push(`| ${p.screen} | ${p.what} | ${median.toFixed(1)} | ${t[4].toFixed(1)} | ${budget} | ${grown} | ${ok ? '✓' : faults.length ? '✗ SHAPE' : '✗ OVER'} |`);
@@ -309,6 +319,25 @@ if (process.env.LOAD_SHAPE_AGAINST) {
   for (const g of grew) { over++; console.log(`::error title=Load — a read that grows with the house::${escape(g)}`); }
   console.log(grew.length ? `\n${grew.length} read(s) grew with the house` : '\nno read grew with the house');
 }
+
+// What the short pieces' indexes (20261122_13, _14) cost the house at this size, beside the trigram
+// indexes of the same words: their size on disk, and a member's write through them (a stack's 1,000-letter
+// description and a member's name, each written five times in a rolled-back transaction, the median).
+try {
+  const sizes = execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-F', ' ', '-c',
+    "SELECT relname, pg_relation_size(oid) FROM pg_class WHERE relname IN ('lists_short_grams', 'lists_title_trigram', 'lists_description_trigram', 'profiles_short_grams', 'profiles_username_trigram', 'profiles_display_name_trigram', 'lists', 'profiles') ORDER BY relname"],
+  { encoding: 'utf8' }).trim();
+  console.log(`\nThe short pieces' indexes at ${Number(process.env.LOAD_MEMBERS ?? 100000).toLocaleString('en-US')} members (bytes):\n${sizes}`);
+  const words = "(SELECT left(string_agg(md5(i::text) || ' Le cinéma ' || i, ' '), 1000) FROM generate_series(1, 40) i)";
+  const writes = (sql) => Array.from({ length: 5 }, (_, k) => `EXPLAIN (ANALYZE, TIMING OFF, FORMAT JSON) ${sql.split('$K').join(String(k))};`).join('\n');
+  const out = execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-c', `BEGIN; SELECT set_config('request.jwt.claims', '', true);
+${writes(`UPDATE public.lists SET description = ${words} || '$K' WHERE id = (SELECT id FROM public.lists WHERE is_private = false ORDER BY created_at, id LIMIT 1)`)}
+${writes(`UPDATE public.profiles SET display_name = 'Agnès Varda $K' WHERE id = '${MEMBER}'`)}
+ROLLBACK;`], { encoding: 'utf8' });
+  const t = [...out.matchAll(/"Execution Time": ([\d.]+)/g)].map((m) => Number(m[1]));
+  const median = (a) => [...a].sort((x, y) => x - y)[2];
+  console.log(`a stack's description written: median ${median(t.slice(0, 5))} ms; a member's name written: median ${median(t.slice(5, 10))} ms`);
+} catch (e) { console.log(`the short pieces' cost could not be read: ${String(e.message).split('\n')[0]}`); }
 
 const members = Number(process.env.LOAD_MEMBERS ?? 100000).toLocaleString('en-US');
 const table = ['| Screen | Read | Median ms | Worst ms | Budget | Rows read | |', '|---|---|---|---|---|---|---|', ...rows].join('\n');
