@@ -19,7 +19,6 @@ LATE:
   - AUTH-a-sign-out-undone-by-a-late-answer
 COPY:
   - DATA-edit-sealed-over-an-unread-record
-  - UI-notice-opens-elsewhere
   - STATE-a-request-held-after-its-answer
   - WRITE-a-sent-message-taken-off-the-screen
 PROT:

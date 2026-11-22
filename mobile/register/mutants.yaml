@@ -10454,3 +10454,30 @@ mutants:
         find: "      if (!published.has(t)) faults.push(`${t}: heard by its channel, but the house does not publish it`);\n"
         replace: ""
     proof: { file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "3: to an ended table named nowhere, a channel the house does not publish or the app does not hear, and a read again gone" }
+
+  - id: shape-salon-notice-opens-the-asker
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: src/utils/noticeRoute.ts
+        find: "  if (notice.related_lounge_id && UUID.test(notice.related_lounge_id)) return `/lounge/${notice.related_lounge_id}?door=1`;\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aNoticeOpensWhatItIsAbout.guard.test.ts, test: "opens the room it is about" }
+
+  - id: shape-log-critique-notice-unkeyed
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: supabase/schema/live-schema.sql
+        find: "'endorse:log:' || NEW.log_id);"
+        replace: "NULL);"
+    proof: { file: src/utils/__tests__/aNoticeOpensWhatItIsAbout.guard.test.ts, test: "opens the room it is about" }
+
+  - id: shape-notice-route-trusted
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aNoticeOpensWhatItIsAbout.guard.test.ts
+        find: "    if (wrong.length) faults.push(`${k}: about a ${room}, opens ${wrong.map((r) => r || 'nothing').join(', ')}`);\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aNoticeOpensWhatItIsAbout.guard.test.ts, test: "to a critique of a log keyed by nothing, a writer named nowhere, and a name gone" }
