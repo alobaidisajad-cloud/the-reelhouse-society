@@ -16,6 +16,7 @@ import { showTierDoor } from '../../../../utils/tierDoor';
 import { isRefusedOnPurpose, saidOfARefusal } from '../../../../utils/saidOfARefusal';
 import { sanitizeInput } from '../../../../utils/sanitizeInput';
 import { pgLiteral } from '../../../../utils/keysetCursor';
+import { readOnAsFar } from '../../../../utils/readAsFar';
 import { resolveTier } from '../../../../utils/tier';
 import { localCalendarDate } from '../../../../utils/timeAgo';
 import { useAuthStore } from '../../../auth';
@@ -182,61 +183,79 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
 
         const PAGE_SIZE = 50;
 
-        // Ordered as the next page is asked for: by watched date (undated last,
-        // as the cursor reads them), then by id. Films watched on one day share a
-        // date, and a tie broken any other way is skipped or repeated at a page edge.
-        let query = supabase
-            .from('logs').select(LOG_SELECT_COLUMNS).eq('user_id', user.id)
-            .order('watched_date', { ascending: false, nullsFirst: false })
-            .order('id', { ascending: false })
-            .limit(PAGE_SIZE);
+        /** One read: `size` logs past the cursor, with the cursor past them while more may follow. */
+        const readPage = async (cursor: string | undefined, size: number) => {
+            // Ordered as the next page is asked for: by watched date (undated last,
+            // as the cursor reads them), then by id. Films watched on one day share a
+            // date, and a tie broken any other way is skipped or repeated at a page edge.
+            let query = supabase
+                .from('logs').select(LOG_SELECT_COLUMNS).eq('user_id', user.id)
+                .order('watched_date', { ascending: false, nullsFirst: false })
+                .order('id', { ascending: false })
+                .limit(size);
 
-        const cursor = loadMore ? state._logsCursor : null;
-        if (cursor) {
-            try {
-                const parsed = JSON.parse(cursor);
-                // Defense-in-depth: lastId is interpolated into a PostgREST .or() filter
-                // string below, so validate it as a uuid first. A corrupted cursor that
-                // isn't a uuid degrades to a safe bare-date page instead of a broken query.
-                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(parsed.lastId));
-                if (parsed.lastId) {
-                    if (parsed.wasDateNull) {
-                        // .lt('id', …) is a parameter, not interpolated: safe as it is.
-                        query = query.is('watched_date', null).lt('id', parsed.lastId);
-                    } else if (parsed.lastDate) {
-                        const safeDate = pgLiteral(String(parsed.lastDate));
-                        if (isUuid) {
-                            query = query.or(`watched_date.lt.${safeDate},and(watched_date.eq.${safeDate},id.lt.${parsed.lastId}),watched_date.is.null`);
-                        } else {
-                            query = query.lt('watched_date', String(parsed.lastDate));
+            if (cursor) {
+                try {
+                    const parsed = JSON.parse(cursor);
+                    // Defense-in-depth: lastId is interpolated into a PostgREST .or() filter
+                    // string below, so validate it as a uuid first. A corrupted cursor that
+                    // isn't a uuid degrades to a safe bare-date page instead of a broken query.
+                    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(parsed.lastId));
+                    if (parsed.lastId) {
+                        if (parsed.wasDateNull) {
+                            // .lt('id', …) is a parameter, not interpolated: safe as it is.
+                            query = query.is('watched_date', null).lt('id', parsed.lastId);
+                        } else if (parsed.lastDate) {
+                            const safeDate = pgLiteral(String(parsed.lastDate));
+                            if (isUuid) {
+                                query = query.or(`watched_date.lt.${safeDate},and(watched_date.eq.${safeDate},id.lt.${parsed.lastId}),watched_date.is.null`);
+                            } else {
+                                query = query.lt('watched_date', String(parsed.lastDate));
+                            }
                         }
                     }
+                } catch {
+                    // Malformed cursor → treat as null (fresh fetch)
                 }
-            } catch {
-                // Malformed cursor → treat as null (fresh fetch)
             }
-        }
 
-        const { data, error } = await query;
+            const { data, error } = await query;
+            if (error || !data) throw error ?? new Error('The logs could not be read');
+
+            // Compute next cursor from last row
+            const lastRow = data.length > 0 ? data[data.length - 1] : null;
+            const nextCursor = data.length === size && lastRow ? JSON.stringify({
+                lastDate: (lastRow as any).watched_date,
+                lastId: (lastRow as any).id,
+                wasDateNull: (lastRow as any).watched_date === null
+            }) : null;
+            return { items: data, nextCursor };
+        };
+
+        // A page more reads on from the cursor; a read from the top reads as far as the member's logs
+        // are held (the pages read past the first, the window the phone keeps), never the first page
+        // alone in place of them.
+        let read: Awaited<ReturnType<typeof readPage>> | null;
+        try {
+            read = loadMore
+                ? await readPage(state._logsCursor ?? undefined, PAGE_SIZE)
+                : await readOnAsFar(readPage, Math.max(PAGE_SIZE, state.logs.length));
+        } catch {
+            // Refused or never reached: said below as a read that failed.
+            read = null;
+        }
 
         // Left mid-fetch: the reset restored this op's flags, and persisting would copy them.
         if (!stillSignedIn(user.id)) return true;
 
-        if (error || !data) { set({ _fetchingLogs: false }); return false; }
-        
-        const hasMore = data.length === PAGE_SIZE;
+        if (!read) { set({ _fetchingLogs: false }); return false; }
 
-        // Compute next cursor from last row
-        const lastRow = data.length > 0 ? data[data.length - 1] : null;
-        const nextCursor = hasMore && lastRow ? JSON.stringify({
-            lastDate: (lastRow as any).watched_date,
-            lastId: (lastRow as any).id,
-            wasDateNull: (lastRow as any).watched_date === null
-        }) : null;
+        const { nextCursor } = read;
+        const hasMore = nextCursor !== null;
 
         // The member's own writes still in the queue, laid over the page, so none flickers back.
         const { queuedAdds, page: newLogs } = overlayQueuedLogs(
-            user.id, data as Record<string, unknown>[], getOfflineQueue() as QueuedWrite[],
+            user.id, read.items as Record<string, unknown>[], getOfflineQueue() as QueuedWrite[],
         );
         const nextLogs = loadMore ? [...state.logs, ...newLogs] : [...queuedAdds, ...newLogs];
         const deduplicatedLogs = oneOfEachLog(nextLogs);

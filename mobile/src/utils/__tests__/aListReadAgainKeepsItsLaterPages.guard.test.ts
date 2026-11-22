@@ -287,8 +287,11 @@ const STARTS_OVER: Record<string, string> = {
   'src/stores/notificationStore.ts notifications in applyIncomingNotification': 'held to 500 notices on the phone: one heard live lets the oldest go',
 };
 
-/** A write that keeps what was read past the first page: the write → what keeps it (a pattern its function holds), and how. */
-const KEEPS: Record<string, { by: string; why: string }> = {
+/**
+ * A write that keeps what was read past the first page: the write → what keeps it (a pattern its function holds,
+ * or the function named `in` where the value it lays down is read), and how.
+ */
+const KEEPS: Record<string, { by: string; in?: string; why: string }> = {
   'app/film-reviews/[id].tsx logs in showPage': { by: 'heldRaw\\.current = \\(isLoadMore \\? heldRaw\\.current : 0\\)', why: 'the top is read again as far as the member had read (heldRaw sizes it)' },
   'src/stores/lounge.ts currentMessages in fetchMessages': { by: 'return get\\(\\)\\.catchUpMessages\\(loungeId\\)', why: 'a room still held is caught up, never read whole; a room left is kept and caught up' },
   'src/stores/lounge.ts currentMessages in sendMessage': { by: '_readBackIn', why: 'the cap keeps every word of a room read back past its window' },
@@ -297,17 +300,15 @@ const KEEPS: Record<string, { by: string; why: string }> = {
   'src/components/moderation/VerdictRecord.tsx items in VerdictRecord': { by: 'readAsFar\\(.*asFar\\.current', why: 'read again as far as the member had read (readAsFar)' },
   'src/stores/lounge.ts currentMessages in subscribeToLounge': { by: '_readBackIn', why: 'the cap keeps every word of a room read back past its window' },
   'app/(admin)/tribunal.tsx pendingItems in TribunalScreen': { by: 'readPendingAsFar\\(pendingAsFar\\.current\\)', why: 'read again as far as the moderator had read (readAsFar)' },
+  'src/hooks/useProfileData.ts mainLogs in profileReducer': { by: 'readOnAsFar\\(.*logsAsFar\\.current\\)', in: 'fetchUserData', why: 'a file read again lays its logs read as far as the reader had read (readOnAsFar)' },
+  'src/hooks/useProfileData.ts archiveLogs in profileReducer': { by: 'readOnAsFar\\(.*logsAsFar\\.current\\)', in: 'fetchUserData', why: 'a file read again lays its logs read as far as the reader had read (readOnAsFar)' },
+  'src/hooks/useProfileData.ts ledgerLogs in profileReducer': { by: 'readOnAsFar\\(.*logsAsFar\\.current\\)', in: 'fetchUserData', why: 'a file read again lays its logs read as far as the reader had read (readOnAsFar)' },
+  'src/stores/domain/logSlice/helpers/logOperations.ts logs in fetchLogsOp': { by: 'readOnAsFar\\(readPage, Math\\.max\\(PAGE_SIZE, state\\.logs\\.length\\)\\)', why: 'a read from the top reads as far as the logs are held (readOnAsFar)' },
   'app/(admin)/tribunal.tsx priorityItems in TribunalScreen': { by: 'readAsFar\\(readPriority, priorityCursorOf, priorityAsFar\\.current', why: 'read again as far as the moderator had read (readAsFar)' },
 };
 
 /** Found and not yet mended: each comes off as it is fixed. */
 const STILL_TO_FIX: string[] = [
-  // A profile come back to after its read went stale reads its logs again from the first page
-  // (USER_DATA_LOADED for another member's, fetchLogs for the member's own).
-  'src/hooks/useProfileData.ts archiveLogs in profileReducer',
-  'src/hooks/useProfileData.ts ledgerLogs in profileReducer',
-  'src/hooks/useProfileData.ts mainLogs in profileReducer',
-  'src/stores/domain/logSlice/helpers/logOperations.ts logs in fetchLogsOp',
   // The app come back to, or its channel back: the board is read again at its first page alone.
   'src/stores/notificationStore.ts notifications in fetchNotifications',
 ];
@@ -317,8 +318,8 @@ function keeps(hit: PageHit, app: { file: string; text: string }[]): boolean {
   const k = KEEPS[hit.at];
   if (!k) return false;
   const file = hit.at.slice(0, hit.at.indexOf(' '));
-  // A cut is kept by its cap; a write by its own function.
-  const fn = hit.how === 'cuts' && hit.by && hit.by !== '.slice' ? hit.by : hit.at.slice(hit.at.indexOf(' in ') + 4);
+  // A cut is kept by its cap; a write by its own function, or the one that reads what it lays down.
+  const fn = hit.how === 'cuts' && hit.by && hit.by !== '.slice' ? hit.by : k.in ?? hit.at.slice(hit.at.indexOf(' in ') + 4);
   const f = app.find((x) => x.file === file);
   if (!f) return false;
   const sf = AW.parse(file, f.text);
@@ -398,6 +399,9 @@ describe('the finder', () => {
     // The Tribunal's sanctions read again at their first page alone after a member is lifted.
     expect(putBack('src/components/admin/SanctionsList.tsx', '}), asFar.current, PAGE)', '}), PAGE, PAGE)'))
       .toContain('src/components/admin/SanctionsList.tsx items in SanctionsList');
+    // Another member's file come back to reads its logs at their first page alone (kept where the read is made).
+    expect(putBack('src/hooks/useProfileData.ts', ', logsAsFar.current);', ', LOGS_PAGE);'))
+      .toContain('src/hooks/useProfileData.ts mainLogs in profileReducer');
   });
 });
 

@@ -14,6 +14,10 @@ import { isArchivistPlusTier } from '@/src/utils/tier';
 import { readCachedCounts, writeCachedCounts } from '@/src/utils/profileCountsCache';
 import type { TasteProfile } from '@/src/constants/taste';
 import { isNarrowed, ROOMS, type Room } from '@/src/utils/roomFilters';
+import { readOnAsFar } from '@/src/utils/readAsFar';
+
+/** The logs a page of another member's file holds. */
+const LOGS_PAGE = 50;
 
 export type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'passport' | 'projector' | 'calendar';
 /** The paged collections a room asks "more" of (the archive and the ledger share the logs). */
@@ -409,6 +413,16 @@ export function useProfileData({
   /** When the member's file was last read whole: a return to the app reads it again once older than a read stays fresh. */
   const readAt = useRef(0);
 
+  // How far another member's logs have been read in the rooms a read of the file lays them in (those no
+  // filter narrows): read again (a return to the app, a pull), the file reads them this far, never the
+  // first page alone over the pages read past it.
+  const logsAsFar = useRef(LOGS_PAGE);
+  useLayoutEffect(() => {
+    logsAsFar.current = Math.max(LOGS_PAGE, state.mainLogs.length,
+      isNarrowed('archive', state.activeFilters.archive) ? 0 : state.archiveLogs.length,
+      isNarrowed('ledger', state.activeFilters.ledger) ? 0 : state.ledgerLogs.length);
+  });
+
   const fetchUserData = useCallback(async (): Promise<boolean | void> => {
     if (!username) return;
 
@@ -424,6 +438,8 @@ export function useProfileData({
       // own rule (a sealed file's logs and summary answer a stranger nothing, and are not drawn).
       // Each is awaited below, or let go unread; none is left to reject unheard.
       const quiet = <T,>(p: Promise<T>): Promise<T> => { p.catch(() => {}); return p; };
+      // Never contaminate the root user data fetch with volatile tab filters.
+      const logsOf = (id: string) => readOnAsFar((cursor, size) => ProfileDataService.fetchOtherUserLogs(id, size, cursor, signal, undefined), logsAsFar.current);
       // The summary, or that it could not be read: a failure is never taken for a file with no record.
       const summaryOf = (p: Promise<AnalyticsShape | null>) => p.then(
         (shape) => ({ shape, unread: false }),
@@ -433,7 +449,7 @@ export function useProfileData({
         id: knownId,
         counts: quiet(ProfileDataService.fetchCountsOf(knownId, isSelf, signal)),
         summary: summaryOf(ProfileDataService.fetchAnalyticsSummary({ id: knownId }, signal)),
-        logs: isSelf ? null : quiet(ProfileDataService.fetchOtherUserLogs(knownId, 50, undefined, signal, undefined)),
+        logs: isSelf ? null : quiet(logsOf(knownId)),
         selfLogs: isSelf && useLogStore.getState().logs.length === 0 ? quiet(fetchLogs()) : null,
       } : null;
       // Validated at the service; another member's row is read without their preferences. Another
@@ -508,8 +524,7 @@ export function useProfileData({
       const [countsResult, analyticsSummary, result] = await Promise.all([
         asked ? asked.counts.then((c) => shownCounts(c, typedProfile)) : ProfileDataService.fetchCounts(typedProfile, isSelf, signal),
         asked ? asked.summary : summaryOf(ProfileDataService.fetchAnalyticsSummary(typedProfile, signal)),
-        // Never contaminate the root user data fetch with volatile tab filters.
-        asked?.logs ?? ProfileDataService.fetchOtherUserLogs(typedProfile.id, 50, undefined, signal, undefined),
+        asked?.logs ?? logsOf(typedProfile.id),
       ]);
       if (signal.aborted || !isMounted.current) return;
       // Heal follower/following display with the live RPC values (see self path).
@@ -682,7 +697,7 @@ export function useProfileData({
     const held = roomController(_roomAbortRef, tabLiteral);
     try {
       const activeLogFilters = activeTab === 'archive' ? state.activeFilters.archive : activeTab === 'ledger' ? state.activeFilters.ledger : undefined;
-      const result = await ProfileDataService.fetchOtherUserLogs(uid, 50, targetCursor ?? undefined, held.signal, activeLogFilters);
+      const result = await ProfileDataService.fetchOtherUserLogs(uid, LOGS_PAGE, targetCursor ?? undefined, held.signal, activeLogFilters);
       // A filtered read since restarted the room: this page belongs to the list it replaced.
       if (uid !== targetUserIdRef.current || _roomAbortRef.current[tabLiteral] !== held) return;
       dispatch({ type: 'SET_LOGS_PAGE', tab: tabLiteral, items: result.items, cursor: result.nextCursor, append: true });

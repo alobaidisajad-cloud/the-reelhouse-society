@@ -38,3 +38,27 @@ export async function readAsFar<T, C>(
 
 /** Whether the house may hold more past a read made of whole pages: its last page was full. */
 export const moreMayFollow = (rows: readonly unknown[], page: number) => rows.length > 0 && rows.length % page === 0;
+
+/** The most rows one read asks the house for: well under the house's ceiling of 1,000 rows a read. */
+export const ONE_READ_MOST = 500;
+
+/**
+ * For a house that hands each page's cursor back with it: read from the start, each read as large as
+ * what is still wanted (never past `most`), until `want` rows are held or the house says none follow.
+ * Answers the rows and the cursor past them, as one page's read would.
+ */
+export async function readOnAsFar<T>(
+  read: (cursor: string | undefined, size: number) => Promise<{ items: T[]; nextCursor: string | null }>,
+  want: number,
+  most: number = ONE_READ_MOST,
+): Promise<{ items: T[]; nextCursor: string | null }> {
+  const items: T[] = [];
+  let cursor: string | undefined;
+  for (;;) {
+    const got = await read(cursor, Math.max(1, Math.min(most, want - items.length)));
+    items.push(...got.items);
+    // A read that brought nothing ends it, as one the house says is the last: never asked forever.
+    if (got.nextCursor === null || items.length >= want || got.items.length === 0) return { items, nextCursor: got.nextCursor };
+    cursor = got.nextCursor;
+  }
+}

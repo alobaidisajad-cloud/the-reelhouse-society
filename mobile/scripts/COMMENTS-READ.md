@@ -2158,3 +2158,5 @@ files of the reading map this one does not.
 | src/utils/__tests__/readAsFar.test.ts | — |  |
 | src/utils/readAsFar.ts | — |  |
 | app/(admin)/__tests__/theDocketsReadAgainKeepTheirLaterPages.test.tsx | — |  |
+| src/hooks/__tests__/aMemberFileReadAgainKeepsItsLaterPages.test.tsx | — |  |
+| src/stores/domain/__tests__/theOwnLogsReadAgainKeepTheirLaterPages.test.ts | — |  |
