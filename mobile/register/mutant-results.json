@@ -7334,5 +7334,47 @@
     "proof": "m28",
     "commit": "7db58dc5bdb2576ece301b244d2d7304330bb227",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-read-that-grows-with-the-house",
+    "mutant": "shape-a-walk-stopped-past-the-floor",
+    "proof": "m8",
+    "commit": "a9f135454470c6072126141f2da047944d437680",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-read-that-grows-with-the-house",
+    "mutant": "shape-a-sorted-walk-taken-as-stopped",
+    "proof": "m8",
+    "commit": "a9f135454470c6072126141f2da047944d437680",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-read-that-grows-with-the-house",
+    "mutant": "shape-a-probes-index-not-asked",
+    "proof": "m7",
+    "commit": "a9f135454470c6072126141f2da047944d437680",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-read-that-grows-with-the-house",
+    "mutant": "shape-the-read-finder-reads-the-whole-lab",
+    "proof": "m10",
+    "commit": "a9f135454470c6072126141f2da047944d437680",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-read-that-grows-with-the-house",
+    "mutant": "shape-the-read-finder-takes-every-read-as-probed",
+    "proof": "m10",
+    "commit": "a9f135454470c6072126141f2da047944d437680",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-read-that-grows-with-the-house",
+    "mutant": "shape-the-read-finder-keeps-a-stale-judgment",
+    "proof": "m10",
+    "commit": "a9f135454470c6072126141f2da047944d437680",
+    "verdict": "caught"
   }
 ]
