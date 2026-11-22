@@ -3454,7 +3454,7 @@
     "class": "STATE-a-screen-opened-where-the-last-left",
     "mutant": "shape-ballot-taken-up-in-silence",
     "proof": "m8",
-    "commit": "65b753f63fb99a4cc27ef2f7504203c179bcd0df",
+    "commit": "a7a4a531660e46c703bfa934ff0c9852536a8377",
     "verdict": "caught"
   },
   {
@@ -3503,7 +3503,7 @@
     "class": "NAV-a-back-that-skips-or-strays",
     "mutant": "shape-amend-back-to-the-forms",
     "proof": "m4",
-    "commit": "65b753f63fb99a4cc27ef2f7504203c179bcd0df",
+    "commit": "a7a4a531660e46c703bfa934ff0c9852536a8377",
     "verdict": "caught"
   },
   {
@@ -3517,7 +3517,7 @@
     "class": "WRITE-words-lost-on-the-way-out",
     "mutant": "shape-take-left-without-asking",
     "proof": "m1",
-    "commit": "65b753f63fb99a4cc27ef2f7504203c179bcd0df",
+    "commit": "a7a4a531660e46c703bfa934ff0c9852536a8377",
     "verdict": "caught"
   },
   {
@@ -6975,7 +6975,7 @@
     "class": "EXIT-work-past-its-screen",
     "mutant": "shape-discard-over-a-desk-sending",
     "proof": "m3",
-    "commit": "c4d3643487c38e25bde7de0c7328c2bc721da70e",
+    "commit": "a7a4a531660e46c703bfa934ff0c9852536a8377",
     "verdict": "caught"
   },
   {
