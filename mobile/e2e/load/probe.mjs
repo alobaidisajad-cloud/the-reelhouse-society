@@ -369,15 +369,16 @@ if (process.env.LOAD_SHAPE_AGAINST) {
   console.log(grew.length ? `\n${grew.length} read(s) grew with the house` : '\nno read grew with the house');
 }
 
-// What the search indexes made for short words (20261122_13, _14) and for a name's beginning (20261122_17)
-// cost the house at this size, beside the trigram indexes of the same words: their size on disk, and a
+// What the search indexes made for short words (20261122_13, _14) and for a name's and a handle's beginning
+// (20261122_17, _22) cost the house at this size, beside the trigram indexes of the same words, and the films
+// seen again by month (20261122_20) beside the logs' own day index: their size on disk, and a
 // member's write through them: a stack's 1,000-letter description and a member's name, each written five
 // times (the median), with every index as built; with the GIN indexes' pending list off, so each write pays
 // its pieces at once, as a write past the list's end does; and with the new indexes dropped. All in one
 // transaction, rolled back.
 try {
   const sizes = execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-F', ' ', '-c',
-    "SELECT relname, pg_relation_size(oid) FROM pg_class WHERE relname IN ('lists_short_grams', 'lists_title_trigram', 'lists_description_trigram', 'profiles_short_grams', 'profiles_display_name_beginning', 'profiles_username_trigram', 'profiles_display_name_trigram', 'lists', 'profiles') ORDER BY relname"],
+    "SELECT relname, pg_relation_size(oid) FROM pg_class WHERE relname IN ('lists_short_grams', 'lists_title_trigram', 'lists_description_trigram', 'profiles_short_grams', 'profiles_display_name_beginning', 'profiles_username_beginning', 'profiles_username_trigram', 'profiles_display_name_trigram', 'logs_seen_again_by_month', 'idx_logs_user_watched_id', 'lists', 'profiles', 'logs') ORDER BY relname"],
   { encoding: 'utf8' }).trim();
   console.log(`\nThe search indexes at ${Number(process.env.LOAD_MEMBERS ?? 100000).toLocaleString('en-US')} members (bytes):\n${sizes}`);
   // 999 letters and one digit: the description's ceiling is 1,000 (lists_description_len). The accented
