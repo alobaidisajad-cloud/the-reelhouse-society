@@ -18,8 +18,6 @@ LATE:
   - READ-a-later-page-failing-in-silence
   - AUTH-a-sign-out-undone-by-a-late-answer
 COPY:
-  - STATE-a-request-held-after-its-answer
-  - WRITE-a-sent-message-taken-off-the-screen
 PROT:
   - DB-rule-kept-on-one-path
   - DB-row-reaches-past-its-reader

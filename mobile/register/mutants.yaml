@@ -3784,8 +3784,8 @@ mutants:
     source: shape
     edits:
       - file: app/lounge/[id].tsx
-        find: "  if (pending && myStatus === 'pending') setPending(false);"
-        replace: "  if (pending && myStatus === 'banned') setPending(false);"
+        find: "      if (asked > requestAnsweredAt.current) setPending(false);"
+        replace: "      if (asked < requestAnsweredAt.current) setPending(false);"
     proof: { file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "a request the host declines is the door to ask again, never \"with the host\" for ever" }
 
   - id: shape-refusal-left-to-the-player
@@ -10517,3 +10517,39 @@ mutants:
         find: "    if ('falls' in s) for (const piece of s.falls) if (!code.includes(piece)) faults.push(`${key}: falls to ${piece}, which its file no longer holds`);\n"
         replace: ""
     proof: { file: src/utils/__tests__/aRecordIsFoundPastItsPages.guard.test.ts, test: "to a look-up named nowhere, one whose way past the pages has gone, and a name gone" }
+
+  - id: shape-request-waits-for-no-later-roster
+    class: STATE-a-request-held-after-its-answer
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "    if (myStatus === 'pending' || pending) refreshMembership();"
+        replace: "    if (myStatus === 'pending') refreshMembership();"
+    proof: { file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "a request whose first roster could not be read, then declined, is the door to ask again once a roster is read" }
+
+  - id: shape-refresh-left-turning
+    class: STATE-a-request-held-after-its-answer
+    source: shape
+    edits:
+      - file: app/(modals)/notifications-modal.tsx
+        find: "    try { await fetchNotifications(); } finally { setRefreshing(false); }"
+        replace: "    await fetchNotifications();\n    setRefreshing(false);"
+    proof: { file: src/utils/__tests__/aMarkInFlightEndsWithItsAnswer.guard.test.ts, test: "ends with its answer: lowered in a finally, or named with what ends it" }
+
+  - id: shape-sent-again-marked-on-screen-alone
+    class: WRITE-a-sent-message-taken-off-the-screen
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      inRoomWords(msg.lounge_id, (words) => words.map(m =>\n        m.id === messageId ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const } : m\n      ));\n"
+        replace: "      set(s => ({ currentMessages: s.currentMessages.map(m =>\n        m.id === messageId ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const } : m\n      ) }));\n"
+    proof: { file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "sent again, answered after another room was opened, is sent in the room’s kept words" }
+
+  - id: shape-sending-mark-unread
+    class: WRITE-a-sent-message-taken-off-the-screen
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMarkInFlightEndsWithItsAnswer.guard.test.ts
+        find: "          out.add(`${file}#${nameOf(p)}:sending`);\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aMarkInFlightEndsWithItsAnswer.guard.test.ts, test: "to a flag lowered in no finally, a message marked sending, each named nowhere; a way gone; a name gone" }
