@@ -9786,3 +9786,12 @@ mutants:
         find: "    else if (probed.has(name)) faults.push(`${name}: judged, but probed now: take the judgment out`);"
         replace: "    else if (probed.has(name) && name === '') faults.push(`${name}: judged, but probed now: take the judgment out`);"
     proof: { file: src/utils/__tests__/everyHouseReadIsProbed.guard.test.ts, test: "says no to a read with no probe, a name not written or not in the house, and a judgment gone stale" }
+
+  - id: shape-a-bitmaps-gathering-not-counted
+    class: SPEED-a-read-that-grows-with-the-house
+    source: shape
+    edits:
+      - file: e2e/load/plan-shape.cjs
+        find: "      const read = n['Node Type'] === 'Bitmap Heap Scan' ? Math.max(perLoop * loops, gatheredBy(n)) : perLoop * loops;"
+        replace: "      const read = perLoop * loops;"
+    proof: { file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "counts what a bitmap gathered by its index, however few rows its heap read under a limit" }

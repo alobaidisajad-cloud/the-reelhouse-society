@@ -74,4 +74,17 @@ describe('the shape of a read', () => {
       .toEqual(['reads profiles whole (a sequential scan of 1001 rows): it grows with the house']);
     expect(shapeFaults([{ Plan: walk(0) }])).toEqual(['reads profiles whole (a sequential scan of 1001 rows): it grows with the house']);
   });
+
+  it('counts what a bitmap gathered by its index, however few rows its heap read under a limit', () => {
+    // One letter every member's handle holds: 40,952 gathered from the short pieces' index, 1,001 read.
+    const gathered = (rows: number) => ({ 'Node Type': 'Bitmap Index Scan', 'Index Name': 'profiles_short_grams', 'Actual Rows': rows, 'Actual Loops': 1 });
+    const heap = { ...scan('Bitmap Heap Scan', 'profiles', 1001), Plans: [gathered(40952)] };
+    expect(scansOf(plan(heap).Plan).map((s: { read: number }) => s.read)).toEqual([40952]);
+    expect(shapeFaults([plan(heap)])).toEqual([`reads 40952 rows of tables that grow with the house, past its bound of ${BOUND}`]);
+    // Under an AND, each index scan's gathering counts; a bitmap that gathered no more than it read counts its read.
+    const and = { ...scan('Bitmap Heap Scan', 'logs', 30), Plans: [{ 'Node Type': 'BitmapAnd', 'Actual Rows': 0, 'Actual Loops': 1, Plans: [gathered(500), gathered(700)] }] };
+    expect(scansOf(plan(and).Plan).map((s: { read: number }) => s.read)).toEqual([1200]);
+    expect(scansOf(plan({ ...scan('Bitmap Heap Scan', 'lists', 9, { 'Rows Removed by Index Recheck': 3 }), Plans: [gathered(4)] }).Plan)
+      .map((s: { read: number }) => s.read)).toEqual([12]);
+  });
 });
