@@ -1334,6 +1334,8 @@ registerStoreReset(() => {
   invalidateInflight();
   // Every read still out is the last member's: each thing's number raised, never set back to 0.
   for (const reads of [filingReads, tallyReads, critiqueReads]) for (const [k, n] of reads) reads.set(k, n + 1);
+  // The gone marks went with the state; their count goes on, so a read still out is older than any mark to come.
+  goneSeq += 1;
 });
 
 /**
