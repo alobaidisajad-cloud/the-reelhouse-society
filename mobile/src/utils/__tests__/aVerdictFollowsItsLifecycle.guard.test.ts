@@ -174,5 +174,7 @@ describe('the lifecycle, against the house as production will hold it', () => {
   });
 });
 
-/** Functions that write a moderation state outside the lifecycle of a case, each with why: none now. */
-const OUTSIDE: Record<string, string> = {};
+/** Functions that write a moderation table outside the lifecycle of a case, each with why it moves no state. */
+const OUTSIDE: Record<string, string> = {
+  'private.the_moderators_words_made_clean': 'cleans the words verdicts already hold (the appeal, its word and the lift\'s reason) through clean_member_text, once: no verdict, appeal or lift changes state',
+};

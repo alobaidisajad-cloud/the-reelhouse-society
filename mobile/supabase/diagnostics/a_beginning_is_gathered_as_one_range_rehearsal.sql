@@ -38,8 +38,8 @@ UPDATE public.profiles p SET username = CASE m.n WHEN 1 THEN 'rh_qzw1' WHEN 2 TH
   FROM br_members m WHERE m.id = p.id AND m.n <= 4;
 
 -- 1,050 members: handles qzw0001.., names "Qzn 1".. (the house makes each profile from the handle asked).
-INSERT INTO auth.users (id, instance_id, aud, role, email, raw_user_meta_data, raw_app_meta_data, created_at, updated_at, email_confirmed_at)
-SELECT ('5eed0000-0000-4000-8000-0000b29' || lpad(g::text, 5, '0'))::uuid, '00000000-0000-0000-0000-000000000000',
+INSERT INTO auth.users (id, aud, role, email, raw_user_meta_data, raw_app_meta_data, created_at, updated_at, email_confirmed_at)
+SELECT ('5eed0000-0000-4000-8000-0000b29' || lpad(g::text, 5, '0'))::uuid,
        'authenticated', 'authenticated', 'qzw' || lpad(g::text, 4, '0') || '@rehearsal.test',
        jsonb_build_object('username', 'qzw' || lpad(g::text, 4, '0')), '{"provider":"email"}'::jsonb, now(), now(), now()
   FROM generate_series(1, 1050) g;

@@ -9385,7 +9385,6 @@ mutants:
         find: ".eq('id', id).is('pushed_at', null).gte("
         replace: ".eq('id', id).gte("
     proof: { file: src/utils/__tests__/aPushIsTheHousesOwn.guard.test.ts, test: "claims the notice from the house once, while fresh, and pushes the row it claimed" }
-=======
 
   - id: shape-a-members-write-left-unpaced
     class: SEC-a-write-a-script-repeats-without-end
@@ -9399,11 +9398,11 @@ mutants:
   - id: shape-the-critique-pace-taken-off
     class: SEC-a-write-a-script-repeats-without-end
     source: shape
-    # Round 14's own instance put back: the critique pace taken off a record's critiques.
+    # Round 14's own instance put back, as production holds it: the critique pace taken off a record's critiques.
     edits:
-      - file: ../supabase/migrations/20261120_08_critiques_are_paced_as_a_person_writes.sql
-        find: "CREATE OR REPLACE TRIGGER zz_a_critique_is_paced\n  BEFORE INSERT ON public.log_comments\n"
-        replace: "CREATE OR REPLACE TRIGGER zz_a_critique_is_paced\n  BEFORE UPDATE ON public.log_comments\n"
+      - file: supabase/schema/live-schema.sql
+        find: "CREATE TRIGGER zz_a_critique_is_paced BEFORE INSERT ON public.log_comments "
+        replace: "CREATE TRIGGER zz_a_critique_is_paced BEFORE UPDATE ON public.log_comments "
     proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "paces every table a member may insert into, or judges why no script can repeat it without end" }
 
   - id: shape-a-caller-written-address-in-another-function

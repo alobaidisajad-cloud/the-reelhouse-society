@@ -464,7 +464,6 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/migrations-down/20261122_01_a_records_withholding_is_no_part_of_a_viewing.sql | — |  |
 | supabase/migrations/20261122_00_a_moderators_words_are_cleaned_as_a_members_are.sql | — |  |
 | supabase/migrations/20261122_01_a_records_withholding_is_no_part_of_a_viewing.sql | — |  |
-=======
 | mobile/supabase/diagnostics/every_members_write_is_paced_rehearsal.sql | — |  |
 | mobile/test-utils/house.d.ts | — |  |
 | mobile/supabase/diagnostics/a_critique_takes_its_notice_rehearsal.sql | — |  |
@@ -532,3 +531,6 @@ record taken from the reader's own work log, or "—" for a file never read.
 | supabase/migrations/20261122_26_the_reels_stack_search_reads_its_page_by_id.sql | — |  |
 | supabase/migrations/20261122_27_a_ballots_votes_are_counted_as_they_are_cast.sql | — |  |
 | supabase/migrations/20261122_28_the_ballots_to_close_are_found_at_once.sql | — |  |
+| mobile/supabase/diagnostics/a_beginning_is_gathered_as_one_range_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261122_29_a_beginning_is_gathered_as_one_range.sql | — |  |
+| supabase/migrations/20261122_29_a_beginning_is_gathered_as_one_range.sql | — |  |
