@@ -148,11 +148,14 @@ const PROBES = [
   { screen: 'Dispatch', what: 'the hot post\'s critiques, most certified first', as: MEMBER,
     sql: `SELECT id, author_username, body, certify_count, created_at FROM public.dispatch_comments WHERE post_id = '${HOT_POST}' ORDER BY certify_count DESC, created_at DESC LIMIT 30` },
   // The Lounge
-  { screen: 'Lounge', what: 'unread counts, for a member in 200 rooms', as: WHALE, sql: 'SELECT * FROM public.get_lounge_unread_counts()' },
+  // Each room's newest hundred since the reading read from the front of its index (20261122_60), never
+  // every word since gathered first: at most a hundred a room, 200 rooms within the bound at any size.
+  { screen: 'Lounge', what: 'unread counts, for a member in 200 rooms', as: WHALE, index: 'lounge_messages_room_newest', sql: 'SELECT * FROM public.get_lounge_unread_counts()' },
   // The corridor in one trip (proposed.sql's get_lounge_list): for the member in 200 rooms, for one
   // in a few, and for the host of the busiest room.
-  // The newest salons from the front of their index (lounges_newest, 20261122_12), never every salon sorted.
-  { screen: 'Lounge', what: 'the corridor in one trip, for a member in 200 rooms', as: WHALE, index: 'lounges_newest', sql: 'SELECT public.get_lounge_list()' },
+  // The newest salons from the front of their index (lounges_newest, 20261122_12), never every salon sorted;
+  // and the member's rooms counted as above (20261122_60).
+  { screen: 'Lounge', what: 'the corridor in one trip, for a member in 200 rooms', as: WHALE, index: ['lounges_newest', 'lounge_messages_room_newest'], sql: 'SELECT public.get_lounge_list()' },
   { screen: 'Lounge', what: 'the corridor in one trip, for a member', as: MEMBER, index: 'lounges_newest', sql: 'SELECT public.get_lounge_list()' },
   { screen: 'Lounge', what: 'the corridor in one trip, for the busiest room\'s host', as: mid(((1 * 61) % 100000) + 1), index: 'lounges_newest', sql: 'SELECT public.get_lounge_list()' },
   // The room's rule asked of each word read, by its salon's own row (20261122_12), never every salon read first.
@@ -205,7 +208,8 @@ const PROBES = [
   { screen: 'Tribunal', what: 'the hot case\'s evidence (get_report_evidence)', as: MODERATOR, sql: "SELECT public.get_report_evidence('00000000-0000-4000-b300-000000000001')" },
   { screen: 'Tribunal', what: 'the appeals waiting, first page (get_pending_appeals)', as: MODERATOR, index: 'mod_actions_appeals_waiting', sql: 'SELECT public.get_pending_appeals()' },
   { screen: 'Tribunal', what: 'the members under sanction, first page (get_sanctioned_members)', as: MODERATOR, index: 'profiles_under_sanction', sql: 'SELECT public.get_sanctioned_members()' },
-  { screen: 'Tribunal', what: 'twenty members\' histories (get_moderation_history_for_users)', as: MODERATOR,
+  // Each member's own verdicts from the front of their index, to their page (20261122_61), never every verdict ranked.
+  { screen: 'Tribunal', what: 'twenty members\' histories (get_moderation_history_for_users)', as: MODERATOR, index: 'idx_mod_actions_target',
     sql: `SELECT * FROM public.get_moderation_history_for_users(ARRAY[${[1, ...Array.from({ length: 19 }, (_, r) => ((r + 1) * 29) % MEMBERS + 1)].map((n) => `'${mid(n)}'`).join(', ')}]::uuid[], 5)` },
 ];
 

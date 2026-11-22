@@ -534,3 +534,9 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/diagnostics/a_beginning_is_gathered_as_one_range_rehearsal.sql | — |  |
 | mobile/supabase/migrations-down/20261122_29_a_beginning_is_gathered_as_one_range.sql | — |  |
 | supabase/migrations/20261122_29_a_beginning_is_gathered_as_one_range.sql | — |  |
+| mobile/supabase/diagnostics/a_members_history_is_read_by_their_own_page_rehearsal.sql | — |  |
+| mobile/supabase/diagnostics/a_salons_unread_reads_at_most_a_hundred_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261122_60_a_salons_unread_reads_at_most_a_hundred.sql | — |  |
+| mobile/supabase/migrations-down/20261122_61_a_members_history_is_read_by_their_own_page.sql | — |  |
+| supabase/migrations/20261122_60_a_salons_unread_reads_at_most_a_hundred.sql | — |  |
+| supabase/migrations/20261122_61_a_members_history_is_read_by_their_own_page.sql | — |  |
