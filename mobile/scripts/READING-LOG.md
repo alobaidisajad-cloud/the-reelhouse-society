@@ -540,3 +540,6 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/migrations-down/20261122_61_a_members_history_is_read_by_their_own_page.sql | — |  |
 | supabase/migrations/20261122_60_a_salons_unread_reads_at_most_a_hundred.sql | — |  |
 | supabase/migrations/20261122_61_a_members_history_is_read_by_their_own_page.sql | — |  |
+| mobile/supabase/diagnostics/a_member_is_found_among_the_first_holders_of_a_piece_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261122_62_a_member_is_found_among_the_first_holders_of_a_piece.sql | — |  |
+| supabase/migrations/20261122_62_a_member_is_found_among_the_first_holders_of_a_piece.sql | — |  |

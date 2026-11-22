@@ -183,6 +183,11 @@ const PROBES = [
   // letter every handle and name holds, whose page is met at once.
   { screen: 'Search', what: 'members, one letter no name begins with (search_members)', as: MEMBER, index: ['profiles_display_name_beginning', 'profiles_username_beginning'], sql: "SELECT * FROM public.search_members('1', false, NULL, NULL, 21)" },
   { screen: 'Search', what: 'members, one letter every member holds (search_members)', as: MEMBER, sql: "SELECT * FROM public.search_members('m', false, NULL, NULL, 21)" },
+  // Words many hold whose holders sort far into the handles (a name's middle, "Member 95..."): walked in the
+  // list of their rarest piece's first thousand holders (20261122_62), never the handles to the page (they
+  // read 94,445 handles at 100,000 members). And a name's beginning held past a thousand, the same way.
+  { screen: 'Search', what: 'members, words in the middle of many names (search_members)', as: MEMBER, index: 'member_grams_pkey', sql: "SELECT * FROM public.search_members('mber 95', false, NULL, NULL, 21)" },
+  { screen: 'Search', what: 'members, a beginning of many names (search_members)', as: MEMBER, index: 'member_grams_pkey', sql: "SELECT * FROM public.search_members('member 95', false, NULL, NULL, 21)" },
   { screen: 'Search', what: 'records, a word none holds (search_logs)', as: MEMBER, sql: "SELECT * FROM public.search_logs('tarkovsky', 'tarkovsky', NULL, NULL, 21)" },
   { screen: 'Search', what: 'records, a word many hold (search_logs)', as: MEMBER, sql: "SELECT * FROM public.search_logs('considered', 'considered', NULL, NULL, 21)" },
   { screen: 'Search', what: 'stacks, a word none holds (search_stacks)', as: MEMBER, sql: "SELECT * FROM public.search_stacks('tarkovsky', NULL, NULL, 21)" },
@@ -382,10 +387,11 @@ if (process.env.LOAD_SHAPE_AGAINST) {
 // member's write through them: a stack's 1,000-letter description and a member's name, each written five
 // times (the median), with every index as built; with the GIN indexes' pending list off, so each write pays
 // its pieces at once, as a write past the list's end does; and with the new indexes dropped. All in one
-// transaction, rolled back.
+// transaction, rolled back; a member's name settled into the pieces' lists in its own statement (20261122_62),
+// as its commit would.
 try {
   const sizes = execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-F', ' ', '-c',
-    "SELECT relname, pg_relation_size(oid) FROM pg_class WHERE relname IN ('lists_short_grams', 'lists_title_trigram', 'lists_description_trigram', 'profiles_short_grams', 'profiles_display_name_beginning', 'profiles_username_beginning', 'profiles_username_trigram', 'profiles_display_name_trigram', 'logs_seen_again_by_month', 'idx_logs_user_watched_id', 'lists', 'profiles', 'logs') ORDER BY relname"],
+    "SELECT relname, pg_relation_size(oid) FROM pg_class WHERE relname IN ('lists_short_grams', 'lists_title_trigram', 'lists_description_trigram', 'profiles_short_grams', 'profiles_display_name_beginning', 'profiles_username_beginning', 'profiles_username_trigram', 'profiles_display_name_trigram', 'logs_seen_again_by_month', 'idx_logs_user_watched_id', 'lists', 'profiles', 'logs', 'member_grams', 'member_grams_pkey', 'member_gram_heads') ORDER BY relname"],
   { encoding: 'utf8' }).trim();
   console.log(`\nThe search indexes at ${Number(process.env.LOAD_MEMBERS ?? 100000).toLocaleString('en-US')} members (bytes):\n${sizes}`);
   // 999 letters and one digit: the description's ceiling is 1,000 (lists_description_len). The accented
@@ -394,7 +400,7 @@ try {
   const writes = (sql) => Array.from({ length: 5 }, (_, k) => `EXPLAIN (ANALYZE, TIMING OFF, FORMAT JSON) ${sql.split('$K').join(String(k))};`).join('\n');
   const both = () => `${writes(`UPDATE public.lists SET description = ${words} || '$K' WHERE id = (SELECT id FROM public.lists WHERE is_private = false ORDER BY created_at, id LIMIT 1)`)}
 ${writes(`UPDATE public.profiles SET display_name = 'Agn' || chr(232) || 's Varda $K' WHERE id = '${MEMBER}'`)}`;
-  const out = execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-c', `BEGIN; SELECT set_config('request.jwt.claims', '', true);
+  const out = execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-c', `BEGIN; SELECT set_config('request.jwt.claims', '', true); SET CONSTRAINTS a_members_pieces_are_settled IMMEDIATE;
 ${both()}
 ALTER INDEX public.lists_short_grams SET (fastupdate = off); ALTER INDEX public.profiles_short_grams SET (fastupdate = off);
 ${both()}

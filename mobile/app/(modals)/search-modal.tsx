@@ -72,6 +72,14 @@ export function countSaid(n: number, more: boolean): string {
   return `${n} result${n === 1 ? '' : 's'}`;
 }
 
+/**
+ * What the members' search says when its words are held too widely to narrow without reading the whole
+ * house (search_members' TOO_WIDE): the members are not silent, and more letters would find them.
+ */
+export const WIDE_LABEL = 'TOO MANY ANSWER TO THOSE LETTERS';
+const WIDE_LABEL_PLAIN = 'Too many members answer to those letters.';
+export const WIDE_MORE = 'Add more letters to narrow the members.';
+
 /** A tab's name as it is spoken: "Films", not "FILMS". */
 const spokenName = (label: string) => `${label.charAt(0)}${label.slice(1).toLowerCase()}`;
 
@@ -101,7 +109,7 @@ export default function SearchModal() {
     return () => clearTimeout(t);
   }, [query]);
 
-  const { data, isFetching, isError, refetch, answered, more, readingMore, moreFailed, loadMore } = useUniversalSearch(debouncedQuery);
+  const { data, isFetching, isError, refetch, answered, more, readingMore, moreFailed, wide, loadMore } = useUniversalSearch(debouncedQuery);
 
   const searched = query.trim().length > 0;
   const searching = searched && (isFetching || debouncedQuery.trim() !== query.trim());
@@ -138,10 +146,13 @@ export default function SearchModal() {
   const rowsOf = useMemo<Record<SourceTab, SR[]>>(() => ({
     films, actors, directors, people: users, logs, lists,
   }), [films, actors, directors, users, logs, lists]);
-  /** Whether a tab's source holds a next page: its count is then "N+", never a total. */
+  /**
+   * Whether a tab's source holds a next page, or holds more than its words could narrow (wide): its
+   * count is then "N+", never a total.
+   */
   const moreOf = useCallback((key: FilterTab) => (key === 'all'
-    ? more.films || more.users || more.logs || more.lists
-    : more[SOURCE_OF[key]]), [more]);
+    ? more.films || more.users || more.logs || more.lists || wide.users
+    : more[SOURCE_OF[key]] || wide[SOURCE_OF[key]]), [more, wide]);
 
   const filtered = useMemo<Row[]>(() => {
     if (tab !== 'all') return rowsOf[tab];
@@ -153,11 +164,11 @@ export default function SearchModal() {
       if (!answered[SOURCE_OF[key]]) break;
       const rows = rowsOf[key];
       if (rows.length === 0) continue;
-      all.push({ kind: 'head', id: `head-${key}`, tab: key, count: rows.length, more: more[SOURCE_OF[key]] });
+      all.push({ kind: 'head', id: `head-${key}`, tab: key, count: rows.length, more: more[SOURCE_OF[key]] || wide[SOURCE_OF[key]] });
       all.push(...rows.slice(0, take));
     }
     return all;
-  }, [tab, rowsOf, more, answered]);
+  }, [tab, rowsOf, more, wide, answered]);
 
   // The foot of a tab: the next page of its source, as it is read.
   const tabSource = tab === 'all' ? null : SOURCE_OF[tab];
@@ -165,15 +176,18 @@ export default function SearchModal() {
   const tabMore = !!tabSource && more[tabSource];
   const tabReadingMore = !!tabSource && readingMore[tabSource];
   const tabMoreFailed = !!tabSource && moreFailed[tabSource];
+  // The members held the words too widely to narrow (ALL shows the members too): more letters would.
+  const wideHere = tab === 'all' ? wide.users : !!tabSource && wide[tabSource];
 
   // No results, and held there while the next letter is searched: otherwise the
-  // answer (and Buster with it) blinks out at every keystroke and back.
+  // answer (and Buster with it) blinks out at every keystroke and back. Never while
+  // the members are too many to narrow: that is not silence.
   const reachable = !isError && !tabSourceDown;
-  const settledSilence = searched && !searching && reachable && filtered.length === 0;
+  const settledSilence = searched && !searching && reachable && filtered.length === 0 && !wideHere;
   const [heldSilence, setHeldSilence] = useState(false);
   // Adjusted as it renders (React's own way to keep a value from a render before), never a frame late.
   if (settledSilence && !heldSilence) setHeldSilence(true);
-  else if (heldSilence && !settledSilence && (!searched || !reachable || filtered.length > 0)) setHeldSilence(false);
+  else if (heldSilence && !settledSilence && (!searched || !reachable || filtered.length > 0 || wideHere)) setHeldSilence(false);
   const silence = settledSilence || (heldSilence && searched && searching && reachable && filtered.length === 0);
 
   const counts = useMemo(() => ({
@@ -286,6 +300,13 @@ export default function SearchModal() {
         </View>
       );
     }
+    if (wideHere) {
+      return (
+        <View style={st.foot}>
+          <Text style={st.footWords}>{WIDE_MORE}</Text>
+        </View>
+      );
+    }
     if (!tabMore) return null;
     return (
       <PressableScale
@@ -298,7 +319,7 @@ export default function SearchModal() {
         <Text style={st.readOnText}>MORE FROM THE ARCHIVE</Text>
       </PressableScale>
     );
-  }, [tabSource, filtered.length, tabReadingMore, tabMoreFailed, tabMore, readOn]);
+  }, [tabSource, filtered.length, tabReadingMore, tabMoreFailed, wideHere, tabMore, readOn]);
   const onEndReached = tabMore && !tabReadingMore && !tabMoreFailed ? readOn : undefined;
 
   return (
@@ -361,12 +382,12 @@ export default function SearchModal() {
           <View style={st.countBar}>
             <Text
               style={st.countText}
-              accessibilityLabel={!searching && reachable && tab !== 'all' ? countSaid(filtered.length, tabMore) : undefined}
+              accessibilityLabel={!searching && reachable && tab !== 'all' ? countSaid(filtered.length, tabMore || wideHere) : undefined}
             >
               {searching ? 'SCANNING ARCHIVES…'
                 : !reachable && filtered.length === 0 ? 'NOT REACHED'
                 : tab === 'all' ? ''
-                : `${countDrawn(filtered.length, tabMore)} RESULT${filtered.length !== 1 || tabMore ? 'S' : ''}`}
+                : `${countDrawn(filtered.length, tabMore || wideHere)} RESULT${filtered.length !== 1 || tabMore || wideHere ? 'S' : ''}`}
             </Text>
           </View>
         </Arrive>
@@ -410,12 +431,23 @@ export default function SearchModal() {
           </Arrive>
         )}
 
+        {/* The members too many to narrow, and nothing else found: said, never silence */}
+        {searched && !searching && reachable && filtered.length === 0 && wideHere && (
+          <Arrive name="search-modal-6" duration={300} rise={0} style={st.center}>
+            <Text style={st.centerLabel}>{WIDE_LABEL}</Text>
+            <Text style={st.emptySub}>{WIDE_MORE}</Text>
+          </Arrive>
+        )}
+
         {/* Results */}
         {searched && filtered.length > 0 && (
           <FlashList
             maintainVisibleContentPosition={NOT_ANCHORED}
             data={filtered}
-            ListHeaderComponent={!searching && (isError || tabSourceDown) ? <SearchPartly onRetry={retrySearch} /> : null}
+            ListHeaderComponent={!searching && (isError || tabSourceDown) ? <SearchPartly onRetry={retrySearch} />
+              // ALL with no member drawn because too many answer: said above the rest, never left out unsaid.
+              : !searching && tab === 'all' && wide.users && users.length === 0 ? <View style={st.foot}><Text style={st.footWords}>{`${WIDE_LABEL_PLAIN} ${WIDE_MORE}`}</Text></View>
+              : null}
             keyExtractor={keyExtractorResult}
             getItemType={itemTypeOf}
             renderItem={renderSearchResult}

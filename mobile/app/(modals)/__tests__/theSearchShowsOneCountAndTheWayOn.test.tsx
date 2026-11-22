@@ -43,7 +43,7 @@ function answer(over: Record<string, unknown> = {}) {
     },
     isFetching: false, isError: false, refetch: jest.fn(),
     answered: { films: true, users: true, logs: true, lists: true },
-    more: { ...none, logs: true }, readingMore: none, moreFailed: none, loadMore,
+    more: { ...none, logs: true }, readingMore: none, moreFailed: none, wide: none, loadMore,
     ...over,
   };
 }
@@ -116,6 +116,38 @@ describe('a section reads on at its foot', () => {
     const r = await searched();
     await fireEvent.press(r.getByRole('tab', { name: 'Lists, 3 results' }));
     expect(r.getByText('3 RESULTS')).toBeTruthy();
+    expect(r.queryByRole('button', { name: 'More from the archive' })).toBeNull();
+  });
+});
+
+describe('members too many to narrow are said, never silence (20261122_62, TOO_WIDE)', () => {
+  const kane = (n: number): SR => ({ id: `user-${n}`, type: 'user', title: `@kane${n}`, subtitle: '', image: null, _nav: `/u/kane${n}` });
+
+  it('ALL with no member drawn says so above the rest, and the People tab counts "0+"', async () => {
+    mockSearch.mockReturnValue(answer({ wide: { ...none, users: true } }));
+    const r = await searched();
+    expect(r.getByText('Too many members answer to those letters. Add more letters to narrow the members.')).toBeTruthy();
+    expect(r.getByRole('tab', { name: 'People, 0 or more results' })).toBeTruthy();
+  });
+
+  it('the People tab, nothing drawn: says more letters would narrow it, not the archive\'s silence', async () => {
+    mockSearch.mockReturnValue(answer({ wide: { ...none, users: true } }));
+    const r = await searched();
+    await fireEvent.press(r.getByRole('tab', { name: 'People, 0 or more results' }));
+    expect(r.getByText('TOO MANY ANSWER TO THOSE LETTERS')).toBeTruthy();
+    expect(r.getByText('Add more letters to narrow the members.')).toBeTruthy();
+    expect(r.queryByText('THE ARCHIVE RETURNS SILENCE')).toBeNull();
+    expect(r.getByText('0+ RESULTS')).toBeTruthy();
+  });
+
+  it('the People tab with members drawn says it at its foot, and offers no next page', async () => {
+    const base = answer();
+    mockSearch.mockReturnValue({ ...base, data: { ...base.data, users: [kane(1), kane(2)] }, wide: { ...none, users: true } });
+    const r = await searched();
+    await fireEvent.press(r.getByRole('tab', { name: 'People, 2 or more results' }));
+    expect(r.getByText('@kane1')).toBeTruthy();
+    expect(r.getByText('Add more letters to narrow the members.')).toBeTruthy();
+    expect(r.getByText('2+ RESULTS')).toBeTruthy();
     expect(r.queryByRole('button', { name: 'More from the archive' })).toBeNull();
   });
 });

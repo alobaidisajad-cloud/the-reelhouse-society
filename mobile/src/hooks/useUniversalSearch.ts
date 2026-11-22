@@ -117,8 +117,16 @@ export function logExcerpt(log: Pick<LogRow, 'review' | 'status' | 'abandoned_re
 
 /** One page of the catalogue: its films and people, and the catalogue's next page. */
 interface CataloguePage { films: SR[]; actors: SR[]; directors: SR[]; next: number | undefined }
-/** One page of a house source: its rows, and where the next page begins. */
-interface RowsPage<C> { rows: SR[]; next: C | undefined }
+/**
+ * One page of a house source: its rows, and where the next page begins; `wide` when the house said
+ * the words are held too widely to narrow past what was read (TOO_WIDE): more letters would.
+ */
+interface RowsPage<C> { rows: SR[]; next: C | undefined; wide?: boolean }
+
+/** search_members' answer for words it cannot narrow without reading the house: more letters would. */
+export function saysTooWide(error: { code?: string; message?: string } | null | undefined): boolean {
+  return !!error && error.code === '54000' && error.message === 'TOO_WIDE';
+}
 
 type MemberCursor = { closeness: number; username: string };
 
@@ -201,6 +209,9 @@ export function useUniversalSearch(query: string) {
         p_cursor_username: pageParam?.username ?? null,
         p_limit: SEARCH_PAGE + 1,
       }), signal);
+      // Words too widely held to narrow without reading the house: an answer, not a failure. The page
+      // holds nothing, and the search says more letters would narrow it.
+      if (saysTooWide(error)) return { rows: [], next: undefined, wide: true };
       if (error) {
         logger.error('[useUniversalSearch] a source failed', 'members', error);
         throw error;
@@ -362,6 +373,8 @@ export function useUniversalSearch(query: string) {
   const moreFailed = usePerSource(
     catalogue.isFetchNextPageError, members.isFetchNextPageError, logs.isFetchNextPageError, lists.isFetchNextPageError,
   );
+  // The members' last page said the words are too widely held to narrow further (only the members' search says so).
+  const wide = usePerSource(false, asked.users && !!pagesOf(membersData).at(-1)?.wide, false, false);
 
   /** The next page of one source; asked twice, or with none left, it does nothing. */
   const loadMore = useCallback((source: SearchSource) => {
@@ -389,6 +402,7 @@ export function useUniversalSearch(query: string) {
     more,
     readingMore,
     moreFailed,
+    wide,
     loadMore,
   };
 }

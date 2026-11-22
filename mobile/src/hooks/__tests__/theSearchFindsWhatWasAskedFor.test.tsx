@@ -118,7 +118,7 @@ describe('the search room', () => {
   /** Each source read to its end: no next page, none being read, none failed (review round 12). */
   const none = { films: false, users: false, logs: false, lists: false };
   const every = { films: true, users: true, logs: true, lists: true };
-  const paging = { answered: every, more: none, readingMore: none, moreFailed: none, loadMore: jest.fn() };
+  const paging = { answered: every, more: none, readingMore: none, moreFailed: none, wide: none, loadMore: jest.fn() };
   const answer = (over: Record<string, unknown> = {}) => ({
     data: {
       films: [], actors: [], directors: [], logs: [], lists: [],

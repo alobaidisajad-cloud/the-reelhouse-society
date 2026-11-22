@@ -65,6 +65,7 @@ jest.mock('@/src/hooks/useUniversalSearch', () => ({
     more: { films: false, users: false, logs: false, lists: false },
     readingMore: { films: false, users: false, logs: false, lists: false },
     moreFailed: { films: false, users: false, logs: false, lists: false },
+    wide: { films: false, users: false, logs: false, lists: false },
     loadMore: jest.fn(),
   }),
 }));
