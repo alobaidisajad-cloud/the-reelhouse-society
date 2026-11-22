@@ -18,6 +18,8 @@ import { StyleSheet } from 'react-native';
 import { REPORT_REASON_LABELS, ReportReason } from '@/src/types/moderation';
 import { colors } from '@/src/theme/theme';
 import ReportSheet from '../ReportSheet';
+import { KEPT_WORDS_REST_MS } from '@/src/hooks/useKeptWords';
+import { ONE_PRESS_MS } from '@/src/utils/onePress';
 
 // Mock gesture handler (native module)
 jest.mock('react-native-gesture-handler', () => {
@@ -381,9 +383,15 @@ describe('the details of a report', () => {
     const r = render(<ReportSheet {...defaultProps} />);
     await act(async () => { await fireEvent.press(r.getAllByRole('radio')[0]!); });
     await act(async () => { await fireEvent.changeText(r.getByLabelText('Additional details'), 'It copies my review word for word.'); });
+    // Kept on the phone once the box rests.
+    await act(async () => { await new Promise((done) => setTimeout(done, KEPT_WORDS_REST_MS)); });
+    expect(kept()).toBe('It copies my review word for word.');
     await act(async () => { await fireEvent.press(r.getByLabelText('File report')); });
     expect(r.getByLabelText('Additional details').props.value).toBe('It copies my review word for word.');
+    // Filed again once the one-press window has passed (onePress): the house holds it now.
+    await act(async () => { await new Promise((done) => setTimeout(done, ONE_PRESS_MS)); });
     await act(async () => { await fireEvent.press(r.getByLabelText('File report')); });
+    expect(mockSubmitReport).toHaveBeenCalledTimes(2);
     expect(kept()).toBeUndefined();
   });
 });

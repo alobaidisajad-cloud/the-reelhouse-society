@@ -159,6 +159,10 @@ describe('the words of a salon not yet founded', () => {
   it('are let go once a room is made', async () => {
     mockCreateLounge.mockResolvedValueOnce('room-1');
     const api = render(<Corridor />);
+    await fireEvent.changeText(api.getByLabelText('Salon name'), 'The Noir Corner');
+    // Kept on the phone once the box rests; founded, let go.
+    await act(async () => { await new Promise((done) => setTimeout(done, 1000)); });
+    expect(kept()[0]).toBe('The Noir Corner');
     await found(api, 'The Noir Corner');
     expect(kept()).toEqual([undefined, undefined]);
   });
