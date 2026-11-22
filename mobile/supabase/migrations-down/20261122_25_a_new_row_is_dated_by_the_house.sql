@@ -1,4 +1,4 @@
--- Undo of 20261122_05: a member's new row dated by the house, undone; the cars after it are undone first.
+-- Undo of 20261122_25: a member's new row dated by the house, undone; the cars after it are undone first.
 SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 
@@ -44,12 +44,12 @@ GRANT ALL ON FUNCTION public.enforce_log_insert_ceiling() TO authenticated;
 GRANT ALL ON FUNCTION public.enforce_log_insert_ceiling() TO service_role;
 -- add-only (3): it only fixes: the undo puts back the snapshot's trigger whole
 CREATE TRIGGER tr_log_insert_ceiling AFTER INSERT ON public.logs REFERENCING NEW TABLE AS inserted FOR EACH STATEMENT EXECUTE FUNCTION public.enforce_log_insert_ceiling();
--- add-only (3): it only fixes: the undo takes the records' new pace off, as 20261122_01 left the table
+-- add-only (3): it only fixes: the undo takes the records' new pace off, as 20261122_24 left the table
 DROP TRIGGER IF EXISTS zz_a_write_is_paced ON public.logs;
 -- add-only (1): no shipped client uses it: the house's own budget rows of the records, read by no client
 DELETE FROM public.write_budget WHERE kind = 'record';
 
--- check_write_pace as 20261122_01 left it.
+-- check_write_pace as 20261122_24 left it.
 -- add-only (1): no shipped client uses it: a trigger's function, called by no client (TestFlight build 41 and the website checked)
 CREATE OR REPLACE FUNCTION public.check_write_pace() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER

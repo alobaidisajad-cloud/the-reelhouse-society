@@ -1,4 +1,4 @@
--- Undo of 20261122_01: every write a member can repeat at will is paced, undone; the cars after it are undone first.
+-- Undo of 20261122_24: every write a member can repeat at will is paced, undone; the cars after it are undone first.
 SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 

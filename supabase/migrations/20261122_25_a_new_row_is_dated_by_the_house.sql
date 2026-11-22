@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════════════
--- 20261122_05 — a member's new row is dated by the house, never by the member's word.
+-- 20261122_25 — a member's new row is dated by the house, never by the member's word.
 -- ════════════════════════════════════════════════════════════════════════════
 --   A member's insert could write its own created_at, and the house kept it: a critique dated
 --   2020 or 2099 (the kinds pass, stage C, kind 9: a value the caller writes, believed). A row dated
@@ -20,7 +20,7 @@
 --   taken off.
 --   A member's drafts (saved_at) and private notes (updated_at) keep the member's own time: read by
 --   no one but their writer, and ordering nothing anyone else reads.
--- Undo: mobile/supabase/migrations-down/20261122_05_a_new_row_is_dated_by_the_house.sql
+-- Undo: mobile/supabase/migrations-down/20261122_25_a_new_row_is_dated_by_the_house.sql
 -- ════════════════════════════════════════════════════════════════════════════
 SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
@@ -104,7 +104,7 @@ ALTER TABLE public.write_budget ADD CONSTRAINT write_budget_kind CHECK (kind = A
   'save', 'vote', 'block', 'watchlist_entry', 'shelf_entry', 'draft', 'push_address', 'seat', 'record']));
 COMMENT ON TABLE public.write_budget IS 'Each member''s room, per kind, to write what they may repeat at will (records, stacks and their entries, filings, salons, reactions, certifications, saves, votes, blocks, watchlist and shelf entries, drafts, push addresses), refilled with time, and the count of the house''s day: written by check_write_pace alone; no client reads or writes it.';
 
--- check_write_pace as 20261122_01 left it, with the records ('record') among its kinds.
+-- check_write_pace as 20261122_24 left it, with the records ('record') among its kinds.
 -- add-only (1): no shipped client uses it: a trigger's function, called by no client (TestFlight build 41 and the website checked)
 CREATE OR REPLACE FUNCTION public.check_write_pace() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER

@@ -9391,7 +9391,7 @@ mutants:
     class: SEC-a-write-a-script-repeats-without-end
     source: shape
     edits:
-      - file: ../supabase/migrations/20261122_01_every_members_write_is_paced.sql
+      - file: ../supabase/migrations/20261122_24_every_members_write_is_paced.sql
         find: "CREATE OR REPLACE TRIGGER zz_a_write_is_paced\n  BEFORE INSERT ON public.lists\n"
         replace: "CREATE OR REPLACE TRIGGER zz_a_write_is_paced\n  BEFORE UPDATE ON public.lists\n"
     proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "paces every table a member may insert into, or judges why no script can repeat it without end" }
@@ -9612,7 +9612,7 @@ mutants:
     class: SEC-a-write-a-script-repeats-without-end
     source: shape
     edits:
-      - file: ../supabase/migrations/20261122_05_a_new_row_is_dated_by_the_house.sql
+      - file: ../supabase/migrations/20261122_25_a_new_row_is_dated_by_the_house.sql
         find: "CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');\n"
         replace: ""
     proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "dates every member's new row by the house, or judges why the member's own date orders and counts nothing another reads" }
@@ -9621,7 +9621,7 @@ mutants:
     class: SEC-a-write-a-script-repeats-without-end
     source: shape
     edits:
-      - file: ../supabase/migrations/20261122_05_a_new_row_is_dated_by_the_house.sql
+      - file: ../supabase/migrations/20261122_25_a_new_row_is_dated_by_the_house.sql
         find: "DROP POLICY IF EXISTS logs_insert_rate_limit ON public.logs;\n"
         replace: ""
     proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "counts no pace by a date the member may write" }
@@ -9677,14 +9677,14 @@ mutants:
   - id: past-the-follow-list-walked-page-by-page
     class: SPEED-a-launch-read-walks-page-by-page
     source: past
-    commit: ad0fffe7
+    commit: 26f44b6f
     files: [src/stores/domain/socialSlice.ts]
     proof: { file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "walks no read of the house page by page at launch, and every walk away from it is judged" }
 
   - id: past-a-salon-caught-up-page-by-page
     class: SPEED-a-launch-read-walks-page-by-page
     source: past
-    commit: d5dd8891
+    commit: 6da4022c
     files: [src/stores/lounge.ts]
     proof: { file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "walks no read of the house page by page at launch, and every walk away from it is judged" }
 
@@ -9772,7 +9772,7 @@ mutants:
   - id: past-the-short-pieces-kept-from-members
     class: SPEED-an-index-refuses-the-writes-it-serves
     source: past
-    commit: d515e487
+    commit: aa7a6766
     files: [../supabase/migrations/20261122_12_a_busy_read_reads_its_page.sql]
     edits:
       - file: ../supabase/migrations/20261122_12_a_busy_read_reads_its_page.sql

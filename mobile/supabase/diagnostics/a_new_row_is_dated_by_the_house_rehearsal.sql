@@ -1,9 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
--- a_new_row_is_dated_by_the_house_rehearsal.sql — 20261122_05. Rolled back, always.
+-- a_new_row_is_dated_by_the_house_rehearsal.sql — 20261122_25. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
 --   node mobile/supabase/diagnostics/rehearse.cjs a_new_row_is_dated_by_the_house_rehearsal.sql --with-train
 --
--- The train applies 20261122_05 here (with_train), every car before it already applied; a sealed copy already holds it.
+-- The train applies 20261122_25 here (with_train), every car before it already applied; a sealed copy already holds it.
 -- Then a member, acting as themselves, writes rows dated in the past and in the future: the house dates
 -- each as it lands, keeps an imported record's past date but never a future one, and paces records
 -- by a room no date gets past (stage C, the kinds pass). Every row here is undone with the
@@ -29,7 +29,7 @@ SELECT pg_temp.rh_need('films to log', (SELECT count(*) FROM public.films), 3) A
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
 \if :{?with_train}
-\ir ../../../supabase/migrations/20261122_05_a_new_row_is_dated_by_the_house.sql
+\ir ../../../supabase/migrations/20261122_25_a_new_row_is_dated_by_the_house.sql
 \endif
 
 -- ── the setting, as the house ──

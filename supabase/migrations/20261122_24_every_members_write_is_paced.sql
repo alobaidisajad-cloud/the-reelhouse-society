@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════════════
--- 20261122_01 — every write a member can repeat at will is paced as a person writes.
+-- 20261122_24 — every write a member can repeat at will is paced as a person writes.
 -- ════════════════════════════════════════════════════════════════════════════
 --   The house paced a member's marks (check_interaction_rate_limit), critiques (check_critique_pace),
 --   records, salon messages, events and error reports, each where a review found it unpaced. The
@@ -34,7 +34,7 @@
 --   whose first send landed (an answer lost; a stack saved again over its entries) is no new write and
 --   is not counted; the house's own writes are not paced. The rule runs after every other check of
 --   the insert (its trigger's name sorts last), so a refusal for standing or rank is said as itself.
--- Undo: mobile/supabase/migrations-down/20261122_01_every_members_write_is_paced.sql
+-- Undo: mobile/supabase/migrations-down/20261122_24_every_members_write_is_paced.sql
 -- ════════════════════════════════════════════════════════════════════════════
 SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';

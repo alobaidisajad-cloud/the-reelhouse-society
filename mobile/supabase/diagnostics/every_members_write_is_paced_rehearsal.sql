@@ -1,9 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
--- every_members_write_is_paced_rehearsal.sql — 20261122_01. Rolled back, always.
+-- every_members_write_is_paced_rehearsal.sql — 20261122_24. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
 --   node mobile/supabase/diagnostics/rehearse.cjs every_members_write_is_paced_rehearsal.sql --with-train
 --
--- The train applies 20261122_01 here (with_train), every car before it already applied; a sealed copy already holds it.
+-- The train applies 20261122_24 here (with_train), every car before it already applied; a sealed copy already holds it.
 -- Then the house and a member in good standing, acting as themselves, find each write a member can
 -- repeat at will paced (stage C, the kinds pass). Every row here is undone with the transaction. Read
 -- each NOTICE as  case|expected|got ; the last line is the verdict, and any miss makes psql exit non-zero.
@@ -52,7 +52,7 @@ SELECT pg_temp.rh_need('a take, a ballot, a salon and its message, planted', (SE
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
 \if :{?with_train}
-\ir ../../../supabase/migrations/20261122_01_every_members_write_is_paced.sql
+\ir ../../../supabase/migrations/20261122_24_every_members_write_is_paced.sql
 \endif
 
 -- ── the pace on every write a member repeats at will ──
