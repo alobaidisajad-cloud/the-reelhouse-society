@@ -11054,8 +11054,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/dispatch/ComposeDesks.tsx
-        find: "if (held && (held.data.body?.trim() || held.data.source?.trim() || held.data.film)) {"
-        replace: "if (held && !held.data) {"
+        find: "      const held = readDraft(userId, 'short', kind);"
+        replace: "      const held = readDraft(userId, 'short', `another-${kind}`);"
     proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "a take taken up says so, with START CLEAN, which empties the desk and the draft" }
 
   - id: shape-short-desk-draft-kept-after-filing
