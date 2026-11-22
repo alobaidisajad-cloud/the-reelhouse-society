@@ -9,9 +9,10 @@
  * any other upholds or overturns it with a word for the member, who is
  * told the outcome. A hearing that crossed another moderator's is said so, and the card leaves.
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { moreMayFollow, readAsFar } from '@/src/utils/readAsFar';
 import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
 import { RemoteImage } from '@/src/components/Picture';
@@ -93,21 +94,25 @@ type Pending = { appeal: PendingAppeal; outcome: 'upheld' | 'overturned'; hearin
 
 export function AppealsDocket({ adminId, end }: { adminId: string; end: number }) {
   const queryClient = useQueryClient();
+  // How far the moderator has read: a read again (a hearing given) reads this far, not page one alone.
+  const asFar = useRef(PAGE);
   const { data: firstPage, isLoading, isError, isRefetching, refetch } = useQuery({
     queryKey: ['admin', 'appeals', adminId],
-    queryFn: () => ModerationService.getPendingAppeals(undefined, PAGE),
+    queryFn: () => readAsFar((after, size) => ModerationService.getPendingAppeals(after, size), (a: PendingAppeal) => ({ appeal_filed_at: a.appeal_filed_at, id: a.id }), asFar.current, PAGE),
   });
 
-  // Page one is the live read (a hearing's read again rebuilds it); pages after are laid on it, each
-  // appeal once. Rebuilt during the render that brings it: never a frame of an empty docket.
+  // The live read, as far as the moderator has read (a hearing's read again rebuilds it); pages after
+  // are laid on it, each appeal once. Rebuilt during the render that brings it: never a frame of an
+  // empty docket.
   const [items, setItems] = useState<PendingAppeal[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [from, setFrom] = useState<PendingAppeal[] | undefined>(undefined);
   if (firstPage && firstPage !== from) {
     setFrom(firstPage);
     setItems(firstPage);
-    setHasMore(firstPage.length >= PAGE);
+    setHasMore(moreMayFollow(firstPage, PAGE));
   }
+  useEffect(() => { asFar.current = Math.max(PAGE, items.length); }, [items.length]);
 
   const more = useMutation({
     mutationFn: (last: PendingAppeal) => ModerationService.getPendingAppeals({ appeal_filed_at: last.appeal_filed_at, id: last.id }, PAGE),

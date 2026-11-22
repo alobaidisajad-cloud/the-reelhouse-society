@@ -2153,3 +2153,7 @@ files of the reading map this one does not.
 | src/stores/__tests__/aQueuedStackChangeStaysOnTheStacks.test.ts | — |  |
 | src/stores/domain/queuedStack.ts | — |  |
 | src/utils/__tests__/everyQueuedWriteIsReadBack.guard.test.ts | — |  |
+| src/components/admin/__tests__/aDocketReadAgainKeepsItsLaterPages.test.tsx | — |  |
+| src/utils/__tests__/aListReadAgainKeepsItsLaterPages.guard.test.ts | — |  |
+| src/utils/__tests__/readAsFar.test.ts | — |  |
+| src/utils/readAsFar.ts | — |  |

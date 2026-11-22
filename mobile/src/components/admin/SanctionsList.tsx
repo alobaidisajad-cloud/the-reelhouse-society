@@ -10,9 +10,10 @@
  * moderator, alone may strike it. No admin lifts their own sanction (the house refuses it, OWN_CASE):
  * their own row says another admin must.
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { moreMayFollow, readAsFar } from '@/src/utils/readAsFar';
 import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
 import { RemoteImage } from '@/src/components/Picture';
@@ -49,20 +50,23 @@ export function sanctionWords(m: Pick<SanctionedMember, 'exiled' | 'is_banned' |
 export function SanctionsList({ end }: { end: number }) {
   const queryClient = useQueryClient();
   const me = useAuthStore((s) => s.user?.id ?? null);
+  // How far the admin has read: a read again (a member lifted) reads this far, not page one alone.
+  const asFar = useRef(PAGE);
   const { data: firstPage, isLoading, isError, isRefetching, refetch } = useQuery({
     queryKey: ['admin', 'sanctions'],
-    queryFn: () => ModerationService.getSanctionedMembers(undefined, PAGE),
+    queryFn: () => readAsFar((after, size) => ModerationService.getSanctionedMembers(after, size), (m: SanctionedMember) => ({ username: m.username, id: m.id }), asFar.current, PAGE),
   });
 
-  // Page one is the live read; pages after are laid on it, each member once (as the docket is).
+  // The live read, as far as the admin has read; pages after are laid on it, each member once (as the docket is).
   const [items, setItems] = useState<SanctionedMember[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [from, setFrom] = useState<SanctionedMember[] | undefined>(undefined);
   if (firstPage && firstPage !== from) {
     setFrom(firstPage);
     setItems(firstPage);
-    setHasMore(firstPage.length >= PAGE);
+    setHasMore(moreMayFollow(firstPage, PAGE));
   }
+  useEffect(() => { asFar.current = Math.max(PAGE, items.length); }, [items.length]);
   const more = useMutation({
     mutationFn: (last: SanctionedMember) => ModerationService.getSanctionedMembers({ username: last.username, id: last.id }, PAGE),
     onSuccess: (rows) => {
