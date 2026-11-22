@@ -10913,3 +10913,201 @@ mutants:
         find: "const want = how?.fromTop ? PAGE_SIZE :"
         replace: "const want = how?.fromTop === undefined ? PAGE_SIZE :"
     proof: { file: src/stores/__tests__/theBoardReadAgainKeepsItsLaterPages.test.ts, test: "a pull asks for the newest: the board is read from its top" }
+
+  - id: shape-word-finder-passes-a-box-by-no-shape
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/hooks/__tests__/everyWordWrittenIsKept.guard.test.ts
+        find: "if (attr(el, 'secureTextEntry', sf) !== null) return 'a secret';"
+        replace: "if (attr(el, 'secureTextEntry', sf) === null) return 'a secret';"
+    proof: { file: src/hooks/__tests__/everyWordWrittenIsKept.guard.test.ts, test: "finds a box whose words nothing keeps, and passes one kept where it is held, by a keeper naming it, by its hook, or by its shape" }
+
+  - id: shape-word-finder-trusts-every-screen-handing-a-box-in
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/hooks/__tests__/everyWordWrittenIsKept.guard.test.ts
+        find: "return uses.length > 0 && uses.every((u) => keptIn(u.src, u.passed, app, depth + 1));"
+        replace: "return uses.length >= 0;"
+    proof: { file: src/hooks/__tests__/everyWordWrittenIsKept.guard.test.ts, test: "finds a box whose words nothing keeps, and passes one kept where it is held, by a keeper naming it, by its hook, or by its shape" }
+
+  - id: shape-verdict-reason-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "useKeptWords(userId, 'verdict', state.report?.id)"
+        replace: "useKeptWords(userId, 'verdict', null)"
+    proof: { file: app/(admin)/__tests__/aVerdictOnACaseThatMovedOnIsTold.test.tsx, test: "is kept per case: the sheet closed and opened again on the case opens on it; another case on its own" }
+
+  - id: shape-verdict-reason-not-put-back
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "      putBackWords(user?.id, 'verdict', reportId, reason);\n"
+        replace: ""
+    proof: { file: app/(admin)/__tests__/aVerdictOnACaseThatMovedOnIsTold.test.tsx, test: "refused, with the case still standing, is put back for the case; judged, it is let go" }
+
+  - id: shape-hearing-word-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/admin/AppealsDocket.tsx
+        find: "useKeptWords(adminId, 'hearing', pending ? `${pending.appeal.id}:${pending.outcome}` : null)"
+        replace: "useKeptWords(adminId, 'hearing', null)"
+    proof: { file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "is kept per hearing: closed and opened again, the sheet opens on it; the other hearing on its own" }
+
+  - id: shape-hearing-word-kept-after-it-is-heard
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/admin/AppealsDocket.tsx
+        find: "      leave(appeal.id);\n      letGoWord();\n      setPending(null);\n      rereadAll();\n      TactileEngine.success();"
+        replace: "      leave(appeal.id);\n      setPending(null);\n      rereadAll();\n      TactileEngine.success();"
+    proof: { file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "is let go once the hearing is heard" }
+
+  - id: shape-lift-word-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/admin/SanctionsList.tsx
+        find: "useKeptWords(me, 'hearing', lifting ? `lift:${lifting.member.id}` : null)"
+        replace: "useKeptWords(me, 'hearing', null)"
+    proof: { file: src/components/admin/__tests__/aBanIsLiftedByAnAdmin.test.tsx, test: "is kept per lift: closed and opened again, the sheet opens on it; lifted, it is let go" }
+
+  - id: shape-report-details-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/moderation/ReportSheet.tsx
+        find: "useKeptWords(user?.id, 'report', visible ? `${contentType}:${contentId}` : null)"
+        replace: "useKeptWords(user?.id, 'report', null)"
+    proof: { file: src/components/moderation/__tests__/ReportSheet.test.tsx, test: "are kept per piece as they are written: closed and opened again, the sheet opens on them" }
+
+  - id: shape-report-details-kept-after-the-house-holds-it
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/moderation/ReportSheet.tsx
+        find: "      letGoDetails();\n"
+        replace: ""
+    proof: { file: src/components/moderation/__tests__/ReportSheet.test.tsx, test: "are let go once the house holds the report, and kept when it did not take it" }
+
+  - id: shape-share-message-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/ShareToLoungeModal.tsx
+        find: "useKeptWords(me, 'share', sharing)"
+        replace: "useKeptWords(me, 'share', null)"
+    proof: { file: src/components/__tests__/theShareSheetSaysWhenTheSalonsAreAway.test.tsx, test: "is kept as it is written: the sheet closed and opened again on the piece opens on it" }
+
+  - id: shape-share-message-refused-not-put-back
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/ShareToLoungeModal.tsx
+        find: "if (sent === false) putBackWords(me, 'share', sharing, content);"
+        replace: "if (sent === true) putBackWords(me, 'share', sharing, content);"
+    proof: { file: src/components/__tests__/theShareSheetSaysWhenTheSalonsAreAway.test.tsx, test: "is let go once sent, and put back when the house refuses it" }
+
+  - id: shape-founding-words-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/lounge/CreateLoungeSheet.tsx
+        find: "useKeptWords(me, 'founding', 'name')"
+        replace: "useKeptWords(me, 'founding', null)"
+    proof: { file: src/components/lounge/__tests__/aSalonFormAsksForOneRoom.test.tsx, test: "are kept as they are written, and opened on again when the corridor is come back to" }
+
+  - id: shape-founding-words-kept-after-the-room-is-made
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/lounge/CreateLoungeSheet.tsx
+        find: "      letGoName(); letGoDescription(); setIsPrivate(false);"
+        replace: "      setIsPrivate(false);"
+    proof: { file: src/components/lounge/__tests__/aSalonFormAsksForOneRoom.test.tsx, test: "are let go once a room is made" }
+
+  - id: shape-series-name-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/dispatch/SeriesPicker.tsx
+        find: "useKeptWords(userId, 'series', NAMING)"
+        replace: "useKeptWords(userId, 'series', null)"
+    proof: { file: src/components/dispatch/__tests__/theSeriesSheet.test.tsx, test: "keeps a name half-typed: closed, it opens on it again, and once the series is set it is let go" }
+
+  - id: shape-short-desk-keeps-no-draft
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "    return writeDraft(userId, 'short', { body, source, film, filmId, spoiler }, kind);"
+        replace: "    return false;"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK with words goes to the forms at once, asking nothing: the words are kept" }
+
+  - id: shape-short-desk-takes-up-nothing
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "if (held && (held.data.body?.trim() || held.data.source?.trim() || held.data.film)) {"
+        replace: "if (held && !held.data) {"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "a take taken up says so, with START CLEAN, which empties the desk and the draft" }
+
+  - id: shape-short-desk-draft-kept-after-filing
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "      letGo();\n      reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Filed');"
+        replace: "      reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Filed');"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "kept once the desk rests, and at once if it closes first; filed, the draft goes" }
+
+  - id: shape-amend-kept-as-a-new-take
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "      return writeDraft(userId, 'edit', { content: body, source, spoiler }, editId);"
+        replace: "      return writeDraft(userId, 'short', { body, source, spoiler }, kind);"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "is kept by its filing, apart from a new take, and taken up over the words as filed" }
+
+  - id: shape-picker-blind-to-a-short-draft
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: app/dispatch/compose.tsx
+        find: "                            || shortDrafts.has(f.kind),"
+        replace: "                            || shortDrafts.has(''),"
+    proof: { file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "says a take or a wire is in progress, each by its own draft (stage C: every desk keeps its draft)" }
+
+  - id: shape-kept-words-taken-up-once-per-place
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/hooks/useKeptWords.ts
+        find: "  if (takenFor !== place) {"
+        replace: "  if (place && takenFor !== place) {"
+    proof: { file: src/hooks/__tests__/aWordWrittenIsKept.test.tsx, test: "a box closed (no place) and opened again on the same place opens on the words kept for it" }
+
+  - id: shape-words-let-go-kept-again-as-the-box-goes
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/hooks/useKeptWords.ts
+        find: "    unsaved.current = null;\n    setWords('');"
+        replace: "    setWords('');"
+    proof: { file: src/hooks/__tests__/aWordWrittenIsKept.test.tsx, test: "words let go as the box goes in the same moment are not kept again by its going" }
+
+  - id: shape-words-put-back-for-another-member
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/hooks/useKeptWords.ts
+        find: "  if (!memberId || !words.trim() || useAuthStore.getState().user?.id !== memberId) return;"
+        replace: "  if (!memberId || !words.trim()) return;"
+    proof: { file: src/hooks/__tests__/aWordWrittenIsKept.test.tsx, test: "words refused after their box went are put back, after any written there since, for the member signed in alone" }

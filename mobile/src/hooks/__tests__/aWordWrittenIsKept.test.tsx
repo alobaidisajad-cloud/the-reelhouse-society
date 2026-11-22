@@ -3,6 +3,7 @@
  * log or a stack, a salon message) is kept once the box rests, taken up when they come back to the
  * same place and never in another, and let go once the house or the queue has it (P4.14, P4.32).
  */
+import { useState } from 'react';
 import { act, renderHook } from '@testing-library/react-native';
 import { KEPT_WORDS_REST_MS, putBackWords, useKeptWords } from '../useKeptWords';
 import { useAuthStore } from '@/src/stores/auth';
@@ -93,12 +94,15 @@ it('a box closed (no place) and opened again on the same place opens on the word
 });
 
 it('words let go as the box goes in the same moment are not kept again by its going', async () => {
-  const { result, rerender } = await renderHook(({ at }: { at: string | null }) => useKeptWords('me', 'hearing', at), { initialProps: { at: 'A' as string | null } });
+  // The docket holds the place, as AppealsDocket holds its hearing: let go and closed in one act.
+  const { result } = await renderHook(() => {
+    const [at, setAt] = useState<string | null>('A');
+    return { kept: useKeptWords('me', 'hearing', at), setAt };
+  });
   jest.useFakeTimers();
-  await act(async () => { result.current[1]('The word for the member'); });
+  await act(async () => { result.current.kept[1]('The word for the member'); });
   // Heard: let go, and the sheet closes in the same moment, before the words rested.
-  await act(async () => { result.current[2](); });
-  await rerender({ at: null });
+  await act(async () => { result.current.kept[2](); result.current.setAt(null); });
   expect(mockDrafts.has('me|hearing|A')).toBe(false);
 });
 
