@@ -57,4 +57,21 @@ describe('the shape of a read', () => {
     expect(shapeFaults(walked, BOUND, 'lists_short_grams')).toEqual(['does not read by its index, lists_short_grams']);
     expect(shapeFaults(walked)).toEqual([]);
   });
+
+  it('says yes to a walk its limit stopped at once, and no to one that threw rows away past the floor or fed a sort', () => {
+    const walk = (removed: number) => scan('Seq Scan', 'profiles', 1001, { 'Rows Removed by Filter': removed });
+    // A letter every member holds: the walk meets its 1,001 at once (search_members' gathering).
+    expect(shapeFaults([{ Plan: { 'Node Type': 'Limit', 'Actual Rows': 1001, 'Actual Loops': 1, Plans: [walk(0)] } }])).toEqual([]);
+    // Through a Gather, its workers stop with the limit.
+    const gathered = { 'Node Type': 'Gather', 'Actual Rows': 1001, 'Actual Loops': 1, Plans: [scan('Seq Scan', 'profiles', 334, { 'Actual Loops': 3, 'Rows Removed by Filter': 200 })] };
+    expect(shapeFaults([{ Plan: { 'Node Type': 'Limit', 'Actual Rows': 1001, 'Actual Loops': 1, Plans: [gathered] } }])).toEqual([]);
+    // One that threw away more than the floor walked the house to find its page.
+    expect(shapeFaults([{ Plan: { 'Node Type': 'Limit', 'Actual Rows': 1001, 'Actual Loops': 1, Plans: [walk(FLOOR + 1)] } }]))
+      .toEqual([`reads profiles whole (a sequential scan of ${1001 + FLOOR + 1} rows): it grows with the house`]);
+    // A sort under the limit reads every row before the first is kept; so does a scan with no limit.
+    const sorted = { 'Node Type': 'Sort', 'Actual Rows': 1001, 'Actual Loops': 1, Plans: [walk(0)] };
+    expect(shapeFaults([{ Plan: { 'Node Type': 'Limit', 'Actual Rows': 1001, 'Actual Loops': 1, Plans: [sorted] } }]))
+      .toEqual(['reads profiles whole (a sequential scan of 1001 rows): it grows with the house']);
+    expect(shapeFaults([{ Plan: walk(0) }])).toEqual(['reads profiles whole (a sequential scan of 1001 rows): it grows with the house']);
+  });
 });

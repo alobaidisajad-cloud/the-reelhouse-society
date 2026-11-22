@@ -7,7 +7,9 @@
  * table that grows with the house (every table but the film catalogue and the house's own settings),
  * counted as the database counts them (the rows it kept, the rows its filter took away, the rows a
  * recheck took away, times the loops). A read is size-independent when:
- *   - no sequential scan reads a growing table past FLOOR rows (a whole table read, however fast now);
+ *   - no sequential scan reads a growing table past FLOOR rows (a whole table read, however fast now),
+ *     but one its limit stopped, having thrown away at most FLOOR rows (a walk that meets its page at
+ *     once: a letter every member's name holds);
  *   - all it reads of growing tables stays within its bound: BOUND, or the probe's own `rows`, said
  *     with why (the whale's own 10,000 films grow with a member's own record, not with the house);
  *   - a read held to an index (the probe's own `index`) reads by it: the plan that keeps it the size of
@@ -34,19 +36,26 @@ const grows = (relation) => !!relation && !FIXED.has(relation);
 
 /**
  * Each scan of a plan tree (one statement's "Plan"), with the rows it read: kept, filtered away and
- * rechecked away, times its loops.
+ * rechecked away, times its loops; and whether a limit stopped it (`stopped`): a scan right under a
+ * Limit (through a Gather, whose workers stop with it) that threw away at most FLOOR rows. Such a walk
+ * reads its limit and what it threw away, however large the table: the rows it keeps come first.
  */
 function scansOf(plan) {
   const out = [];
-  const walk = (n) => {
+  const walk = (n, underLimit) => {
     if (!n) return;
     if (SCANS.has(n['Node Type']) && n['Relation Name']) {
-      const perLoop = (n['Actual Rows'] ?? 0) + (n['Rows Removed by Filter'] ?? 0) + (n['Rows Removed by Index Recheck'] ?? 0);
-      out.push({ node: n['Node Type'], relation: n['Relation Name'], index: n['Index Name'] ?? null, read: perLoop * (n['Actual Loops'] ?? 1) });
+      const removed = (n['Rows Removed by Filter'] ?? 0) + (n['Rows Removed by Index Recheck'] ?? 0);
+      const perLoop = (n['Actual Rows'] ?? 0) + removed;
+      const loops = n['Actual Loops'] ?? 1;
+      out.push({ node: n['Node Type'], relation: n['Relation Name'], index: n['Index Name'] ?? null, read: perLoop * loops,
+        stopped: underLimit && removed * loops <= FLOOR });
     }
-    for (const c of n.Plans ?? []) walk(c);
+    const type = n['Node Type'];
+    const passes = type === 'Limit' || ((type === 'Gather' || type === 'Gather Merge') && underLimit);
+    for (const c of n.Plans ?? []) walk(c, passes);
   };
-  walk(plan);
+  walk(plan, false);
   return out;
 }
 
@@ -71,7 +80,7 @@ function readOf(plans) {
 /** The faults of a read's shape, in words; [] when it stays the same size as the house grows. */
 function shapeFaults(plans, bound = BOUND, index = null) {
   const { scans, grown } = readOf(plans);
-  const faults = scans.filter((s) => s.node === 'Seq Scan' && grows(s.relation) && s.read > FLOOR)
+  const faults = scans.filter((s) => s.node === 'Seq Scan' && grows(s.relation) && s.read > FLOOR && !s.stopped)
     .map((s) => `reads ${s.relation} whole (a sequential scan of ${s.read} rows): it grows with the house`);
   if (grown > bound) faults.push(`reads ${grown} rows of tables that grow with the house, past its bound of ${bound}`);
   if (index && !plans.some((p) => indexesOf(p.Plan ?? p).has(index))) faults.push(`does not read by its index, ${index}`);

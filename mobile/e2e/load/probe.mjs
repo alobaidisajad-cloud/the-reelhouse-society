@@ -148,6 +148,11 @@ const PROBES = [
   // Two letters: who holds them anywhere gathered from the short pieces' index (20261122_14, _15), never read member by member.
   { screen: 'Search', what: 'members, a handle many share (search_members)', as: MEMBER, index: 'profiles_short_grams', sql: "SELECT * FROM public.search_members('m1', false, NULL, NULL, 21)" },
   { screen: 'Search', what: 'members, two letters none holds (search_members)', as: MEMBER, index: 'profiles_short_grams', sql: "SELECT * FROM public.search_members('zq', false, NULL, NULL, 21)" },
+  // One letter, as a member types the first: a name that begins with it read as one range of the names'
+  // beginnings (20261122_17, _18), never every name holding a word that starts with it; and a letter
+  // every handle and name holds, whose page is met at once.
+  { screen: 'Search', what: 'members, one letter no name begins with (search_members)', as: MEMBER, index: 'profiles_display_name_beginning', sql: "SELECT * FROM public.search_members('1', false, NULL, NULL, 21)" },
+  { screen: 'Search', what: 'members, one letter every member holds (search_members)', as: MEMBER, sql: "SELECT * FROM public.search_members('m', false, NULL, NULL, 21)" },
   { screen: 'Search', what: 'records, a word none holds (search_logs)', as: MEMBER, sql: "SELECT * FROM public.search_logs('tarkovsky', 'tarkovsky', NULL, NULL, 21)" },
   { screen: 'Search', what: 'records, a word many hold (search_logs)', as: MEMBER, sql: "SELECT * FROM public.search_logs('considered', 'considered', NULL, NULL, 21)" },
   { screen: 'Search', what: 'stacks, a word none holds (search_stacks)', as: MEMBER, sql: "SELECT * FROM public.search_stacks('tarkovsky', NULL, NULL, 21)" },
@@ -320,24 +325,37 @@ if (process.env.LOAD_SHAPE_AGAINST) {
   console.log(grew.length ? `\n${grew.length} read(s) grew with the house` : '\nno read grew with the house');
 }
 
-// What the short pieces' indexes (20261122_13, _14) cost the house at this size, beside the trigram
-// indexes of the same words: their size on disk, and a member's write through them (a stack's 1,000-letter
-// description and a member's name, each written five times in a rolled-back transaction, the median).
+// What the search indexes made for short words (20261122_13, _14) and for a name's beginning (20261122_17)
+// cost the house at this size, beside the trigram indexes of the same words: their size on disk, and a
+// member's write through them: a stack's 1,000-letter description and a member's name, each written five
+// times (the median), with every index as built; with the GIN indexes' pending list off, so each write pays
+// its pieces at once, as a write past the list's end does; and with the new indexes dropped. All in one
+// transaction, rolled back.
 try {
   const sizes = execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-F', ' ', '-c',
-    "SELECT relname, pg_relation_size(oid) FROM pg_class WHERE relname IN ('lists_short_grams', 'lists_title_trigram', 'lists_description_trigram', 'profiles_short_grams', 'profiles_username_trigram', 'profiles_display_name_trigram', 'lists', 'profiles') ORDER BY relname"],
+    "SELECT relname, pg_relation_size(oid) FROM pg_class WHERE relname IN ('lists_short_grams', 'lists_title_trigram', 'lists_description_trigram', 'profiles_short_grams', 'profiles_display_name_beginning', 'profiles_username_trigram', 'profiles_display_name_trigram', 'lists', 'profiles') ORDER BY relname"],
   { encoding: 'utf8' }).trim();
-  console.log(`\nThe short pieces' indexes at ${Number(process.env.LOAD_MEMBERS ?? 100000).toLocaleString('en-US')} members (bytes):\n${sizes}`);
-  const words = "(SELECT left(string_agg(md5(i::text) || ' Le cinéma ' || i, ' '), 1000) FROM generate_series(1, 40) i)";
+  console.log(`\nThe search indexes at ${Number(process.env.LOAD_MEMBERS ?? 100000).toLocaleString('en-US')} members (bytes):\n${sizes}`);
+  // 999 letters and one digit: the description's ceiling is 1,000 (lists_description_len). The accented
+  // letters are made by chr(), so the command's own text is plain ASCII on any runner's shell.
+  const words = "(SELECT left(string_agg(md5(i::text) || ' Le cin' || chr(233) || 'ma ' || i, ' '), 999) FROM generate_series(1, 40) i)";
   const writes = (sql) => Array.from({ length: 5 }, (_, k) => `EXPLAIN (ANALYZE, TIMING OFF, FORMAT JSON) ${sql.split('$K').join(String(k))};`).join('\n');
-  const out = execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-c', `BEGIN; SELECT set_config('request.jwt.claims', '', true);
-${writes(`UPDATE public.lists SET description = ${words} || '$K' WHERE id = (SELECT id FROM public.lists WHERE is_private = false ORDER BY created_at, id LIMIT 1)`)}
-${writes(`UPDATE public.profiles SET display_name = 'Agnès Varda $K' WHERE id = '${MEMBER}'`)}
+  const both = () => `${writes(`UPDATE public.lists SET description = ${words} || '$K' WHERE id = (SELECT id FROM public.lists WHERE is_private = false ORDER BY created_at, id LIMIT 1)`)}
+${writes(`UPDATE public.profiles SET display_name = 'Agn' || chr(232) || 's Varda $K' WHERE id = '${MEMBER}'`)}`;
+  const out = execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-c', `BEGIN; SELECT set_config('request.jwt.claims', '', true);
+${both()}
+ALTER INDEX public.lists_short_grams SET (fastupdate = off); ALTER INDEX public.profiles_short_grams SET (fastupdate = off);
+${both()}
+DROP INDEX public.lists_short_grams; DROP INDEX public.profiles_short_grams; DROP INDEX public.profiles_display_name_beginning;
+${both()}
 ROLLBACK;`], { encoding: 'utf8' });
   const t = [...out.matchAll(/"Execution Time": ([\d.]+)/g)].map((m) => Number(m[1]));
-  const median = (a) => [...a].sort((x, y) => x - y)[2];
-  console.log(`a stack's description written: median ${median(t.slice(0, 5))} ms; a member's name written: median ${median(t.slice(5, 10))} ms`);
-} catch (e) { console.log(`the short pieces' cost could not be read: ${String(e.message).split('\n')[0]}`); }
+  if (t.length !== 30) throw new Error(`expected 30 timings, read ${t.length}`);
+  const median = (from) => [...t.slice(from, from + 5)].sort((x, y) => x - y)[2];
+  for (const [at, how] of [[0, 'with the new indexes'], [10, 'with them, their pieces paid at once'], [20, 'without them']]) {
+    console.log(`${how}: a stack's description written, median ${median(at)} ms; a member's name written, median ${median(at + 5)} ms`);
+  }
+} catch (e) { console.log(`the search indexes' cost could not be read: ${String(e.stderr || e.message).split('\n').slice(0, 4).join(' ⏎ ')}`); }
 
 const members = Number(process.env.LOAD_MEMBERS ?? 100000).toLocaleString('en-US');
 const table = ['| Screen | Read | Median ms | Worst ms | Budget | Rows read | |', '|---|---|---|---|---|---|---|', ...rows].join('\n');
