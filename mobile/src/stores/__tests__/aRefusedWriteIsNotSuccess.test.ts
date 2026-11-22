@@ -148,19 +148,22 @@ describe('leaveLounge', () => {
 });
 
 describe("a host's act on a seat is said by why it failed", () => {
-  const acts: [string, () => Promise<unknown>, string][] = [
-    ['admitting a guest', () => useLoungeStore.getState().approveMember(L1, U1), 'Could not admit this guest.'],
-    ['declining a request', () => useLoungeStore.getState().declineMember(L1, U1), 'Could not decline this request.'],
-    ['muting a member', () => useLoungeStore.getState().setMemberStatus(L1, U1, 'muted'), 'Could not update this member.'],
-    ['removing a member', () => useLoungeStore.getState().removeMember(L1, U1), 'Could not remove this member.'],
+  const acts: [() => Promise<unknown>, string][] = [
+    [() => useLoungeStore.getState().approveMember(L1, U1), 'Could not admit this guest.'],
+    [() => useLoungeStore.getState().declineMember(L1, U1), 'Could not decline this request.'],
+    [() => useLoungeStore.getState().setMemberStatus(L1, U1, 'muted'), 'Could not update this member.'],
+    [() => useLoungeStore.getState().removeMember(L1, U1), 'Could not remove this member.'],
   ];
 
-  it.each(acts)('%s: refused, said as refused; unreached, said as the connection', async (_, act, words) => {
-    mockRpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'permission denied' } });
-    expect(await act()).toBe(false);
-    mockRpc.mockResolvedValue({ data: null, error: { message: 'Network request failed' } });
-    expect(await act()).toBe(false);
-    expect(mockToastError.mock.calls.map((c) => c[0])).toEqual([
-      `${words} The house did not allow it.`, `${words} Check your connection and try again.`]);
+  it('admitting, declining, muting or removing: refused, said as refused; unreached, said as the connection', async () => {
+    for (const [act, words] of acts) {
+      mockToastError.mockClear();
+      mockRpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'permission denied' } });
+      expect(await act()).toBe(false);
+      mockRpc.mockResolvedValue({ data: null, error: { message: 'Network request failed' } });
+      expect(await act()).toBe(false);
+      expect(mockToastError.mock.calls.map((c) => c[0])).toEqual([
+        `${words} The house did not allow it.`, `${words} Check your connection and try again.`]);
+    }
   });
 });

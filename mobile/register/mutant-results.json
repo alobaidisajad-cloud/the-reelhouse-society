@@ -948,14 +948,14 @@
     "class": "SPEED-page-waits-for-the-members-marks",
     "mutant": "shape-page-waits-for-marks",
     "proof": "m1",
-    "commit": "ec22079f00f66bb86a9bba5a5d3d629cb8fc5c4d",
+    "commit": "7db58dc5bdb2576ece301b244d2d7304330bb227",
     "verdict": "caught"
   },
   {
     "class": "SPEED-page-waits-for-the-members-marks",
     "mutant": "shape-reader-waits-for-marks",
     "proof": "m2",
-    "commit": "fb3ca184756e26e2dd9c2bf8fb4d6475373ae204",
+    "commit": "7db58dc5bdb2576ece301b244d2d7304330bb227",
     "verdict": "caught"
   },
   {
@@ -3279,14 +3279,14 @@
     "class": "WRITE-a-failure-put-back-by-a-read",
     "mutant": "shape-leave-put-back-by-a-read",
     "proof": "m2",
-    "commit": "f5c7d143d0612cc2dd0ab99bc9b70397a19aa517",
+    "commit": "7db58dc5bdb2576ece301b244d2d7304330bb227",
     "verdict": "caught"
   },
   {
     "class": "WRITE-a-failure-put-back-by-a-read",
     "mutant": "shape-dissolve-put-back-by-a-read",
     "proof": "m1",
-    "commit": "f5c7d143d0612cc2dd0ab99bc9b70397a19aa517",
+    "commit": "7db58dc5bdb2576ece301b244d2d7304330bb227",
     "verdict": "caught"
   },
   {
@@ -4749,7 +4749,7 @@
     "class": "COPY-a-refusal-told-as-anothers",
     "mutant": "shape-salon-refusal-said-as-a-failure",
     "proof": "m6",
-    "commit": "fb3ca184756e26e2dd9c2bf8fb4d6475373ae204",
+    "commit": "7db58dc5bdb2576ece301b244d2d7304330bb227",
     "verdict": "caught"
   },
   {
@@ -5057,7 +5057,7 @@
     "class": "STATE-a-copy-drawn-after-the-house-let-it-go",
     "mutant": "shape-answered-salon-request-kept-on-the-bell",
     "proof": "m33",
-    "commit": "0bce9845b8ec01c2c9bc8b706290e524094c6c54",
+    "commit": "7db58dc5bdb2576ece301b244d2d7304330bb227",
     "verdict": "caught"
   },
   {
@@ -7101,14 +7101,14 @@
     "class": "SEC-a-write-a-script-repeats-without-end",
     "mutant": "shape-a-paced-act-undone-as-a-refusal",
     "proof": "m13",
-    "commit": "aecf4a7b0ece8070c103afaf16021c7241f906e0",
+    "commit": "7db58dc5bdb2576ece301b244d2d7304330bb227",
     "verdict": "caught"
   },
   {
     "class": "SEC-a-write-a-script-repeats-without-end",
     "mutant": "shape-a-held-filing-said-as-the-wire",
     "proof": "m14",
-    "commit": "aecf4a7b0ece8070c103afaf16021c7241f906e0",
+    "commit": "7db58dc5bdb2576ece301b244d2d7304330bb227",
     "verdict": "caught"
   },
   {
@@ -7312,6 +7312,27 @@
     "mutant": "shape-the-walk-finder-follows-no-import",
     "proof": "m5",
     "commit": "3dfd9a8f6aae1605caf0a50ad6b0707de6268625",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-refusal-told-as-anothers",
+    "mutant": "shape-a-guest-refused-said-as-failed",
+    "proof": "m26",
+    "commit": "7db58dc5bdb2576ece301b244d2d7304330bb227",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-refusal-told-as-anothers",
+    "mutant": "shape-a-stack-film-refused-said-as-failed",
+    "proof": "m27",
+    "commit": "7db58dc5bdb2576ece301b244d2d7304330bb227",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-refusal-told-as-anothers",
+    "mutant": "shape-a-house-fault-said-as-refused",
+    "proof": "m28",
+    "commit": "7db58dc5bdb2576ece301b244d2d7304330bb227",
     "verdict": "caught"
   }
 ]

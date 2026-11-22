@@ -9713,7 +9713,7 @@ mutants:
       - file: src/stores/lounge.ts
         find: "      reelToast.error(saidOfAFailure(e, 'Could not admit this guest.'));"
         replace: "      reelToast.error('Could not admit this guest.');"
-    proof: { file: src/stores/__tests__/aRefusedWriteIsNotSuccess.test.ts, test: "admitting a guest: refused, said as refused; unreached, said as the connection" }
+    proof: { file: src/stores/__tests__/aRefusedWriteIsNotSuccess.test.ts, test: "admitting, declining, muting or removing: refused, said as refused; unreached, said as the connection" }
 
   - id: shape-a-stack-film-refused-said-as-failed
     class: COPY-a-refusal-told-as-anothers
