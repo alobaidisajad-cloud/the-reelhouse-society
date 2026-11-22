@@ -1439,7 +1439,7 @@ const s = StyleSheet.create({
 
   emptyState: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
   // A later page that could not be read: the search's foot, in its words and its look.
-  moreFoot: { alignItems: 'center', paddingVertical: 18, gap: 6 },
+  moreFoot: { alignItems: 'center', paddingVertical: 16, gap: 8 },
   moreFootWords: { fontFamily: fonts.body, fontSize: 12, color: colors.fogQuiet, textAlign: 'center' },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, marginBottom: 8 },
   emptySubtitle: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.fog, textAlign: 'center' },
