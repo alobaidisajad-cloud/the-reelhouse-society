@@ -9772,6 +9772,8 @@ mutants:
   - id: past-the-short-pieces-kept-from-members
     class: SPEED-an-index-refuses-the-writes-it-serves
     source: past
+    commit: d515e487
+    files: [../supabase/migrations/20261122_12_a_busy_read_reads_its_page.sql]
     edits:
       - file: ../supabase/migrations/20261122_12_a_busy_read_reads_its_page.sql
         find: "GRANT EXECUTE ON FUNCTION private.short_grams(text), private.search_grams(text, text) TO anon, authenticated, service_role;"
