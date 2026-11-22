@@ -132,3 +132,42 @@ describe('each statement is timed', () => {
     ]);
   });
 });
+
+describe('a job the train scheduled is watched to its end', () => {
+  type Verdict = { fault: boolean; lines: string[] };
+  const verdict = (job: Record<string, unknown>): Verdict => {
+    const file = join(dir, `j${Math.random().toString(36).slice(2)}.json`);
+    writeFileSync(file, JSON.stringify({ name: 'the-members-pieces-are-listed', windowMs: 25_000, ended: true, driven: false, ...job }));
+    const r = spawnSync(process.execPath, [SCRIPT, '--job', file], { encoding: 'utf8' });
+    if (r.status !== 0) throw new Error(r.stderr);
+    return JSON.parse(r.stdout);
+  };
+
+  it('passes when it ended itself and every run let members write within the second', () => {
+    const v = verdict({ runs: [107, 233, 95, HELD_MS] });
+    expect(v.fault).toBe(false);
+    expect(v.lines[0]).toBe('ran  C · job the-members-pieces-are-listed, run by pg_cron: 4 runs over 25 s');
+    expect(v.lines[1]).toMatch(/^ {4}run {6} {3}1000 ms at most, 233 ms the middle run/);
+  });
+
+  it('fails when one run held members\' writes over a second, as a lock would', () => {
+    const v = verdict({ runs: [107, HELD_MS + 1, 95] });
+    expect(v.fault).toBe(true);
+    expect(v.lines[1]).toMatch(/^ {4}TOO LONG {4}1001 ms at most/);
+  });
+
+  it('is a job run every few seconds, never one the house keeps by the hour or the minute', () => {
+    const pacedIs = (schedule: string) => JSON.parse(spawnSync(process.execPath, [SCRIPT, '--paced', schedule], { encoding: 'utf8' }).stdout);
+    expect(pacedIs('1 seconds')).toBe(true);
+    expect(pacedIs('30 seconds')).toBe(true);
+    expect(pacedIs('17 * * * *')).toBe(false);
+    expect(pacedIs('*/5 * * * *')).toBe(false);
+    expect(pacedIs('5 minutes')).toBe(false);
+  });
+
+  it('fails when it never ended itself, and says it was run here when no scheduler ran it', () => {
+    const v = verdict({ runs: [107], ended: false, driven: true });
+    expect(v.fault).toBe(true);
+    expect(v.lines[0]).toBe('DID NOT END  C · job the-members-pieces-are-listed, run here at its pace (no scheduler): 1 runs over 25 s');
+  });
+});

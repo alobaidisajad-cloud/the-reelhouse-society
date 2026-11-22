@@ -156,6 +156,15 @@ BEGIN
 END;
 $$;
 
+-- The job this car made, where the house keeps its jobs (it may have ended itself already).
+DO $$
+BEGIN
+  IF to_regclass('cron.job') IS NOT NULL THEN
+    PERFORM cron.unschedule(j.jobid) FROM cron.job j WHERE j.jobname = 'the-members-pieces-are-listed';
+  END IF;
+END $$;
+-- add-only (1): no shipped client uses it: the functions this car made, in private
+DROP FUNCTION IF EXISTS private.member_grams_fill(integer);
 -- add-only (1): no shipped client uses it: the triggers this car made
 DROP TRIGGER IF EXISTS a_members_pieces_are_settled ON public.profiles;
 -- add-only (1): no shipped client uses it: the triggers this car made
@@ -176,3 +185,5 @@ DROP FUNCTION IF EXISTS private.member_grams_of(text, text);
 DROP TABLE IF EXISTS private.member_grams;
 -- add-only (1): no shipped client uses it: the lists this car made, in private
 DROP TABLE IF EXISTS private.member_gram_heads;
+-- add-only (1): no shipped client uses it: how far the job read, in private
+DROP TABLE IF EXISTS private.member_grams_filled;

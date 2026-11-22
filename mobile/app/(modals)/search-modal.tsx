@@ -76,9 +76,9 @@ export function countSaid(n: number, more: boolean): string {
  * What the members' search says when its words are held too widely to narrow without reading the whole
  * house (search_members' TOO_WIDE): the members are not silent, and more letters would find them.
  */
-export const WIDE_LABEL = 'TOO MANY ANSWER TO THOSE LETTERS';
+export const WIDE_LABEL = 'TOO MANY MEMBERS ANSWER TO THOSE LETTERS';
 const WIDE_LABEL_PLAIN = 'Too many members answer to those letters.';
-export const WIDE_MORE = 'Add more letters to narrow the members.';
+export const WIDE_MORE = 'Add more letters to narrow the search.';
 
 /** A tab's name as it is spoken: "Films", not "FILMS". */
 const spokenName = (label: string) => `${label.charAt(0)}${label.slice(1).toLowerCase()}`;
@@ -434,7 +434,7 @@ export default function SearchModal() {
         {/* The members too many to narrow, and nothing else found: said, never silence */}
         {searched && !searching && reachable && filtered.length === 0 && wideHere && (
           <Arrive name="search-modal-6" duration={300} rise={0} style={st.center}>
-            <Text style={st.centerLabel}>{WIDE_LABEL}</Text>
+            <Text style={st.centerLabel} accessibilityLabel={WIDE_LABEL_PLAIN}>{WIDE_LABEL}</Text>
             <Text style={st.emptySub}>{WIDE_MORE}</Text>
           </Arrive>
         )}

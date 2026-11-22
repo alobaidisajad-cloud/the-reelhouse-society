@@ -21,8 +21,13 @@
 --   The lists are kept as members join, are renamed and leave: each write queued by a trigger, and
 --   settled once a transaction as it commits (a constraint trigger), each piece's head locked in the
 --   pieces' order and written once.
---   The lists are filled from the house as it stands before the trigger is made, so the making holds the
---   members' writes only to reconcile those written meanwhile, then they are analysed for the planner.
+--   The car makes the lists empty and holds no member's write for longer than its triggers' making: it
+--   reads no member. The lists are filled by a job (private.member_grams_fill, every second where the
+--   house keeps its jobs), five hundred members at a time in the order of their ids, each time short and
+--   its own transaction, resumed where the last ended; a member written meanwhile is settled into the
+--   lists by its own commit once the job has passed its id, and read as it stands by the job otherwise.
+--   Until the job has read every member, the search reads as 20261122_29 left it; once it has, the
+--   lists are analysed for the planner and read.
 --   Words without three letters together in a row are searched as before.
 -- Undo: mobile/supabase/migrations-down/20261122_62_a_member_is_found_among_the_first_holders_of_a_piece.sql
 -- ════════════════════════════════════════════════════════════════════════════
@@ -120,19 +125,47 @@ CREATE INDEX IF NOT EXISTS member_grams_waiting_txid ON private.member_grams_wai
 -- add-only (1): no shipped client uses it: a table this car makes in private, which the API never serves (TestFlight build 41 and the website checked)
 REVOKE ALL ON private.member_grams_waiting FROM PUBLIC, anon, authenticated;
 
+-- How far the job has read: every member whose id sorts at or before `after` is listed (none while it is
+-- NULL), and `complete` once every member is. A member written is settled by its commit only once the
+-- job has passed it; the job and the settling take one lock (shared by the settling) while they read
+-- this row, so a member is never both missed by the job and passed over by the settling.
+CREATE TABLE IF NOT EXISTS private.member_grams_filled (
+  one      boolean PRIMARY KEY DEFAULT true CHECK (one),
+  after    uuid,
+  members  integer NOT NULL DEFAULT 0,
+  complete boolean NOT NULL DEFAULT false,
+  -- How many holders a piece lists at most: a thousand. Made smaller only on empty lists, as the car's
+  -- rehearsal lists its few planted members.
+  cap      integer NOT NULL DEFAULT 1000 CHECK (cap BETWEEN 1 AND 1000),
+  began    timestamptz NOT NULL DEFAULT now(),
+  ended    timestamptz
+);
+INSERT INTO private.member_grams_filled (one) VALUES (true) ON CONFLICT (one) DO NOTHING;
+-- add-only (1): no shipped client uses it: a table this car makes in private, which the API never serves (TestFlight build 41 and the website checked)
+REVOKE ALL ON private.member_grams_filled FROM PUBLIC, anon, authenticated;
+
 CREATE OR REPLACE FUNCTION private.member_grams_apply(p_gone private.member_grams[], p_came private.member_grams[]) RETURNS integer
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'pg_catalog', 'pg_temp'
     AS $$
 DECLARE
-  v_off  text[];
-  v_on   text[];
-  v_cut  text[] := '{}';
-  v_last text[] := '{}';
-  v_gram text;
-  v_at   text;
-  v_n    integer;
+  v_off_g text[];
+  v_off_n integer[];
+  v_on_g  text[];
+  v_on_n  integer[];
+  v_cut   text[] := '{}';
+  v_last  text[] := '{}';
+  v_gram  text;
+  v_k     integer;
+  v_at    text;
+  v_n     integer;
+  v_cap   integer;
 BEGIN
+  -- Nothing to settle (members the job has not reached): the lists not touched.
+  IF cardinality(p_gone) = 0 AND cardinality(p_came) = 0 THEN
+    RETURN 0;
+  END IF;
+  SELECT f.cap INTO v_cap FROM private.member_grams_filled f;
   -- A head for each new piece; then every piece touched, locked in one order.
   INSERT INTO private.member_gram_heads (gram, holders, listed, upto)
   SELECT DISTINCT c.gram, 0, 0, NULL::text FROM unnest(p_came) c ORDER BY 1
@@ -141,42 +174,47 @@ BEGIN
    WHERE h.gram IN (SELECT g.gram FROM unnest(p_gone) g UNION SELECT c.gram FROM unnest(p_came) c)
    ORDER BY h.gram FOR UPDATE;
   -- The leavers off the lists; the comers on, where their piece lists every holder or they sort at or
-  -- before its last.
+  -- before its last. Each counted by piece.
   WITH off AS (
     DELETE FROM private.member_grams m USING unnest(p_gone) g
      WHERE m.gram = g.gram AND m.username = g.username AND m.id = g.id
     RETURNING m.gram
-  ) SELECT coalesce(array_agg(off.gram), '{}') INTO v_off FROM off;
+  ) SELECT coalesce(array_agg(o.gram), '{}'), coalesce(array_agg(o.n), '{}') INTO v_off_g, v_off_n
+      FROM (SELECT off.gram, count(*)::integer AS n FROM off GROUP BY off.gram) o;
   WITH came AS (
     INSERT INTO private.member_grams (gram, username, id)
     SELECT c.gram, c.username, c.id FROM unnest(p_came) c JOIN private.member_gram_heads h ON h.gram = c.gram
      WHERE h.upto IS NULL OR c.username <= h.upto
     RETURNING gram
-  ) SELECT coalesce(array_agg(came.gram), '{}') INTO v_on FROM came;
-  -- A list past a thousand ends at its thousandth.
-  FOR v_gram IN
-    SELECT h.gram FROM private.member_gram_heads h
-     WHERE h.gram = ANY (v_on)
-       AND h.listed + (SELECT count(*) FROM unnest(v_on) o WHERE o = h.gram) - (SELECT count(*) FROM unnest(v_off) f WHERE f = h.gram) > 1000
+  ) SELECT coalesce(array_agg(o.gram), '{}'), coalesce(array_agg(o.n), '{}') INTO v_on_g, v_on_n
+      FROM (SELECT came.gram, count(*)::integer AS n FROM came GROUP BY came.gram) o;
+  -- A list past its cap (a thousand) ends at its thousandth: those past it go, the last of them first.
+  FOR v_gram, v_k IN
+    SELECT h.gram, h.listed + o.n - coalesce(f.n, 0) - v_cap
+      FROM unnest(v_on_g, v_on_n) o(gram, n) JOIN private.member_gram_heads h ON h.gram = o.gram
+      LEFT JOIN unnest(v_off_g, v_off_n) f(gram, n) ON f.gram = o.gram
+     WHERE h.listed + o.n - coalesce(f.n, 0) > v_cap
      ORDER BY h.gram
   LOOP
-    SELECT m.username INTO v_at FROM private.member_grams m WHERE m.gram = v_gram ORDER BY m.username OFFSET 999 LIMIT 1;
-    DELETE FROM private.member_grams m WHERE m.gram = v_gram AND m.username > v_at;
+    DELETE FROM private.member_grams m
+     WHERE m.gram = v_gram
+       AND m.username IN (SELECT x.username FROM private.member_grams x WHERE x.gram = v_gram ORDER BY x.username DESC LIMIT v_k);
+    SELECT max(m.username) INTO v_at FROM private.member_grams m WHERE m.gram = v_gram;
     v_cut := v_cut || v_gram;
     v_last := v_last || v_at;
   END LOOP;
   -- Each head written once: its holders by the change, its list as it now ends.
   UPDATE private.member_gram_heads h
      SET holders = h.holders + d.came - d.gone,
-         listed  = CASE WHEN c.last IS NOT NULL THEN 1000 ELSE h.listed + d.went_on - d.came_off END,
+         listed  = CASE WHEN c.last IS NOT NULL THEN v_cap ELSE h.listed + d.went_on - d.came_off END,
          upto    = CASE WHEN c.last IS NOT NULL THEN c.last
                         WHEN h.holders + d.came - d.gone = h.listed + d.went_on - d.came_off THEN NULL
                         ELSE h.upto END
     FROM (SELECT x.gram, sum(x.came) AS came, sum(x.gone) AS gone, sum(x.went_on) AS went_on, sum(x.came_off) AS came_off
             FROM (SELECT c.gram, 1 AS came, 0 AS gone, 0 AS went_on, 0 AS came_off FROM unnest(p_came) c
                   UNION ALL SELECT g.gram, 0, 1, 0, 0 FROM unnest(p_gone) g
-                  UNION ALL SELECT o, 0, 0, 1, 0 FROM unnest(v_on) o
-                  UNION ALL SELECT f, 0, 0, 0, 1 FROM unnest(v_off) f) x
+                  UNION ALL SELECT o.gram, 0, 0, o.n, 0 FROM unnest(v_on_g, v_on_n) o(gram, n)
+                  UNION ALL SELECT f.gram, 0, 0, 0, f.n FROM unnest(v_off_g, v_off_n) f(gram, n)) x
            GROUP BY x.gram) d
     LEFT JOIN (SELECT unnest(v_cut) AS gram, unnest(v_last) AS last) c ON c.gram = d.gram
    WHERE h.gram = d.gram;
@@ -212,19 +250,31 @@ CREATE OR REPLACE FUNCTION private.member_grams_settle() RETURNS trigger
     SET search_path TO 'pg_catalog', 'pg_temp'
     AS $$
 DECLARE
-  v_queued text := COALESCE(current_setting('reelhouse.member_grams_queued', true), '');
+  v_queued   text := COALESCE(current_setting('reelhouse.member_grams_queued', true), '');
+  v_complete boolean;
+  v_after    uuid;
 BEGIN
   -- Run once a written member as the transaction commits: the first settles everything waiting, the rest
   -- find nothing new.
   IF v_queued = '' OR v_queued = COALESCE(current_setting('reelhouse.member_grams_settled', true), '') THEN
     RETURN NULL;
   END IF;
+  -- While the job is filling the lists, only the members it has passed are settled here (it reads the
+  -- others as they stand): its lock is taken, shared, before its row is read, so a batch of the job
+  -- reads this transaction's writes once committed or lists them before this reads how far it went.
+  SELECT f.complete, f.after INTO v_complete, v_after FROM private.member_grams_filled f;
+  IF NOT v_complete THEN
+    PERFORM pg_advisory_xact_lock_shared(hashtext('private.member_grams_fill'));
+    SELECT f.complete, f.after INTO v_complete, v_after FROM private.member_grams_filled f;
+  END IF;
   -- Each member's net change to each piece: joined and left in one transaction is no change.
   PERFORM private.member_grams_apply(
     ARRAY(SELECT ROW(w.gram, w.username, w.id)::private.member_grams FROM private.member_grams_waiting w
-           WHERE w.txid = txid_current() GROUP BY w.gram, w.username, w.id HAVING sum(w.sign) < 0),
+           WHERE w.txid = txid_current() AND (v_complete OR w.id <= v_after)
+           GROUP BY w.gram, w.username, w.id HAVING sum(w.sign) < 0),
     ARRAY(SELECT ROW(w.gram, w.username, w.id)::private.member_grams FROM private.member_grams_waiting w
-           WHERE w.txid = txid_current() GROUP BY w.gram, w.username, w.id HAVING sum(w.sign) > 0));
+           WHERE w.txid = txid_current() AND (v_complete OR w.id <= v_after)
+           GROUP BY w.gram, w.username, w.id HAVING sum(w.sign) > 0));
   DELETE FROM private.member_grams_waiting WHERE txid = txid_current();
   PERFORM set_config('reelhouse.member_grams_settled', v_queued, true);
   RETURN NULL;
@@ -234,95 +284,86 @@ REVOKE ALL ON FUNCTION private.member_grams_of(text, text), private.member_patte
   private.member_grams_apply(private.member_grams[], private.member_grams[]),
   private.a_members_pieces_are_queued(), private.member_grams_settle() FROM PUBLIC, anon, authenticated;
 
--- ── the lists filled from the house as it stands ──
---   Each member's place in handle order, read once (handles compared once, never at each piece); every
---   piece each holds; then each piece's first thousand and its count, a quarter of the pieces at a time.
-CREATE TEMP TABLE member_grams_seen ON COMMIT DROP AS
-  SELECT p.id, p.username, p.display_name, row_number() OVER (ORDER BY p.username) AS r FROM public.profiles p;
-CREATE TEMP TABLE member_grams_held ON COMMIT DROP AS
-  SELECT (v.f || substr(v.x, i, 3)) COLLATE "C" AS gram, s.r
-    FROM member_grams_seen s
-   CROSS JOIN LATERAL (VALUES (lower(s.username), 'a'), (lower(s.display_name), 'a'), (lower(s.username), 'h')) v(x, f)
-   CROSS JOIN LATERAL generate_series(1, char_length(v.x) - 2) i;
-WITH ranked AS (
-  SELECT o.gram, o.r, row_number() OVER (PARTITION BY o.gram ORDER BY o.r) AS n, count(*) OVER (PARTITION BY o.gram) AS holders
-    FROM (SELECT DISTINCT h.gram, h.r FROM member_grams_held h WHERE (hashtext(h.gram) & 3) = 0) o
-), kept AS (
-  SELECT * FROM ranked WHERE n <= 1000
-), heads AS (
-  INSERT INTO private.member_gram_heads (gram, holders, listed, upto)
-  SELECT k.gram, k.holders, k.listed, CASE WHEN k.holders > k.listed THEN s.username END
-    FROM (SELECT gram, max(holders) AS holders, count(*) AS listed, max(r) AS last FROM kept GROUP BY gram) k
-    JOIN member_grams_seen s ON s.r = k.last
-)
-INSERT INTO private.member_grams (gram, username, id)
-SELECT k.gram, s.username, s.id FROM kept k JOIN member_grams_seen s ON s.r = k.r ORDER BY k.gram, k.r;
-WITH ranked AS (
-  SELECT o.gram, o.r, row_number() OVER (PARTITION BY o.gram ORDER BY o.r) AS n, count(*) OVER (PARTITION BY o.gram) AS holders
-    FROM (SELECT DISTINCT h.gram, h.r FROM member_grams_held h WHERE (hashtext(h.gram) & 3) = 1) o
-), kept AS (
-  SELECT * FROM ranked WHERE n <= 1000
-), heads AS (
-  INSERT INTO private.member_gram_heads (gram, holders, listed, upto)
-  SELECT k.gram, k.holders, k.listed, CASE WHEN k.holders > k.listed THEN s.username END
-    FROM (SELECT gram, max(holders) AS holders, count(*) AS listed, max(r) AS last FROM kept GROUP BY gram) k
-    JOIN member_grams_seen s ON s.r = k.last
-)
-INSERT INTO private.member_grams (gram, username, id)
-SELECT k.gram, s.username, s.id FROM kept k JOIN member_grams_seen s ON s.r = k.r ORDER BY k.gram, k.r;
-WITH ranked AS (
-  SELECT o.gram, o.r, row_number() OVER (PARTITION BY o.gram ORDER BY o.r) AS n, count(*) OVER (PARTITION BY o.gram) AS holders
-    FROM (SELECT DISTINCT h.gram, h.r FROM member_grams_held h WHERE (hashtext(h.gram) & 3) = 2) o
-), kept AS (
-  SELECT * FROM ranked WHERE n <= 1000
-), heads AS (
-  INSERT INTO private.member_gram_heads (gram, holders, listed, upto)
-  SELECT k.gram, k.holders, k.listed, CASE WHEN k.holders > k.listed THEN s.username END
-    FROM (SELECT gram, max(holders) AS holders, count(*) AS listed, max(r) AS last FROM kept GROUP BY gram) k
-    JOIN member_grams_seen s ON s.r = k.last
-)
-INSERT INTO private.member_grams (gram, username, id)
-SELECT k.gram, s.username, s.id FROM kept k JOIN member_grams_seen s ON s.r = k.r ORDER BY k.gram, k.r;
-WITH ranked AS (
-  SELECT o.gram, o.r, row_number() OVER (PARTITION BY o.gram ORDER BY o.r) AS n, count(*) OVER (PARTITION BY o.gram) AS holders
-    FROM (SELECT DISTINCT h.gram, h.r FROM member_grams_held h WHERE (hashtext(h.gram) & 3) = 3) o
-), kept AS (
-  SELECT * FROM ranked WHERE n <= 1000
-), heads AS (
-  INSERT INTO private.member_gram_heads (gram, holders, listed, upto)
-  SELECT k.gram, k.holders, k.listed, CASE WHEN k.holders > k.listed THEN s.username END
-    FROM (SELECT gram, max(holders) AS holders, count(*) AS listed, max(r) AS last FROM kept GROUP BY gram) k
-    JOIN member_grams_seen s ON s.r = k.last
-)
-INSERT INTO private.member_grams (gram, username, id)
-SELECT k.gram, s.username, s.id FROM kept k JOIN member_grams_seen s ON s.r = k.r ORDER BY k.gram, k.r;
-
--- The lists, known to the planner (new tables need their statistics).
--- add-only (1): no shipped client uses it: statistics, read by the planner alone
-ANALYZE private.member_gram_heads;
--- add-only (1): no shipped client uses it: statistics, read by the planner alone
-ANALYZE private.member_grams;
-
--- ── the triggers, then what was written meanwhile ──
---   The triggers' making holds the members' writes to the commit: those written since the house was read
---   above are taken off as they were read and listed as they stand, and no other is written meanwhile.
---   The house is read once for them (the members' writes wait only that long).
+-- ── the triggers ──
+--   Made on the empty lists: their making holds the members' writes only for itself, never for a read of
+--   the house. From their commit, every member written is queued, and settled once the job has passed it.
 -- add-only (3): it only fixes: every member joins, is renamed and leaves as before, and is listed (the rehearsal replays members joining, renamed and leaving, and compares the lists with the house read again); TestFlight build 41 and the website write as before
 CREATE OR REPLACE TRIGGER a_members_pieces_are_queued
   AFTER INSERT OR DELETE OR UPDATE OF username, display_name ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION private.a_members_pieces_are_queued();
--- add-only (3): it only fixes: every member joins, is renamed and leaves as before, and is listed as the transaction commits (the rehearsal settles members joining, renamed and leaving, and compares the lists with the house read again); TestFlight build 41 and the website write as before
+-- add-only (3): it only fixes: every member joins, is renamed and leaves as before, and is listed as the transaction commits (the rehearsal replays members joining, renamed and leaving, settles them, and compares the lists with the house read again); TestFlight build 41 and the website write as before
 CREATE CONSTRAINT TRIGGER a_members_pieces_are_settled
   AFTER INSERT OR DELETE OR UPDATE OF username, display_name ON public.profiles
   DEFERRABLE INITIALLY DEFERRED
   FOR EACH ROW EXECUTE FUNCTION private.member_grams_settle();
-CREATE TEMP TABLE member_grams_meanwhile ON COMMIT DROP AS
-  SELECT s.id AS was_id, s.username AS was_handle, s.display_name AS was_name, p.id, p.username, p.display_name
-    FROM member_grams_seen s FULL JOIN public.profiles p ON p.id = s.id
-   WHERE s.id IS NULL OR p.id IS NULL OR p.username IS DISTINCT FROM s.username OR p.display_name IS DISTINCT FROM s.display_name;
-SELECT private.member_grams_apply(
-  ARRAY(SELECT ROW(g, m.was_handle, m.was_id)::private.member_grams FROM member_grams_meanwhile m, unnest(private.member_grams_of(m.was_handle, m.was_name)) g WHERE m.was_id IS NOT NULL),
-  ARRAY(SELECT ROW(g, m.username, m.id)::private.member_grams FROM member_grams_meanwhile m, unnest(private.member_grams_of(m.username, m.display_name)) g WHERE m.id IS NOT NULL)) AS heads_written;
+
+-- ── the lists filled, five hundred members at a time ──
+--   One run lists the next members in the order of their ids (profiles_pkey), as they stand, and says how
+--   far it went; resumed by the next where it ended. Its lock is taken alone, and given up at once when
+--   a member's commit or another run holds it (each run is short, and the next tries again), so a
+--   member's write waits at most one run. The run after the last member marks the lists complete and
+--   analyses them, and where the house keeps its jobs the job then ends itself.
+CREATE OR REPLACE FUNCTION private.member_grams_fill(p_members integer DEFAULT 500) RETURNS text
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    SET lock_timeout TO '100ms'
+    AS $$
+DECLARE
+  v_after    uuid;
+  v_complete boolean;
+  v_came     private.member_grams[];
+  v_read     integer;
+  v_last     uuid;
+BEGIN
+  SELECT f.complete INTO v_complete FROM private.member_grams_filled f;
+  IF NOT v_complete THEN
+    -- Read again once the lock is held: the last run's end, and every member committed before it. Its
+    -- row is held too, and a run gives way at once to whoever holds it.
+    BEGIN
+      PERFORM pg_advisory_xact_lock(hashtext('private.member_grams_fill'));
+      SELECT f.complete, f.after INTO v_complete, v_after FROM private.member_grams_filled f FOR UPDATE NOWAIT;
+    EXCEPTION WHEN lock_not_available THEN
+      RETURN 'waited';
+    END;
+  END IF;
+  IF v_complete THEN
+    IF to_regclass('cron.job') IS NOT NULL THEN
+      PERFORM cron.unschedule(j.jobid) FROM cron.job j WHERE j.jobname = 'the-members-pieces-are-listed';
+    END IF;
+    RETURN 'complete';
+  END IF;
+  -- The next members after the last run's, each with every piece they hold.
+  WITH next AS (
+    SELECT p.id, p.username, p.display_name FROM public.profiles p
+     -- One range of the ids from the last run's end (the same plan at every run), its end itself left out.
+     WHERE p.id >= COALESCE(v_after, '00000000-0000-0000-0000-000000000000'::uuid) AND p.id IS DISTINCT FROM v_after
+     ORDER BY p.id LIMIT GREATEST(p_members, 1)
+  )
+  SELECT array_agg(ROW(g.g, n.username, n.id)::private.member_grams) FILTER (WHERE g.g IS NOT NULL),
+         count(DISTINCT n.id), (array_agg(n.id ORDER BY n.id DESC))[1]
+    INTO v_came, v_read, v_last
+    FROM next n LEFT JOIN LATERAL unnest(private.member_grams_of(n.username, n.display_name)) g(g) ON true;
+  IF v_read = 0 THEN
+    UPDATE private.member_grams_filled SET complete = true, ended = now();
+    ANALYZE private.member_gram_heads;
+    ANALYZE private.member_grams;
+    RETURN 'complete';
+  END IF;
+  PERFORM private.member_grams_apply('{}', COALESCE(v_came, '{}'));
+  UPDATE private.member_grams_filled SET after = v_last, members = members + v_read;
+  RETURN 'listed ' || v_read;
+END $$;
+-- add-only (1): no shipped client uses it: a function this car makes in private, run by the job alone (TestFlight build 41 and the website checked)
+REVOKE ALL ON FUNCTION private.member_grams_fill(integer) FROM PUBLIC, anon, authenticated;
+
+-- The job, where the house keeps its jobs (pg_cron): a run every second, so the members' writes wait at
+-- most one short run in a second while it lasts.
+DO $$
+BEGIN
+  IF to_regprocedure('cron.schedule(text,text,text)') IS NOT NULL THEN
+    PERFORM cron.schedule('the-members-pieces-are-listed', '1 seconds', 'SELECT private.member_grams_fill();');
+  END IF;
+END $$;
 
 -- ── the search, by the lists ──
 -- As 20261122_29 left it, but words with a piece of three are found by its list.
@@ -353,11 +394,13 @@ DECLARE
   -- The words' letters before their first wildcard, their escapes read: where a handle beginning with them starts.
   v_lead   text := regexp_replace(substring(COALESCE(p_pattern, '') from '^((?:[^%_\\]|\\.)*)'), '\\(.)', '\1', 'g');
   -- The words' pieces of three (private.member_pattern_grams): every holder of the words holds each,
-  -- anywhere ("a") or, for a search of handles alone, in the handle ("h"). Only once the reader's own
-  -- transaction has no member's write waiting to be settled (settled as it commits, so the lists do not
-  -- hold them yet): until then, searched as before.
+  -- anywhere ("a") or, for a search of handles alone, in the handle ("h"). Only once the job has listed
+  -- every member (private.member_grams_filled), and the reader's own transaction has no member's write
+  -- waiting to be settled (settled as it commits, so the lists do not hold them yet): until then,
+  -- searched as before.
   v_grams  text[] := CASE WHEN COALESCE(current_setting('reelhouse.member_grams_queued', true), '')
                                = COALESCE(current_setting('reelhouse.member_grams_settled', true), '')
+                           AND (SELECT f.complete FROM private.member_grams_filled f)
                           THEN (SELECT array_agg((CASE WHEN COALESCE(p_handles_only, false) THEN 'h' ELSE 'a' END || g) COLLATE "C")
                                   FROM unnest(private.member_pattern_grams(COALESCE(p_pattern, ''))) g) END;
   v_known  integer;
@@ -365,6 +408,9 @@ DECLARE
   v_gram   text;
   v_upto   text;
   v_listed boolean := false;
+  -- How many a gathering keeps before the handles are walked instead (a thousand); with a list, its cap
+  -- (a thousand): the list is walked instead.
+  v_wide   integer := 1000;
 BEGIN
   IF COALESCE(p_pattern, '') = '' THEN
     RETURN;
@@ -408,17 +454,18 @@ BEGIN
      LIMIT 1;
     v_listed := true;
     v_many := false;
+    SELECT f.cap INTO v_wide FROM private.member_grams_filled f;
     IF v_upto IS NULL THEN
       -- It lists every holder: whoever holds the words is among them, a thousand at most.
       EXECUTE format('SELECT array_agg(p.id) FROM private.member_grams g JOIN public.profiles p ON p.id = g.id WHERE g.gram = $2 AND COALESCE(%s, false) AND NOT COALESCE(p.id = ANY ($1), false)',
                      v_tests[4])
         INTO v_few USING v_hidden, v_gram;
-    ELSIF v_rare <= 5000 THEN
+    ELSIF v_rare <= 5 * v_wide THEN
       -- Its rarest piece of three letters or digits is held by 5,000 or fewer: the trigram indexes gather
       -- no more than they hold of it (a bitmap of all the words' trigrams, never a walk or a scan).
       PERFORM set_config('enable_seqscan', 'off', true); PERFORM set_config('enable_indexscan', 'off', true);
-      EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s AND NOT COALESCE(p.id = ANY ($1), false) LIMIT 1001) p',
-                     v_tests[4])
+      EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s AND NOT COALESCE(p.id = ANY ($1), false) LIMIT %s) p',
+                     v_tests[4], v_wide + 1)
         INTO v_few USING v_hidden;
       PERFORM set_config('enable_seqscan', v_seq, true); PERFORM set_config('enable_indexscan', v_index, true);
     ELSE
@@ -452,7 +499,7 @@ BEGIN
         INTO v_few USING v_hidden;
     END IF;
   END IF;
-  IF NOT v_many AND COALESCE(cardinality(v_few), 0) <= 1000 THEN
+  IF NOT v_many AND COALESCE(cardinality(v_few), 0) <= v_wide THEN
     RETURN QUERY
     SELECT m.id, m.username, m.avatar_url, m.role, m.closeness
       FROM (
@@ -493,14 +540,15 @@ BEGIN
         -- trigram indexes hold of a piece 5,000 or fewer hold).
         IF v_tier IN (1, 2) THEN PERFORM set_config('enable_bitmapscan', 'off', true); PERFORM set_config('enable_sort', 'off', true); END IF;
         IF v_tier = 3 AND v_listed THEN PERFORM set_config('enable_seqscan', 'off', true); PERFORM set_config('enable_indexscan', 'off', true); END IF;
-        EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s%s%s%s AND NOT COALESCE(p.id = ANY ($1), false)%s LIMIT 1001) p',
+        EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s%s%s%s AND NOT COALESCE(p.id = ANY ($1), false)%s LIMIT %s) p',
                        CASE WHEN v_short = '' OR v_tier < 3 THEN v_tests[v_tier + 1] ELSE format('COALESCE(%s, false)', v_tests[v_tier + 1]) END, v_not, v_past,
                        CASE WHEN v_tier = 3 THEN v_short ELSE '' END,
-                       CASE v_tier WHEN 1 THEN ' ORDER BY lower(p.username) USING ~<~' WHEN 2 THEN ' ORDER BY lower(p.display_name) USING ~<~' ELSE '' END)
+                       CASE v_tier WHEN 1 THEN ' ORDER BY lower(p.username) USING ~<~' WHEN 2 THEN ' ORDER BY lower(p.display_name) USING ~<~' ELSE '' END,
+                       v_wide + 1)
           INTO v_few USING v_hidden;
         IF v_tier IN (1, 2) THEN PERFORM set_config('enable_bitmapscan', v_bitmap, true); PERFORM set_config('enable_sort', v_sort, true); END IF;
         IF v_tier = 3 AND v_listed THEN PERFORM set_config('enable_seqscan', v_seq, true); PERFORM set_config('enable_indexscan', v_index, true); END IF;
-        v_walk := COALESCE(cardinality(v_few), 0) > 1000;
+        v_walk := COALESCE(cardinality(v_few), 0) > v_wide;
       END IF;
       IF NOT v_walk THEN
         RETURN QUERY

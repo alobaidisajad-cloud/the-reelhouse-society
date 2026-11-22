@@ -10,6 +10,10 @@
  *      (applied and committed by their own B): its migration and its cases, in one transaction
  *      that is rolled back;
  *   B. its migration applied, one transaction, as apply.cjs applies it.
+ * Then C: each paced job the train scheduled (pg_cron, every few seconds: what fills a car's new lists a
+ * short run at a time, then ends itself) is watched to its end, from pg_cron's run history, or run here at
+ * its pace where no scheduler runs it. A run holds what members' writes wait on, so a run over HELD_MS
+ * fails as a lock would, and so does a job that has not ended itself within JOB_LIMIT_MS.
  * Each index built CONCURRENTLY comes first, alone and outside any transaction, as the train
  * builds it, so the rehearsals after it read through it. The train's probe after each apply is
  * not run here: it is A's cases without the migration, so it takes no lock A did not and holds
@@ -126,6 +130,75 @@ function measure(label, args, dir, n) {
   return { label, ok: r.status === 0, out, ms: Date.now() - began, statements: statementsIn(out), holds: holds(samplesIn(read(files.samples))) };
 }
 
+/** A paced job the train schedules (pg_cron, every few seconds) must end itself within this. */
+export const JOB_LIMIT_MS = 60 * 60 * 1000;
+/** A job scheduled every few seconds: one that fills what a car made, a short run at a time, then ends itself. */
+export const paced = (schedule) => /^\d+ seconds?$/.test(schedule.trim());
+
+/**
+ * A paced job's verdict, from each run's time and its whole window: a run holds what members' writes
+ * wait on (the job's lock), so a run over HELD_MS fails as a lock would; and a job that has not ended
+ * itself within JOB_LIMIT_MS fails.
+ */
+export function jobVerdict({ name, runs, windowMs, ended, driven }) {
+  const sorted = [...runs].sort((a, b) => a - b);
+  const longest = sorted[sorted.length - 1] ?? 0;
+  const middle = sorted[Math.floor(sorted.length / 2)] ?? 0;
+  const tooLong = longest > HELD_MS;
+  const fault = tooLong || !ended;
+  const how = driven ? 'run here at its pace (no scheduler)' : 'run by pg_cron';
+  return {
+    fault,
+    lines: [
+      `${ended ? 'ran' : 'DID NOT END'}  C · job ${name}, ${how}: ${runs.length} runs over ${Math.round(windowMs / 1000)} s`,
+      `    ${tooLong ? 'TOO LONG' : 'run     '}  ${String(Math.round(longest)).padStart(6)} ms at most, ${Math.round(middle)} ms the middle run  (members' writes wait at most one run)`,
+    ],
+  };
+}
+
+const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+const rows = (sql) => {
+  const r = spawnSync('psql', [DB, '-X', '-q', '-t', '-A', '-F', '\t', '-c', sql], { encoding: 'utf8' });
+  return r.status === 0 ? r.stdout.split(/\r?\n/).filter(Boolean).map((l) => l.split('\t')) : null;
+};
+/** The scheduled jobs, by name: none where the house keeps no jobs. */
+const cronJobs = () => (rows("SELECT to_regclass('cron.job') IS NOT NULL")?.[0]?.[0] === 't'
+  ? new Map((rows('SELECT jobname, jobid, schedule, command FROM cron.job') ?? []).map(([name, id, schedule, command]) => [name, { name, id, schedule, command }]))
+  : new Map());
+
+/**
+ * One paced job watched to its end: pg_cron's own runs, read from its run history; or, where no run of
+ * it is seen to succeed within 30 seconds (a copy whose scheduler is not running, or cannot sign in), its
+ * command run here at its pace, each run timed with psql's own start (so a little longer than the run),
+ * until it ends itself (it leaves the scheduled jobs).
+ */
+function watchJob(job) {
+  const began = Date.now();
+  const pace = Number.parseInt(job.schedule, 10) * 1000;
+  const runsOf = () => (rows(`SELECT extract(epoch FROM start_time) * 1000, extract(epoch FROM end_time) * 1000 FROM cron.job_run_details WHERE jobid = ${job.id} AND status = 'succeeded' AND end_time IS NOT NULL ORDER BY start_time`) ?? [])
+    .map(([s, e]) => [+s, +e]);
+  const live = () => cronJobs().has(job.name);
+  let driven = false;
+  const timed = [];
+  while (live() && Date.now() - began < JOB_LIMIT_MS) {
+    if (!driven && runsOf().length === 0 && Date.now() - began > 30_000) driven = true;
+    if (driven) {
+      const t = Date.now();
+      rows(job.command);
+      timed.push([t, Date.now()]);
+    }
+    sleep(pace);
+  }
+  const runs = driven ? timed : runsOf();
+  return jobVerdict({
+    name: job.name,
+    runs: runs.map(([s, e]) => e - s),
+    windowMs: runs.length ? runs[runs.length - 1][1] - runs[0][0] : 0,
+    ended: !live(),
+    driven,
+  });
+}
+
 /**
  * The runs, from the train's own steps, in its own order, car by car in name order: an index
  * built alone in its turn (as production builds it, the cars after it then read through it),
@@ -149,7 +222,16 @@ function main() {
     return;
   }
   const dir = mkdtempSync(join(tmpdir(), 'train-locks-'));
-  const runs = runsOf(p.steps, train.psqlArgs).map((r, n) => measure(r.label, r.args, dir, n));
+  // The paced jobs the train schedules, seen after each run (one may end itself before the train does).
+  const jobsBefore = cronJobs();
+  const scheduled = new Map();
+  const runs = runsOf(p.steps, train.psqlArgs).map((r, n) => {
+    const m = measure(r.label, r.args, dir, n);
+    for (const j of cronJobs().values()) if (!jobsBefore.has(j.name) && paced(j.schedule)) scheduled.set(j.name, j);
+    return m;
+  });
+  // C: each, watched to its end (the reads below are timed on what it filled).
+  const jobs = [...scheduled.values()].map(watchJob);
 
   const lines = [];
   let failed = false;
@@ -166,8 +248,12 @@ function main() {
       if (h.fault) failed = true;
     }
   }
+  for (const j of jobs) {
+    lines.push(...j.lines);
+    if (j.fault) failed = true;
+  }
   const report = [`The train on 100,000 members, car by car: ${runs.length} runs; a blocking lock may be held ${HELD_MS} ms at most.`,
-    'A: a car rehearsed, rolled back, on the house the cars before it left. B: a car applied, committed.', '', ...lines, ''].join('\n');
+    'A: a car rehearsed, rolled back, on the house the cars before it left. B: a car applied, committed. C: a job the train scheduled, to its end.', '', ...lines, ''].join('\n');
   console.log(report);
   writeFileSync(join(process.env.RUNNER_TEMP ?? dir, 'lock-report.txt'), report);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n### Locks\n\n\`\`\`\n${report}\n\`\`\`\n`);
@@ -176,11 +262,16 @@ function main() {
 
 // `--holds` and a file of saved samples, or `--statements` and psql's saved output: the reading
 // alone. `--runs` and a file of { pending, rehearsals } (train.cjs's plan's own inputs): the runs
-// that train would be measured in, with no database.
+// that train would be measured in, with no database. `--job` and a file of a job's runs: its verdict;
+// `--paced` and a schedule: whether a job of it is watched to its end.
 const at = process.argv.indexOf('--holds');
 const timed = process.argv.indexOf('--statements');
 const planned = process.argv.indexOf('--runs');
+const job = process.argv.indexOf('--job');
+const pace = process.argv.indexOf('--paced');
 if (at >= 0) console.log(JSON.stringify(holds(JSON.parse(readFileSync(process.argv[at + 1], 'utf8')))));
+else if (pace >= 0) console.log(JSON.stringify(paced(process.argv[pace + 1])));
+else if (job >= 0) console.log(JSON.stringify(jobVerdict(JSON.parse(readFileSync(process.argv[job + 1], 'utf8')))));
 else if (timed >= 0) console.log(JSON.stringify(statementsIn(readFileSync(process.argv[timed + 1], 'utf8'))));
 else if (planned >= 0) {
   const train = require(join(MOBILE, 'supabase', 'diagnostics', 'train.cjs'));

@@ -126,7 +126,7 @@ describe('members too many to narrow are said, never silence (20261122_62, TOO_W
   it('ALL with no member drawn says so above the rest, and the People tab counts "0+"', async () => {
     mockSearch.mockReturnValue(answer({ wide: { ...none, users: true } }));
     const r = await searched();
-    expect(r.getByText('Too many members answer to those letters. Add more letters to narrow the members.')).toBeTruthy();
+    expect(r.getByText('Too many members answer to those letters. Add more letters to narrow the search.')).toBeTruthy();
     expect(r.getByRole('tab', { name: 'People, 0 or more results' })).toBeTruthy();
   });
 
@@ -134,8 +134,10 @@ describe('members too many to narrow are said, never silence (20261122_62, TOO_W
     mockSearch.mockReturnValue(answer({ wide: { ...none, users: true } }));
     const r = await searched();
     await fireEvent.press(r.getByRole('tab', { name: 'People, 0 or more results' }));
-    expect(r.getByText('TOO MANY ANSWER TO THOSE LETTERS')).toBeTruthy();
-    expect(r.getByText('Add more letters to narrow the members.')).toBeTruthy();
+    expect(r.getByText('TOO MANY MEMBERS ANSWER TO THOSE LETTERS')).toBeTruthy();
+    // Read aloud in the same words as it shows, as a sentence rather than capitals.
+    expect(r.getByLabelText('Too many members answer to those letters.')).toBeTruthy();
+    expect(r.getByText('Add more letters to narrow the search.')).toBeTruthy();
     expect(r.queryByText('THE ARCHIVE RETURNS SILENCE')).toBeNull();
     expect(r.getByText('0+ RESULTS')).toBeTruthy();
   });
@@ -146,7 +148,7 @@ describe('members too many to narrow are said, never silence (20261122_62, TOO_W
     const r = await searched();
     await fireEvent.press(r.getByRole('tab', { name: 'People, 2 or more results' }));
     expect(r.getByText('@kane1')).toBeTruthy();
-    expect(r.getByText('Add more letters to narrow the members.')).toBeTruthy();
+    expect(r.getByText('Add more letters to narrow the search.')).toBeTruthy();
     expect(r.getByText('2+ RESULTS')).toBeTruthy();
     expect(r.queryByRole('button', { name: 'More from the archive' })).toBeNull();
   });
