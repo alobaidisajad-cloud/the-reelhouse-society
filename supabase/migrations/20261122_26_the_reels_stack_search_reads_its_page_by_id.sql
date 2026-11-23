@@ -42,19 +42,28 @@ CREATE OR REPLACE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search te
   -- in about 33 or more, so the walk meets its page within some 2,000 stacks, and no index that gathers
   -- every holder is read ("m1" gathered 11,112 members of 100,000 from the short pieces, in
   -- proportion to the house).
+  -- How many of the newest 300 hold the words (to 9 for 60), and so how far the walk would go for its page:
+  -- a page in 300 / hits stacks. The matches are counted to that reach at most (1,000 when none of the 300
+  -- holds them), and walked only when they are as many: a word one stack in 75 holds ("stack 12", 1,110
+  -- stacks at 500,000 members, load 45122008179) is read by its matches, never walked through 4,500 stacks
+  -- (13,406 rows, 109.8 ms). Either way a search reads at most its reach, whatever the house's size.
+  sampled AS MATERIALIZED (
+    SELECT s.hits, CASE WHEN s.hits > 0 THEN GREATEST(1000, p_limit * 300 / s.hits) ELSE 1000 END AS reach
+      FROM (SELECT count(*)::integer AS hits FROM (
+              SELECT 1 FROM (SELECT l.title, l.user_id FROM lists l
+                              WHERE l.is_private = false
+                              ORDER BY l.created_at DESC, l.id DESC
+                              LIMIT 300) w
+               WHERE COALESCE(w.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\', false)
+                  OR COALESCE((SELECT pu.username FROM profiles pu WHERE pu.id = w.user_id)
+                                ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\', false)
+               LIMIT GREATEST(p_limit * 3 / 20, 1)) newest) s
+  ),
   many AS MATERIALIZED (
     SELECT CASE WHEN COALESCE(p_search, '') = '' OR (p_search !~ '[[:alnum:]]{3}' AND (SELECT grams FROM short) IS NULL) THEN true
-                WHEN (SELECT count(*) FROM (
-                        SELECT 1 FROM (SELECT l.title, l.user_id FROM lists l
-                                        WHERE l.is_private = false
-                                        ORDER BY l.created_at DESC, l.id DESC
-                                        LIMIT 300) w
-                         WHERE COALESCE(w.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\', false)
-                            OR COALESCE((SELECT pu.username FROM profiles pu WHERE pu.id = w.user_id)
-                                          ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\', false)
-                         LIMIT GREATEST(p_limit * 3 / 20, 1)) newest) >= GREATEST(p_limit * 3 / 20, 1) THEN true
+                WHEN (SELECT hits FROM sampled) >= GREATEST(p_limit * 3 / 20, 1) THEN true
                 WHEN p_search !~ '[[:alnum:]]{3}' THEN (
-      SELECT count(*) >= 1000 FROM (
+      SELECT count(*) >= (SELECT reach FROM sampled) FROM (
         SELECT l.id FROM lists l
          WHERE l.is_private = false
            AND private.search_grams(l.title, l.description) @> (SELECT grams FROM short)
@@ -64,10 +73,10 @@ CREATE OR REPLACE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search te
          CROSS JOIN LATERAL (SELECT l.id FROM lists l WHERE l.user_id = pu.id AND l.is_private = false OFFSET 0) l
          WHERE private.search_grams(pu.username, pu.display_name) @> (SELECT grams FROM short)
            AND COALESCE(pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\', false)
-        LIMIT 1000
+        LIMIT (SELECT reach FROM sampled)
       ) counted_short)
                 ELSE (
-      SELECT count(*) >= 1000 FROM (
+      SELECT count(*) >= (SELECT reach FROM sampled) FROM (
         SELECT l.id FROM lists l
          WHERE l.is_private = false
            AND l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
@@ -77,7 +86,7 @@ CREATE OR REPLACE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search te
         SELECT l.id FROM profiles pu
          CROSS JOIN LATERAL (SELECT l.id FROM lists l WHERE l.user_id = pu.id AND l.is_private = false OFFSET 0) l
          WHERE pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
-        LIMIT 1000
+        LIMIT (SELECT reach FROM sampled)
       ) counted) END AS walk
   ),
   -- The matches of a few, newest first, before anything is asked of them.

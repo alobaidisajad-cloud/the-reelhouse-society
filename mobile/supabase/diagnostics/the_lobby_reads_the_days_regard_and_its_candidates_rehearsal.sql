@@ -34,9 +34,13 @@ CREATE TEMP TABLE lr_cast ON COMMIT DROP AS
 SELECT pg_temp.rh_need('four members who are not admins, banned or private', (SELECT count(*) FROM lr_cast), 4) AS done \gset rh_
 GRANT SELECT ON lr_cast TO authenticated;
 DELETE FROM public.user_blocks WHERE blocker_id IN (SELECT id FROM lr_cast) AND blocked_id IN (SELECT id FROM lr_cast);
--- Today's edition: its moment 00:00 UTC; everything below made in the minutes before it.
+-- The edition of 2 January 2001: its moment 00:00 UTC; everything below made in the minutes before it. A day
+-- before the house's first piece, so the only pieces older than the edition are the ones made here: the chooser
+-- as production held it reads every piece older than its edition (load 45122008179: past 30 s at 500,000
+-- members, under the car's locks), and here it reads these alone, as the new chooser does.
 CREATE TEMP TABLE lr_clock ON COMMIT DROP AS
-  SELECT (now() AT TIME ZONE 'UTC')::date AS today, ((now() AT TIME ZONE 'UTC')::date)::timestamp AT TIME ZONE 'UTC' AS moment;
+  SELECT date '2001-01-02' AS today, (date '2001-01-02')::timestamp AT TIME ZONE 'UTC' AS moment;
+SELECT pg_temp.rh_case('no record of the house is older than the edition', '0', (SELECT count(*) FROM public.logs WHERE created_at < (SELECT moment FROM lr_clock))::text) AS done \gset rh_
 -- The house's own record set aside: the only honours and Lobby notices are the ones made here.
 DELETE FROM public.notifications WHERE type = 'featured';
 DELETE FROM public.lobby_editions;
@@ -308,7 +312,7 @@ SELECT pg_temp.rh_case('the job takes more steps than a draft has stages, and le
 SELECT private.lobby_edition_begun() AS begun \gset lr_
 SELECT pg_temp.rh_case('the hourly lobby-edition job begins the day''s draft, and its job is put on the schedule', 'drafted|true|true|true',
   :'lr_begun' || '|'
-  || (EXISTS (SELECT 1 FROM private.lobby_drafts d WHERE d.edition = (SELECT today FROM lr_clock)))::text || '|'
+  || (EXISTS (SELECT 1 FROM private.lobby_drafts d WHERE d.edition = (now() AT TIME ZONE 'UTC')::date))::text || '|'
   || (pg_temp.lr_job('the-lobby-edition-is-drafted') IN ('no jobs', '1 seconds SELECT private.lobby_edition_drafted();'))::text || '|'
   || (pg_temp.lr_job('lobby-edition') IN ('no jobs', '5 * * * * SELECT private.lobby_edition_begun();'))::text) AS done \gset rh_
 
