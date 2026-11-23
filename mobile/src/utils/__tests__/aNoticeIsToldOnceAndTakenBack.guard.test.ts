@@ -103,7 +103,7 @@ const WRITERS: Record<string, Judged> = {
   'public.lift_sanction': { back: 'a lift is the house\'s record to the member', once: 'once a sanction: a lifted sanction is refused again (NOT_SANCTIONED)' },
   'public.judge_appeal': { back: 'a heard appeal is the house\'s record to the member', once: 'once an appeal: an appeal heard is refused again (ALREADY_JUDGED)' },
   'public.give_back_withheld_piece': { back: 'a piece given back is the house\'s record to its author', once: 'once a piece: a piece given back is no longer withheld' },
-  'public.lobby_choose_edition': { back: 'the Lobby\'s edition is the house\'s, turned once a day', once: 'once a day and edition (its own check), and never pushed' },
+  'private.lobby_edition_step': { back: 'the Lobby\'s edition is the house\'s, turned once a day', once: 'once an edition: written in the step that places it, which ends its draft (an edition chosen is never drafted again); once a piece (its own check); never pushed' },
   'public.notify_on_dossier_certify': { back: 'a legacy table no member writes any more (matrix: insert none)', once: 'as the legacy writer wrote it' },
   'public.notify_on_dossier_comment': { back: 'a legacy table no member writes any more (matrix: insert none)', once: 'as the legacy writer wrote it' },
 };

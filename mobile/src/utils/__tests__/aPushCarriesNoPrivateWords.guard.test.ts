@@ -46,7 +46,7 @@ const VALUES: Record<string, Record<string, string>> = {
     v_banned: 'compared only: which of two fixed phrases',
     v_reason: "the house's reason, written by its moderator to the member about the pause or closing it lifts on their own account (cleaned as a member's words are)",
   },
-  lobby_choose_edition: {
+  lobby_edition_step: {
     'e.slot': 'compared only: which of three fixed sentences',
   },
   notify_on_dossier_certify: { v_title: "the recipient's own dossier's title" },

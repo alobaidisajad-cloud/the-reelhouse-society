@@ -367,7 +367,7 @@ END $$;
 -- ── the edition, chosen to the end ──
 --   As production holds it, called by itself (the rehearsals, the seeds): every step of the day's draft
 --   taken in this one transaction.
--- add-only (3): it only fixes: the same edition, places and notices for every day (the rehearsal chooses an edition with the old reading and the new and compares them); run by the rehearsals and the seeds, the schedule now drawing it up a step at a time
+-- add-only (3): it only fixes: the same edition, places and notices for every day (the rehearsal replays an edition chosen by the old reading and by the new, and compares them); run by the rehearsals and the seeds, the schedule now drawing it up a step at a time
 CREATE OR REPLACE FUNCTION public.lobby_choose_edition(p_edition date DEFAULT ((now() AT TIME ZONE 'UTC'::text))::date) RETURNS integer
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
