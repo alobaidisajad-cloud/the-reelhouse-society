@@ -50,6 +50,7 @@ const readsEveryJob = (text: string) => [...text.matchAll(/\bFROM cron\.job\b(?!
 /** Scripts that read the schedule as state, by design, each with its reason. */
 const JUDGED: Record<string, string> = {
   'e2e/load/train-locks.mjs': 'it watches each job a car puts on the schedule until it ends: whether the job stands is what it reads, as state, and it compares no schedule with another',
+  'supabase/diagnostics/pretrain.cjs': 'its stand-in for pg_cron makes the schedule\'s table and the calls that keep it, so a copy of production restores whole; it reads no job and compares no schedule',
 };
 
 const HOUSE = read();

@@ -21,7 +21,7 @@
 // The database is dropped at the end either way (PRETRAIN_KEEP=1 keeps it). The address is never
 // printed; the whole run is kept in <private>/pretrain/.
 const { spawnSync } = require('child_process');
-const { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } = require('fs');
+const { appendFileSync, existsSync, mkdirSync, writeFileSync } = require('fs');
 const { homedir } = require('os');
 const { delimiter, join } = require('path');
 
@@ -36,7 +36,7 @@ const SUPER = process.env.PRETRAIN_SUPERUSER || 'pretrain';
 const exe = (name) => join(PG_BIN, process.platform === 'win32' ? `${name}.exe` : name);
 const local = (db, user) => `postgresql://${user}@localhost:${PORT}/${db}`;
 
-/** Settings whose value is a list psql must not quote as one word (as pg_dumpall writes them). */
+/** Settings whose value is a list, not to be quoted as one word (as PostgreSQL's own dump of roles writes them). */
 const LISTS = new Set(['search_path', 'session_preload_libraries', 'shared_preload_libraries',
   'local_preload_libraries', 'temp_tablespaces', 'unix_socket_directories']);
 const ident = (s) => `"${String(s).replace(/"/g, '""')}"`;
