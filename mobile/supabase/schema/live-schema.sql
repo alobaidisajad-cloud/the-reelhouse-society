@@ -879,6 +879,52 @@ END $$;
 
 
 --
+-- Name: a_critique_takes_its_notice(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.a_critique_takes_its_notice() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_group text;
+  v_left  boolean;
+BEGIN
+  -- The piece the critique was on, as its notice's group names it, and whether its member has
+  -- another critique there still.
+  IF TG_TABLE_NAME = 'log_comments' THEN
+    v_group := 'endorse:log:' || OLD.log_id;
+    v_left := EXISTS (SELECT 1 FROM public.log_comments WHERE log_id = OLD.log_id AND user_id = OLD.user_id);
+  ELSIF TG_TABLE_NAME = 'list_comments' THEN
+    v_group := 'endorse:list:' || OLD.list_id;
+    v_left := EXISTS (SELECT 1 FROM public.list_comments WHERE list_id = OLD.list_id AND user_id = OLD.user_id);
+  ELSIF TG_TABLE_NAME = 'dispatch_comments' THEN
+    v_group := 'endorse:post:' || OLD.post_id;
+    v_left := EXISTS (SELECT 1 FROM public.dispatch_comments WHERE post_id = OLD.post_id AND user_id = OLD.user_id);
+  ELSE
+    RETURN NULL;
+  END IF;
+
+  -- The notices naming this critique: its own, and the answer's (a filing's critique taken as its answer).
+  DELETE FROM public.notifications
+   WHERE from_user_id = OLD.user_id
+     AND type = 'comment'
+     AND group_key = v_group
+     AND metadata ->> 'comment_id' = OLD.id::text;
+
+  -- A notice written before notices named their critique: taken once its member has none left there.
+  IF NOT v_left THEN
+    DELETE FROM public.notifications
+     WHERE from_user_id = OLD.user_id
+       AND type = 'comment'
+       AND group_key = v_group
+       AND NOT (coalesce(metadata, '{}'::jsonb) ? 'comment_id');
+  END IF;
+  RETURN NULL;
+END $$;
+
+
+--
 -- Name: a_deleted_stack_leaves_its_cards(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -6414,10 +6460,11 @@ BEGIN
     SELECT user_id, title INTO target_user, v_title FROM public.lists WHERE id = NEW.list_id;
 
     IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
-        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, group_key)
+        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, group_key, metadata)
         VALUES (target_user, 'comment', sender_user, NEW.user_id,
                 'left a critique on your stack “' || COALESCE(v_title, 'Untitled') || '”.',
-                'endorse:list:' || NEW.list_id);
+                'endorse:list:' || NEW.list_id,
+                jsonb_build_object('comment_id', NEW.id));
     END IF;
 
     RETURN NEW;
@@ -6442,10 +6489,11 @@ BEGIN
     SELECT user_id, film_title INTO target_user, target_film_title FROM public.logs WHERE id = NEW.log_id;
 
     IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
-        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, group_key)
+        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, group_key, metadata)
         VALUES (target_user, 'comment', sender_user, NEW.user_id,
                 'left a critique on your log of ' || COALESCE(target_film_title, 'a film') || '.',
-                'endorse:log:' || NEW.log_id);
+                'endorse:log:' || NEW.log_id,
+                jsonb_build_object('comment_id', NEW.id));
     END IF;
 
     RETURN NEW;
@@ -11841,6 +11889,27 @@ CREATE TRIGGER a_critique_has_its_page BEFORE INSERT ON public.log_comments FOR 
 
 
 --
+-- Name: dispatch_comments a_critique_takes_its_notice; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_critique_takes_its_notice AFTER DELETE ON public.dispatch_comments FOR EACH ROW EXECUTE FUNCTION public.a_critique_takes_its_notice();
+
+
+--
+-- Name: list_comments a_critique_takes_its_notice; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_critique_takes_its_notice AFTER DELETE ON public.list_comments FOR EACH ROW EXECUTE FUNCTION public.a_critique_takes_its_notice();
+
+
+--
+-- Name: log_comments a_critique_takes_its_notice; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_critique_takes_its_notice AFTER DELETE ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.a_critique_takes_its_notice();
+
+
+--
 -- Name: lists a_deleted_stack_leaves_its_cards; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -15154,6 +15223,14 @@ GRANT ALL ON FUNCTION public.a_certification_takes_its_notice() TO service_role;
 
 REVOKE ALL ON FUNCTION public.a_critique_has_its_page() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.a_critique_has_its_page() TO service_role;
+
+
+--
+-- Name: FUNCTION a_critique_takes_its_notice(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.a_critique_takes_its_notice() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.a_critique_takes_its_notice() TO service_role;
 
 
 --

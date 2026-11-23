@@ -464,8 +464,6 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/diagnostics/every_members_write_is_paced_rehearsal.sql | — |  |
 | mobile/test-utils/house.d.ts | — |  |
 | mobile/supabase/diagnostics/a_critique_takes_its_notice_rehearsal.sql | — |  |
-| mobile/supabase/migrations-down/20261122_02_a_critique_takes_its_notice.sql | — |  |
-| supabase/migrations/20261122_02_a_critique_takes_its_notice.sql | — |  |
 | mobile/supabase/diagnostics/a_judge_never_rules_on_their_own_case_rehearsal.sql | — |  |
 | mobile/supabase/migrations-down/20261122_03_a_judge_never_rules_on_their_own_case.sql | — |  |
 | supabase/migrations/20261122_03_a_judge_never_rules_on_their_own_case.sql | — |  |

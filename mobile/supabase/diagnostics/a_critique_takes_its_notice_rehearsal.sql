@@ -1,9 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_critique_takes_its_notice_rehearsal.sql — 20261122_02. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_critique_takes_its_notice_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_critique_takes_its_notice_rehearsal.sql
 --
--- The train applies 20261122_02 here (with_train), every car before it already applied; a sealed copy already holds it.
+-- 20261122_02 is applied on production (the train of 2026-11-23); this shows it still holds there, and on every sealed copy.
 -- Then members in good standing, acting as themselves, critique a record, a stack and a filing and
 -- delete their critiques, and find each notice leave with its critique (stage C, the kinds pass).
 -- Every row here is undone with the transaction. Read each NOTICE as  case|expected|got ; the last
@@ -40,22 +40,6 @@ DELETE FROM public.user_blocks
  WHERE (blocker_id IN (SELECT critic FROM ctn_critic) AND blocked_id IN (SELECT author FROM ctn_pieces))
     OR (blocked_id IN (SELECT critic FROM ctn_critic) AND blocker_id IN (SELECT author FROM ctn_pieces));
 
--- A notice of a critique deleted before the car, written as the old writers wrote it: orphaned.
-INSERT INTO public.notifications (user_id, type, from_user_id, message, group_key)
-SELECT k.author, 'comment', c.critic, 'left a critique on your rehearsal piece (orphaned).', 'endorse:' || k.kind || ':' || k.piece
-  FROM ctn_pieces k JOIN ctn_critic c USING (kind)
- WHERE k.kind <> 'post'
-   AND NOT EXISTS (SELECT 1 FROM public.log_comments x WHERE k.kind = 'log' AND x.log_id = k.piece AND x.user_id = c.critic)
-   AND NOT EXISTS (SELECT 1 FROM public.list_comments x WHERE k.kind = 'list' AND x.list_id = k.piece AND x.user_id = c.critic);
-
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_02_a_critique_takes_its_notice.sql
-SELECT pg_temp.rh_case('the notices of critiques already deleted are taken by the car', '0',
-  (SELECT count(*)::text FROM public.notifications
-    WHERE from_user_id IN (SELECT critic FROM ctn_critic) AND message = 'left a critique on your rehearsal piece (orphaned).')) AS done \gset rh_
-\endif
 
 -- ── a critique takes its notice ──
 RESET ROLE;
