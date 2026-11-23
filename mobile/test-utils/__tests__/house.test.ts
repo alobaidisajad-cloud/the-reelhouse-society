@@ -33,6 +33,13 @@ describe('the house reader, on planted text', () => {
       .map((x) => [x.timing, x.events, x.level, x.fn])).toEqual([['AFTER', ['DELETE'], 'STATEMENT', 'public.h']]);
   });
 
+  it('reads a trigger on two or more columns, and one that keeps the statement\'s rows', () => {
+    const t = 'CREATE TRIGGER a_clean BEFORE INSERT OR UPDATE OF review, pull_quote ON public.logs FOR EACH ROW EXECUTE FUNCTION public.clean();\n'
+      + 'CREATE TRIGGER moved AFTER UPDATE ON public.logs REFERENCING OLD TABLE AS moved_out NEW TABLE AS moved_in FOR EACH STATEMENT EXECUTE FUNCTION public.move();\n';
+    expect(triggersOn(read(t), 'logs').map((x) => [x.name, x.events, x.level, x.fn]))
+      .toEqual([['a_clean', ['INSERT', 'UPDATE'], 'ROW', 'public.clean'], ['moved', ['UPDATE'], 'STATEMENT', 'public.move']]);
+  });
+
   it('reads a row rule whole, altered and dropped', () => {
     const p = 'CREATE POLICY "own rows" ON public.t AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK ((user_id = ( SELECT auth.uid() AS uid)));\n';
     expect([...read(p).policies.values()].map((x) => [x.name, x.cmd, x.restrictive, x.roles, x.check]))

@@ -157,7 +157,8 @@ function read(sql, { pendingFrom = 0 } = {}) {
       if (fn && /\bSECURITY\s+DEFINER\b/i.test(text)) fn.definer = true;
       if (fn && /\bSECURITY\s+INVOKER\b/i.test(text)) fn.definer = false;
     } else if (kind.includes('TRIGGER') && kind.startsWith('CREATE')) {
-      const t = /TRIGGER\s+("?\w+"?)\s+(BEFORE|AFTER|INSTEAD OF)\s+([\w\s]+?)\s+ON\s+("?\w+"?(?:\."?\w+"?)?)[\s\S]*?EXECUTE\s+(?:FUNCTION|PROCEDURE)\s+("?\w+"?(?:\."?\w+"?)?)\s*\(([^)]*)\)/i.exec(text);
+      // The events with their columns (UPDATE OF review, pull_quote): a trigger on two or more columns is read too.
+      const t = /TRIGGER\s+("?\w+"?)\s+(BEFORE|AFTER|INSTEAD OF)\s+([\w\s,]+?)\s+ON\s+("?\w+"?(?:\."?\w+"?)?)[\s\S]*?EXECUTE\s+(?:FUNCTION|PROCEDURE)\s+("?\w+"?(?:\."?\w+"?)?)\s*\(([^)]*)\)/i.exec(text);
       if (!t) continue;
       const table = qualified(t[4]);
       const name = t[1].replace(/"/g, '');

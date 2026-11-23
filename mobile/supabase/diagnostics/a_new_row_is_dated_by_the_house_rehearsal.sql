@@ -24,13 +24,16 @@ CREATE TEMP TABLE rehearsal_members ON COMMIT DROP AS
    ORDER BY u.created_at LIMIT 1;
 SELECT pg_temp.rh_need('a member in good standing', (SELECT count(*) FROM rehearsal_members), 1) AS done \gset rh_
 GRANT SELECT ON rehearsal_members TO anon, authenticated;
--- Three films the member has not logged: no record of theirs is touched, so no write here grows with
--- their archive, and the car's locks are held only as long as these few cases.
+-- Three films the member has not logged, the house's least logged: no record of theirs is touched, so no
+-- write here grows with their archive; and each record written here moves its film's verdict, which the
+-- house counted again from every record of the film until 20261122_67 (the load house's film 1, the
+-- lowest id, holds half the house's records: 1.1 s a record at 500,000 members, load 45122008179), so no
+-- write here grows with a film's records either, and the car's locks are held only as long as these few cases.
 CREATE TEMP TABLE nrd_films ON COMMIT DROP AS
-  SELECT f.id, row_number() OVER (ORDER BY f.id) AS k
+  SELECT f.id, row_number() OVER (ORDER BY f.log_count, f.id) AS k
     FROM public.films f
    WHERE NOT EXISTS (SELECT 1 FROM public.logs l WHERE l.user_id = (SELECT id FROM rehearsal_members WHERE n = 1) AND l.film_id = f.id)
-   ORDER BY f.id LIMIT 3;
+   ORDER BY f.log_count, f.id LIMIT 3;
 GRANT SELECT ON nrd_films TO authenticated;
 SELECT pg_temp.rh_need('films the member has not logged', (SELECT count(*) FROM nrd_films), 3) AS done \gset rh_
 

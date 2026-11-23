@@ -9909,3 +9909,43 @@ mutants:
         find: "filter((name) => !c.taken.has(name))"
         replace: "filter((name) => !c.taken.has(name) && false)"
     proof: { file: e2e/__tests__/aJobThatEndsItselfIsState.test.ts, test: "finds a call that names no job, and a job put on that nothing takes off" }
+  - id: shape-a-films-verdict-counted-at-every-move
+    class: SPEED-a-write-counts-the-house-again
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261122_67_a_films_verdict_moves_with_each_record.sql
+        find: "  IF NOT FOUND THEN"
+        replace: "  IF true THEN"
+    proof: { file: e2e/__tests__/aWriteNeverCountsTheHouseAgain.test.ts, test: "bounds each read a write's trigger aggregates by one piece the write names, or counts a film once, at its first move" }
+  - id: shape-a-write-that-counts-through-a-call-passed-over
+    class: SPEED-a-write-counts-the-house-again
+    source: shape
+    edits:
+      - file: e2e/__tests__/aWriteNeverCountsTheHouseAgain.test.ts
+        find: "for (const call of code(fn.body).matchAll(CALL)) reached(house, call[1] ?? '', seen);"
+        replace: "for (const call of code(fn.body).matchAll(CALL)) if (!seen) reached(house, call[1] ?? '', seen);"
+    proof: { file: e2e/__tests__/aWriteNeverCountsTheHouseAgain.test.ts, test: "finds the verdict counted again at each record, as production holds it before 20261122_67" }
+  - id: shape-a-job-command-read-as-a-call
+    class: SPEED-a-write-counts-the-house-again
+    source: shape
+    edits:
+      - file: e2e/__tests__/aWriteNeverCountsTheHouseAgain.test.ts
+        find: "const code = (body: string) => mask(body).text;"
+        replace: "const code = (body: string) => body;"
+    proof: { file: e2e/__tests__/aWriteNeverCountsTheHouseAgain.test.ts, test: "finds a write that counts the house, in its trigger and in a function it calls, and no call in a job's words" }
+  - id: shape-a-films-count-judged-without-its-condition
+    class: SPEED-a-write-counts-the-house-again
+    source: shape
+    edits:
+      - file: e2e/__tests__/aWriteNeverCountsTheHouseAgain.test.ts
+        find: "return moved >= 0 && notFound > moved && counted > notFound && ended > counted;"
+        replace: "return moved >= 0 || notFound > moved;"
+    proof: { file: e2e/__tests__/aWriteNeverCountsTheHouseAgain.test.ts, test: "judges a film's count a first move only where its kept sums were not found" }
+  - id: shape-a-trigger-on-two-columns-unread
+    class: TEST-a-trigger-on-two-columns-unread
+    source: shape
+    edits:
+      - file: test-utils/house.js
+        find: "(BEFORE|AFTER|INSTEAD OF)\\s+([\\w\\s,]+?)\\s+ON"
+        replace: "(BEFORE|AFTER|INSTEAD OF)\\s+([\\w\\s]+?)\\s+ON"
+    proof: { file: test-utils/__tests__/house.test.ts, test: "reads a trigger on two or more columns, and one that keeps the statement's rows" }
