@@ -7481,5 +7481,40 @@
     "proof": "m4",
     "commit": "dae06a10f5c001818af96bd6ad0ee125af1c37e1",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-write-counts-the-house-again",
+    "mutant": "shape-a-films-verdict-counted-at-every-move",
+    "proof": "m1",
+    "commit": "3f61c9a429408f8d9e0419f26d640ae1bc33f4c5",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-write-counts-the-house-again",
+    "mutant": "shape-a-write-that-counts-through-a-call-passed-over",
+    "proof": "m2",
+    "commit": "3f61c9a429408f8d9e0419f26d640ae1bc33f4c5",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-write-counts-the-house-again",
+    "mutant": "shape-a-job-command-read-as-a-call",
+    "proof": "m3",
+    "commit": "3f61c9a429408f8d9e0419f26d640ae1bc33f4c5",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-write-counts-the-house-again",
+    "mutant": "shape-a-films-count-judged-without-its-condition",
+    "proof": "m4",
+    "commit": "3f61c9a429408f8d9e0419f26d640ae1bc33f4c5",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-a-trigger-on-two-columns-unread",
+    "mutant": "shape-a-trigger-on-two-columns-unread",
+    "proof": "m1",
+    "commit": "3f61c9a429408f8d9e0419f26d640ae1bc33f4c5",
+    "verdict": "caught"
   }
 ]
