@@ -119,9 +119,11 @@ CREATE TABLE IF NOT EXISTS private.member_grams_waiting (
   gram     text COLLATE "C" NOT NULL,
   username text NOT NULL,
   id       uuid NOT NULL,
-  sign     smallint NOT NULL CHECK (sign IN (-1, 1))
+  sign     smallint NOT NULL CHECK (sign IN (-1, 1)),
+  -- Its key leads with the transaction, so the settling's read and delete of its own rows walk the key.
+  seq      bigint GENERATED ALWAYS AS IDENTITY,
+  PRIMARY KEY (txid, seq)
 );
-CREATE INDEX IF NOT EXISTS member_grams_waiting_txid ON private.member_grams_waiting (txid);
 -- add-only (1): no shipped client uses it: a table this car makes in private, which the API never serves (TestFlight build 41 and the website checked)
 REVOKE ALL ON private.member_grams_waiting FROM PUBLIC, anon, authenticated;
 
