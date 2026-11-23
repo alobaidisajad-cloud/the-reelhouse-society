@@ -35,7 +35,7 @@ RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 -- Members 1 and 2 are the house's moderators; member 3 reports; member 4 is another member.
 UPDATE public.profiles SET role = 'admin' WHERE id IN (SELECT id FROM rehearsal_members WHERE n IN (1, 2));
-UPDATE public.profiles SET role = 'member' WHERE id IN (SELECT id FROM rehearsal_members WHERE n IN (3, 4)) AND role = 'admin';
+UPDATE public.profiles SET role = 'free' WHERE id IN (SELECT id FROM rehearsal_members WHERE n IN (3, 4)) AND role = 'admin';
 
 -- Four cases, each reported by 3: two about moderator 1, two about member 4.
 CREATE TEMP TABLE ojc_cases (k text, id uuid) ON COMMIT DROP;
