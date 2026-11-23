@@ -976,6 +976,15 @@ mutants:
         replace: "  return true ? [] : ["
     proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "touches production only once the shipped builds, the database checks, the E2E and the lock lab passed on these files" }
 
+  - id: shape-train-without-the-copy
+    class: DB-train-unrehearsed-on-real-data
+    source: shape
+    edits:
+      - file: supabase/diagnostics/train.cjs
+        find: "  if (stamp.sha !== head) return"
+        replace: "  if (false) return"
+    proof: { file: scripts/__tests__/aTrainIsRehearsedOnACopyFirst.test.ts, test: "refuses a stamp for another commit" }
+
   - id: shape-scroll-ran-out-unseen
     class: E2E-scroll-untimed-on-a-full-house
     source: shape

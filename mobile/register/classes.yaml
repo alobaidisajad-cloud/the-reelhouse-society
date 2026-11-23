@@ -950,6 +950,19 @@ classes:
     fix: "train.cjs's second step reads, with gh, each of e2e-old-clients.yml, db-integration.yml, e2e.yml and load.yml for a green run on main whose migrations, functions and rehearsals are HEAD's, and refuses by name before production is read (mutant shape-train-before-ci)"
     places: [none]
 
+  - id: DB-train-unrehearsed-on-real-data
+    title: "A train reached production proven only on CI's made-up house: three trains stopped on what only production's own rows showed, a plan its few rows let the planner choose otherwise"
+    seriousness: serious
+    area: database
+    status: OPEN
+    count: 2
+    source: { kind: history, ref: "the trains of 2026-11-22 and 2026-11-23, stopped three times; the owner's rule of 2026-11-23" }
+    methods:
+      - { kind: static, file: scripts/__tests__/aTrainIsRehearsedOnACopyFirst.test.ts, test: "refuses a stamp for another commit" }
+      - { kind: static, file: scripts/__tests__/aTrainIsRehearsedOnACopyFirst.test.ts, test: "refuses a stamp for other cars: one more, one fewer, or the same cars in another order" }
+    fix: "pretrain.cjs restores a fresh full copy of production on a local PostgreSQL 17 and runs the train's own plan on it car by car as production's postgres; train.cjs refuses before production is read unless its stamp names HEAD, the same cars in order, a pass and 17. Its first runs caught cars 28 and 65, whose plan cases named one index production's few rows let the planner pass by; each now asks the bound of a house the rehearsal lays down (mutant shape-train-without-the-copy)"
+    places: [none]
+
   - id: E2E-scroll-untimed-on-a-full-house
     title: "No busy screen's scroll was timed signed in on a house full enough to scroll, so a member's lag (build 41's findings) had no measure to be judged by"
     seriousness: code

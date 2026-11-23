@@ -344,7 +344,7 @@ describe('the train: every pending migration in one command', () => {
   it('checks the tree, production and a copy first, then goes car by car: each rehearsed, applied and probed before the next', () => {
     expect(both.steps?.map((s) => s.what)).toEqual([
       'the checkout is what CI ran', 'CI passed on these migrations, functions and rehearsals',
-      'production matches the committed snapshot', 'a full copy of production, read back',
+      'rehearsed on a copy of production first, at this commit', 'production matches the committed snapshot', 'a full copy of production, read back',
       `rehearse ${A.name} on production as it now is`, `apply ${A.name}`, `probe ${A.name} on production as it now is`,
       `rehearse ${B.name} on production as it now is`, `apply ${B.name}`, `probe ${B.name} on production as it now is`,
     ]);
@@ -410,7 +410,7 @@ describe('the train: every pending migration in one command', () => {
     const idx = car('20990101_03_c.sql', "SET lock_timeout = '2s';\nSET statement_timeout = '10min';\nCREATE INDEX CONCURRENTLY IF NOT EXISTS x_due ON public.x (due);\n");
     const D = car('20990101_04_d.sql');
     const p = train.plan([A, col, idx, D], [reh('a_rehearsal.sql', A.name), reh('col_rehearsal.sql', col.name), reh('c_rehearsal.sql'), reh('d_rehearsal.sql', D.name)]);
-    expect(p.steps?.slice(4).map((s) => s.what)).toEqual([
+    expect(p.steps?.slice(5).map((s) => s.what)).toEqual([
       `rehearse ${A.name} on production as it now is`, `apply ${A.name}`, `probe ${A.name} on production as it now is`,
       `rehearse ${col.name} on production as it now is`, `apply ${col.name}`, `probe ${col.name} on production as it now is`,
       `build ${idx.name} alone, as members write`, `probe ${idx.name}: the index whole, and read through`,

@@ -5,9 +5,12 @@
 //   1. the checkout is what CI ran: nothing tracked changed, and HEAD is on origin/main;
 //   2. CI passed on these exact database files: each workflow of MUST_PASS has a green run on main
 //      whose migrations, functions and rehearsals are HEAD's (read with gh);
-//   3. production matches the committed snapshot (schema-snapshot.mjs --check);
-//   4. a full copy of production is taken and read back (dump-production.cjs full);
-//   5. then car by car, every pending migration in name order, the order CI applied and proved
+//   3. every pending car was rehearsed, applied and probed, in this order, on a copy of
+//      production's data on PostgreSQL 17 (pretrain.cjs), for this very commit: its stamp names
+//      HEAD and these cars;
+//   4. production matches the committed snapshot (schema-snapshot.mjs --check);
+//   5. a full copy of production is taken and read back (dump-production.cjs full);
+//   6. then car by car, every pending migration in name order, the order CI applied and proved
 //      them in: an index built CONCURRENTLY (a file of one statement, P0.8) is built alone, outside
 //      any transaction, while members write, in its own turn (after the cars named before it, whose
 //      tables and columns it may index, and before the cars after it, whose rehearsals read through
@@ -81,6 +84,28 @@ const unproven = (greens, same) => MUST_PASS.flatMap((w) => {
   return shas.some((sha) => same(sha, w.paths)) ? [] : [`${w.what} (${w.file}) has passed on no commit with these files`];
 });
 
+/** The file in the private settings folder where pretrain.cjs writes what it proved on a copy. */
+const PRETRAIN_STAMP = 'pretrain-stamp.json';
+const PRETRAIN_RUN = 'run node mobile/supabase/diagnostics/pretrain.cjs';
+
+/**
+ * Why the copy's proof cannot stand for this train, or null when it can: `stamp` is what
+ * pretrain.cjs wrote (null when there is none), `head` HEAD's full sha, `pending` the names of the
+ * pending cars in train order. The proof must have passed on PostgreSQL 17, at HEAD, on exactly
+ * these cars in this order.
+ */
+const uncopied = (stamp, head, pending) => {
+  if (!stamp || typeof stamp !== 'object') return 'no proof on a copy of production was found';
+  if (stamp.passed !== true) return 'the last run on a copy of production did not pass';
+  if (!/^17\./.test(String(stamp.server))) return `the copy ran on PostgreSQL ${stamp.server}, not production's 17`;
+  if (stamp.sha !== head) return `the copy's proof names ${String(stamp.sha).slice(0, 12)}, not HEAD ${String(head).slice(0, 12)}`;
+  const was = Array.isArray(stamp.pending) ? stamp.pending : [];
+  if (was.length !== pending.length || was.some((n, i) => n !== pending[i])) {
+    return `the copy's proof names the cars ${was.join(', ') || '(none)'}; the train holds ${pending.join(', ')}`;
+  }
+  return null;
+};
+
 /** The steps of the train, or why it cannot run. */
 const plan = (pending, rehearsals) => {
   if (!pending.length) return { refuse: 'nothing is pending: every migration is in APPLIED.txt' };
@@ -112,6 +137,7 @@ const plan = (pending, rehearsals) => {
     steps: [
       { kind: 'tree', what: 'the checkout is what CI ran' },
       { kind: 'ci', what: 'CI passed on these migrations, functions and rehearsals' },
+      { kind: 'copy', what: 'rehearsed on a copy of production first, at this commit' },
       { kind: 'check', what: 'production matches the committed snapshot' },
       { kind: 'dump', what: 'a full copy of production, read back' },
       // Car by car in name order, as CI applied them: an index built alone in its turn, while members
@@ -228,6 +254,13 @@ if (require.main === module) {
       const missing = unproven(greens, same);
       return missing.length ? { ok: false, out: `CI has not passed on this train:\n${missing.join('\n')}` } : { ok: true, out: '' };
     }
+    if (step.kind === 'copy') {
+      let stamp = null;
+      try { stamp = JSON.parse(readFileSync(join(privateDir(), PRETRAIN_STAMP), 'utf8')); } catch { stamp = null; }
+      const head = shell('git', ['rev-parse', 'HEAD']).out.trim();
+      const why = uncopied(stamp, head, pendingIn().map((m) => m.name));
+      return why ? { ok: false, out: `${why}.\nRehearsed on a copy of production first: ${PRETRAIN_RUN}` } : { ok: true, out: '' };
+    }
     if (step.kind === 'check') {
       const r = shell('node', [join(MOBILE, 'scripts', 'schema-snapshot.mjs'), '--check']);
       return { ok: r.status === 0, out: r.out };
@@ -251,4 +284,4 @@ if (require.main === module) {
   process.exit(result.failed ? 1 : 0);
 }
 
-module.exports = { MUST_PASS, buildIndex, pendingIn, plan, psqlArgs, rehearsalsIn, run, unproven, validSql, verdict };
+module.exports = { LIMITS, MUST_PASS, PRETRAIN_STAMP, buildIndex, pendingIn, plan, psqlArgs, rehearsalsIn, run, uncopied, unproven, validSql, verdict };

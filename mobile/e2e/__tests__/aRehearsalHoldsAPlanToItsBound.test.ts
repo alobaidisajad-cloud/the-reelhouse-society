@@ -24,8 +24,6 @@ type Index = { name: string; table: string; lead: string };
 const JUDGED: Record<string, string> = {
   'the_moderators_are_found_at_once_rehearsal.sql: profiles_admins':
     "the read asks role = 'admin', this partial index's own predicate; every other index that leads with id holds every member and reads them all",
-  'the_stacks_open_to_all_are_read_newest_first_rehearsal.sql: lists_open_newest':
-    'the read asks is_private IS NOT TRUE, which only this index\'s predicate implies; idx_lists_created_at_id_desc holds is_private = false, which leaves out the stacks marked neither way',
 };
 
 /** The first key of an index's column list: its column or expression, without order or operator class. */
