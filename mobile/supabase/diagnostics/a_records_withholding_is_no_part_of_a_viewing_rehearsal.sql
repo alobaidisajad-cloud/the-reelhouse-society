@@ -1,9 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_records_withholding_is_no_part_of_a_viewing_rehearsal.sql — 20261122_01. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_records_withholding_is_no_part_of_a_viewing_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_records_withholding_is_no_part_of_a_viewing_rehearsal.sql
 --
--- The train applies 20261122_01 here (with_train), 20261122_00 already applied; a sealed copy already holds it.
+-- 20261122_01 is applied on production (the second train of 2026-11-22); this shows it still holds there, and on every sealed copy.
 -- Then the house and a member, acting as themselves, find what it fixes holding.
 -- Every row here is undone with the transaction. Read each NOTICE as  case|expected|got ; the last line
 -- is the verdict, and any miss makes psql exit non-zero.
@@ -22,12 +22,6 @@ CREATE TEMP TABLE rehearsal_members ON COMMIT DROP AS
    ORDER BY u.created_at LIMIT 1;
 SELECT pg_temp.rh_need('a member in good standing', (SELECT count(*) FROM rehearsal_members), 1) AS done \gset rh_
 GRANT SELECT ON rehearsal_members TO authenticated;
-
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_01_a_records_withholding_is_no_part_of_a_viewing.sql
-\endif
 
 -- ── a record's withholding is no part of a viewing ──
 RESET ROLE;

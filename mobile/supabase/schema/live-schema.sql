@@ -745,6 +745,54 @@ END $$;
 
 
 --
+-- Name: the_moderators_words_made_clean(); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.the_moderators_words_made_clean() RETURNS integer
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_made  integer := 0;
+  v_count integer;
+BEGIN
+  -- The notices of an appeal heard, written in the moment it was heard.
+  UPDATE public.notifications n
+     SET body = public.clean_member_text(n.body), message = public.clean_member_text(n.message)
+    FROM public.mod_actions m
+   WHERE m.appeal_judged_at IS NOT NULL
+     AND n.user_id = m.target_user_id AND n.created_at = m.appeal_judged_at
+     AND n.type = 'moderation' AND n.metadata ->> 'action' = 'appeal'
+     AND (n.body, n.message) IS DISTINCT FROM (public.clean_member_text(n.body), public.clean_member_text(n.message));
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  v_made := v_made + v_count;
+  -- The notices of a sanction lifted, written in the moment it was lifted, the reason they carry with them.
+  UPDATE public.notifications n
+     SET body = public.clean_member_text(n.body), message = public.clean_member_text(n.message),
+         metadata = CASE WHEN n.metadata ? 'reason'
+                         THEN jsonb_set(n.metadata, '{reason}', to_jsonb(public.clean_member_text(n.metadata ->> 'reason')))
+                         ELSE n.metadata END
+    FROM public.mod_actions m
+   WHERE m.lifted_at IS NOT NULL
+     AND n.user_id = m.target_user_id AND n.created_at = m.lifted_at
+     AND n.type = 'moderation' AND n.metadata ->> 'action' = 'lift'
+     AND (n.body, n.message, n.metadata ->> 'reason')
+         IS DISTINCT FROM (public.clean_member_text(n.body), public.clean_member_text(n.message), public.clean_member_text(n.metadata ->> 'reason'));
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  v_made := v_made + v_count;
+  -- The verdicts' appeals, the Tribunal's words and the lifts' reasons.
+  UPDATE public.mod_actions
+     SET appeal = public.clean_member_text(appeal), appeal_note = public.clean_member_text(appeal_note),
+         lift_reason = public.clean_member_text(lift_reason)
+   WHERE (appeal IS NOT NULL OR lift_reason IS NOT NULL)
+     AND (appeal, appeal_note, lift_reason)
+         IS DISTINCT FROM (public.clean_member_text(appeal), public.clean_member_text(appeal_note), public.clean_member_text(lift_reason));
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_made + v_count;
+END $$;
+
+
+--
 -- Name: a_block_stands_between(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -5157,7 +5205,9 @@ CREATE FUNCTION public.judge_appeal(p_action_id uuid, p_outcome text, p_note tex
     AS $_$
 DECLARE
   v_admin_id uuid := auth.uid();
-  v_note     text := btrim(coalesce(p_note, ''));
+  -- The Tribunal's word, cleaned as a member's words are (clean_member_text): kept on the verdict and
+  -- told to the member in their notice.
+  v_note     text := btrim(coalesce(public.clean_member_text(p_note), ''));
   m          public.mod_actions%ROWTYPE;
   v_snap     jsonb;
   v_kept     jsonb;
@@ -5312,7 +5362,9 @@ CREATE FUNCTION public.lift_sanction(p_user_id uuid, p_reason text) RETURNS void
     AS $$
 DECLARE
   v_admin_id uuid := auth.uid();
-  v_reason   text := btrim(coalesce(p_reason, ''));
+  -- The reason, cleaned as a member's words are (clean_member_text): kept on the verdict and told to
+  -- the member in their notice.
+  v_reason   text := btrim(coalesce(public.clean_member_text(p_reason), ''));
   v_banned   boolean;
   v_until    timestamptz;
   v_said     text;
@@ -8571,7 +8623,8 @@ CREATE FUNCTION public.viewing_fields() RETURNS jsonb
     },
     "not_a_viewing": ["id", "user_id", "film_id", "film_title", "poster_path",
                       "year", "created_at", "updated_at", "private_notes",
-                      "viewing_history", "view_count", "viewing_id"]
+                      "viewing_history", "view_count", "viewing_id",
+                      "withheld_at"]
   }'::jsonb;
 $$;
 
@@ -11742,7 +11795,7 @@ CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF name, description 
 -- Name: mod_actions a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF reason ON public.mod_actions FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('reason');
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF reason, appeal, appeal_note, lift_reason ON public.mod_actions FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('reason', 'appeal', 'appeal_note', 'lift_reason');
 
 
 --
@@ -15062,6 +15115,13 @@ GRANT ALL ON FUNCTION private.no_block_stands_with(p_one uuid, p_two uuid) TO se
 --
 
 REVOKE ALL ON FUNCTION private.the_cards_made_true(p_part integer) FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION the_moderators_words_made_clean(); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.the_moderators_words_made_clean() FROM PUBLIC;
 
 
 --

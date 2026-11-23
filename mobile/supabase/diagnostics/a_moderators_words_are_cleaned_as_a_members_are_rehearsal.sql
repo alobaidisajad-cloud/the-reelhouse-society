@@ -1,9 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_moderators_words_are_cleaned_as_a_members_are_rehearsal.sql — 20261122_00. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_moderators_words_are_cleaned_as_a_members_are_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_moderators_words_are_cleaned_as_a_members_are_rehearsal.sql
 --
--- The train applies 20261122_00 here (with_train); a sealed copy already holds it.
+-- 20261122_00 is applied on production (the second train of 2026-11-22); this shows it still holds there, and on every sealed copy.
 -- Then the house and members in good standing, acting as themselves, find what it fixes holding.
 -- Every row here is undone with the transaction. Read each NOTICE as  case|expected|got ; the last line
 -- is the verdict, and any miss makes psql exit non-zero.
@@ -63,12 +63,6 @@ WITH made AS (
     FROM public.mod_actions m WHERE m.id = (SELECT id FROM mw_ids WHERE what = 'old verdict')
   RETURNING id)
 INSERT INTO mw_ids SELECT 'old notice', id FROM made;
-
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_00_a_moderators_words_are_cleaned_as_a_members_are.sql
-\endif
 
 -- ── a moderator's words are cleaned as a member's are ──
 RESET ROLE;

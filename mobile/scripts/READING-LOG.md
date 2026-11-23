@@ -460,10 +460,6 @@ record taken from the reader's own work log, or "—" for a file never read.
 | supabase/functions/_shared/callerAddress.js | — |  |
 | mobile/supabase/diagnostics/a_moderators_words_are_cleaned_as_a_members_are_rehearsal.sql | — |  |
 | mobile/supabase/diagnostics/a_records_withholding_is_no_part_of_a_viewing_rehearsal.sql | — |  |
-| mobile/supabase/migrations-down/20261122_00_a_moderators_words_are_cleaned_as_a_members_are.sql | — |  |
-| mobile/supabase/migrations-down/20261122_01_a_records_withholding_is_no_part_of_a_viewing.sql | — |  |
-| supabase/migrations/20261122_00_a_moderators_words_are_cleaned_as_a_members_are.sql | — |  |
-| supabase/migrations/20261122_01_a_records_withholding_is_no_part_of_a_viewing.sql | — |  |
 | mobile/supabase/diagnostics/every_members_write_is_paced_rehearsal.sql | — |  |
 | mobile/test-utils/house.d.ts | — |  |
 | mobile/supabase/diagnostics/a_critique_takes_its_notice_rehearsal.sql | — |  |
@@ -543,3 +539,4 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/diagnostics/a_member_is_found_among_the_first_holders_of_a_piece_rehearsal.sql | — |  |
 | mobile/supabase/migrations-down/20261122_62_a_member_is_found_among_the_first_holders_of_a_piece.sql | — |  |
 | supabase/migrations/20261122_62_a_member_is_found_among_the_first_holders_of_a_piece.sql | — |  |
+| mobile/supabase/diagnostics/train_12_live_check.sql | — |  |
