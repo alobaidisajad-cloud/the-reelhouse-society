@@ -184,6 +184,9 @@ SELECT pg_temp.rh_case('the span asks the records seen again in it, and of a yea
              AND extract(day FROM (l.viewing_history->0->>'date')::date) >= 29))::text) AS done \gset rh_
 SELECT pg_temp.rh_case('the logs are analysed with the index of the films seen again', 'true',
   (EXISTS (SELECT 1 FROM pg_stats WHERE schemaname = 'public' AND tablename = 'logs_seen_again_by_month'))::text) AS done \gset rh_
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 -- The planner told of the member's 600 films more, as the house's statistics would tell it.
 ANALYZE public.logs;
 SET LOCAL enable_seqscan = off;
@@ -205,6 +208,7 @@ GRANT EXECUTE ON FUNCTION pg_temp.yv_plan() TO authenticated;
 -- Production's statistics choose among equal per-member indexes; size-independence at 500k is proven by the Load's plan guards.
 SELECT pg_temp.rh_case('a record''s last viewing in the span is read by the member''s own index, never the whole table', 'true',
   pg_temp.rh_reads_by((SELECT pg_temp.yv_plan()), 'logs', 'user_id')::text) AS done \gset rh_
+\endif
 SELECT pg_temp.rh_case('the calendar and the year read the span alone (private.viewings_between)', 'true|true',
   (position('private.viewings_between' in pg_get_functiondef('public.calendar_days(uuid)'::regprocedure)) > 0)::text || '|'
     || (position('private.viewings_between' in pg_get_functiondef('public.year_viewings(uuid, integer, date, uuid)'::regprocedure)) > 0)::text) AS done \gset rh_

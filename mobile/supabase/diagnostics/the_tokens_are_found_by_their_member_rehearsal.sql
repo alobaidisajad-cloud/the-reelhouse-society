@@ -20,6 +20,9 @@ BEGIN;
 SELECT pg_temp.rh_case('the index of the tokens by member is built, and whole', 'true',
   coalesce((SELECT i.indisvalid::text FROM pg_index i WHERE i.indexrelid = to_regclass('public.push_tokens_user_id')), 'missing')) AS done \gset rh_
 
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 CREATE TEMP TABLE b1i_plan (line text) ON COMMIT DROP;
 DO $$
@@ -32,6 +35,7 @@ END $$;
 SELECT pg_temp.rh_case('a member''s tokens are read through it', 'true',
   (SELECT bool_or(line LIKE '%push_tokens_user_id%') FROM b1i_plan)::text) AS done \gset rh_
 SET LOCAL enable_seqscan = on;
+\endif
 
 SELECT pg_temp.rh_verdict();
 ROLLBACK;

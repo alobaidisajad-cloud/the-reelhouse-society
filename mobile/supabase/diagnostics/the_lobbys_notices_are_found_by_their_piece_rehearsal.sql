@@ -27,6 +27,9 @@ SELECT m.id, 'featured', 'Your log hangs in the Lobby today.', 'lobby:log:5eed00
 INSERT INTO public.notifications (user_id, type, message, group_key)
 SELECT m.id, 'system', 'A word of the house.', 'lobby:log:5eed0000-0000-4000-8000-0000000b0c65' FROM lt_member m;
 
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 CREATE FUNCTION pg_temp.lt_plan() RETURNS text LANGUAGE plpgsql AS $$
 DECLARE v text := ''; r record;
@@ -39,6 +42,7 @@ BEGIN
 END $$;
 SELECT pg_temp.rh_case('a piece''s Lobby notice is asked for by one lookup of it', 'true',
   (position('notifications_lobby_told' in (SELECT pg_temp.lt_plan())) > 0)::text) AS done \gset rh_
+\endif
 SELECT pg_temp.rh_case('the Lobby''s notice of the piece is found, and not another kind''s', 'true|false',
   (EXISTS (SELECT 1 FROM public.notifications n WHERE n.type = 'featured'
              AND n.group_key = 'lobby:log:5eed0000-0000-4000-8000-0000000b0c64'))::text || '|'

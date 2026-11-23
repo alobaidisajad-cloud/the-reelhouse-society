@@ -45,6 +45,9 @@ CREATE TEMP TABLE hdx_films ON COMMIT DROP AS
                    GROUP BY l.film_id HAVING count(*) = 1 ORDER BY l.film_id LIMIT 1);
 GRANT SELECT ON hdx_films TO authenticated;
 SELECT pg_temp.rh_found('a film with critiques', (SELECT film_id FROM hdx_films WHERE film = 'popular')) AS done \gset rh_
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_sort = off;
 SET LOCAL enable_bitmapscan = off;
 SET LOCAL enable_seqscan = off;
@@ -70,6 +73,7 @@ SELECT pg_temp.rh_case('the most reviewed film''s critiques are read through it'
   (SELECT bool_or(line LIKE '%logs_film_reviewed_newest%') FROM hdx_plan WHERE film = 'popular')::text) AS done \gset rh_
 SELECT pg_temp.rh_case('and a film with one critique''s by its film, never by walking every film''s critiques', 'false',
   coalesce((SELECT bool_or(line LIKE '%using logs_reviewed_newest %') FROM hdx_plan WHERE film = 'rare'), false)::text) AS done \gset rh_
+\endif
 
 SELECT pg_temp.rh_verdict();
 ROLLBACK;

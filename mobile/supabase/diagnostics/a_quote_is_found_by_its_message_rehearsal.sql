@@ -18,6 +18,9 @@ BEGIN;
 SELECT pg_temp.rh_case('the index is built, and whole', 'true',
   coalesce((SELECT i.indisvalid::text FROM pg_index i WHERE i.indexrelid = to_regclass('public.lounge_messages_reply_to_id')), 'missing')) AS done \gset rh_
 
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 CREATE TEMP TABLE rh_plan (what text, line text) ON COMMIT DROP;
 DO $$
@@ -36,6 +39,7 @@ SELECT pg_temp.rh_case('a withdrawn message''s quotes are found by the index', '
   (SELECT bool_or(line LIKE '%lounge_messages_reply_to_id%') FROM rh_plan WHERE what = 'withdrawn')::text) AS done \gset rh_
 SELECT pg_temp.rh_case('a departing member''s quotes are found by the index', 'true',
   (SELECT bool_or(line LIKE '%lounge_messages_reply_to_id%') FROM rh_plan WHERE what = 'departed')::text) AS done \gset rh_
+\endif
 
 SELECT pg_temp.rh_verdict();
 ROLLBACK;

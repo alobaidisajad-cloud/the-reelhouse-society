@@ -32,6 +32,9 @@ SELECT ('5eed0000-0000-4000-8000-0000000b0c2' || g)::uuid, 'ballot', m.id, m.use
 UPDATE public.dispatch_posts SET closes_at = now() - interval '1 minute' WHERE id IN ('5eed0000-0000-4000-8000-0000000b0c28', '5eed0000-0000-4000-8000-0000000b0c29');
 UPDATE public.dispatch_posts SET frozen_totals = '{"total": 0, "counts": {}}'::jsonb WHERE id = '5eed0000-0000-4000-8000-0000000b0c29';
 
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 -- A house of 5,000 ballots closed and frozen, and six open, two of them past their close: made like
 -- dispatch_posts with every index it holds, this car's among them, and its statistics taken.
 CREATE TEMP TABLE btc_house (LIKE public.dispatch_posts INCLUDING DEFAULTS INCLUDING INDEXES) ON COMMIT DROP;
@@ -54,6 +57,7 @@ END $$;
 SELECT pg_temp.rh_case('the closing ballots are read as one range of when they close, never every ballot', 'true',
   (position('Index Cond: (closes_at <= now())' in (SELECT pg_temp.btc_plan())) > 0
    AND position('Seq Scan' in (SELECT pg_temp.btc_plan())) = 0)::text) AS done \gset rh_
+\endif
 SELECT pg_temp.rh_case('the ballot past its close and not yet frozen is found, and not the frozen one', 'true|false',
   (EXISTS (SELECT 1 FROM public.dispatch_posts p WHERE p.id = '5eed0000-0000-4000-8000-0000000b0c28'
              AND p.kind = 'ballot' AND p.closes_at <= now() AND p.frozen_totals IS NULL AND p.ended_at IS NULL))::text || '|'

@@ -125,24 +125,19 @@ CREATE FUNCTION pg_temp.su_old() RETURNS TABLE(lounge_id uuid, unread_count bigi
 $$;
 GRANT EXECUTE ON FUNCTION pg_temp.su_old() TO authenticated;
 
--- What member 1 is told of each salon, by either reading, and the rows the salons' index returned to
--- this reading alone.
+-- What member 1 is told of each salon, by either reading.
 CREATE TEMP TABLE su_told (how text, what text, unread bigint, last_word timestamptz) ON COMMIT DROP;
 GRANT SELECT, INSERT ON su_told TO authenticated;
-CREATE TEMP TABLE su_read (how text PRIMARY KEY, index_rows bigint) ON COMMIT DROP;
-GRANT SELECT, INSERT ON su_read TO authenticated;
 CREATE FUNCTION pg_temp.su_ask(p_old boolean) RETURNS void LANGUAGE plpgsql AS $f$
-DECLARE v_before bigint; v_how text := CASE WHEN p_old THEN 'old' ELSE 'new' END;
+DECLARE v_how text := CASE WHEN p_old THEN 'old' ELSE 'new' END;
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', (SELECT m.id FROM su_members m WHERE m.n = 1), 'role', 'authenticated')::text, true);
   PERFORM set_config('role', 'authenticated', true);
-  v_before := pg_stat_get_xact_tuples_returned('public.lounge_messages_room_newest'::regclass);
   IF p_old THEN
     INSERT INTO su_told SELECT v_how, r.what, u.unread_count, u.last_message_at FROM pg_temp.su_old() u JOIN su_rooms r ON r.id = u.lounge_id;
   ELSE
     INSERT INTO su_told SELECT v_how, r.what, u.unread_count, u.last_message_at FROM public.get_lounge_unread_counts() u JOIN su_rooms r ON r.id = u.lounge_id;
   END IF;
-  INSERT INTO su_read VALUES (v_how, pg_stat_get_xact_tuples_returned('public.lounge_messages_room_newest'::regclass) - v_before);
   PERFORM set_config('role', 'none', true);
   PERFORM set_config('request.jwt.claims', '', true);
 END $f$;
@@ -162,9 +157,26 @@ SELECT pg_temp.rh_case('every salon but the crowded one is told as production to
 SELECT pg_temp.rh_case('the crowded salon: production counted past the member''s own; its last word the same', '100|true',
   pg_temp.su_said('old', 'crowded') || '|'
     || ((SELECT last_word FROM su_told WHERE how = 'new' AND what = 'crowded') = (SELECT last_word FROM su_told WHERE how = 'old' AND what = 'crowded'))::text) AS done \gset rh_
--- Five salons: four read (the awaited one is not), at most a hundred each, and each one's last word.
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
+-- The rows the salons' index returns to member 1's reading alone. Five salons: four read (the awaited one
+-- is not), at most a hundred each, and each one's last word.
+CREATE FUNCTION pg_temp.su_index_rows() RETURNS bigint LANGUAGE plpgsql AS $f$
+DECLARE v_before bigint; v_rows bigint;
+BEGIN
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', (SELECT m.id FROM su_members m WHERE m.n = 1), 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+  v_before := pg_stat_get_xact_tuples_returned('public.lounge_messages_room_newest'::regclass);
+  PERFORM count(*) FROM public.get_lounge_unread_counts();
+  v_rows := pg_stat_get_xact_tuples_returned('public.lounge_messages_room_newest'::regclass) - v_before;
+  PERFORM set_config('role', 'none', true);
+  PERFORM set_config('request.jwt.claims', '', true);
+  RETURN v_rows;
+END $f$;
 SELECT pg_temp.rh_case('the read reads at most a hundred and a few of the index''s rows a salon, 3,000 waiting in one', 'true',
-  ((SELECT index_rows FROM su_read WHERE how = 'new') <= 5 * 110)::text) AS done \gset rh_
+  ((SELECT pg_temp.su_index_rows()) <= 5 * 110)::text) AS done \gset rh_
+\endif
 SELECT pg_temp.rh_case('each salon''s hundred is read from the front of its index, the plan held, the hidden asked as a set', 'true|true',
   (position('NOT IN (SELECT h.u FROM hidden h)' in pg_get_functiondef('public.get_lounge_unread_counts()'::regprocedure)) > 0
      AND position('ORDER BY m.created_at DESC, m.id DESC

@@ -152,6 +152,9 @@ SELECT pg_temp.rh_case('the job tells 500 voters a run', 'p_voters integer DEFAU
   pg_get_function_arguments('private.closed_ballots_told(integer)'::regprocedure)) AS done \gset rh_
 
 -- A ballot's next voters are one range of its key, whatever the house holds.
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 CREATE FUNCTION pg_temp.bt_plan() RETURNS text LANGUAGE plpgsql AS $f$
 DECLARE v text := ''; r record;
@@ -167,6 +170,7 @@ END $f$;
 SELECT pg_temp.rh_case('a ballot''s voters are read by its key, from the last told', 'true',
   (position('dispatch_votes_post_id_user_id_key' in (SELECT pg_temp.bt_plan())) > 0)::text) AS done \gset rh_
 RESET enable_seqscan;
+\endif
 
 -- No member reads the list.
 CREATE FUNCTION pg_temp.bt_member_reads() RETURNS text LANGUAGE plpgsql AS $f$

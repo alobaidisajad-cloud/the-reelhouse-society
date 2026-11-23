@@ -23,6 +23,9 @@ INSERT INTO public.lounges (id, name, creator_id, is_private)
 SELECT (SELECT id FROM nsr_salon), 'rh the newest', u.id, false FROM auth.users u JOIN public.profiles p ON p.id = u.id ORDER BY u.created_at LIMIT 1;
 SELECT pg_temp.rh_need('a salon planted', (SELECT count(*) FROM public.lounges WHERE id = (SELECT id FROM nsr_salon)), 1) AS done \gset rh_
 
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 CREATE FUNCTION pg_temp.nsr_plan() RETURNS text LANGUAGE plpgsql AS $$
 DECLARE v text := ''; r record;
@@ -34,6 +37,7 @@ BEGIN
 END $$;
 SELECT pg_temp.rh_case('the newest fifty are read from its front, unsorted', 'true|false',
   (position('lounges_newest' in pg_temp.nsr_plan()) > 0)::text || '|' || (position('Sort' in pg_temp.nsr_plan()) > 0)::text) AS done \gset rh_
+\endif
 SELECT pg_temp.rh_case('the salon made now is the first of them', 'true',
   ((SELECT l.id FROM public.lounges l ORDER BY l.created_at DESC, l.id DESC LIMIT 1) = (SELECT id FROM nsr_salon))::text) AS done \gset rh_
 

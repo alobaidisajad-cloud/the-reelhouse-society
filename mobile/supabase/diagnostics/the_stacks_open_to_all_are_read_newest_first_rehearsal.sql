@@ -30,6 +30,9 @@ SELECT ('5eed0000-0000-4000-8000-0000000b0c6' || g)::uuid, m.id, 'Rehearsal stac
        CASE g WHEN 5 THEN false WHEN 6 THEN NULL ELSE true END
   FROM so_member m, generate_series(5, 7) g;
 
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 -- A house of 5,000 stacks, one in ten private and one in ten marked neither way: made like lists with every
 -- index it holds, this car's among them, and its statistics taken.
 CREATE TEMP TABLE so_house (LIKE public.lists INCLUDING DEFAULTS INCLUDING INDEXES) ON COMMIT DROP;
@@ -52,6 +55,7 @@ SELECT pg_temp.rh_case('the stacks open to all are read newest first from an ind
   (position('Index Cond: (created_at < ' in (SELECT pg_temp.so_plan())) > 0
    AND position('Seq Scan' in (SELECT pg_temp.so_plan())) = 0 AND position('Bitmap' in (SELECT pg_temp.so_plan())) = 0)::text || '|'
     || (position('Sort' in replace((SELECT pg_temp.so_plan()), 'Incremental Sort', '')) > 0)::text) AS done \gset rh_
+\endif
 SELECT pg_temp.rh_case('the stacks marked open and marked neither way are read, and not the private one', '5eed0000-0000-4000-8000-0000000b0c65,5eed0000-0000-4000-8000-0000000b0c66',
   (SELECT string_agg(n.id::text, ',' ORDER BY n.id) FROM public.lists n
     WHERE n.is_private IS NOT TRUE AND n.id::text LIKE '5eed0000-0000-4000-8000-0000000b0c6_')) AS done \gset rh_

@@ -27,6 +27,9 @@ SELECT pg_temp.rh_need('two members', (SELECT count(*) FROM msw_members), 2) AS 
 UPDATE public.profiles SET username = 'rh_9q_' || substr(md5(id::text), 1, 6) WHERE id = (SELECT id FROM msw_members WHERE n = 1);
 UPDATE public.profiles SET display_name = 'Rh ǁǂ' WHERE id = (SELECT id FROM msw_members WHERE n = 2);
 
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 CREATE FUNCTION pg_temp.msw_plan() RETURNS text LANGUAGE plpgsql AS $$
 DECLARE v text := ''; r record;
@@ -37,6 +40,7 @@ BEGIN
   RETURN v;
 END $$;
 SELECT pg_temp.rh_case('a pair of letters is looked up in it', 'true', (position('profiles_short_grams' in pg_temp.msw_plan()) > 0)::text) AS done \gset rh_
+\endif
 SELECT pg_temp.rh_case('the member whose handle holds it is found, and the one whose name holds the other', '1|2',
   (SELECT (SELECT string_agg(m.n::text, ',') FROM public.profiles p JOIN msw_members m ON m.id = p.id
             WHERE private.search_grams(p.username, p.display_name) @> ARRAY['9q']) || '|'

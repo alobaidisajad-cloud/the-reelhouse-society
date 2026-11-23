@@ -73,6 +73,9 @@ SELECT pg_temp.rh_case('an escaped underscore is read as itself, a bare one as a
   pg_temp.nb_named('o''brien\_') || '|' || pg_temp.nb_named('o''brien_r')) AS done \gset rh_
 
 -- The test the car adds, as search_members asks it of a name's beginning, read by the index.
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 SET LOCAL enable_bitmapscan = off;
 CREATE FUNCTION pg_temp.nb_plan() RETURNS text LANGUAGE plpgsql AS $$
@@ -84,10 +87,15 @@ BEGIN
   END LOOP;
   RETURN v;
 END $$;
+\endif
 SELECT pg_temp.rh_case('search_members asks a name''s beginning of its lower case too', 'true',
   (position('lower(p.display_name) LIKE %L' in pg_get_functiondef('public.search_members(text, boolean, integer, text, integer)'::regprocedure)) > 0)::text) AS done \gset rh_
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SELECT pg_temp.rh_case('a name''s beginning, as the search asks it, is one range of the names'' index', 'true',
   (position('profiles_display_name_beginning' in pg_temp.nb_plan()) > 0)::text) AS done \gset rh_
+\endif
 SELECT pg_temp.rh_case('the members are analysed with the index of their names'' beginnings', 'true',
   (EXISTS (SELECT 1 FROM pg_stats WHERE schemaname = 'public' AND tablename = 'profiles_display_name_beginning'))::text) AS done \gset rh_
 

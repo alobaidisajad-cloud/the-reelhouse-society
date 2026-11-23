@@ -20,6 +20,9 @@ SELECT pg_temp.rh_case('the index of the house''s moderators is built, and whole
   coalesce((SELECT i.indisvalid::text FROM pg_index i WHERE i.indexrelid = to_regclass('public.profiles_admins')), 'missing')) AS done \gset rh_
 SELECT pg_temp.rh_case('it holds the moderators alone', 'true',
   (SELECT (pg_get_expr(i.indpred, i.indrelid) = '(role = ''admin''::text)')::text FROM pg_index i WHERE i.indexrelid = 'public.profiles_admins'::regclass)) AS done \gset rh_
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 CREATE FUNCTION pg_temp.hb2a_plan() RETURNS text LANGUAGE plpgsql AS $$
 DECLARE v text; r record;
@@ -32,6 +35,7 @@ BEGIN
 END $$;
 SELECT pg_temp.rh_case('the moderators are read from it', 'true',
   (position('profiles_admins' in pg_temp.hb2a_plan()) > 0)::text) AS done \gset rh_
+\endif
 
 SELECT pg_temp.rh_verdict();
 ROLLBACK;

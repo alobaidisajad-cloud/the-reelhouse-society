@@ -206,6 +206,9 @@ SELECT pg_temp.rh_case('a handle that begins with the words is found at the seco
 SELECT pg_temp.rh_case('an escaped underscore is read as itself, a bare one as any one letter', '4|1,4',
   (SELECT pg_temp.sm_at('qz19\_', 1)) || '|' || (SELECT pg_temp.sm_at('qz19_', 1))) AS done \gset rh_
 
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 SET LOCAL enable_bitmapscan = off;
 CREATE FUNCTION pg_temp.sm_plan() RETURNS text LANGUAGE plpgsql AS $f$
@@ -222,6 +225,7 @@ SELECT pg_temp.rh_case('search_members asks many or few by its bounded walk firs
     || (position('lower(p.username) LIKE %L' in pg_get_functiondef('public.search_members(text, boolean, integer, text, integer)'::regprocedure)) > 0)::text) AS done \gset rh_
 SELECT pg_temp.rh_case('a handle''s beginning, as the search asks it, is one range of an index of the handles'' lower case', 'true',
   pg_temp.rh_reads_by((SELECT pg_temp.sm_plan()), 'profiles', 'lower(username)')::text) AS done \gset rh_
+\endif
 SELECT pg_temp.rh_case('the members are analysed with the index of their handles'' beginnings', 'true',
   (EXISTS (SELECT 1 FROM pg_stats WHERE schemaname = 'public' AND tablename = 'profiles_username_beginning'))::text) AS done \gset rh_
 

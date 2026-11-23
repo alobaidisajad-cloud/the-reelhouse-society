@@ -1434,6 +1434,9 @@ SELECT pg_temp.rh_case('the staying member''s own record, stack, filing and salo
 SELECT pg_temp.rh_case('the counts settle: one critique on the record, one on the filing, no answer taken, S''s critique on the withdrawn take',
   '1|1|no answer|1', (SELECT got FROM rh_d2_read WHERE what = 'counts')) AS done \gset rh_
 
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 -- The card read now also asks a stack's curator: still answered by the cards' own index
 -- (lounge_messages_card_names), never by reading every message. Sequential scans are off for the plan
 -- alone, and put back.
@@ -1455,6 +1458,7 @@ BEGIN
 END $$;
 SELECT pg_temp.rh_case('a departing member''s cards, a stack''s among them, are found by the cards'' index', 'true|false',
   (SELECT bool_or(line LIKE '%lounge_messages_card_names%')::text || '|' || bool_or(line LIKE '%Seq Scan%')::text FROM rh_d2_plan)) AS done \gset rh_
+\endif
 
 SELECT pg_temp.rh_verdict();
 ROLLBACK;

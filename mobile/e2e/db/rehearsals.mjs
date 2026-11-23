@@ -8,9 +8,12 @@
  * listing the folder, so a new one runs here the day it is written. First the
  * made-up house in rehearsal-seed.sql is laid down, as supabase_admin; then each
  * rehearsal runs in its own psql as postgres, the login production runs them as,
- * from mobile/ (a rehearsal may read a file by a path from there). No variable
+ * from mobile/ (a rehearsal may read a file by a path from there). No with_train
  * is passed: the database already holds every pending migration, as
- * production will.
+ * production will. plan_checks is passed here alone: a rehearsal's plan cases
+ * run only on this sealed copy, whose data is the house's own; production's
+ * plans are chosen by statistics no copy of it carries (the train and pretrain
+ * never set it).
  *
  * Each rehearsal is one transaction that ends in its verdict: a miss, or a pick
  * that finds nothing, raises, and ON_ERROR_STOP makes psql exit non-zero. The
@@ -46,7 +49,7 @@ export const rehearsals = () => universe.files('rehearsals').map((f) => relative
 
 /** One file in its own psql, from mobile/; its exit status and everything it printed. */
 const psql = (url, file) => {
-  const r = spawnSync('psql', [url, '-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-f', file],
+  const r = spawnSync('psql', [url, '-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-v', 'plan_checks=1', '-f', file],
     { cwd: MOBILE, encoding: 'utf8', maxBuffer: 1e8 });
   return { status: r.status, out: `${r.stdout ?? ''}${r.stderr ?? ''}`.trim() };
 };

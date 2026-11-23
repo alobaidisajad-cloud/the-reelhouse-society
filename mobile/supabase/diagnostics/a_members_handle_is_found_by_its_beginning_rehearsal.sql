@@ -27,6 +27,9 @@ SELECT pg_temp.rh_need('two members', (SELECT count(*) FROM mhb_members), 2) AS 
 UPDATE public.profiles SET username = 'qxj1924_rh' WHERE id = (SELECT id FROM mhb_members WHERE n = 1);
 UPDATE public.profiles SET username = 'rh_qxj1924' WHERE id = (SELECT id FROM mhb_members WHERE n = 2);
 
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 SET LOCAL enable_bitmapscan = off;
 CREATE FUNCTION pg_temp.mhb_plan() RETURNS text LANGUAGE plpgsql AS $$
@@ -39,6 +42,7 @@ BEGIN
 END $$;
 SELECT pg_temp.rh_case('a handle''s beginning is read as one range of an index of the handles'' lower case', 'true',
   pg_temp.rh_reads_by((SELECT pg_temp.mhb_plan()), 'profiles', 'lower(username)')::text) AS done \gset rh_
+\endif
 SELECT pg_temp.rh_case('the member whose handle begins with it is found, in either case, and not the one whose later word holds it', '1|1',
   (SELECT coalesce((SELECT string_agg(m.n::text, ',') FROM public.profiles p JOIN mhb_members m ON m.id = p.id
                      WHERE lower(p.username) LIKE lower('QXJ1924') || '%'), 'none') || '|'

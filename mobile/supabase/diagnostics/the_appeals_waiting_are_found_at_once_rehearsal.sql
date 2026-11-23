@@ -20,6 +20,9 @@ SELECT pg_temp.rh_case('the index of the appeals waiting is built, and whole', '
   coalesce((SELECT i.indisvalid::text FROM pg_index i WHERE i.indexrelid = to_regclass('public.mod_actions_appeals_waiting')), 'missing')) AS done \gset rh_
 SELECT pg_temp.rh_case('it holds the waiting appeals alone', 'true',
   (SELECT (pg_get_expr(i.indpred, i.indrelid) = '(appeal_status = ''pending''::text)')::text FROM pg_index i WHERE i.indexrelid = 'public.mod_actions_appeals_waiting'::regclass)) AS done \gset rh_
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 SET LOCAL enable_bitmapscan = off;
 CREATE FUNCTION pg_temp.hb6i_plan() RETURNS text LANGUAGE plpgsql AS $$
@@ -33,6 +36,7 @@ BEGIN
 END $$;
 SELECT pg_temp.rh_case('the list''s read is answered from it', 'true',
   (position('mod_actions_appeals_waiting' in pg_temp.hb6i_plan()) > 0)::text) AS done \gset rh_
+\endif
 
 SELECT pg_temp.rh_verdict();
 ROLLBACK;

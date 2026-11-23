@@ -18,6 +18,9 @@ BEGIN;
 SELECT pg_temp.rh_case('the index is built, and whole', 'true',
   coalesce((SELECT i.indisvalid::text FROM pg_index i WHERE i.indexrelid = to_regclass('public.idx_films_reread')), 'missing')) AS done \gset rh_
 
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 CREATE TEMP TABLE rh_c5i_plan (line text) ON COMMIT DROP;
 DO $$
@@ -42,6 +45,7 @@ END $$;
 RESET enable_seqscan;
 SELECT pg_temp.rh_case('the claim reads the films to read again through their index', 'true',
   (SELECT bool_or(line LIKE '%idx_films_reread%') FROM rh_c5i_plan)::text) AS done \gset rh_
+\endif
 
 SELECT pg_temp.rh_verdict();
 ROLLBACK;

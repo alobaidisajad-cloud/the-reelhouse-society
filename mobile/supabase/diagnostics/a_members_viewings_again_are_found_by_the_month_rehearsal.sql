@@ -31,6 +31,9 @@ SELECT m.id, f.film, 'rh film', date '2025-09-01', f.history
                (1, 990003, '[]'::jsonb),
                (2, 990001, '[{"date": "2025-03-20"}]'::jsonb)) f(n, film, history) ON f.n = m.n;
 
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 CREATE FUNCTION pg_temp.vbm_plan() RETURNS text LANGUAGE plpgsql AS $$
 DECLARE v text := ''; r record; v_id uuid := (SELECT id FROM vbm_members WHERE n = 1);
@@ -43,6 +46,7 @@ BEGIN
 END $$;
 SELECT pg_temp.rh_case('a span''s keys are read through it', 'true',
   (position('logs_seen_again_by_month' in (SELECT pg_temp.vbm_plan())) > 0)::text) AS done \gset rh_
+\endif
 SELECT pg_temp.rh_case('the span of March finds the member''s log seen again in March, and no other', '990001',
   (SELECT coalesce(string_agg(l.film_id::text, ',' ORDER BY l.film_id), 'none') FROM public.logs l
     WHERE jsonb_typeof(l.viewing_history) = 'array' AND l.viewing_history <> '[]'::jsonb

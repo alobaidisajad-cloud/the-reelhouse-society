@@ -21,6 +21,9 @@ SELECT pg_temp.rh_case('the index of the members under sanction is built, and wh
   coalesce((SELECT i.indisvalid::text FROM pg_index i WHERE i.indexrelid = to_regclass('public.profiles_under_sanction')), 'missing')) AS done \gset rh_
 SELECT pg_temp.rh_case('it holds the banned and the suspended alone', 'true',
   (SELECT (pg_get_expr(i.indpred, i.indrelid) = '(is_banned OR (suspended_until IS NOT NULL))')::text FROM pg_index i WHERE i.indexrelid = 'public.profiles_under_sanction'::regclass)) AS done \gset rh_
+-- On a sealed copy alone (plan_checks, which e2e/db/rehearsals.mjs sets): a plan is chosen by statistics,
+-- and a copy of production carries its rows without them; the Load's plan guards hold the bound at size.
+\if :{?plan_checks}
 SET LOCAL enable_seqscan = off;
 SET LOCAL enable_bitmapscan = off;
 CREATE FUNCTION pg_temp.hb2i_plan() RETURNS text LANGUAGE plpgsql AS $$
@@ -36,6 +39,7 @@ BEGIN
 END $$;
 SELECT pg_temp.rh_case('the list''s read is answered from it', 'true',
   (position('profiles_under_sanction' in pg_temp.hb2i_plan()) > 0)::text) AS done \gset rh_
+\endif
 
 SELECT pg_temp.rh_verdict();
 ROLLBACK;
