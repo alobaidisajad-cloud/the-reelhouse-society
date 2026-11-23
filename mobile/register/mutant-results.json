@@ -7430,7 +7430,7 @@
     "class": "CI-a-pure-suite-reaches-node-through-a-script",
     "mutant": "shape-a-suite-read-by-its-own-words-alone",
     "proof": "m1",
-    "commit": "13fa70d3ed0c4c0ea770c16c80c2f4684b01ee4a",
+    "commit": "d369de3ddc454da4ec18a9424f23746faa3cf5e9",
     "verdict": "caught"
   },
   {
