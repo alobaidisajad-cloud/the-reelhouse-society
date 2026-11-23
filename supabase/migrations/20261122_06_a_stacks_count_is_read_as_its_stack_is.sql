@@ -43,7 +43,6 @@ CREATE OR REPLACE FUNCTION public.list_certify_counts(p_list_ids uuid[]) RETURNS
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH hidden AS MATERIALIZED (SELECT private.hidden_authors() AS ids)
   SELECT t.id, (
     SELECT count(*)::bigint
     FROM public.interactions i
@@ -54,7 +53,7 @@ CREATE OR REPLACE FUNCTION public.list_certify_counts(p_list_ids uuid[]) RETURNS
         WHERE l.id = t.id
           AND (l.user_id = (SELECT auth.uid())
                OR (l.is_private = false AND l.withheld_at IS NULL
-                   AND NOT COALESCE(l.user_id = ANY ((SELECT ids FROM hidden)::uuid[]), false)
+                   AND NOT COALESCE(l.user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)
                    AND private.can_view_user_data(l.user_id)))
       )
   )

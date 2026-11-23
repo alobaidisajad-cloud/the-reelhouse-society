@@ -132,8 +132,13 @@ const BASE = {
   created_at: '2026-03-04T00:00:00Z', is_social_private: false, preferences: {},
 };
 
+// Each test mounts the whole desk: about half a second alone, over three times that with eight copies
+// of this suite at once, and more under the push gate, where every suite and mutant runs together.
+// A wait the test owns (waitFor) still fails in its own second; this only keeps load from failing it.
+jest.setTimeout(20_000);
+
 const mount = () => render(<SettingsScreen />);
-const settle = async (r: ReturnType<typeof mount>) => {
+const settle =async (r: ReturnType<typeof mount>) => {
   await act(async () => {});
   await waitFor(() => expect(r.getAllByText('Settings').length).toBeGreaterThan(0));
   return r;
