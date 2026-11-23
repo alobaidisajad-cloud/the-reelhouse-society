@@ -24,7 +24,15 @@ CREATE TEMP TABLE rehearsal_members ON COMMIT DROP AS
    ORDER BY u.created_at LIMIT 1;
 SELECT pg_temp.rh_need('a member in good standing', (SELECT count(*) FROM rehearsal_members), 1) AS done \gset rh_
 GRANT SELECT ON rehearsal_members TO anon, authenticated;
-SELECT pg_temp.rh_need('films to log', (SELECT count(*) FROM public.films), 3) AS done \gset rh_
+-- Three films the member has not logged: no record of theirs is touched, so no write here grows with
+-- their archive, and the car's locks are held only as long as these few cases.
+CREATE TEMP TABLE nrd_films ON COMMIT DROP AS
+  SELECT f.id, row_number() OVER (ORDER BY f.id) AS k
+    FROM public.films f
+   WHERE NOT EXISTS (SELECT 1 FROM public.logs l WHERE l.user_id = (SELECT id FROM rehearsal_members WHERE n = 1) AND l.film_id = f.id)
+   ORDER BY f.id LIMIT 3;
+GRANT SELECT ON nrd_films TO authenticated;
+SELECT pg_temp.rh_need('films the member has not logged', (SELECT count(*) FROM nrd_films), 3) AS done \gset rh_
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
@@ -35,11 +43,8 @@ SELECT pg_temp.rh_need('films to log', (SELECT count(*) FROM public.films), 3) A
 -- ── the setting, as the house ──
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
--- The member's own records cleared, then one record as the house, dated a year back (kept: the house's word).
-DELETE FROM public.logs WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 1);
+-- The member's room for records starts full, then one record as the house, dated a year back (kept: the house's word).
 DELETE FROM public.write_budget WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 1);
-CREATE TEMP TABLE nrd_films ON COMMIT DROP AS SELECT id, row_number() OVER (ORDER BY id) AS k FROM public.films ORDER BY id LIMIT 3;
-GRANT SELECT ON nrd_films TO authenticated;
 INSERT INTO public.logs (id, user_id, film_id, film_title, watched_date, created_at)
 VALUES ('00000000-0000-4000-8000-0000000d0001', (SELECT id FROM rehearsal_members WHERE n = 1), (SELECT id FROM nrd_films WHERE k = 1), 'rh dated', '2025-01-01', now() - interval '1 year');
 
