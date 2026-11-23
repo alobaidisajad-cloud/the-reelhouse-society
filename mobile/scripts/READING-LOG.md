@@ -289,6 +289,7 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/diagnostics/a_film_read_early_is_read_again_rehearsal.sql | — |  |
 | mobile/supabase/diagnostics/a_film_says_when_it_is_read_again_rehearsal.sql | — |  |
 | mobile/supabase/diagnostics/a_films_critiques_are_one_range_rehearsal.sql | — |  |
+| mobile/supabase/diagnostics/a_films_verdict_moves_with_each_record_rehearsal.sql | — |  |
 | mobile/supabase/diagnostics/a_follow_is_counted_when_it_is_granted_rehearsal.sql | — |  |
 | mobile/supabase/diagnostics/a_handle_is_judged_by_its_words_rehearsal.sql | — |  |
 | mobile/supabase/diagnostics/a_handle_many_share_is_found_at_once_rehearsal.sql | — |  |
@@ -548,10 +549,12 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/migrations-down/20261122_64_the_lobbys_notices_are_found_by_their_piece.sql | — |  |
 | mobile/supabase/migrations-down/20261122_65_the_stacks_open_to_all_are_read_newest_first.sql | — |  |
 | mobile/supabase/migrations-down/20261122_66_the_lobby_reads_the_days_regard_and_its_candidates.sql | — |  |
+| mobile/supabase/migrations-down/20261122_67_a_films_verdict_moves_with_each_record.sql | — |  |
 | supabase/migrations/20261122_63_a_closed_ballots_voters_are_told_at_a_pace.sql | — |  |
 | supabase/migrations/20261122_64_the_lobbys_notices_are_found_by_their_piece.sql | — |  |
 | supabase/migrations/20261122_65_the_stacks_open_to_all_are_read_newest_first.sql | — |  |
 | supabase/migrations/20261122_66_the_lobby_reads_the_days_regard_and_its_candidates.sql | — |  |
+| supabase/migrations/20261122_67_a_films_verdict_moves_with_each_record.sql | — |  |
 | mobile/e2e/db/fixtures/up-down-up/jobs-before.sql | — |  |
 | mobile/e2e/db/fixtures/up-down-up/jobs-down.sql | — |  |
 | mobile/e2e/db/fixtures/up-down-up/jobs-left-down.sql | — |  |

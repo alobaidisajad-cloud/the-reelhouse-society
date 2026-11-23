@@ -82,7 +82,7 @@ REVOKE ALL ON FUNCTION private.a_films_verdict_moves(integer, integer, integer, 
 -- ── the kept verdict, written again for its callers ──
 --   As production holds it, but the verdict is read from the kept sums: a withholding and its giving
 --   back have already moved it in their own statement (note_film_verdict, below).
--- add-only (3): it only fixes: the same verdict for the film it names (the rehearsal compares it with the film's records counted again after a withholding and a giving back); run by the house's withholding functions alone
+-- add-only (3): it only fixes: the same verdict for the film it names (the rehearsal replays a withholding and a giving back, and compares the verdict with the film's records counted again); run by the house's withholding functions alone
 CREATE OR REPLACE FUNCTION public.refresh_film_verdict(p_film_id integer) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
@@ -97,7 +97,7 @@ $$;
 --   counted in less what it counted out, film by film, in the films' order, so two statements moving the
 --   same films wait in one order. A record the house withholds is counted out of its film; a change that
 --   moves no film's sums (words, a date, a poster) moves nothing.
--- add-only (3): it only fixes: the same verdicts for every film (the rehearsal compares each with the film's records counted again after records written, changed, moved, withheld and taken away, alone and several in one statement); a trigger's function, called by no client
+-- add-only (3): it only fixes: the same verdicts for every film (the rehearsal replays records written, changed, moved, withheld and taken away, alone and several in one statement, and compares each film with its records counted again); a trigger's function, called by no client
 CREATE OR REPLACE FUNCTION public.note_film_verdict() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
