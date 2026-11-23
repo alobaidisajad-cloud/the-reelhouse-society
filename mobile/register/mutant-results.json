@@ -7446,5 +7446,40 @@
     "proof": "m1",
     "commit": "3ec8a46a927a639982a29fd2eeaa699f907359fc",
     "verdict": "caught"
+  },
+  {
+    "class": "TEST-a-job-that-ends-itself-read-as-schema",
+    "mutant": "shape-the-undo-check-reads-every-job-as-schema",
+    "proof": "m3",
+    "commit": "dae06a10f5c001818af96bd6ad0ee125af1c37e1",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-a-job-that-ends-itself-read-as-schema",
+    "mutant": "shape-the-snapshot-reads-every-job-as-schema",
+    "proof": "m3",
+    "commit": "dae06a10f5c001818af96bd6ad0ee125af1c37e1",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-a-job-that-ends-itself-read-as-schema",
+    "mutant": "shape-a-pg-cron-call-naming-no-job-passed-over",
+    "proof": "m4",
+    "commit": "dae06a10f5c001818af96bd6ad0ee125af1c37e1",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-a-job-that-ends-itself-read-as-schema",
+    "mutant": "shape-a-job-found-by-its-name-read-as-unnamed",
+    "proof": "m1",
+    "commit": "dae06a10f5c001818af96bd6ad0ee125af1c37e1",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-a-job-that-ends-itself-read-as-schema",
+    "mutant": "shape-a-job-put-on-for-good-passed-over",
+    "proof": "m4",
+    "commit": "dae06a10f5c001818af96bd6ad0ee125af1c37e1",
+    "verdict": "caught"
   }
 ]
