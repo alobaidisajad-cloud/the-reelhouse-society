@@ -2122,3 +2122,5 @@ files of the reading map this one does not.
 | src/utils/__tests__/anIndexsFunctionsRunForItsWriters.guard.test.ts | — |  |
 | src/hooks/__tests__/theSearchSaysWhenTooManyAnswer.test.tsx | — |  |
 | e2e/__tests__/aSeededHouseIsAsProductionHoldsIt.test.ts | — |  |
+| e2e/__tests__/aJobThatEndsItselfIsState.test.ts | — |  |
+| scripts/jobs-that-end-themselves.cjs | — |  |

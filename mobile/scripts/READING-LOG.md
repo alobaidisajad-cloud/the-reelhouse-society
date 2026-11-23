@@ -552,3 +552,8 @@ record taken from the reader's own work log, or "—" for a file never read.
 | supabase/migrations/20261122_64_the_lobbys_notices_are_found_by_their_piece.sql | — |  |
 | supabase/migrations/20261122_65_the_stacks_open_to_all_are_read_newest_first.sql | — |  |
 | supabase/migrations/20261122_66_the_lobby_reads_the_days_regard_and_its_candidates.sql | — |  |
+| mobile/e2e/db/fixtures/up-down-up/jobs-before.sql | — |  |
+| mobile/e2e/db/fixtures/up-down-up/jobs-down.sql | — |  |
+| mobile/e2e/db/fixtures/up-down-up/jobs-left-down.sql | — |  |
+| mobile/e2e/db/fixtures/up-down-up/jobs-left-up.sql | — |  |
+| mobile/e2e/db/fixtures/up-down-up/jobs-up.sql | — |  |
