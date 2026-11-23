@@ -31,6 +31,7 @@ const { spawnSync } = require('child_process');
 const { builtinModules } = require('module');
 const ts = require('typescript');
 const { files } = require('../test-utils/universe');
+const { stripComments } = require('../test-utils/stripComments');
 
 const MOBILE = path.resolve(__dirname, '..');
 const SUITES = path.join(MOBILE, 'src/utils/__tests__');
@@ -155,11 +156,10 @@ function localFile(from, spec) {
 }
 
 /** What of Node a file's own code uses, its comments aside; null when nothing. */
-function nodeUse(text) {
+function nodeUse(text, file) {
   const imported = importsOf(text).find((m) => NODE.has(m));
   if (imported) return `'${imported}'`;
-  const code = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/[^\n]*/g, '$1');
-  return code.match(NODE_TEXT)?.[0] ?? null;
+  return stripComments(text, file).match(NODE_TEXT)?.[0] ?? null;
 }
 
 /**
@@ -183,7 +183,7 @@ function nodeReach(file, text, mocked = [], seen = new Set([path.resolve(file)])
 /** Each file's text and its use of Node, read once for every suite that loads it. */
 const known = new Map();
 const readOnce = (at) => {
-  if (!known.has(at)) { const own = fs.readFileSync(at, 'utf8'); known.set(at, { own, use: nodeUse(own) }); }
+  if (!known.has(at)) { const own = fs.readFileSync(at, 'utf8'); known.set(at, { own, use: nodeUse(own, at) }); }
   return known.get(at);
 };
 

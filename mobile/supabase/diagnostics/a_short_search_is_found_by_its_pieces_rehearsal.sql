@@ -8,7 +8,8 @@
 -- searching: a pair of letters (9q) no other planted row holds, in a stack's title, in another's description, in a
 -- member's handle and in another's name, and one letter of the same kind, found by search_stacks,
 -- search_members and the Reel's stack search; a private stack never; each answered after the car as
--- before it (before is read first, with_train). Every row here is undone with the transaction. Read each
+-- before it (before is read first, with_train); and each of the three asks a short search's pieces, the
+-- car's own change, which the same answers alone cannot show. Every row here is undone with the transaction. Read each
 -- NOTICE as  case|expected|got ; the last line is the verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
@@ -83,6 +84,11 @@ SELECT pg_temp.rh_case('every search answers after the car as it did before it',
 SELECT pg_temp.rh_case('the stacks and the members are analysed with the indexes of their pieces', 'true',
   (EXISTS (SELECT 1 FROM pg_stats WHERE schemaname = 'public' AND tablename = 'lists_short_grams')
    AND EXISTS (SELECT 1 FROM pg_stats WHERE schemaname = 'public' AND tablename = 'profiles_short_grams'))::text) AS done \gset rh_
+SELECT pg_temp.rh_case('each of the three searches asks a short search''s pieces', 'get_filtered_stacks_auth_cursor_v2,search_members,search_stacks',
+  (SELECT string_agg(p.proname, ',' ORDER BY p.proname) FROM pg_proc p
+    WHERE p.pronamespace = 'public'::regnamespace
+      AND p.proname IN ('search_stacks', 'search_members', 'get_filtered_stacks_auth_cursor_v2')
+      AND position('private.pattern_grams(' in pg_get_functiondef(p.oid)) > 0)) AS done \gset rh_
 
 SELECT pg_temp.rh_verdict();
 ROLLBACK;
