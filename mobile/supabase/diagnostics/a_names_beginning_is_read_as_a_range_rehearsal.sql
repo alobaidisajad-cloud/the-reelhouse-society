@@ -1,14 +1,11 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_names_beginning_is_read_as_a_range_rehearsal.sql — 20261122_18. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_names_beginning_is_read_as_a_range_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_names_beginning_is_read_as_a_range_rehearsal.sql
 --
--- The train applies 20261122_18 here (with_train), every car before it already applied (20261122_17's index
--- among them); a sealed copy already holds it. On names it plants (accents in both cases, a digraph, a
--- sharp s, digits, a quote, an underscore), as a member searching: search_members answers every search after
--- the car exactly as before it (before is read first, with_train), the whole page with each closeness (the
--- digraph's lower case is the collation's to say, so it is held to that alone); a
--- planted name that begins with the words is found at that closeness, one whose later word holds them is
+-- 20261122_18 is applied on production (the train of 2026-11-23); this shows it still holds there, and on every sealed copy.
+-- On names it plants (accents in both cases, a digraph, a sharp s, digits, a quote, an underscore), as a
+-- member searching: a planted name that begins with the words is found at that closeness, one whose later word holds them is
 -- not; and the test the car adds to a name's beginning is read as one range of 20261122_17's index.
 -- Every row here is undone with the transaction. Read each NOTICE as  case|expected|got ; the last line
 -- is the verdict, and any miss makes psql exit non-zero.
@@ -54,13 +51,7 @@ BEGIN
   PERFORM set_config('request.jwt.claims', '', true);
   RETURN v;
 END $$;
-CREATE TEMP TABLE nb_before ON COMMIT DROP AS SELECT pg_temp.nb_finds() AS r;
 
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_18_a_names_beginning_is_read_as_a_range.sql
-\endif
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 CREATE TEMP TABLE nb_after ON COMMIT DROP AS SELECT pg_temp.nb_finds() AS r;
@@ -72,8 +63,6 @@ CREATE FUNCTION pg_temp.nb_named(w text) RETURNS text LANGUAGE sql AS $$
     JOIN rehearsal_members m ON m.id = (e ->> 0)::uuid
    WHERE (e ->> 1)::int = 2
 $$;
-SELECT pg_temp.rh_case('every search answers after the car as it did before it, the whole page', 'true',
-  ((SELECT r FROM nb_after) = (SELECT r FROM nb_before))::text) AS done \gset rh_
 SELECT pg_temp.rh_case('a name that begins with an accented word is found by it in either case; a later word''s is not', '1|1|2',
   pg_temp.nb_named('élise rh') || '|' || pg_temp.nb_named('ÉLISE RH') || '|' || pg_temp.nb_named('élan rh')) AS done \gset rh_
 SELECT pg_temp.rh_case('a sharp s begins a name as itself', '5',

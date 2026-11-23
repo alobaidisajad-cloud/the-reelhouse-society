@@ -706,6 +706,74 @@ COMMENT ON FUNCTION private.no_block_stands_with(p_one uuid, p_two uuid) IS 'Whe
 
 
 --
+-- Name: pattern_grams(text); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.pattern_grams(p_pattern text) RETURNS text[]
+    LANGUAGE plpgsql IMMUTABLE STRICT PARALLEL SAFE
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    AS $$
+DECLARE
+  v_text text := lower(p_pattern);
+  v_n    integer := char_length(v_text);
+  v_i    integer := 1;
+  v_c    text;
+  v_seg  text := '';
+  v_out  text[] := '{}';
+BEGIN
+  WHILE v_i <= v_n + 1 LOOP
+    v_c := CASE WHEN v_i <= v_n THEN substr(v_text, v_i, 1) END;
+    IF v_c = '\' AND v_i < v_n THEN
+      v_seg := v_seg || substr(v_text, v_i + 1, 1);
+      v_i := v_i + 2;
+      CONTINUE;
+    END IF;
+    IF v_c IS NULL OR v_c IN ('%', '_') THEN
+      IF char_length(v_seg) = 1 THEN
+        v_out := v_out || v_seg;
+      ELSE
+        FOR k IN 1 .. char_length(v_seg) - 1 LOOP
+          v_out := v_out || substr(v_seg, k, 2);
+        END LOOP;
+      END IF;
+      v_seg := '';
+    ELSE
+      v_seg := v_seg || v_c;
+    END IF;
+    v_i := v_i + 1;
+  END LOOP;
+  RETURN CASE WHEN cardinality(v_out) = 0 THEN NULL ELSE v_out END;
+END $$;
+
+
+--
+-- Name: search_grams(text, text); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.search_grams(p_one text, p_two text) RETURNS text[]
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    AS $$
+  SELECT private.short_grams(coalesce(p_one, '')) || private.short_grams(coalesce(p_two, ''));
+$$;
+
+
+--
+-- Name: short_grams(text); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.short_grams(p_text text) RETURNS text[]
+    LANGUAGE sql IMMUTABLE STRICT PARALLEL SAFE
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    AS $$
+  SELECT string_to_array(x.t, NULL)
+      || ARRAY(SELECT m[1] FROM regexp_matches(x.t, '(..)', 'g') m)
+      || ARRAY(SELECT m[1] FROM regexp_matches(substr(x.t, 2), '(..)', 'g') m)
+    FROM (SELECT lower(p_text) AS t) x;
+$$;
+
+
+--
 -- Name: the_cards_made_true(integer); Type: FUNCTION; Schema: private; Owner: -
 --
 
@@ -790,6 +858,47 @@ BEGIN
   GET DIAGNOSTICS v_count = ROW_COUNT;
   RETURN v_made + v_count;
 END $$;
+
+
+--
+-- Name: viewing_months(uuid, jsonb, timestamp with time zone); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.viewing_months(p_user uuid, p_history jsonb, p_created timestamp with time zone) RETURNS text[]
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    AS $$
+  SELECT ARRAY(
+    SELECT DISTINCT p_user::text || '/' || k.month
+      FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p_history) = 'array' THEN p_history ELSE '[]'::jsonb END) e
+     CROSS JOIN LATERAL (SELECT e->>'date' AS d) w
+     CROSS JOIN LATERAL (SELECT coalesce(w.d ~ '^\d{4}-\d{2}-\d{2}', false) AS written,
+                                coalesce(w.d ~ '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|1[0-9]|2[0-8])' AND left(w.d, 4) <> '0000', false) AS sure) s
+     CROSS JOIN LATERAL (
+       SELECT left(w.d, 7) AS month WHERE s.written
+       UNION ALL
+       SELECT lpad(extract(year FROM x.day)::int::text, 4, '0') || '-' || lpad(extract(month FROM x.day)::int::text, 2, '0')
+         FROM (VALUES ((p_created AT TIME ZONE 'UTC')::date - 1), ((p_created AT TIME ZONE 'UTC')::date + 1)) x(day)
+        WHERE NOT s.sure AND p_created IS NOT NULL
+     ) k
+     WHERE jsonb_typeof(e) = 'object'
+  );
+$$;
+
+
+--
+-- Name: viewing_months_between(uuid, date, date); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.viewing_months_between(p_user uuid, p_first date, p_last date) RETURNS text[]
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    AS $$
+  SELECT ARRAY(
+    SELECT p_user::text || '/' || lpad(extract(year FROM m)::int::text, 4, '0') || '-' || lpad(extract(month FROM m)::int::text, 2, '0')
+      FROM generate_series(date_trunc('month', p_first::timestamp), p_last::timestamp, interval '1 month') m
+  );
+$$;
 
 
 --
@@ -1560,6 +1669,8 @@ BEGIN
     UPDATE reports
        SET status = 'resolved', resolved_at = now(), resolved_by = v_admin_id, resolution_action = 'dismiss'
      WHERE id = ANY(p_report_ids) AND status = 'pending'
+       -- A case about the moderator stays pending, for another moderator (a_judge_is_refused).
+       AND private.a_judge_is_refused(v_admin_id, NULL, target_user_id) IS NULL
     RETURNING id, target_user_id, reporter_id
   ), recorded AS (
     INSERT INTO mod_actions (report_id, target_user_id, admin_id, action, reason)
@@ -3637,22 +3748,47 @@ CREATE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT 
     SET search_path TO 'public', 'pg_temp'
     AS $$
   WITH
+  -- A search's one- and two-letter pieces, when it has no three letters or digits in a row; none when it
+  -- is all wildcards (then it walks). Read by them, the words' own test is asked inside COALESCE, so no
+  -- plan reads a trigram index for them whole (it holds nothing to find them by).
+  short AS MATERIALIZED (
+    SELECT CASE WHEN p_search !~ '[[:alnum:]]{3}'
+                THEN private.pattern_grams('%' || like_escape(COALESCE(p_search, '')) || '%') END AS grams
+  ),
   -- A search that matches many stacks walks them newest first, as with no search, and stops
   -- at its page; one that matches few is read by its matches. Counted by the trigram indexes,
   -- to 1,000 at most (load 43284739569: the walk 6.5 ms for a word every stack has and 292.7
   -- for a handle; the matches 94.7 and 4.4).
-  -- Under three letters no trigram index can find a word (it is made of three-letter pieces): such
-  -- a search walks, uncounted (load 43292798767: "m1" counted by the indexes took 506.9 ms).
+  -- Without three letters or digits in a row no trigram index can find a word (it is made of three-
+  -- letter pieces; "m1" counted by them took 506.9 ms, load 43292798767): such a search is counted by
+  -- its one- and two-letter pieces instead (lists_short_grams, profiles_short_grams), and walks only
+  -- when it has none (all wildcards).
   many AS MATERIALIZED (
-    SELECT CASE WHEN char_length(COALESCE(p_search, '')) < 3 THEN true ELSE (
+    SELECT CASE WHEN COALESCE(p_search, '') = '' OR (p_search !~ '[[:alnum:]]{3}' AND (SELECT grams FROM short) IS NULL) THEN true
+                WHEN p_search !~ '[[:alnum:]]{3}' THEN (
+      SELECT count(*) >= 1000 FROM (
+        SELECT l.id FROM lists l
+         WHERE l.is_private = false
+           AND private.search_grams(l.title, l.description) @> (SELECT grams FROM short)
+           AND COALESCE(l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\', false)
+        UNION ALL
+        SELECT l.id FROM profiles pu
+         CROSS JOIN LATERAL (SELECT l.id FROM lists l WHERE l.user_id = pu.id AND l.is_private = false OFFSET 0) l
+         WHERE private.search_grams(pu.username, pu.display_name) @> (SELECT grams FROM short)
+           AND COALESCE(pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\', false)
+        LIMIT 1000
+      ) counted_short)
+                ELSE (
       SELECT count(*) >= 1000 FROM (
         SELECT l.id FROM lists l
          WHERE l.is_private = false
            AND l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
         UNION ALL
-        SELECT l.id FROM profiles pu JOIN lists l ON l.user_id = pu.id
-         WHERE l.is_private = false
-           AND pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+        -- Each member whose handle holds the words, then their stacks by their own index (OFFSET 0
+        -- keeps it a lookup per member): never every stack of the house read to be joined.
+        SELECT l.id FROM profiles pu
+         CROSS JOIN LATERAL (SELECT l.id FROM lists l WHERE l.user_id = pu.id AND l.is_private = false OFFSET 0) l
+         WHERE pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
         LIMIT 1000
       ) counted) END AS walk
   ),
@@ -3662,14 +3798,34 @@ CREATE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT 
       SELECT l.id, l.created_at, l.user_id
         FROM lists l
        WHERE COALESCE(p_search, '') <> '' AND NOT (SELECT walk FROM many) AND l.is_private = false
+         AND p_search ~ '[[:alnum:]]{3}'
          AND l.withheld_at IS NULL
          AND l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
       UNION
       SELECT l.id, l.created_at, l.user_id
-        FROM profiles pu JOIN lists l ON l.user_id = pu.id
+        FROM lists l
        WHERE COALESCE(p_search, '') <> '' AND NOT (SELECT walk FROM many) AND l.is_private = false
+         AND p_search !~ '[[:alnum:]]{3}'
+         AND private.search_grams(l.title, l.description) @> (SELECT grams FROM short)
          AND l.withheld_at IS NULL
+         AND COALESCE(l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\', false)
+      UNION
+      SELECT l.id, l.created_at, l.user_id
+        FROM profiles pu
+       CROSS JOIN LATERAL (SELECT l.id, l.created_at, l.user_id FROM lists l
+                            WHERE l.user_id = pu.id AND l.is_private = false AND l.withheld_at IS NULL OFFSET 0) l
+       WHERE COALESCE(p_search, '') <> '' AND NOT (SELECT walk FROM many)
+         AND p_search ~ '[[:alnum:]]{3}'
          AND pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+      UNION
+      SELECT l.id, l.created_at, l.user_id
+        FROM profiles pu
+       CROSS JOIN LATERAL (SELECT l.id, l.created_at, l.user_id FROM lists l
+                            WHERE l.user_id = pu.id AND l.is_private = false AND l.withheld_at IS NULL OFFSET 0) l
+       WHERE COALESCE(p_search, '') <> '' AND NOT (SELECT walk FROM many)
+         AND p_search !~ '[[:alnum:]]{3}'
+         AND private.search_grams(pu.username, pu.display_name) @> (SELECT grams FROM short)
+         AND COALESCE(pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\', false)
     ) m
      WHERE p_cursor_created_at IS NULL OR (m.created_at, m.id) < (p_cursor_created_at, p_cursor_id)
      ORDER BY m.created_at DESC, m.id DESC
@@ -4067,6 +4223,33 @@ CREATE FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per
   WHERE r.rn <= LEAST(GREATEST(COALESCE(p_per_user, 5), 0), 20)
   ORDER BY r.target_user_id, r.created_at DESC, r.id DESC;
 $$;
+
+
+--
+-- Name: get_my_follows(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.get_my_follows() RETURNS jsonb
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  -- One pass over the member's own follows and requests, each with its handle; both lists in the
+  -- order the follows were made.
+  SELECT jsonb_build_object(
+    'following', COALESCE(jsonb_agg(p.username ORDER BY i.created_at, i.id) FILTER (WHERE i.type = 'follow'), '[]'::jsonb),
+    'requested', COALESCE(jsonb_agg(p.username ORDER BY i.created_at, i.id) FILTER (WHERE i.type = 'follow_request'), '[]'::jsonb))
+    FROM public.interactions i
+    JOIN public.profiles p ON p.id = i.target_user_id
+   WHERE i.user_id = (SELECT auth.uid())
+     AND i.type IN ('follow', 'follow_request');
+$$;
+
+
+--
+-- Name: FUNCTION get_my_follows(); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.get_my_follows() IS 'The caller''s follow list in one read, for the phone at launch: the handles they follow and the handles they asked to follow, each in the order made. Runs as the caller, under the interactions'' and profiles'' own rules.';
 
 
 --
@@ -4711,10 +4894,6 @@ DECLARE
   result JSON;
   v_vault JSON := '[]'::json;
   v_decades JSON := '[]'::json;
-  v_current integer := 0;
-  v_longest integer := 0;
-  v_run JSON;
-  v_months JSON := '[]'::json;
 BEGIN
   -- The check the other two functions already had. This one had none.
   IF NOT private.can_view_user_data(p_user_id) THEN
@@ -4749,17 +4928,32 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN v_decades := '[]'::json;
   END;
 
-  -- The nights a member saw a film: every viewing's day, a rewatched film's earlier viewings
-  -- among them. A run is consecutive days; date - row_number holds still along one, read
-  -- ascending.
+  -- The member's records, read once (a withheld one its author's alone): every figure below is
+  -- counted from this one read, never from the records read again.
+  WITH mine AS MATERIALIZED (
+    SELECT l.rating, l.format, l.watched_date, l.created_at, l.viewing_history
+      FROM logs l
+     WHERE l.user_id = p_user_id AND (l.withheld_at IS NULL OR l.user_id = auth.uid())
+  ),
+  -- The nights a member saw a film, as member_viewings reads them: every viewing's day, a rewatched
+  -- film's earlier viewings among them. A run is consecutive days; date - row_number holds still
+  -- along one, read ascending.
   --   current_streak: the run reaching the house's today or yesterday, as before, for the builds
   --     that read it.
   --   current_run: the newest run whole, its length and its last day, for the phone to judge on
   --     its own calendar (the house's day is not the member's). A day past the house's tomorrow
   --     is today nowhere, so a run ending after it is not the newest one.
   --   monthly_viewings: the viewings of each month, `YYYY-MM`.
-  WITH viewed AS (
-    SELECT v.day FROM public.member_viewings(p_user_id) v
+  viewed AS (
+    SELECT m.watched_date AS day FROM mine m
+    UNION ALL
+    SELECT COALESCE(CASE WHEN e->>'date' ~ '^\d{4}-\d{2}-\d{2}' AND pg_input_is_valid(left(e->>'date', 10), 'date')
+                         THEN left(e->>'date', 10)::date END,
+                    m.created_at::date)
+      FROM mine m
+     CROSS JOIN LATERAL jsonb_array_elements(
+             CASE WHEN jsonb_typeof(m.viewing_history) = 'array' THEN m.viewing_history ELSE '[]'::jsonb END) AS e
+     WHERE jsonb_typeof(e) = 'object'
   ),
   streak AS (
     SELECT d.day, d.day - (ROW_NUMBER() OVER (ORDER BY d.day))::int AS grp
@@ -4768,50 +4962,43 @@ BEGIN
   runs AS (
     SELECT COUNT(*)::int AS len, MAX(day) AS ends_on FROM streak GROUP BY grp
   )
-  SELECT
-    COALESCE((SELECT r.len FROM runs r WHERE r.ends_on >= CURRENT_DATE - 1 ORDER BY r.ends_on DESC LIMIT 1), 0),
-    COALESCE((SELECT MAX(r.len) FROM runs r), 0),
-    (SELECT json_build_object('length', r.len, 'ends_on', r.ends_on)
-       FROM runs r WHERE r.ends_on <= CURRENT_DATE + 1 ORDER BY r.ends_on DESC LIMIT 1),
-    (SELECT COALESCE(json_agg(row_to_json(mv)), '[]'::json) FROM (
-       SELECT TO_CHAR(day, 'YYYY-MM') AS month, COUNT(*) AS count
-       FROM viewed GROUP BY 1 ORDER BY 1 DESC) mv)
-  INTO v_current, v_longest, v_run, v_months;
-
   SELECT json_build_object(
-    'total_logs', (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id AND (withheld_at IS NULL OR user_id = auth.uid())),
-    'avg_rating', (SELECT COALESCE(ROUND(AVG(rating)::numeric, 2), 0)
-                   FROM logs WHERE user_id = p_user_id AND (withheld_at IS NULL OR user_id = auth.uid()) AND rating > 0),
+    'total_logs', (SELECT COUNT(*) FROM mine),
+    'avg_rating', (SELECT COALESCE(ROUND(AVG(rating)::numeric, 2), 0) FROM mine WHERE rating > 0),
     'rating_distribution', (
       SELECT COALESCE(json_agg(row_to_json(rd)), '[]'::json) FROM (
-        SELECT rating, COUNT(*) as count FROM logs
-        WHERE user_id = p_user_id AND (withheld_at IS NULL OR user_id = auth.uid()) AND rating > 0
+        SELECT rating, COUNT(*) as count FROM mine
+        WHERE rating > 0
         GROUP BY rating ORDER BY rating) rd),
 
-    -- the 12-month window is gone. The Archive's records by the month each is filed under, as
-    -- its headings count the posters beneath them.
+    -- The Archive's records by the month each is filed under, as its headings count the posters
+    -- beneath them.
     'monthly_activity', (
       SELECT COALESCE(json_agg(row_to_json(ma)), '[]'::json) FROM (
         SELECT TO_CHAR(COALESCE(watched_date::date, created_at::date), 'YYYY-MM') as month,
                COUNT(*) as count
-        FROM logs WHERE user_id = p_user_id AND (withheld_at IS NULL OR user_id = auth.uid())
+        FROM mine
         GROUP BY month ORDER BY month DESC) ma),
 
-    'current_streak', v_current,
-    'longest_streak', v_longest,
-    'current_run', v_run,
-    'monthly_viewings', v_months,
+    'current_streak', COALESCE((SELECT r.len FROM runs r WHERE r.ends_on >= CURRENT_DATE - 1 ORDER BY r.ends_on DESC LIMIT 1), 0),
+    'longest_streak', COALESCE((SELECT MAX(r.len) FROM runs r), 0),
+    'current_run', (SELECT json_build_object('length', r.len, 'ends_on', r.ends_on)
+                      FROM runs r WHERE r.ends_on <= CURRENT_DATE + 1 ORDER BY r.ends_on DESC LIMIT 1),
+    'monthly_viewings', (SELECT COALESCE(json_agg(row_to_json(mv)), '[]'::json) FROM (
+                           SELECT TO_CHAR(day, 'YYYY-MM') AS month, COUNT(*) AS count
+                           FROM viewed GROUP BY 1 ORDER BY 1 DESC) mv),
 
-    -- unchanged: this is logs.format, how a film was watched — NOT the Vault
+    -- this is logs.format, how a film was watched — NOT the Vault
     'format_breakdown', (
       SELECT COALESCE(json_agg(row_to_json(fb)), '[]'::json) FROM (
-        SELECT format, COUNT(*) as count FROM logs
-        WHERE user_id = p_user_id AND (withheld_at IS NULL OR user_id = auth.uid()) AND format IS NOT NULL AND format != ''
+        SELECT format, COUNT(*) as count FROM mine
+        WHERE format IS NOT NULL AND format != ''
         GROUP BY format ORDER BY count DESC) fb),
 
     'vault_formats', v_vault,
     'watchlist_decades', v_decades
-  ) INTO result;
+  ) INTO result
+  FROM (SELECT 1) one;
 
   RETURN result;
 END;
@@ -5501,7 +5688,10 @@ CREATE FUNCTION public.list_certify_count(p_list_id uuid) RETURNS bigint
     AND EXISTS (
       SELECT 1 FROM public.lists l
       WHERE l.id = p_list_id
-        AND ((l.is_private = false AND l.withheld_at IS NULL) OR l.user_id = auth.uid())
+        AND (l.user_id = (SELECT auth.uid())
+             OR (l.is_private = false AND l.withheld_at IS NULL
+                 AND NOT COALESCE(l.user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)
+                 AND private.can_view_user_data(l.user_id)))
     );
 $$;
 
@@ -5529,7 +5719,10 @@ CREATE FUNCTION public.list_certify_counts(p_list_ids uuid[]) RETURNS TABLE(list
       AND EXISTS (
         SELECT 1 FROM public.lists l
         WHERE l.id = t.id
-          AND ((l.is_private = false AND l.withheld_at IS NULL) OR l.user_id = auth.uid())
+          AND (l.user_id = (SELECT auth.uid())
+               OR (l.is_private = false AND l.withheld_at IS NULL
+                   AND NOT COALESCE(l.user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)
+                   AND private.can_view_user_data(l.user_id)))
       )
   )
   FROM unnest(p_list_ids) AS t(id);
@@ -6313,7 +6506,14 @@ $$;
 CREATE FUNCTION public.notices_page(p_limit integer DEFAULT 30) RETURNS jsonb
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
+    SET enable_bitmapscan TO 'off'
     AS $$
+  WITH counted AS (
+    SELECT count(*) AS n
+      FROM (SELECT 1 FROM public.notifications
+             WHERE user_id = (SELECT auth.uid()) AND is_read = false
+             LIMIT 1001) u
+  )
   SELECT jsonb_build_object(
     'rows', COALESCE((
       SELECT jsonb_agg(to_jsonb(n) ORDER BY n.created_at DESC, n.id DESC)
@@ -6323,8 +6523,8 @@ CREATE FUNCTION public.notices_page(p_limit integer DEFAULT 30) RETURNS jsonb
                WHERE user_id = (SELECT auth.uid())
                ORDER BY created_at DESC, id DESC
                LIMIT LEAST(GREATEST(COALESCE(p_limit, 30), 1), 100)) n), '[]'::jsonb),
-    'unread', (SELECT count(*) FROM public.notifications
-                WHERE user_id = (SELECT auth.uid()) AND is_read = false));
+    'unread', (SELECT LEAST(n, 1000) FROM counted),
+    'unread_more', (SELECT n > 1000 FROM counted));
 $$;
 
 
@@ -7241,6 +7441,12 @@ BEGIN
     RAISE EXCEPTION 'ALREADY_JUDGED' USING ERRCODE = 'P0002';
   END IF;
 
+  -- A moderator never rules on a case about themselves: another moderator judges it, by the one rule
+  -- of who may judge a case (as an appeal or a lift is refused).
+  IF private.a_judge_is_refused(v_admin_id, NULL, v_target_user_id) IS NOT NULL THEN
+    RAISE EXCEPTION '%', private.a_judge_is_refused(v_admin_id, NULL, v_target_user_id) USING ERRCODE = '42501';
+  END IF;
+
   IF v_target_user_id IS NULL AND p_action NOT IN ('dismiss', 'delete_content') THEN
     RAISE EXCEPTION 'That member has deleted their account. Only dismiss or delete_content remain.'
       USING ERRCODE = 'P0001';
@@ -7713,6 +7919,7 @@ DECLARE
   v_not    text := '';
   v_got    integer := 0;
   v_n      integer;
+  v_short  text := '';
 BEGIN
   IF COALESCE(p_pattern, '') = '' THEN
     RETURN;
@@ -7723,19 +7930,30 @@ BEGIN
   -- The handle that is the words: words with no wildcard left once their escapes are read are one
   -- handle, any case, so the case-blind unique index (profiles_username_lower_unique) finds it at once
   -- (ILIKE is that same lower() on both sides: the equality adds no member and takes none away).
+  -- A name that begins with the words is asked the same of its lower case (ILIKE is lower() LIKE lower()),
+  -- so its beginning is found in profiles_display_name_beginning (20261122_17), never by the trigram of
+  -- a word's start that every name holding such a word anywhere also holds.
   v_tests := ARRAY[
     format('p.username ILIKE %L ESCAPE %L', p_pattern, '\')
       || CASE WHEN regexp_replace(p_pattern, '\\.', '', 'g') !~ '[%_\\]'
               THEN format(' AND lower(p.username) = lower(%L)', regexp_replace(p_pattern, '\\(.)', '\1', 'g')) ELSE '' END,
     format('p.username ILIKE %L ESCAPE %L', p_pattern || '%', '\'),
-    CASE WHEN v_names THEN format('p.display_name ILIKE %L ESCAPE %L', p_pattern || '%', '\') ELSE 'false' END,
+    CASE WHEN v_names THEN format('p.display_name ILIKE %L ESCAPE %L AND lower(p.display_name) LIKE %L ESCAPE %L', p_pattern || '%', '\', lower(p_pattern) || '%', '\') ELSE 'false' END,
     format('(p.username ILIKE %L ESCAPE %L', '%' || p_pattern || '%', '\')
       || CASE WHEN v_names THEN format(' OR p.display_name ILIKE %L ESCAPE %L)', '%' || p_pattern || '%', '\') ELSE ')' END
   ];
+  -- Words without three letters or digits in a row hold no trigram inside a handle or a name: the
+  -- gatherings of who holds them anywhere (the one read's own, and the last closeness) then read by
+  -- their one- and two-letter pieces (profiles_short_grams), never member by member through the house,
+  -- the words' own test asked inside COALESCE so no plan reads a trigram index for them whole. A handle
+  -- or a name that begins with them is found by its trigrams as before (a beginning has its own).
+  IF p_pattern !~ '[[:alnum:]]{3}' AND private.pattern_grams(p_pattern) IS NOT NULL THEN
+    v_short := format(' AND private.search_grams(p.username, p.display_name) @> %L::text[]', private.pattern_grams(p_pattern));
+  END IF;
   -- Who holds the words at all (the one read's own WHERE), gathered once by the plan the words want,
   -- up to a thousand: when fewer hold them, the page is the one read's own over just those few, by id.
-  EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s AND NOT COALESCE(p.id = ANY ($1), false) LIMIT 1001) p',
-                 v_tests[4])
+  EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s%s AND NOT COALESCE(p.id = ANY ($1), false) LIMIT 1001) p',
+                 CASE WHEN v_short = '' THEN v_tests[4] ELSE format('COALESCE(%s, false)', v_tests[4]) END, v_short)
     INTO v_few USING v_hidden;
   IF COALESCE(cardinality(v_few), 0) <= 1000 THEN
     RETURN QUERY
@@ -7765,8 +7983,9 @@ BEGIN
   FOR v_tier IN 0..3 LOOP
     IF (p_cursor_closeness IS NULL OR v_tier >= p_cursor_closeness) AND v_tests[v_tier + 1] <> 'false' THEN
       v_past := CASE WHEN v_tier = p_cursor_closeness THEN format(' AND p.username > %L', p_cursor_username) ELSE '' END;
-      EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s%s%s AND NOT COALESCE(p.id = ANY ($1), false) LIMIT 1001) p',
-                     v_tests[v_tier + 1], v_not, v_past)
+      EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s%s%s%s AND NOT COALESCE(p.id = ANY ($1), false) LIMIT 1001) p',
+                     CASE WHEN v_short = '' OR v_tier < 3 THEN v_tests[v_tier + 1] ELSE format('COALESCE(%s, false)', v_tests[v_tier + 1]) END, v_not, v_past,
+                     CASE WHEN v_tier = 3 THEN v_short ELSE '' END)
         INTO v_few USING v_hidden;
       IF COALESCE(cardinality(v_few), 0) <= 1000 THEN
         RETURN QUERY
@@ -7817,6 +8036,9 @@ DECLARE
   v_id     uuid := CASE WHEN p_cursor_at IS NULL THEN 'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid ELSE p_cursor_id END;
   -- A trigram is three letters or digits in a row: without one, no index can find the words.
   v_pieces boolean := p_pattern ~ '[[:alnum:]]{3}';
+  -- Without one, the words' one- and two-letter pieces (lists_short_grams): none when all wildcards.
+  -- Read by them, the words' own test is asked inside COALESCE, so no plan reads a trigram index whole.
+  v_grams  text[] := CASE WHEN p_pattern !~ '[[:alnum:]]{3}' THEN private.pattern_grams('%' || p_pattern || '%') END;
   v_few    boolean := false;
   v_page   uuid[];
 BEGIN
@@ -7825,8 +8047,15 @@ BEGIN
   END IF;
   v_hidden := COALESCE((SELECT private.hidden_authors()), '{}'::uuid[]);
 
-  -- 1. Counted by the trigram indexes, to 1,000.
-  IF v_pieces THEN
+  -- 1. Counted by the trigram indexes, or by the short pieces, to 1,000.
+  IF v_grams IS NOT NULL THEN
+    SELECT count(*) < 1000 INTO v_few
+      FROM (SELECT 1 FROM public.lists l
+             WHERE l.is_private = false AND l.withheld_at IS NULL
+               AND private.search_grams(l.title, l.description) @> v_grams
+               AND COALESCE((l.title ILIKE v_words ESCAPE '\' OR l.description ILIKE v_words ESCAPE '\'), false)
+             LIMIT 1000) c;
+  ELSIF v_pieces THEN
     SELECT count(*) < 1000 INTO v_few
       FROM (SELECT 1 FROM public.lists l
              WHERE l.is_private = false AND l.withheld_at IS NULL
@@ -7841,7 +8070,8 @@ BEGIN
               FROM (SELECT l.id, l.created_at, l.user_id
                       FROM public.lists l
                      WHERE l.is_private = false AND l.withheld_at IS NULL
-                       AND (l.title ILIKE v_words ESCAPE '\' OR l.description ILIKE v_words ESCAPE '\')
+                       AND (v_grams IS NULL OR private.search_grams(l.title, l.description) @> v_grams)
+                       AND CASE WHEN v_grams IS NULL THEN (l.title ILIKE v_words ESCAPE '\' OR l.description ILIKE v_words ESCAPE '\') ELSE COALESCE((l.title ILIKE v_words ESCAPE '\' OR l.description ILIKE v_words ESCAPE '\'), false) END
                        AND (l.created_at, l.id) < (v_at, v_id)
                     -- Read by the indexes and sorted before any stack is asked the rule.
                     OFFSET 0) m
@@ -7853,7 +8083,7 @@ BEGIN
              ORDER BY m.created_at DESC, m.id DESC
              LIMIT v_limit) w;
   ELSE
-    -- 3. Many, or no trigram: the public stacks newest first, each asked the words, then the rule.
+    -- 3. Many, or no piece at all: the public stacks newest first, each asked the words, then the rule.
     SELECT array_agg(w.id ORDER BY w.created_at DESC, w.id DESC) INTO v_page
       FROM (SELECT l.id, l.created_at
               FROM public.lists l
@@ -11469,6 +11699,13 @@ CREATE INDEX lists_description_trigram ON public.lists USING gin (description ex
 
 
 --
+-- Name: lists_short_grams; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX lists_short_grams ON public.lists USING gin (private.search_grams(title, description)) WHERE (is_private = false);
+
+
+--
 -- Name: lists_title_trigram; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11560,6 +11797,13 @@ CREATE INDEX logs_reviewed_words ON public.logs USING gin (film_title extensions
 
 
 --
+-- Name: logs_seen_again_by_month; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX logs_seen_again_by_month ON public.logs USING gin (private.viewing_months(user_id, viewing_history, created_at)) WHERE ((jsonb_typeof(viewing_history) = 'array'::text) AND (viewing_history <> '[]'::jsonb));
+
+
+--
 -- Name: logs_user_film_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11592,6 +11836,13 @@ CREATE INDEX lounge_messages_reply_to_id ON public.lounge_messages USING btree (
 --
 
 CREATE INDEX lounge_messages_room_newest ON public.lounge_messages USING btree (lounge_id, created_at DESC, id DESC) INCLUDE (user_id);
+
+
+--
+-- Name: lounges_newest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX lounges_newest ON public.lounges USING btree (created_at DESC, id DESC);
 
 
 --
@@ -11630,6 +11881,13 @@ CREATE INDEX profiles_admins ON public.profiles USING btree (id) WHERE (role = '
 
 
 --
+-- Name: profiles_display_name_beginning; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX profiles_display_name_beginning ON public.profiles USING btree (lower(display_name) text_pattern_ops);
+
+
+--
 -- Name: profiles_display_name_trigram; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11648,6 +11906,13 @@ CREATE INDEX profiles_email_idx ON public.profiles USING btree (email);
 --
 
 CREATE INDEX profiles_last_log_date_idx ON public.profiles USING btree (last_log_date);
+
+
+--
+-- Name: profiles_short_grams; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX profiles_short_grams ON public.profiles USING gin (private.search_grams(username, display_name));
 
 
 --
@@ -13609,7 +13874,7 @@ CREATE POLICY "Dossier comments viewable by everyone" ON public.dossier_comments
 
 CREATE POLICY "Lounge messages readable" ON public.lounge_messages FOR SELECT TO authenticated USING (((EXISTS ( SELECT 1
    FROM public.lounges l
-  WHERE ((l.id = lounge_messages.lounge_id) AND (l.is_private = false)))) OR (EXISTS ( SELECT 1
+  WHERE ((l.id = lounge_messages.lounge_id) AND (l.is_private = false) AND (lounge_messages.lounge_id IS NOT NULL)))) OR (EXISTS ( SELECT 1
    FROM public.lounge_members m
   WHERE ((m.lounge_id = lounge_messages.lounge_id) AND (m.user_id = ( SELECT auth.uid() AS uid)) AND (m.status = ANY (ARRAY['approved'::text, 'muted'::text])))))));
 
@@ -13641,7 +13906,7 @@ CREATE POLICY "Published dossiers are viewable by everyone." ON public.dispatch_
 
 CREATE POLICY "Reactions readable" ON public.lounge_message_reactions FOR SELECT TO authenticated USING (((EXISTS ( SELECT 1
    FROM public.lounges l
-  WHERE ((l.id = lounge_message_reactions.lounge_id) AND (l.is_private = false)))) OR (EXISTS ( SELECT 1
+  WHERE ((l.id = lounge_message_reactions.lounge_id) AND (l.is_private = false) AND (lounge_message_reactions.lounge_id IS NOT NULL)))) OR (EXISTS ( SELECT 1
    FROM public.lounge_members m
   WHERE ((m.lounge_id = lounge_message_reactions.lounge_id) AND (m.user_id = ( SELECT auth.uid() AS uid)) AND (m.status = ANY (ARRAY['approved'::text, 'muted'::text])))))));
 
@@ -15180,6 +15445,33 @@ GRANT ALL ON FUNCTION private.no_block_stands_with(p_one uuid, p_two uuid) TO se
 
 
 --
+-- Name: FUNCTION pattern_grams(p_pattern text); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.pattern_grams(p_pattern text) FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION search_grams(p_one text, p_two text); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.search_grams(p_one text, p_two text) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.search_grams(p_one text, p_two text) TO anon;
+GRANT ALL ON FUNCTION private.search_grams(p_one text, p_two text) TO authenticated;
+GRANT ALL ON FUNCTION private.search_grams(p_one text, p_two text) TO service_role;
+
+
+--
+-- Name: FUNCTION short_grams(p_text text); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.short_grams(p_text text) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.short_grams(p_text text) TO anon;
+GRANT ALL ON FUNCTION private.short_grams(p_text text) TO authenticated;
+GRANT ALL ON FUNCTION private.short_grams(p_text text) TO service_role;
+
+
+--
 -- Name: FUNCTION the_cards_made_true(p_part integer); Type: ACL; Schema: private; Owner: -
 --
 
@@ -15191,6 +15483,26 @@ REVOKE ALL ON FUNCTION private.the_cards_made_true(p_part integer) FROM PUBLIC;
 --
 
 REVOKE ALL ON FUNCTION private.the_moderators_words_made_clean() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION viewing_months(p_user uuid, p_history jsonb, p_created timestamp with time zone); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.viewing_months(p_user uuid, p_history jsonb, p_created timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.viewing_months(p_user uuid, p_history jsonb, p_created timestamp with time zone) TO anon;
+GRANT ALL ON FUNCTION private.viewing_months(p_user uuid, p_history jsonb, p_created timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION private.viewing_months(p_user uuid, p_history jsonb, p_created timestamp with time zone) TO service_role;
+
+
+--
+-- Name: FUNCTION viewing_months_between(p_user uuid, p_first date, p_last date); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.viewing_months_between(p_user uuid, p_first date, p_last date) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.viewing_months_between(p_user uuid, p_first date, p_last date) TO anon;
+GRANT ALL ON FUNCTION private.viewing_months_between(p_user uuid, p_first date, p_last date) TO authenticated;
+GRANT ALL ON FUNCTION private.viewing_months_between(p_user uuid, p_first date, p_last date) TO service_role;
 
 
 --
@@ -16252,6 +16564,15 @@ GRANT ALL ON FUNCTION public.get_marks_ledger() TO authenticated;
 REVOKE ALL ON FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer) TO service_role;
 GRANT ALL ON FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer) TO authenticated;
+
+
+--
+-- Name: FUNCTION get_my_follows(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.get_my_follows() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_my_follows() TO service_role;
+GRANT ALL ON FUNCTION public.get_my_follows() TO authenticated;
 
 
 --

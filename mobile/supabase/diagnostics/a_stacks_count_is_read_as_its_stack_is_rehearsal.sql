@@ -1,9 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_stacks_count_is_read_as_its_stack_is_rehearsal.sql — 20261122_06. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_stacks_count_is_read_as_its_stack_is_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_stacks_count_is_read_as_its_stack_is_rehearsal.sql
 --
--- The train applies 20261122_06 here (with_train), every car before it already applied; a sealed copy already holds it.
+-- 20261122_06 is applied on production (the train of 2026-11-23); this shows it still holds there, and on every sealed copy.
 -- Then members, acting as themselves, read a stack's certifications across a block both ways and of a
 -- private member they do not follow: each answers 0, and every stack they may read answers its count
 -- (stage C, the kinds pass). Every row here is undone with the transaction. Read each NOTICE as
@@ -22,12 +22,6 @@ CREATE TEMP TABLE rehearsal_members ON COMMIT DROP AS
    ORDER BY u.created_at LIMIT 3;
 SELECT pg_temp.rh_need('members', (SELECT count(*) FROM rehearsal_members), 3) AS done \gset rh_
 GRANT SELECT ON rehearsal_members TO anon, authenticated;
-
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_06_a_stacks_count_is_read_as_its_stack_is.sql
-\endif
 
 -- ── the setting, as the house ──
 RESET ROLE;

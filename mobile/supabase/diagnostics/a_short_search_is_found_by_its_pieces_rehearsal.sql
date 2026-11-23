@@ -1,15 +1,14 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_short_search_is_found_by_its_pieces_rehearsal.sql — 20261122_15. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_short_search_is_found_by_its_pieces_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_short_search_is_found_by_its_pieces_rehearsal.sql
 --
--- The train applies 20261122_15 here (with_train), every car before it already applied (the indexes of
--- 20261122_13 and _14 among them); a sealed copy already holds it. On rows it plants, as a member
--- searching: a pair of letters (9q) no other planted row holds, in a stack's title, in another's description, in a
--- member's handle and in another's name, and one letter of the same kind, found by search_stacks,
--- search_members and the Reel's stack search; a private stack never; each answered after the car as
--- before it (before is read first, with_train); and each of the three asks a short search's pieces, the
--- car's own change, which the same answers alone cannot show. Every row here is undone with the transaction. Read each
+-- 20261122_15 is applied on production (the train of 2026-11-23); this shows it still holds there, and on every sealed copy.
+-- On rows it plants, as a member searching: a pair of letters (9q) no other planted row holds, in a
+-- stack's title, in another's description, in a member's handle and in another's name, and one letter of
+-- the same kind, found by search_stacks, search_members and the Reel's stack search; a private stack
+-- never; and each of the three asks a short search's pieces, the car's own change, which the same answers
+-- alone cannot show. Every row here is undone with the transaction. Read each
 -- NOTICE as  case|expected|got ; the last line is the verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
@@ -60,13 +59,7 @@ BEGIN
   PERFORM set_config('request.jwt.claims', '', true);
   RETURN v;
 END $$;
-CREATE TEMP TABLE ssp_before ON COMMIT DROP AS SELECT pg_temp.ssp_finds() AS r;
 
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_15_a_short_search_is_found_by_its_pieces.sql
-\endif
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 CREATE TEMP TABLE ssp_after ON COMMIT DROP AS SELECT pg_temp.ssp_finds() AS r;
@@ -79,8 +72,6 @@ SELECT pg_temp.rh_case('one letter finds the member holding it', '3',
   (SELECT r ->> 'one letter' FROM ssp_after)) AS done \gset rh_
 SELECT pg_temp.rh_case('the Reel finds a stack by its title and by its author''s handle', 'description,title',
   (SELECT r ->> 'reel' FROM ssp_after)) AS done \gset rh_
-SELECT pg_temp.rh_case('every search answers after the car as it did before it', 'true',
-  ((SELECT r FROM ssp_after) = (SELECT r FROM ssp_before))::text) AS done \gset rh_
 SELECT pg_temp.rh_case('the stacks and the members are analysed with the indexes of their pieces', 'true',
   (EXISTS (SELECT 1 FROM pg_stats WHERE schemaname = 'public' AND tablename = 'lists_short_grams')
    AND EXISTS (SELECT 1 FROM pg_stats WHERE schemaname = 'public' AND tablename = 'profiles_short_grams'))::text) AS done \gset rh_

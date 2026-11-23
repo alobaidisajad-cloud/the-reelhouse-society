@@ -1,9 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- the_follow_list_in_one_trip_rehearsal.sql — 20261122_09. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs the_follow_list_in_one_trip_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs the_follow_list_in_one_trip_rehearsal.sql
 --
--- The train applies 20261122_09 here (with_train), every car before it already applied; a sealed copy already holds it.
+-- 20261122_09 is applied on production (the train of 2026-11-23); this shows it still holds there, and on every sealed copy.
 -- Then members, acting as themselves, read their follow lists in one trip: the same handles, in the
 -- same order, as the pages the phone read before, their own and no one else's (stage C, the kinds
 -- pass). A borrowed member may already follow others: each case counts only what it planted, or
@@ -23,12 +23,6 @@ CREATE TEMP TABLE rehearsal_members ON COMMIT DROP AS
    ORDER BY u.created_at LIMIT 4;
 SELECT pg_temp.rh_need('members', (SELECT count(*) FROM rehearsal_members), 4) AS done \gset rh_
 GRANT SELECT ON rehearsal_members TO anon, authenticated;
-
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_09_the_follow_list_in_one_trip.sql
-\endif
 
 -- ── the setting, as the house ──
 RESET ROLE;

@@ -1,9 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_viewing_again_is_filed_by_its_month_rehearsal.sql — 20261122_19. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_viewing_again_is_filed_by_its_month_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_viewing_again_is_filed_by_its_month_rehearsal.sql
 --
--- The train applies 20261122_19 here (with_train); a sealed copy already holds it. On histories it makes
+-- 20261122_19 is applied on production (the train of 2026-11-23); this shows it still holds there, and on every sealed copy.
+-- On histories it makes
 -- (dates written as days, as moments, as no day at all, a 29th to a 31st, a month past 12, the year 0,
 -- a digit not from 0 to 9, no date, a viewing that is not an object), each made at the last half hour of
 -- a month in UTC and in its middle, read on three clocks (UTC, fourteen hours east, twelve west): the
@@ -15,10 +16,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_19_a_viewing_again_is_filed_by_its_month.sql
-\endif
 
 -- The histories, and the moments their logs were made.
 CREATE TEMP TABLE vm_history ON COMMIT DROP AS

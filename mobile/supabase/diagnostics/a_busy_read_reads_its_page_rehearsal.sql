@@ -1,13 +1,12 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_busy_read_reads_its_page_rehearsal.sql — 20261122_12. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_busy_read_reads_its_page_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_busy_read_reads_its_page_rehearsal.sql
 --
--- The train applies 20261122_12 here (with_train), every car before it already applied; a sealed copy already holds it.
+-- 20261122_12 is applied on production (the train of 2026-11-23); this shows it still holds there, and on every sealed copy.
 -- On rows it plants, as the members themselves: the Reel's stacks searched by an author's handle, the
 -- projector room, and a salon's words and reactions read from an open room, from a seat, from a muted
--- seat and from no seat, each answered after the car as before it (before is read first, with_train),
--- and the pieces a short search is found by. Every row here is undone with the transaction. Read each
+-- seat and from no seat, and the pieces a short search is found by. Every row here is undone with the transaction. Read each
 -- NOTICE as  case|expected|got ; the last line is the verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
@@ -77,13 +76,7 @@ BEGIN
   PERFORM set_config('request.jwt.claims', '', true);
   RETURN jsonb_build_object('stacks', v_stacks, 'words', v_words, 'reactions', v_reactions, 'room', v_room::jsonb);
 END $$;
-CREATE TEMP TABLE brp_before ON COMMIT DROP AS SELECT pg_temp.brp_reads() AS r;
 
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_12_a_busy_read_reads_its_page.sql
-\endif
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 CREATE TEMP TABLE brp_after ON COMMIT DROP AS SELECT pg_temp.brp_reads() AS r;
@@ -98,9 +91,6 @@ SELECT pg_temp.rh_case('the projector room counts the records, their ratings and
   (SELECT concat_ws('|', r #>> '{room,total_logs}', r #>> '{room,avg_rating}', r #> '{room,rating_distribution}', jsonb_array_length(r #> '{room,format_breakdown}')) FROM brp_after)) AS done \gset rh_
 SELECT pg_temp.rh_case('and its nights: the run of yesterday and today, and the viewings of each month', '2|2|' || (SELECT count(DISTINCT to_char(d, 'YYYY-MM')) FROM unnest(ARRAY[current_date, current_date - 1, current_date - 30, current_date - 40]) d),
   (SELECT concat_ws('|', r #>> '{room,current_streak}', r #>> '{room,longest_streak}', jsonb_array_length(r #> '{room,monthly_viewings}')) FROM brp_after)) AS done \gset rh_
-SELECT pg_temp.rh_case('every read answers after the car as it did before it', 'true',
-  ((SELECT r FROM brp_after) = (SELECT r FROM brp_before))::text) AS done \gset rh_
-
 -- The pieces of a short search are as the words hold them.
 SELECT pg_temp.rh_case('a text''s pieces are each of its letters and each pair, in lower case', 'true',
   ((SELECT array_agg(DISTINCT g ORDER BY g) FROM unnest(private.short_grams('Ab c')) g) = ARRAY[' ', ' c', 'a', 'ab', 'b', 'b ', 'c'])::text) AS done \gset rh_
