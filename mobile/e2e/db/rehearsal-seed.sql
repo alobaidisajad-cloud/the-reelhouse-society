@@ -198,3 +198,8 @@ VALUES ('5eed0000-0000-4000-8000-0000000001a2', pg_temp.m('cleo'), 'The first wo
        ('5eed0000-0000-4000-8000-0000000001a3', pg_temp.m('ada'),  'Sit anywhere.', '2026-02-22');
 
 COMMIT;
+
+-- The house analysed once it is laid down, as production's tables always hold their statistics: the
+-- pending cars were applied (and analysed what they made) on the empty copy before this seed, so
+-- without it the rehearsals read statistics of empty tables, or none for a car's new index.
+ANALYZE;

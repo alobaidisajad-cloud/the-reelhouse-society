@@ -149,6 +149,8 @@ UPDATE public.films f SET log_count = c.n, rating_count = c.rated, avg_rating = 
                round(avg(rating) FILTER (WHERE rating > 0), 2) AS avg FROM public.logs GROUP BY 1) c WHERE f.id = c.id;
 COMMIT;
 SELECT public.lobby_choose_edition() AS lobby_edition_rows;
+-- The house analysed once it is laid down, as production's tables always hold their statistics.
+ANALYZE;
 
 -- The seed's own check: each count, and the ids the lab opens.
 SELECT json_build_object(

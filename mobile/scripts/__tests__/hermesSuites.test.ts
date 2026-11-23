@@ -97,6 +97,13 @@ describe('the reader says NO', () => {
     expect(reason('globalThis.Intl.Segmenter = undefined;')).toBeNull();
   });
 
+  it('to Node reached through a file the suite loads, at any depth, but not through one it mocks', () => {
+    expect(reason("const { databaseSql } = require('../../../scripts/write-sites.cjs');")).toBe("uses Node's 'fs' through scripts/write-sites.cjs");
+    expect(reason("import { readCode } from '@/test-utils/readCode';")).toBe("uses Node's 'fs' through test-utils/readCode.ts");
+    expect(reason("jest.mock('../../../scripts/write-sites.cjs', () => ({}));\nconst sites = require('../../../scripts/write-sites.cjs');")).toBeNull();
+    expect(reason("import { withTimeout } from '../withTimeout';")).toBeNull();
+  });
+
   it('to a mock it cannot make, and yes to one it can', () => {
     expect(reason("jest.mock('../logger');")).toBe("jest.mock('../logger') without a factory (jest's automock)");
     expect(reason("describe('d', () => { jest.mock('../logger', () => ({})); });")).toBe("calls jest.mock inside a test (jest's module registry)");

@@ -275,7 +275,8 @@ SELECT ('00000000-0000-4000-b300-' || lpad(to_hex(k), 12, '0'))::uuid, pg_temp.m
        'The hot case.', 'pending', now() - k * interval '1 minute', pg_temp.mid(2)
   FROM generate_series(1, 300) k;
 -- A verdict on each settled report but one in nine, by member 6; a fifth of them appealed and waiting.
--- The whale is the target of 40, each on a log of its own withheld while the verdict stands.
+-- The whale is the target of 40, each on a log of its own withheld while the verdict stands: one every
+-- seventeen hours, so all 40 are inside their thirty days, as the hourly expiry leaves a house.
 INSERT INTO public.mod_actions (id, report_id, target_user_id, admin_id, action, reason, duration_hours, expires_at, created_at,
                                 appeal, appeal_filed_at, appeal_status)
 SELECT ('00000000-0000-4000-b100-' || lpad(to_hex(r), 12, '0'))::uuid, ('00000000-0000-4000-b000-' || lpad(to_hex(r), 12, '0'))::uuid,
@@ -290,11 +291,11 @@ SELECT ('00000000-0000-4000-b100-' || lpad(to_hex(r), 12, '0'))::uuid, ('0000000
  WHERE r % 10 <> 0 AND r % 9 <> 0;
 INSERT INTO public.mod_actions (id, target_user_id, admin_id, action, reason, created_at)
 SELECT ('00000000-0000-4000-b200-' || lpad(to_hex(k), 12, '0'))::uuid, pg_temp.mid(1), pg_temp.mid(6), 'delete_content',
-       'A verdict on the whale, number ' || k || '.', now() - k * interval '1 day'
+       'A verdict on the whale, number ' || k || '.', now() - k * interval '17 hours'
   FROM generate_series(1, 40) k;
 INSERT INTO public.withheld_pieces (mod_action_id, kind, piece_id, author_id, withheld_at, delete_after)
-SELECT ('00000000-0000-4000-b200-' || lpad(to_hex(w.k), 12, '0'))::uuid, 'log', w.id, pg_temp.mid(1), now() - w.k * interval '1 day',
-       now() + interval '30 days' - w.k * interval '1 day'
+SELECT ('00000000-0000-4000-b200-' || lpad(to_hex(w.k), 12, '0'))::uuid, 'log', w.id, pg_temp.mid(1), now() - w.k * interval '17 hours',
+       now() + interval '30 days' - w.k * interval '17 hours'
   FROM (SELECT x.id, row_number() OVER (ORDER BY x.id) AS k FROM public.logs x WHERE x.user_id = pg_temp.mid(1) ORDER BY x.id LIMIT 40) w;
 UPDATE public.logs SET withheld_at = w.withheld_at FROM public.withheld_pieces w WHERE w.kind = 'log' AND public.logs.id = w.piece_id;
 -- Sanctions: one member in 200 suspended for a week, one in 1,000 banned (never a member a probe reads as).
@@ -327,8 +328,22 @@ UPDATE public.dispatch_posts d SET certify_count = c.n
 UPDATE public.lounges l SET member_count = c.n
   FROM (SELECT lounge_id AS id, count(*) AS n FROM public.lounge_members WHERE status = 'approved' GROUP BY 1) c WHERE l.id = c.id;
 
--- The Lobby's hourly edition, as the cron job makes it.
+-- ── what the house's schedule would have done ───────────────────────────────
+-- Each job production schedules (supabase/schema/live-outside-public.sql), run once as its schedule runs
+-- it, so the house is as production holds it between two runs: the Lobby's edition chosen, every closed
+-- ballot frozen and its voters told, every withheld piece past its thirty days gone, the job history
+-- trimmed. Left to the schedule, its first run after the seed would do all of it in one transaction
+-- (1,800 ballots frozen and 45,000 notices written at 100,000 members, about half a minute), a backlog
+-- production never holds; an index built CONCURRENTLY waits for every transaction older than it, so the
+-- train's builds would be cancelled at their lock wait while that run lasts.
 SELECT public.lobby_choose_edition() AS lobby_edition_rows;
+SELECT public.freeze_closed_ballots() AS ballots_frozen;
+SELECT public.expire_withheld_pieces() AS withheld_pieces_expired;
+DELETE FROM cron.job_run_details WHERE start_time < now() - interval '14 days';
+-- The pushes those notices queued were sent long ago on production, whose queue is drained as it fills:
+-- left here, pg_net would work through tens of thousands of them while the rehearsals count the pushes
+-- their own cases queue.
+DELETE FROM net.http_request_queue;
 
 VACUUM ANALYZE;
 

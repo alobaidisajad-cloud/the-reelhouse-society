@@ -19,6 +19,7 @@ const VALUES: Record<string, Record<string, string>> = {
   approve_lounge_member: {
     v_lname: "the salon's name, told to the member just admitted to it: theirs to know, a private salon's included",
   },
+  bulk_dismiss_reports: {},
   dispatch_notify: {
     p_message: 'the shared writer: each caller\'s message is read at its own call, below',
   },
@@ -35,6 +36,15 @@ const VALUES: Record<string, Record<string, string>> = {
     'p.title': "the recipient's own filing's title, public in the Dispatch",
   },
   handle_privacy_switch: {},
+  judge_appeal: {
+    p_outcome: "compared only: which of the house's fixed sentences",
+    v_effect: "one of the house's fixed sentences, saying what the verdict heard does to the member's own record and piece",
+    v_note: "the Tribunal's word, written by its moderator to the member about their own appeal (cleaned as a member's words are)",
+  },
+  lift_sanction: {
+    v_banned: 'compared only: which of two fixed phrases',
+    v_reason: "the house's reason, written by its moderator to the member about the pause or closing it lifts on their own account (cleaned as a member's words are)",
+  },
   lobby_choose_edition: {
     'e.slot': 'compared only: which of three fixed sentences',
   },
@@ -52,12 +62,16 @@ const VALUES: Record<string, Record<string, string>> = {
   resolve_moderation_report_v2: {
     p_action: 'compared only: which of the house\'s fixed sentences',
     p_duration_hours: 'a number of hours, the house\'s',
+    v_content_type: "compared only: which of the house's fixed sentences",
+    v_held_banned: 'compared only: whether the longer sentence already standing on the member\'s own account is told',
+    v_held_until: "the day and hour the longer pause already standing on the member's own account ends, the house's",
     p_reason: "the house's reason, written by its moderator to the member about their own account",
   },
 };
 
 /** SQL that is grammar or a function of the house's, never a value. */
-const GRAMMAR = new Set(['CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'IS', 'NOT', 'NULL', 'AND', 'OR', 'COALESCE', 'coalesce', 'btrim', 'text', 'public.dispatch_names']);
+const GRAMMAR = new Set(['CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'IS', 'NOT', 'NULL', 'AND', 'OR', 'IN', 'AT', 'TIME', 'ZONE', 'COALESCE', 'coalesce',
+  'btrim', 'text', 'to_char', 'now', 'public.dispatch_names']);
 
 type Body = { name: string; body: string };
 
@@ -132,16 +146,45 @@ export function messagesIn(fn: Body): string[] {
   return out;
 }
 
-/** The values in a message: its names once the words in quotes are taken out, locals followed to what they hold. */
+/** SQL with each word in quotes and each comment blanked to spaces, so every other character keeps its place. */
+export function codeOf(sql: string): string {
+  let out = '';
+  for (let i = 0; i < sql.length; i++) {
+    if (sql[i] === "'") {
+      let j = i + 1;
+      while (j < sql.length && !(sql[j] === "'" && sql[j + 1] !== "'")) j += sql[j] === "'" ? 2 : 1;
+      out += ' '.repeat(Math.min(j, sql.length - 1) - i + 1);
+      i = j;
+    } else if (sql.startsWith('--', i)) {
+      const end = sql.indexOf('\n', i);
+      const to = end < 0 ? sql.length : end;
+      out += ' '.repeat(to - i);
+      i = to - 1;
+    } else out += sql[i];
+  }
+  return out;
+}
+
+/** What a local is first assigned (`name := …;`), to its semicolon outside words in quotes and comments; null when never. */
+export function assignmentOf(name: string, body: string): string | null {
+  const code = codeOf(body);
+  const at = new RegExp(`\\b${name.replace('.', '\\.')}\\s*:=`).exec(code);
+  if (!at) return null;
+  const from = at.index + at[0].length;
+  const end = code.indexOf(';', from);
+  return body.slice(from, end < 0 ? body.length : end);
+}
+
+/** The values in a message: its names once the words in quotes and the comments are taken out, locals followed to what they hold. */
 export function valuesIn(expr: string, body: string, seen = new Set<string>()): string[] {
-  const names = expr.replace(/'(?:[^']|'')*'/g, ' ').replace(/::\w+/g, ' ').match(/[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*/g) ?? [];
+  const names = codeOf(expr).replace(/::\w+/g, ' ').match(/[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*/g) ?? [];
   const out = new Set<string>();
   for (const name of names) {
     if (GRAMMAR.has(name)) continue;
-    const assigned = new RegExp(`\\b${name.replace('.', '\\.')}\\s*:=([^;]+);`).exec(body);
-    if (assigned && !seen.has(name)) {
+    const assigned = assignmentOf(name, body);
+    if (assigned !== null && !seen.has(name)) {
       seen.add(name);
-      for (const v of valuesIn(assigned[1]!, body, seen)) out.add(v);
+      for (const v of valuesIn(assigned, body, seen)) out.add(v);
     } else out.add(name);
   }
   return [...out];
@@ -150,9 +193,9 @@ export function valuesIn(expr: string, body: string, seen = new Set<string>()): 
 const writers = functionsIn(SNAPSHOT_SQL()).map((fn) => ({ fn, messages: messagesIn(fn) })).filter((w) => w.messages.length > 0);
 
 describe('a push message', () => {
-  it('is written by the functions listed, and the scan reads them all (17 inserts, 4 shared calls)', () => {
+  it('is written by the functions listed, and the scan reads them all (20 inserts, 4 shared calls)', () => {
     expect(writers.map((w) => w.fn.name).sort()).toEqual(Object.keys(VALUES).sort());
-    expect(writers.flatMap((w) => w.messages).length).toBe(21);
+    expect(writers.flatMap((w) => w.messages).length).toBe(24);
     expect(writers.flatMap((w) => w.messages).filter((m) => m.startsWith('?unread'))).toEqual([]);
   });
 
@@ -161,6 +204,11 @@ describe('a push message', () => {
     const unjudged = found.flatMap((w) => [...w.values].filter((v) => !(v in (VALUES[w.name] ?? {}))).map((v) => `${w.name}: ${v}`));
     const stale = found.flatMap((w) => Object.keys(VALUES[w.name] ?? {}).filter((v) => !w.values.has(v)).map((v) => `${w.name}: ${v}`));
     expect({ unjudged, stale }).toEqual({ unjudged: [], stale: [] });
+  });
+
+  it('follows a local past a semicolon in its words and a comment, to the value at its end', () => {
+    const body = "DECLARE n text; BEGIN n := 'kept; then gone. ' -- the member's words follow\n || NEW.body; INSERT INTO public.notifications (user_id, message) VALUES (NEW.to, n); END";
+    expect(messagesIn({ name: 'probe', body }).flatMap((m) => valuesIn(m, body))).toEqual(['NEW.body']);
   });
 
   it('says NO to a member\'s words in a notice', () => {

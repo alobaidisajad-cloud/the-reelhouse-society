@@ -142,10 +142,55 @@ function mocksOf(file, text) {
   return refused ? { refused } : { mocks, actuals: [...actuals] };
 }
 
-/** Why a suite cannot run on the phone's runtime, read from its own text; null when it can be tried. */
+/** The modules a file names: each import, require or dynamic import written with its name. */
+const importsOf = (text) => [...text.matchAll(/(?:from\s+|require\(\s*|import\(\s*)['"]([^'"]+)['"]/g)].map((m) => m[1]);
+const ENDINGS = ['', '.ts', '.tsx', '.js', '.cjs', '.mjs', '/index.ts', '/index.tsx', '/index.js'];
+
+/** The repository's own file a module name means from `from` (relative, or tsconfig's "@/"); null for a package. */
+function localFile(from, spec) {
+  const base = spec.startsWith('@/') ? path.join(MOBILE, spec.slice(2)) : spec.startsWith('.') ? path.resolve(path.dirname(from), spec) : null;
+  if (!base) return null;
+  const at = ENDINGS.map((end) => base + end).find((f) => fs.existsSync(f) && fs.statSync(f).isFile());
+  return at && !at.includes(`${path.sep}node_modules${path.sep}`) ? at : null;
+}
+
+/** What of Node a file's own code uses, its comments aside; null when nothing. */
+function nodeUse(text) {
+  const imported = importsOf(text).find((m) => NODE.has(m));
+  if (imported) return `'${imported}'`;
+  const code = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/[^\n]*/g, '$1');
+  return code.match(NODE_TEXT)?.[0] ?? null;
+}
+
+/**
+ * What of Node a suite reaches through the repository's own files it loads, at any depth (a script it
+ * requires to read the schema from disk, say), and through which file; null when none of them uses Node.
+ * Metro refuses such a file's dynamic require, or bundles a Node call the phone has not. A module the
+ * suite mocks by name is never loaded, so it is not followed.
+ */
+function nodeReach(file, text, mocked = [], seen = new Set([path.resolve(file)])) {
+  for (const spec of importsOf(text).filter((s) => !mocked.includes(s))) {
+    const at = localFile(file, spec);
+    if (!at || seen.has(at)) continue;
+    seen.add(at);
+    const { own, use } = readOnce(at);
+    if (use) return `uses Node's ${use} through ${rel(at)}`;
+    const deeper = nodeReach(at, own, [], seen);
+    if (deeper) return deeper;
+  }
+  return null;
+}
+/** Each file's text and its use of Node, read once for every suite that loads it. */
+const known = new Map();
+const readOnce = (at) => {
+  if (!known.has(at)) { const own = fs.readFileSync(at, 'utf8'); known.set(at, { own, use: nodeUse(own) }); }
+  return known.get(at);
+};
+
+/** Why a suite cannot run on the phone's runtime, read from its own text and the files it loads; null when it can be tried. */
 function staticReason(file, text) {
   if (file.endsWith('.tsx') || DRAWS.test(text)) return 'draws a screen';
-  const imports = [...text.matchAll(/(?:from\s+|require\(\s*|import\(\s*)['"]([^'"]+)['"]/g)].map((m) => m[1]);
+  const imports = importsOf(text);
   const node = imports.find((m) => NODE.has(m));
   if (node) return `uses Node's '${node}'`;
   const nodeText = text.match(NODE_TEXT);
@@ -156,7 +201,9 @@ function staticReason(file, text) {
   if (/\b__DEV__\b/.test(text)) return 'sets or reads __DEV__, which the release bundle writes in as false';
   // Node's segmenter is the answer such a suite checks the app against; the app never asks it.
   if (/\bnew\s+Intl\.Segmenter\b/.test(text)) return "checks against Node's Intl.Segmenter, which the phone has not";
-  return mocksOf(file, text).refused ?? null;
+  const made = mocksOf(file, text);
+  if (made.refused) return made.refused;
+  return nodeReach(file, text, made.mocks.map(([spec]) => spec));
 }
 
 async function bundle(out, only = [], bare = false) {

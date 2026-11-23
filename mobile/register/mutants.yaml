@@ -9829,3 +9829,35 @@ mutants:
         find: "      const read = n['Node Type'] === 'Bitmap Heap Scan' ? Math.max(perLoop * loops, gatheredBy(n)) : perLoop * loops;"
         replace: "      const read = perLoop * loops;"
     proof: { file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "counts what a bitmap gathered by its index, however few rows its heap read under a limit" }
+  - id: shape-the-load-seed-leaves-the-ballots-to-the-schedule
+    class: TEST-a-seed-leaves-a-house-production-never-holds
+    source: shape
+    edits:
+      - file: e2e/load/seed.sql
+        find: "SELECT public.freeze_closed_ballots() AS ballots_frozen;"
+        replace: "SELECT 0 AS ballots_frozen;"
+    proof: { file: e2e/__tests__/aSeededHouseIsAsProductionHoldsIt.test.ts, test: "runs each job production schedules, once, as its schedule runs it" }
+  - id: shape-the-rehearsals-house-left-unanalysed
+    class: TEST-a-seed-leaves-a-house-production-never-holds
+    source: shape
+    edits:
+      - file: e2e/db/rehearsal-seed.sql
+        find: "ANALYZE;"
+        replace: "SELECT 1;"
+    proof: { file: e2e/__tests__/aSeededHouseIsAsProductionHoldsIt.test.ts, test: "after its last write: every seed that lays a house in SQL" }
+  - id: shape-a-suite-read-by-its-own-words-alone
+    class: CI-a-pure-suite-reaches-node-through-a-script
+    source: shape
+    edits:
+      - file: scripts/hermes-suites.cjs
+        find: "return nodeReach(file, text, made.mocks.map(([spec]) => spec));"
+        replace: "return null;"
+    proof: { file: scripts/__tests__/hermesSuites.test.ts, test: "to Node reached through a file the suite loads, at any depth, but not through one it mocks" }
+  - id: shape-a-local-read-to-its-first-semicolon
+    class: TEST-a-scan-reads-a-local-to-its-first-semicolon
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aPushCarriesNoPrivateWords.guard.test.ts
+        find: "const end = code.indexOf(';', from);"
+        replace: "const end = body.indexOf(';', from);"
+    proof: { file: src/utils/__tests__/aPushCarriesNoPrivateWords.guard.test.ts, test: "follows a local past a semicolon in its words and a comment, to the value at its end" }

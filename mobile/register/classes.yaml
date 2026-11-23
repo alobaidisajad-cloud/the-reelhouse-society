@@ -5336,3 +5336,41 @@ classes:
     source: { kind: ci, ref: "god_tier_ci on d030851b (run 44927851374), Native Jest part 3: coverage.test.ts 'but not the findings file it was given' read 'named /tmp/cov-5GMSHe'" }
     fix: "coverage.cjs judges a POSIX path by whether it is inside the copy alone; a test with the copy at a Linux path holds a shell inside it clean and one naming a path beside it outside (fails on the old rule)"
     places: [none]
+
+  - id: TEST-a-seed-leaves-a-house-production-never-holds
+    title: "A house a check reads was laid down as production never holds one: the load seed left its closed ballots for the schedule's first freeze, one transaction of about half a minute at 100,000 members, and the train's indexes built CONCURRENTLY meanwhile waited for it until their lock wait cancelled them; the rehearsals' seed, laid after the pending cars on an empty copy, left every table with an empty table's statistics, so the cases that ask a car's index to be analysed, or read as one range, failed"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 3
+    source: { kind: ci, ref: "Load 45102990257 on 07d704e8: cars 20261122_16 and _17 cancelled at their lock wait during the schedule's freeze-closed-ballots, car 18's rehearsal 1 of 8; DB security 45105398992 on 4a22abe6: five rehearsals' analysis and range cases" }
+    methods:
+      - { kind: static, file: e2e/__tests__/aSeededHouseIsAsProductionHoldsIt.test.ts, test: "runs each job production schedules, once, as its schedule runs it" }
+      - { kind: static, file: e2e/__tests__/aSeededHouseIsAsProductionHoldsIt.test.ts, test: "after its last write: every seed that lays a house in SQL" }
+    fix: "e2e/load/seed.sql runs once each job production schedules (supabase/schema/live-outside-public.sql), as its schedule runs it: the Lobby's edition, every closed ballot frozen and its voters told, the withheld pieces past their thirty days, the job history trimmed; the pushes those notices queued are taken from pg_net's queue, as production's is drained; the whale's 40 withheld pieces are dated within their thirty days, so all 40 stand. e2e/db/rehearsal-seed.sql and e2e/db/lab-seed.mjs end with ANALYZE. A finder reads production's schedule (the snapshot) and every seed among the scripts that lays a house in SQL: each scheduled job run by the load seed, each seed analysed after its last write (mutants shape-the-load-seed-leaves-the-ballots-to-the-schedule, shape-the-rehearsals-house-left-unanalysed). Proven on a copy of the 100,000-member house: the schedule's first freeze took 29 s, and cars 16 and 17 built meanwhile were cancelled at their lock wait (2.3 s, 2.6 s), as CI's were; on the house as the seed now leaves it the freeze found nothing in 0.2 s and both built whole. On an empty copy with every pending car applied and the rehearsals' house laid after them, four of the five rehearsals failed as DB security's did, and all five passed once the house was analysed"
+    sweep: { read: [snapshot, scripts], found: 3, fixed: 3, judged: 0, commit: 4a22abe6, finder: e2e/__tests__/aSeededHouseIsAsProductionHoldsIt.test.ts, result: "the four jobs the snapshot schedules and the three seeds among the scripts that lay a house in SQL (e2e/load/seed.sql, e2e/db/rehearsal-seed.sql, e2e/db/lab-seed.mjs; e2e/db/seed.mjs writes through the API): 3 found, 3 fixed: the load seed ran one job of four (the Lobby's edition), the rehearsals' and the lab's seeds ended unanalysed; the rehearsals' and the lab's houses are left to their schedule, each a few dozen members whose first run finds a few rows" }
+    places: [none]
+
+  - id: CI-a-pure-suite-reaches-node-through-a-script
+    title: "The reader that picks the suites to run on the phone's runtime read only each suite's own text, so a suite whose words use nothing of Node but which loads a Node script (scripts/write-sites.cjs, to read the schema from disk) was bundled, and Metro refused the script's dynamic require and stopped the whole job"
+    seriousness: code
+    area: release
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "god_tier_ci on 4a22abe6 (run 45105399065), The pure suites pass on the phone's own runtime: Invalid call at line 72 of scripts/write-sites.cjs, reached by anIndexsFunctionsRunForItsWriters" }
+    methods:
+      - { kind: running, file: scripts/__tests__/hermesSuites.test.ts, test: "to Node reached through a file the suite loads, at any depth, but not through one it mocks" }
+    fix: "scripts/hermes-suites.cjs follows each suite's own imports and requires through the repository's files, at any depth (a module the suite mocks by name is not followed), and a suite that reaches one using Node is not tried, naming the file (mutant shape-a-suite-read-by-its-own-words-alone). The local bundle now goes through: 61 suites bundled, the rest each with its reason"
+    places: [none]
+
+  - id: TEST-a-scan-reads-a-local-to-its-first-semicolon
+    title: "The push-words guard followed a local to the first semicolon after it, inside the words in quotes too, so a notice whose words hold a semicolon (a withheld piece's notice: 'if you appeal; unappealed') was read as loose words and its last value lost, and three writers of notices went unjudged"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "god_tier_ci on bd2701c2 and 4a22abe6 (run 45105399065), Native Jest: aPushCarriesNoPrivateWords read resolve_moderation_report_v2's notice as loose words, and judge_appeal, lift_sanction and bulk_dismiss_reports were not listed" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/aPushCarriesNoPrivateWords.guard.test.ts, test: "follows a local past a semicolon in its words and a comment, to the value at its end" }
+    fix: "the guard reads each local to its semicolon outside the words in quotes and the comments (codeOf, assignmentOf), and the names of a message with its comments taken out; judge_appeal, lift_sanction and bulk_dismiss_reports are listed, each value judged (the Tribunal's word and the house's reason, written by a moderator to the member about their own account; the rest the house's fixed sentences or compared only), with resolve_moderation_report_v2's new values (mutant shape-a-local-read-to-its-first-semicolon)"
+    places: [none]
