@@ -5,8 +5,8 @@
 --
 -- An index built CONCURRENTLY cannot be built inside this file's transaction, so the train builds 20261122_22
 -- alone, in its turn, and this checks it holds: the index is there and whole, a handle's beginning is read
--- as one range of it, and a member planted with a handle that begins with a rare run of letters is found
--- through it, in any case, while one whose handle holds them only after an underscore is not.
+-- as one range of an index of the handles' lower case (it, or another that leads alike, as the statistics
+-- choose), and a member planted with a handle that begins with a rare run of letters is found, in any case, while one whose handle holds them only after an underscore is not.
 -- Every row here is undone with the transaction. Read each NOTICE as  case|expected|got ; the last line
 -- is the verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
@@ -37,8 +37,8 @@ BEGIN
   END LOOP;
   RETURN v;
 END $$;
-SELECT pg_temp.rh_case('a handle''s beginning is read as one range of it', 'true',
-  (position('profiles_username_beginning' in (SELECT pg_temp.mhb_plan())) > 0)::text) AS done \gset rh_
+SELECT pg_temp.rh_case('a handle''s beginning is read as one range of an index of the handles'' lower case', 'true',
+  pg_temp.rh_reads_by((SELECT pg_temp.mhb_plan()), 'profiles', 'lower(username)')::text) AS done \gset rh_
 SELECT pg_temp.rh_case('the member whose handle begins with it is found, in either case, and not the one whose later word holds it', '1|1',
   (SELECT coalesce((SELECT string_agg(m.n::text, ',') FROM public.profiles p JOIN mhb_members m ON m.id = p.id
                      WHERE lower(p.username) LIKE lower('QXJ1924') || '%'), 'none') || '|'

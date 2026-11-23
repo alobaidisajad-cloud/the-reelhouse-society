@@ -220,8 +220,8 @@ END $f$;
 SELECT pg_temp.rh_case('search_members asks many or few by its bounded walk first, and a handle''s beginning of its lower case', 'true|true',
   (position('ORDER BY p.username LIMIT 2000' in pg_get_functiondef('public.search_members(text, boolean, integer, text, integer)'::regprocedure)) > 0)::text || '|'
     || (position('lower(p.username) LIKE %L' in pg_get_functiondef('public.search_members(text, boolean, integer, text, integer)'::regprocedure)) > 0)::text) AS done \gset rh_
-SELECT pg_temp.rh_case('a handle''s beginning, as the search asks it, is one range of the handles'' index', 'true',
-  (position('profiles_username_beginning' in (SELECT pg_temp.sm_plan())) > 0)::text) AS done \gset rh_
+SELECT pg_temp.rh_case('a handle''s beginning, as the search asks it, is one range of an index of the handles'' lower case', 'true',
+  pg_temp.rh_reads_by((SELECT pg_temp.sm_plan()), 'profiles', 'lower(username)')::text) AS done \gset rh_
 SELECT pg_temp.rh_case('the members are analysed with the index of their handles'' beginnings', 'true',
   (EXISTS (SELECT 1 FROM pg_stats WHERE schemaname = 'public' AND tablename = 'profiles_username_beginning'))::text) AS done \gset rh_
 

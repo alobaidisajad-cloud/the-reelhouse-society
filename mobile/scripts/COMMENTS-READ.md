@@ -2124,5 +2124,6 @@ files of the reading map this one does not.
 | e2e/__tests__/aSeededHouseIsAsProductionHoldsIt.test.ts | — |  |
 | e2e/__tests__/aJobThatEndsItselfIsState.test.ts | — |  |
 | e2e/__tests__/aRehearsalSetsOnlyARoleTheHouseAllows.test.ts | — |  |
+| e2e/__tests__/aRehearsalHoldsAPlanToItsBound.test.ts | — |  |
 | scripts/jobs-that-end-themselves.cjs | — |  |
 | e2e/__tests__/aWriteNeverCountsTheHouseAgain.test.ts | — |  |

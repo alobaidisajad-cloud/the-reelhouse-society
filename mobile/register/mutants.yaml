@@ -9647,7 +9647,7 @@ mutants:
     class: DB-rule-kept-on-one-path
     source: shape
     edits:
-      - file: ../supabase/migrations/20261122_06_a_stacks_count_is_read_as_its_stack_is.sql
+      - file: supabase/schema/live-schema.sql
         find: "                   AND NOT COALESCE(l.user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)\n                   AND private.can_view_user_data(l.user_id)))\n"
         replace: "                   ))\n"
     proof: { file: src/utils/__tests__/aDefinerReadKeepsTheReadersRules.guard.test.ts, test: "names the hiding rule and the withheld rule in each that reads members' words, or is judged why it need not" }
@@ -9765,14 +9765,17 @@ mutants:
         replace: "  for (const one of [index ?? []].flat().slice(0, 1)) {"
     proof: { file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "holds a read to every index of its list: the calendar reads a last viewing by its day and a film seen again by its month" }
 
-  - id: past-the-short-pieces-kept-from-members
+  - id: shape-the-short-pieces-kept-from-members
     class: SPEED-an-index-refuses-the-writes-it-serves
-    source: past
-    commit: aa7a6766
-    files: [../supabase/migrations/20261122_12_a_busy_read_reads_its_page.sql]
+    source: shape
+    # aa7a6766's fix put back, as production holds it since the train of 2026-11-23: car 12's grant of the
+    # short pieces to members taken out.
     edits:
-      - file: ../supabase/migrations/20261122_12_a_busy_read_reads_its_page.sql
-        find: "GRANT EXECUTE ON FUNCTION private.short_grams(text), private.search_grams(text, text) TO anon, authenticated, service_role;"
+      - file: supabase/schema/live-schema.sql
+        find: "GRANT ALL ON FUNCTION private.search_grams(p_one text, p_two text) TO authenticated;"
+        replace: "SELECT 1;"
+      - file: supabase/schema/live-schema.sql
+        find: "GRANT ALL ON FUNCTION private.short_grams(p_text text) TO authenticated;"
         replace: "SELECT 1;"
     proof: { file: src/utils/__tests__/anIndexsFunctionsRunForItsWriters.guard.test.ts, test: "lets a member run every function an index of the house works out, and every function those call" }
 

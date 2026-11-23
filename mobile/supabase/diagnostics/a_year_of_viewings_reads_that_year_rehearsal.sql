@@ -12,8 +12,8 @@
 -- the calendar and the Year in Cinema (four years, and the next page of the full one) answer exactly as
 -- 20261117_01's reading of them (member_viewings, kept here as it was) answers, row for row; a private
 -- member's are a stranger's and a visitor's to see not at all; and the full year answers its first 1,000
--- and then its last 200. And each read keeps to its span: a record's last viewing found by its day in
--- idx_logs_user_watched_id, and the records seen again in the span alone (private.logs_seen_again_in);
+-- and then its last 200. And each read keeps to its span: a record's last viewing read through an index of
+-- the member's own (never the whole table), and the records seen again in the span alone (private.logs_seen_again_in);
 -- and the logs analysed, 20261122_20's index among them.
 -- Every row here is undone with the transaction. Read each NOTICE as  case|expected|got ; the last line
 -- is the verdict, and any miss makes psql exit non-zero.
@@ -202,8 +202,9 @@ BEGIN
   RETURN v;
 END $$;
 GRANT EXECUTE ON FUNCTION pg_temp.yv_plan() TO authenticated;
-SELECT pg_temp.rh_case('a record''s last viewing in the span is found by its day, as a member reads it', 'true',
-  (position('idx_logs_user_watched_id' in (SELECT pg_temp.yv_plan())) > 0)::text) AS done \gset rh_
+-- Production's statistics choose among equal per-member indexes; size-independence at 500k is proven by the Load's plan guards.
+SELECT pg_temp.rh_case('a record''s last viewing in the span is read by the member''s own index, never the whole table', 'true',
+  pg_temp.rh_reads_by((SELECT pg_temp.yv_plan()), 'logs', 'user_id')::text) AS done \gset rh_
 SELECT pg_temp.rh_case('the calendar and the year read the span alone (private.viewings_between)', 'true|true',
   (position('private.viewings_between' in pg_get_functiondef('public.calendar_days(uuid)'::regprocedure)) > 0)::text || '|'
     || (position('private.viewings_between' in pg_get_functiondef('public.year_viewings(uuid, integer, date, uuid)'::regprocedure)) > 0)::text) AS done \gset rh_

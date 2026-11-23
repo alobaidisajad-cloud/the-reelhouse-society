@@ -8,6 +8,9 @@
 --                                           what it could not find
 --   pg_temp.rh_need(what, have, need)       the same for a count of rows
 --   pg_temp.rh_verdict()                    the last statement before ROLLBACK
+--   pg_temp.rh_reads_by(plan, table, lead)  true when an EXPLAIN reads the table
+--                                           by any index that leads with lead, as
+--                                           its Index Cond, and never all of it
 --
 -- A case over nothing is a failure, never a pass: a pick that finds no row
 -- stops the run, and a file in which no case ran fails its verdict. The verdict
@@ -53,5 +56,16 @@ BEGIN
   RETURN format('REHEARSAL PASSED: %s cases', cases);
 END $$;
 
+-- Production's statistics choose among indexes that lead alike (the train of 2026-11-23 stopped on one
+-- name), so a plan is held to the bound, never to one index's name.
+CREATE FUNCTION pg_temp.rh_reads_by(p_plan text, p_table text, p_lead text) RETURNS boolean LANGUAGE sql AS $$
+  SELECT position('Seq Scan on ' || p_table || ' ' in p_plan) = 0
+     AND EXISTS (SELECT 1 FROM regexp_split_to_table(p_plan, '->') AS n(node)
+                   CROSS JOIN LATERAL regexp_match(n.node, 'Index (?:Only )?Scan using ([a-z0-9_]+) on ' || p_table || ' ') AS m
+                   JOIN pg_index i ON i.indexrelid = to_regclass('public.' || m[1]) AND i.indrelid = to_regclass('public.' || p_table)
+                  WHERE pg_get_indexdef(i.indexrelid, 1, true) = p_lead
+                    AND position(p_lead in split_part(n.node, 'Index Cond: ', 2)) > 0)
+$$;
+
 GRANT EXECUTE ON FUNCTION pg_temp.rh_case(text, text, text), pg_temp.rh_found(text, anyelement),
-  pg_temp.rh_need(text, bigint, bigint), pg_temp.rh_verdict() TO anon, authenticated;
+  pg_temp.rh_need(text, bigint, bigint), pg_temp.rh_verdict(), pg_temp.rh_reads_by(text, text, text) TO anon, authenticated;

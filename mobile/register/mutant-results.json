@@ -7269,7 +7269,7 @@
     "class": "DB-rule-kept-on-one-path",
     "mutant": "shape-a-stacks-count-read-past-its-stack",
     "proof": "m3",
-    "commit": "e356d5317d182583eb8994d28484fc9722c9fa79",
+    "commit": "254535444a524260ff174cb22d09362ab5d0b82b",
     "verdict": "caught"
   },
   {
@@ -7365,9 +7365,9 @@
   },
   {
     "class": "SPEED-an-index-refuses-the-writes-it-serves",
-    "mutant": "past-the-short-pieces-kept-from-members",
+    "mutant": "shape-the-short-pieces-kept-from-members",
     "proof": "m1",
-    "commit": "ec7d35d5925e3bb2585ec872074843ea7ad1af7d",
+    "commit": "254535444a524260ff174cb22d09362ab5d0b82b",
     "verdict": "caught"
   },
   {

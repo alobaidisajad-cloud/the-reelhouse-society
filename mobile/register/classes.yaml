@@ -4081,7 +4081,7 @@ classes:
       judged: 0
       commit: aa7a6766
       result: "every index of the snapshot and the pending migrations, its functions and theirs: two indexes refused their writers (lists_short_grams, profiles_short_grams, each through private.search_grams and private.short_grams), both fixed by car 12's grant; every other index's functions are a member's to run"
-      proofs: "planted SQL in the test; car 12's grant taken out finds the four (past-the-short-pieces-kept-from-members); green with it; the finder weakened two ways (shape-the-index-finder-reads-no-inner-call, shape-the-index-finder-takes-a-revoke-as-a-grant)"
+      proofs: "planted SQL in the test; car 12's grant taken out finds the four (shape-the-short-pieces-kept-from-members); green with it; the finder weakened two ways (shape-the-index-finder-reads-no-inner-call, shape-the-index-finder-takes-a-revoke-as-a-grant)"
     places: [none]
 
   - id: SPEED-a-launch-read-walks-page-by-page
