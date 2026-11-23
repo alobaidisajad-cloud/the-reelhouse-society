@@ -54,6 +54,9 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import secretShapes from './secret-shapes.cjs';
 import privateSettings from './private-settings.cjs';
+import jobsThatEndThemselves from './jobs-that-end-themselves.cjs';
+
+const { steady } = jobsThatEndThemselves;
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = join(HERE, '..', 'supabase', 'schema');
@@ -207,10 +210,13 @@ function dumpOutside(url) {
         FROM changes c GROUP BY c.role, c.t, c.verb, c.grantee)
       SELECT string_agg(line, E'\\n' ORDER BY line) FROM lines`)),
 
+    // Less each job the house's own functions put on the schedule or take off it
+    // (jobs-that-end-themselves.cjs): one standing while its work lasts is state, as a row is, and
+    // a copy built from the snapshot would run it every second with none of the rows its work reads.
     ...section('scheduled jobs', q(`
       SELECT string_agg(format('SELECT cron.schedule_in_database(%L, %L, %L, %L, %L, %L);', j.jobname, j.schedule, j.command, j.database, j.username, j.active),
         E'\\n' ORDER BY j.jobname)
-      FROM cron.job j`)),
+      FROM cron.job j WHERE ${steady('j')}`)),
 
     ...section('vault secrets — names only; a stand-in must be made wherever this is built', q(`
       SELECT string_agg('-- ' || s.name, E'\\n' ORDER BY s.name) FROM vault.secrets s`)),

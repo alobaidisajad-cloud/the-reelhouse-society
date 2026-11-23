@@ -26,10 +26,13 @@ import { createRequire } from 'node:module';
 import universe from '../../test-utils/universe.js';
 
 const { lint } = createRequire(import.meta.url)('../../scripts/migration-lint.cjs');
+const { steady } = createRequire(import.meta.url)('../../scripts/jobs-that-end-themselves.cjs');
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MOBILE = join(HERE, '..', '..');
 const SERVER = `postgresql://postgres:postgres@${process.env.E2E_DB_HOST ?? '127.0.0.1'}:${process.env.E2E_DB_PORT ?? '54322'}`;
+/** The database the pending migrations are proven on: the runner's own, or a copy named for a local proof. */
+const DATABASE = process.env.E2E_DB_NAME ?? 'postgres';
 const LIMITS = '-c lock_timeout=2s -c statement_timeout=30s';
 
 /** Every migration file with code in it, both trees, by name. */
@@ -70,10 +73,15 @@ export const grantsInOrder = (lines) => {
 
 const psqlRows = (url, sql) => execFileSync('psql', [url, '-X', '-q', '-t', '-A', '-c', sql], { encoding: 'utf8' }).trim();
 
-/** The scheduled jobs, where the database has pg_cron (pg_dump leaves them out). */
+/**
+ * The scheduled jobs, where the database has pg_cron (pg_dump leaves them out), less each job the
+ * house's own functions put on the schedule or take off it (jobs-that-end-themselves.cjs): one standing
+ * at the first reading may have ended its work by the next, and whether it stands is state. Each row
+ * is read without its line end (psql on Windows ends every row but the last with a CR).
+ */
 const jobs = (url) => (psqlRows(url, "SELECT to_regclass('cron.job') IS NOT NULL") === 't'
   ? ['scheduled jobs:', ...psqlRows(url,
-    "SELECT jobname || ' | ' || schedule || ' | ' || command || ' | ' || active FROM cron.job ORDER BY jobname").split('\n')]
+    `SELECT j.jobname || ' | ' || j.schedule || ' | ' || j.command || ' | ' || j.active FROM cron.job j WHERE ${steady('j')} ORDER BY j.jobname`).split(/\r?\n/)]
   : []);
 
 /**
@@ -120,7 +128,7 @@ const run = () => {
     if (!existsSync(undoOf(m.name))) { faults.push(`${m.name}: no undo file`); continue; }
     console.log(`→ ${m.name}: up, down, up`);
     try {
-      const fault = roundTrip(`${SERVER}/postgres`, m.path, undoOf(m.name));
+      const fault = roundTrip(`${SERVER}/${DATABASE}`, m.path, undoOf(m.name));
       if (fault) faults.push(`${m.name}: ${fault}`);
     } catch (e) {
       faults.push(`${m.name}: ${(e.stderr || e.message).trim().split('\n')[0]}`);
@@ -151,12 +159,14 @@ const selfTest = () => {
     ['an undo that forgets a grant', inScratch('up_down_up_grant', 'grants-up.sql', 'grants-down-forgets.sql', 'grants-before.sql'), 'the undo does not restore'],
     ['an undo restoring, with LF, a body applied with CRLF', inScratch('up_down_up_crlf', 'line-ends-up.sql', 'line-ends-down.sql', 'line-ends-before.sql'), null],
     ['an undo restoring another body', inScratch('up_down_up_crlf_bad', 'line-ends-up.sql', 'line-ends-down-wrong.sql', 'line-ends-before.sql'), 'the undo does not restore'],
+    ['an undo while a job that ends itself ended its work', inScratch('up_down_up_job_ended', 'jobs-up.sql', 'jobs-down.sql', 'jobs-before.sql'), null],
+    ['an undo that leaves its job on the schedule, its function gone', inScratch('up_down_up_job_left', 'jobs-left-up.sql', 'jobs-left-down.sql', 'jobs-before.sql'), 'the undo does not restore'],
   ];
   for (const [what, got, want] of cases) {
     const ok = want === null ? got === null : typeof got === 'string' && got.startsWith(want);
     if (!ok) { console.error(`✗ self-test: ${what}: expected ${want === null ? 'a pass' : `"${want}…"`}, got ${got ?? 'a pass'}`); process.exit(1); }
   }
-  console.log('✓ self-test: a correct undo passes, also one giving grants back in another order or a body back with other line ends; a forgotten function, grant or body is caught.');
+  console.log('✓ self-test: a correct undo passes, also one giving grants back in another order or a body back with other line ends, or run while a job that ends itself ended its work; a forgotten function, grant, body or job is caught.');
 };
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {

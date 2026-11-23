@@ -9869,3 +9869,43 @@ mutants:
         find: "const end = code.indexOf(';', from);"
         replace: "const end = body.indexOf(';', from);"
     proof: { file: src/utils/__tests__/aPushCarriesNoPrivateWords.guard.test.ts, test: "follows a local past a semicolon in its words and a comment, to the value at its end" }
+  - id: shape-the-undo-check-reads-every-job-as-schema
+    class: TEST-a-job-that-ends-itself-read-as-schema
+    source: shape
+    edits:
+      - file: e2e/db/up-down-up.mjs
+        find: "FROM cron.job j WHERE ${steady('j')} ORDER BY j.jobname"
+        replace: "FROM cron.job j ORDER BY j.jobname"
+    proof: { file: e2e/__tests__/aJobThatEndsItselfIsState.test.ts, test: "each script that compares the schedule takes the rule; the others are judged" }
+  - id: shape-the-snapshot-reads-every-job-as-schema
+    class: TEST-a-job-that-ends-itself-read-as-schema
+    source: shape
+    edits:
+      - file: scripts/schema-snapshot.mjs
+        find: "FROM cron.job j WHERE ${steady('j')}`"
+        replace: "FROM cron.job j`"
+    proof: { file: e2e/__tests__/aJobThatEndsItselfIsState.test.ts, test: "each script that compares the schedule takes the rule; the others are judged" }
+  - id: shape-a-pg-cron-call-naming-no-job-passed-over
+    class: TEST-a-job-that-ends-itself-read-as-schema
+    source: shape
+    edits:
+      - file: scripts/jobs-that-end-themselves.cjs
+        find: "if (!call) return [];"
+        replace: "if (!call || statement.indexOf(String.fromCharCode(39)) < 0) return [];"
+    proof: { file: e2e/__tests__/aJobThatEndsItselfIsState.test.ts, test: "finds a call that names no job, and a job put on that nothing takes off" }
+  - id: shape-a-job-found-by-its-name-read-as-unnamed
+    class: TEST-a-job-that-ends-itself-read-as-schema
+    source: shape
+    edits:
+      - file: scripts/jobs-that-end-themselves.cjs
+        find: "(call[1].startsWith('schedule') ? null :"
+        replace: "(call[1].startsWith('schedule') || true ? null :"
+    proof: { file: e2e/__tests__/aJobThatEndsItselfIsState.test.ts, test: "names its job in quotes at each call of pg_cron in a function, so the readers' rule sees it" }
+  - id: shape-a-job-put-on-for-good-passed-over
+    class: TEST-a-job-that-ends-itself-read-as-schema
+    source: shape
+    edits:
+      - file: e2e/__tests__/aJobThatEndsItselfIsState.test.ts
+        find: "filter((name) => !c.taken.has(name))"
+        replace: "filter((name) => !c.taken.has(name) && false)"
+    proof: { file: e2e/__tests__/aJobThatEndsItselfIsState.test.ts, test: "finds a call that names no job, and a job put on that nothing takes off" }
