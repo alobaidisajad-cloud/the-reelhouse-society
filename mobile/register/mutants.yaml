@@ -9455,9 +9455,9 @@ mutants:
     class: DB-a-notice-left-when-its-cause-is-undone
     source: shape
     edits:
-      - file: ../supabase/migrations/20261122_02_a_critique_takes_its_notice.sql
-        find: "  AFTER DELETE ON public.log_comments\n"
-        replace: "  AFTER DELETE ON public.logs\n"
+      - file: supabase/schema/live-schema.sql
+        find: "CREATE TRIGGER a_critique_takes_its_notice AFTER DELETE ON public.log_comments FOR"
+        replace: "CREATE TRIGGER a_critique_takes_its_notice AFTER DELETE ON public.logs FOR"
     proof: { file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts, test: "lists every notice writer with what takes its notice back, or why it stands, and what tells it once" }
 
   - id: shape-the-notice-finder-reads-no-shared-call
