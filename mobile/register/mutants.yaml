@@ -9845,6 +9845,14 @@ mutants:
         find: "ANALYZE;"
         replace: "SELECT 1;"
     proof: { file: e2e/__tests__/aSeededHouseIsAsProductionHoldsIt.test.ts, test: "after its last write: every seed that lays a house in SQL" }
+  - id: shape-the-load-seed-dates-the-regard-at-its-minute
+    class: TEST-a-seed-leaves-a-house-production-never-holds
+    source: shape
+    edits:
+      - file: e2e/load/seed.sql
+        find: "INSERT INTO public.dispatch_certifications (user_id, post_id, created_at)"
+        replace: "INSERT INTO public.dispatch_certifications (user_id, post_id)"
+    proof: { file: e2e/__tests__/aSeededHouseIsAsProductionHoldsIt.test.ts, test: "each insert of the load house into a source of the regard names when its rows were given" }
   - id: shape-a-suite-read-by-its-own-words-alone
     class: CI-a-pure-suite-reaches-node-through-a-script
     source: shape

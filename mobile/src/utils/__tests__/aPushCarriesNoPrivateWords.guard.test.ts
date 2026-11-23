@@ -3,7 +3,8 @@
  *
  * A notice's `message` is the push's body (notify-push: `@name` and the message, under a title
  * per type), and a push is read on a lock screen, by whoever holds the phone. Every SQL function
- * in the schema snapshot that writes `notifications.message` is read here: each insert's message,
+ * of the house as production will hold it (the schema snapshot, then each migration production has
+ * not had yet: test-utils/house.js) that writes `notifications.message` is read here: each insert's message,
  * and each call of the shared `dispatch_notify` (its fourth argument), with the locals they are
  * built from followed to their assignment. Every value that goes into the words is listed below
  * with why it may be there. The rule: a message names only the house's own words, the film
@@ -11,7 +12,7 @@
  * private. A value not listed fails, and so does a writer not listed, so a new notice is judged
  * before it ships. (The sealed E2E's half reads each type back from the push stand-in: P5.)
  */
-import { SNAPSHOT_SQL } from '@/test-utils/schema';
+import { read } from '@/test-utils/house';
 
 /** Each writer, and each value in its message with the reason it may be read on a lock screen. */
 const VALUES: Record<string, Record<string, string>> = {
@@ -20,13 +21,13 @@ const VALUES: Record<string, Record<string, string>> = {
     v_lname: "the salon's name, told to the member just admitted to it: theirs to know, a private salon's included",
   },
   bulk_dismiss_reports: {},
+  closed_ballots_told: {
+    'q.title': "the ballot's question as it stood when the ballot closed, to the members who voted in it: a filing, public in the Dispatch",
+  },
   dispatch_notify: {
     p_message: 'the shared writer: each caller\'s message is read at its own call, below',
   },
   dispatch_notify_answer: {},
-  dispatch_notify_ballot_closed: {
-    'NEW.title': "the ballot's question, to the members who voted in it: a filing, public in the Dispatch",
-  },
   dispatch_notify_certify: {
     'p.kind': "the filing's kind, a word of the house's (dispatch_names)",
     'p.title': "the recipient's own filing's title, public in the Dispatch",
@@ -190,7 +191,9 @@ export function valuesIn(expr: string, body: string, seen = new Set<string>()): 
   return [...out];
 }
 
-const writers = functionsIn(SNAPSHOT_SQL()).map((fn) => ({ fn, messages: messagesIn(fn) })).filter((w) => w.messages.length > 0);
+/** Each function of the house, by its name without its schema, as the judgments name it. */
+const HOUSE: Body[] = [...read().functions.values()].map((f) => ({ name: f.name.split('.').pop() ?? f.name, body: f.body }));
+const writers = HOUSE.map((fn) => ({ fn, messages: messagesIn(fn) })).filter((w) => w.messages.length > 0);
 
 describe('a push message', () => {
   it('is written by the functions listed, and the scan reads them all (20 inserts, 4 shared calls)', () => {

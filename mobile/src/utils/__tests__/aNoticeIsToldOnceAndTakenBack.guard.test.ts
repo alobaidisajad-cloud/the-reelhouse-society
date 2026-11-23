@@ -93,7 +93,7 @@ const WRITERS: Record<string, Judged> = {
   'public.dispatch_notify_critique': { back: ['a_critique_takes_its_notice'], once: 'as a record\'s critique' },
   'public.dispatch_notify_certify': { back: ['a_certification_takes_its_notice'], once: 'a certification a member and piece (its key); pushed once by its piece or critique' },
   'public.dispatch_notify_answer': { back: ['notify_answer'], once: 'the answer moved away takes its notice in the same trigger; pushed once a critique (answer:<critique>)' },
-  'public.dispatch_notify_ballot_closed': { back: 'a ballot closes once and is never reopened: its close is a fact, never undone', once: 'written only on the update that closes it (OLD open, NEW closed), and only to members who voted' },
+  'private.closed_ballots_told': { back: 'a ballot closes once and is never reopened: its close is a fact, never undone', once: 'a ballot is put on its list only on the update that closes it (OLD open, NEW closed), once (its key); the job tells only its voters, each once: their notices and how far it went written in one transaction, resumed after the last voter told' },
   'public.handle_privacy_switch': { back: ['tr_handle_privacy_switch'], once: 'the requests it turns into follows are written as follows once, the requests\' notices taken in the same trigger' },
   'public.request_lounge_membership': { back: 'taken by a_salon_request_takes_its_notice on lounge_members when the seat is answered or given up', once: 'one seat a member and salon (its key); pushed once a salon (salon_request:<salon>)' },
   'public.approve_lounge_member': { back: 'an admission happened: the member was let in, which a later removal does not undo', once: 'once a seat: approving an approved seat writes nothing' },

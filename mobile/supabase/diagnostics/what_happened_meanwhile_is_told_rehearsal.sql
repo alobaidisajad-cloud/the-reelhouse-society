@@ -1298,6 +1298,13 @@ WITH r AS (INSERT INTO public.dispatch_posts (kind, user_id, author_username, ti
 INSERT INTO rh_d2_rows SELECT 'E ballot', id FROM r;
 INSERT INTO public.dispatch_votes (post_id, user_id, option_index) VALUES ((SELECT pg_temp.rh_d2_row('E ballot')), (SELECT pg_temp.rh_d2('S')), 0);
 UPDATE public.dispatch_posts SET frozen_totals = '{"total": 1, "counts": {"0": 1}}'::jsonb WHERE id = (SELECT pg_temp.rh_d2_row('E ballot'));
+-- The house's job tells the ballot's voters, as the schedule runs it, until none waits.
+DO $$
+BEGIN
+  WHILE EXISTS (SELECT 1 FROM private.ballot_notices_waiting) LOOP
+    PERFORM private.closed_ballots_told();
+  END LOOP;
+END $$;
 UPDATE public.dispatch_posts SET answer_id = (SELECT pg_temp.rh_d2_row('E answer')) WHERE id = (SELECT pg_temp.rh_d2_row('seeking'));
 
 SELECT pg_temp.rh_need('the ballot''s notice to S, quoting its question',

@@ -306,15 +306,28 @@ SELECT pg_temp.gb6_prefs(1, '{}') AS done \gset rh_
 SELECT pg_temp.gb6_as(1, format('SELECT public.approve_lounge_member(%L, %L)', (SELECT id FROM gb6_rows WHERE what = 'salon'),
   (SELECT id FROM rehearsal_members WHERE n = 3))) AS done \gset rh_
 
--- The ballots close: 4's System Alerts off for the first, the critiques' switch off for the second.
+-- The ballots close, and the house's job tells each one's voter as the schedule runs it: 4's System
+-- Alerts off for the first, the critiques' switch off for the second.
 SELECT pg_temp.gb6_prefs(4, '{"notif_system": false}') AS done \gset rh_
 SELECT pg_temp.gb6_mark('before the first close') AS done \gset rh_
 UPDATE public.dispatch_posts SET frozen_totals = jsonb_build_object('total', 1, 'counts', jsonb_build_object('0', 1), 'frozen_at', now())
  WHERE id = (SELECT id FROM gb6_rows WHERE what = 'ballot: first');
+DO $$
+BEGIN
+  WHILE EXISTS (SELECT 1 FROM private.ballot_notices_waiting) LOOP
+    PERFORM private.closed_ballots_told();
+  END LOOP;
+END $$;
 SELECT pg_temp.gb6_mark('the first close, System Alerts off') AS done \gset rh_
 SELECT pg_temp.gb6_prefs(4, '{"notif_comments": false}') AS done \gset rh_
 UPDATE public.dispatch_posts SET frozen_totals = jsonb_build_object('total', 1, 'counts', jsonb_build_object('0', 1), 'frozen_at', now())
  WHERE id = (SELECT id FROM gb6_rows WHERE what = 'ballot: second');
+DO $$
+BEGIN
+  WHILE EXISTS (SELECT 1 FROM private.ballot_notices_waiting) LOOP
+    PERFORM private.closed_ballots_told();
+  END LOOP;
+END $$;
 SELECT pg_temp.gb6_mark('the second close, critiques off') AS done \gset rh_
 SELECT pg_temp.gb6_prefs(4, '{}') AS done \gset rh_
 
@@ -348,7 +361,7 @@ UPDATE public.interactions SET created_at = created_at - interval '1 hour'
 -- rolled back with the rest), with its rehearsal_members (n = 1..4). 1 files two ballots, both past
 -- their close; the house withholds the second. 2, 3 and 4 vote in the first, 4 in the second (laid by
 -- the house, as the vote the app sends). 2 mutes 1 and 1 blocks 3, each as themselves. The house
--- freezes both counts, as freeze_closed_ballots does. Then 4 is told of the first, the notice naming
+-- freezes both counts, as freeze_closed_ballots does, and its job tells the voters. Then 4 is told of the first, the notice naming
 -- its author, of kind 'ballot', and 4 reads it on their board, as themselves; 2 and 3 are told
 -- nothing; nobody is told of the withheld one.
 
@@ -391,6 +404,13 @@ UPDATE public.dispatch_posts SET frozen_totals = jsonb_build_object('total', 3, 
  WHERE id = (SELECT id FROM gb4_ballots WHERE what = 'told');
 UPDATE public.dispatch_posts SET frozen_totals = jsonb_build_object('total', 1, 'counts', jsonb_build_object('1', 1), 'frozen_at', now())
  WHERE id = (SELECT id FROM gb4_ballots WHERE what = 'withheld');
+-- Then the house's job tells the voters of each ballot it closed, as the schedule runs it, until none waits.
+DO $$
+BEGIN
+  WHILE EXISTS (SELECT 1 FROM private.ballot_notices_waiting) LOOP
+    PERFORM private.closed_ballots_told();
+  END LOOP;
+END $$;
 
 -- 4 reads their board, as themselves.
 SET LOCAL ROLE authenticated;

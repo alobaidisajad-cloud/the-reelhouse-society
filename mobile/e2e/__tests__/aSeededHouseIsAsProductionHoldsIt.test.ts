@@ -14,9 +14,15 @@
  * train's indexes built CONCURRENTLY meanwhile wait for that transaction until their lock wait
  * cancels them. The rehearsals' and the lab's houses are a few dozen members: their schedule's first
  * run finds a few rows, in milliseconds.
+ *
+ * And the regard the Lobby weighs by its day (each table its chooser reads by when a row was given) is
+ * dated in the load house as production's is, across the house's life: a row the seed leaves to its
+ * column's default is dated at the seed's minute, so the day before the seed held every certification
+ * of the house's filings (800,000 at 100,000 members) as one day's regard, a day no house has.
  */
 import { readFileSync } from 'fs';
 import { join, relative } from 'path';
+import { read } from '@/test-utils/house';
 import { files } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..');
@@ -35,6 +41,22 @@ const jobsNotRun = (schedule: string, seed: string) => {
   const body = plain(seed);
   return jobsIn(schedule).filter((j) => !body.includes(plain(j.command).trim().replace(/;$/, '').trim())).map((j) => j.name);
 };
+
+/**
+ * Each table a body reads by when its rows were given, from the day's start or a step's last row
+ * (`created_at >= v_start` or `>= v_from`), with the kind of row it reads where the table holds others
+ * (its `type`).
+ */
+export const regardSources = (body: string) => [...plain(body).matchAll(
+  /\bFROM public\.(\w+) (\w+)\b((?:(?!\bFROM\b)[\s\S])*?)\bWHERE\b((?:(?!\bFROM\b)[\s\S])*?)\b\2\.created_at >= v_(?:start|from)\b/g)]
+  .map(([, table = '', , , where = '']) => ({ table, type: /\.type = '(\w+)'/.exec(where)?.[1] }));
+
+/** A seed's inserts into a source of the regard that leave the row's date to the column's default: by table. */
+export const undatedRegard = (seed: string, sources: { table: string; type?: string }[]) => [...plain(seed)
+  .matchAll(/\bINSERT INTO public\.(\w+) \(([^)]*)\)([^;]*);/g)]
+  .filter(([, table, cols = '', rest = '']) => sources.some((r) => r.table === table && (!r.type || rest.includes(`'${r.type}'`)))
+    && !/\bcreated_at\b/.test(cols))
+  .map(([, table = '']) => table);
 
 /** Whether a seed's last write comes before an ANALYZE of the house. */
 const analysedLast = (sql: string) => {
@@ -65,6 +87,30 @@ describe('the load house is as production\'s schedule leaves it', () => {
     expect(jobsNotRun(schedule, "SELECT public.a_job() AS done;\nDELETE FROM t\n  WHERE at < now() - interval '14 days';")).toEqual([]);
     // a command named only in a comment is not run
     expect(jobsNotRun(schedule, "-- SELECT public.a_job();\nDELETE FROM t WHERE at < now() - interval '14 days';")).toEqual(['a-job']);
+  });
+});
+
+/** The Lobby's sources of regard, as the house production will hold reads them. */
+const LOBBY = [...read().functions.values()].filter((fn) => /lobby/.test(fn.name)).flatMap((fn) => regardSources(fn.body));
+
+describe('the regard the Lobby weighs by its day is dated as production dates it', () => {
+  it('each insert of the load house into a source of the regard names when its rows were given', () => {
+    expect(LOBBY.map((r) => r.table)).toEqual(expect.arrayContaining(['interactions', 'log_comments', 'dispatch_certifications', 'dispatch_comments']));
+    expect(undatedRegard(SEEDS.find((x) => x.file === LOAD_SEED)?.text ?? '', LOBBY)).toEqual([]);
+  });
+
+  it('reads the sources from the chooser, and finds an insert left to the default date', () => {
+    const body = "SELECT 1 FROM public.interactions x JOIN public.logs l ON l.id = x.target_log_id\n WHERE x.type = 'endorse_log' AND x.created_at >= v_start;\n"
+      + 'SELECT 1 FROM public.dispatch_certifications c\n WHERE c.post_id IS NOT NULL AND c.created_at >= v_from AND c.created_at < v_end;\n'
+      + 'SELECT 1 FROM public.lists s WHERE s.created_at < v_end;';
+    const sources = regardSources(body);
+    expect(sources).toEqual([{ table: 'interactions', type: 'endorse_log' }, { table: 'dispatch_certifications', type: undefined }]);
+    const seed = "INSERT INTO public.dispatch_certifications (user_id, post_id)\nSELECT u, p FROM x;\n"
+      + "INSERT INTO public.interactions (user_id, target_user_id, type) SELECT a, b, 'follow' FROM y;\n"
+      + "INSERT INTO public.interactions (user_id, target_log_id, type) SELECT a, l, 'endorse_log' FROM z;\n"
+      + "INSERT INTO public.interactions (user_id, target_log_id, type, created_at) SELECT a, l, 'endorse_log', t FROM z;\n"
+      + '-- INSERT INTO public.dispatch_certifications (user_id, post_id) VALUES (1, 2);\n';
+    expect(undatedRegard(seed, sources)).toEqual(['dispatch_certifications', 'interactions']);
   });
 });
 

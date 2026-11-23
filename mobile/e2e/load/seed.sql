@@ -173,9 +173,14 @@ INSERT INTO public.dispatch_comments (post_id, user_id, author_username, body, c
 SELECT ('00000000-0000-4000-9000-' || lpad(to_hex(1), 12, '0'))::uuid, pg_temp.mid(u), 'm' || u,
        'On the hot post.', now() - u * interval '1 second', u % 50
   FROM generate_series(3, 20002) u;
-INSERT INTO public.dispatch_certifications (user_id, post_id)
-SELECT pg_temp.mid(u), ('00000000-0000-4000-9000-' || lpad(to_hex(p), 12, '0'))::uuid
-  FROM generate_series(1, 40000 * :scale) p, LATERAL (SELECT ((p * 7 + k * 15485863) % :members) + 1 AS u FROM generate_series(1, 20) k) x
+-- Twenty certifications a post, its k-th given k hours after the post was filed (never after now), as
+-- production's are given across a post's life: dated all at the seed's minute, the day before the seed
+-- would hold every certification the house ever gave, 800,000 at 100,000 members, as one day's regard.
+INSERT INTO public.dispatch_certifications (user_id, post_id, created_at)
+SELECT pg_temp.mid(u), ('00000000-0000-4000-9000-' || lpad(to_hex(p), 12, '0'))::uuid,
+       LEAST(now(), now() - (p % 3000) * interval '1 hour' + k * interval '1 hour')
+  FROM generate_series(1, 40000 * :scale) p,
+       LATERAL (SELECT k, ((p * 7 + k * 15485863) % :members) + 1 AS u FROM generate_series(1, 20) k) x
 ON CONFLICT DO NOTHING;
 -- One series at the ceiling: 24 parts (MOST_PARTS) of 25,000 characters (essay_ceiling), its words
 -- parted by every kind of space the app counts by, Arabic among them (the series page's read times).
@@ -333,11 +338,35 @@ UPDATE public.lounges l SET member_count = c.n
 -- it, so the house is as production holds it between two runs: the Lobby's edition chosen, every closed
 -- ballot frozen and its voters told, every withheld piece past its thirty days gone, the job history
 -- trimmed. Left to the schedule, its first run after the seed would do all of it in one transaction
--- (1,800 ballots frozen and 45,000 notices written at 100,000 members, about half a minute), a backlog
+-- (1,800 ballots frozen and, where closing a ballot tells its voters in the same write, 45,000 notices
+-- written at 100,000 members, about half a minute), a backlog
 -- production never holds; an index built CONCURRENTLY waits for every transaction older than it, so the
 -- train's builds would be cancelled at their lock wait while that run lasts.
 SELECT public.lobby_choose_edition() AS lobby_edition_rows;
+-- Where the schedule draws the edition up a step at a time (private.lobby_edition_begun, every hour, and
+-- its job private.lobby_edition_drafted every second while a draft waits), the hourly job run as the
+-- schedule runs it, then its steps to the end.
+DO $$
+BEGIN
+  IF to_regprocedure('private.lobby_edition_begun()') IS NOT NULL THEN
+    EXECUTE 'SELECT private.lobby_edition_begun();';
+    WHILE EXISTS (SELECT 1 FROM private.lobby_drafts) LOOP
+      PERFORM private.lobby_edition_drafted(1000000);
+    END LOOP;
+  END IF;
+END $$;
 SELECT public.freeze_closed_ballots() AS ballots_frozen;
+-- Where the house tells a closed ballot's voters by a job of its own (private.closed_ballots_told, every
+-- second while a ballot waits), every voter of the ballots just closed told now, as its runs would tell
+-- them within minutes.
+DO $$
+BEGIN
+  IF to_regprocedure('private.closed_ballots_told(integer)') IS NOT NULL THEN
+    WHILE EXISTS (SELECT 1 FROM private.ballot_notices_waiting) LOOP
+      PERFORM private.closed_ballots_told(100000);
+    END LOOP;
+  END IF;
+END $$;
 SELECT public.expire_withheld_pieces() AS withheld_pieces_expired;
 DELETE FROM cron.job_run_details WHERE start_time < now() - interval '14 days';
 -- The pushes those notices queued were sent long ago on production, whose queue is drained as it fills:

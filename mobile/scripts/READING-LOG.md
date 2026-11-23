@@ -540,3 +540,15 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/migrations-down/20261122_62_a_member_is_found_among_the_first_holders_of_a_piece.sql | — |  |
 | supabase/migrations/20261122_62_a_member_is_found_among_the_first_holders_of_a_piece.sql | — |  |
 | mobile/supabase/diagnostics/train_12_live_check.sql | — |  |
+| mobile/supabase/diagnostics/a_closed_ballots_voters_are_told_at_a_pace_rehearsal.sql | — |  |
+| mobile/supabase/diagnostics/the_lobby_reads_the_days_regard_and_its_candidates_rehearsal.sql | — |  |
+| mobile/supabase/diagnostics/the_lobbys_notices_are_found_by_their_piece_rehearsal.sql | — |  |
+| mobile/supabase/diagnostics/the_stacks_open_to_all_are_read_newest_first_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261122_63_a_closed_ballots_voters_are_told_at_a_pace.sql | — |  |
+| mobile/supabase/migrations-down/20261122_64_the_lobbys_notices_are_found_by_their_piece.sql | — |  |
+| mobile/supabase/migrations-down/20261122_65_the_stacks_open_to_all_are_read_newest_first.sql | — |  |
+| mobile/supabase/migrations-down/20261122_66_the_lobby_reads_the_days_regard_and_its_candidates.sql | — |  |
+| supabase/migrations/20261122_63_a_closed_ballots_voters_are_told_at_a_pace.sql | — |  |
+| supabase/migrations/20261122_64_the_lobbys_notices_are_found_by_their_piece.sql | — |  |
+| supabase/migrations/20261122_65_the_stacks_open_to_all_are_read_newest_first.sql | — |  |
+| supabase/migrations/20261122_66_the_lobby_reads_the_days_regard_and_its_candidates.sql | — |  |
