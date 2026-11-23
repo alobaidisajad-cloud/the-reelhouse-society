@@ -7122,28 +7122,28 @@
     "class": "DB-a-notice-left-when-its-cause-is-undone",
     "mutant": "shape-a-critique-leaves-its-notice",
     "proof": "m2",
-    "commit": "ec7d35d5925e3bb2585ec872074843ea7ad1af7d",
+    "commit": "3ec8a46a927a639982a29fd2eeaa699f907359fc",
     "verdict": "caught"
   },
   {
     "class": "DB-a-notice-left-when-its-cause-is-undone",
     "mutant": "shape-the-notice-finder-reads-no-shared-call",
     "proof": "m1",
-    "commit": "ec7d35d5925e3bb2585ec872074843ea7ad1af7d",
+    "commit": "3ec8a46a927a639982a29fd2eeaa699f907359fc",
     "verdict": "caught"
   },
   {
     "class": "DB-a-count-taken-before-its-lock",
     "mutant": "shape-the-seat-count-read-before-its-lock",
     "proof": "m2",
-    "commit": "ec7d35d5925e3bb2585ec872074843ea7ad1af7d",
+    "commit": "3ec8a46a927a639982a29fd2eeaa699f907359fc",
     "verdict": "caught"
   },
   {
     "class": "DB-a-count-taken-before-its-lock",
     "mutant": "shape-the-count-finder-takes-one-way-for-two",
     "proof": "m3",
-    "commit": "ec7d35d5925e3bb2585ec872074843ea7ad1af7d",
+    "commit": "3ec8a46a927a639982a29fd2eeaa699f907359fc",
     "verdict": "caught"
   },
   {
@@ -7416,14 +7416,21 @@
     "class": "TEST-a-seed-leaves-a-house-production-never-holds",
     "mutant": "shape-the-load-seed-leaves-the-ballots-to-the-schedule",
     "proof": "m1",
-    "commit": "13fa70d3ed0c4c0ea770c16c80c2f4684b01ee4a",
+    "commit": "3ec8a46a927a639982a29fd2eeaa699f907359fc",
     "verdict": "caught"
   },
   {
     "class": "TEST-a-seed-leaves-a-house-production-never-holds",
     "mutant": "shape-the-rehearsals-house-left-unanalysed",
     "proof": "m2",
-    "commit": "13fa70d3ed0c4c0ea770c16c80c2f4684b01ee4a",
+    "commit": "3ec8a46a927a639982a29fd2eeaa699f907359fc",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-a-seed-leaves-a-house-production-never-holds",
+    "mutant": "shape-the-load-seed-dates-the-regard-at-its-minute",
+    "proof": "m3",
+    "commit": "3ec8a46a927a639982a29fd2eeaa699f907359fc",
     "verdict": "caught"
   },
   {
@@ -7437,7 +7444,7 @@
     "class": "TEST-a-scan-reads-a-local-to-its-first-semicolon",
     "mutant": "shape-a-local-read-to-its-first-semicolon",
     "proof": "m1",
-    "commit": "13fa70d3ed0c4c0ea770c16c80c2f4684b01ee4a",
+    "commit": "3ec8a46a927a639982a29fd2eeaa699f907359fc",
     "verdict": "caught"
   }
 ]
