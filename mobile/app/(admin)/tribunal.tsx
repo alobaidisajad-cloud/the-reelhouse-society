@@ -220,7 +220,8 @@ export function EnforcementHistory({ history, isLoading, failed, onRetry }: {
             <Text style={s.historyAction}>
               {record.action.toUpperCase()}{standing ? ` · ${standing}` : ''}
             </Text>
-            <Text style={s.historyReason} numberOfLines={1}>
+            {/* Whole: no other place in the case reads a past verdict's reason. */}
+            <Text style={s.historyReason} selectable>
               {record.reason}
             </Text>
             <Text style={s.historyDate}>
@@ -243,7 +244,8 @@ function Exhibit({ words, said }: { words: PieceWords; said?: string }) {
   return (
     <>
       {!!said && <Text style={[s.contextLabel, s.exhibitSaid]}>{said}</Text>}
-      {!!words.title && <Text style={s.evidenceTitle} numberOfLines={2}>{words.title}</Text>}
+      {/* Whole, as the words under it: a title as reported is held nowhere else, and may be the offence. */}
+      {!!words.title && <Text style={s.evidenceTitle} selectable>{words.title}</Text>}
       {!!words.display_name && <Text style={s.evidenceTitle} selectable>Display name: {words.display_name}</Text>}
       {!!picture && (
         <RemoteImage uri={picture} style={s.exhibitPicture} contentFit="cover"

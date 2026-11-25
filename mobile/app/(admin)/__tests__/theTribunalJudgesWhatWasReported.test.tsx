@@ -9,6 +9,7 @@
  *   · REMOVE CONTENT was never offered for a page or a salon, and a ban froze both: a slur in a bio
  *     or a salon's name stood as long as the ban did. It is offered, saying what it takes from each.
  *   · A verdict lifted or overturned on appeal reads so on the record, never as a strike.
+ *   · A past verdict's reason and a reported title are drawn whole: nothing else in the case reads them.
  */
 import React from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -189,6 +190,29 @@ describe('REMOVE CONTENT on a page and a salon', () => {
     await waitFor(() => expect(r.getByLabelText('Remove content: clear the salon’s name and words')).toBeTruthy());
     await act(async () => { await fireEvent.press(firstOf(r.getAllByLabelText('Remove content: clear the salon’s name and words'))); });
     expect(r.getByText(/name, description and cover are cleared; its rooms/)).toBeTruthy();
+  });
+});
+
+describe('the words a verdict is given on are read whole', () => {
+  const LONG_REASON = 'Third warning in a month: abusive critiques under four films, each naming the same member, after two warnings and a mute that ran its course without a word of change';
+  const LONG_TITLE = 'Films for people who think the ones you love are for fools, a stack made to mock one member by name, its title the whole of the abuse, a hundred characters';
+
+  it('a past verdict’s reason on the record is drawn whole, never cut to a line', () => {
+    const r = render(<EnforcementHistory isLoading={false} history={[record('m1', 'suspend', LONG_REASON)] as never} />);
+    expect(r.getByText(LONG_REASON).props.numberOfLines).toBeUndefined();
+  });
+
+  it('a reported title is drawn whole, as it stands and as it was reported', async () => {
+    mockGetReportEvidence.mockResolvedValue({
+      found: true, title: 'A stack', body: 'Edited since.', route: '/stacks/content-abc', changed: true,
+      reported: { title: LONG_TITLE, body: 'The words as reported.' },
+    });
+    const r = renderTribunal();
+    await waitFor(() => expect(r.getByLabelText('Summon the evidence')).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText('Summon the evidence')); });
+    await waitFor(() => expect(r.getByText(LONG_TITLE)).toBeTruthy());
+    expect(r.getByText(LONG_TITLE).props.numberOfLines).toBeUndefined();
+    expect(r.getByText('A stack').props.numberOfLines).toBeUndefined();
   });
 });
 
