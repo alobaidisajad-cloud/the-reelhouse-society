@@ -2004,6 +2004,42 @@ mutants:
         replace: "const PostWords = (function PostWords({"
     proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the member's marks, read, redraw each filing's bar and none of its words" }
 
+  - id: shape-docket-case-drawn-at-every-change
+    class: SPEED-a-mark-redraws-the-words
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "}, (was, now) => (Object.keys(now) as (keyof typeof now)[]).every("
+        replace: "}, (was, now) => false && (Object.keys(now) as (keyof typeof now)[]).every("
+    proof: { file: app/(admin)/__tests__/aVerdictRedrawsOnlyTheCasesItChanged.test.tsx, test: "a verdict, and the docket read again behind it, draw again none of the cases left on the docket" }
+
+  - id: shape-docket-case-compared-by-reference
+    class: SPEED-a-mark-redraws-the-words
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "const sameCase = (a: TribunalReport, b: TribunalReport) => a === b || JSON.stringify(a) === JSON.stringify(b);"
+        replace: "const sameCase = (a: TribunalReport, b: TribunalReport) => a === b;"
+    proof: { file: app/(admin)/__tests__/aVerdictRedrawsOnlyTheCasesItChanged.test.tsx, test: "a verdict, and the docket read again behind it, draw again none of the cases left on the docket" }
+
+  - id: shape-docket-dismiss-made-anew
+    class: SPEED-a-mark-redraws-the-words
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "    [resolveCase],\n"
+        replace: "    [resolveCase, resolveV2Mutation],\n"
+    proof: { file: app/(admin)/__tests__/aVerdictRedrawsOnlyTheCasesItChanged.test.tsx, test: "a verdict, and the docket read again behind it, draw again none of the cases left on the docket" }
+
+  - id: shape-docket-record-reread-made-anew
+    class: SPEED-a-mark-redraws-the-words
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "reread={item.target_user_id ? readOf(item.target_user_id)?.refetch : undefined}"
+        replace: "reread={item.target_user_id ? () => readOf(item.target_user_id!)!.refetch() : undefined}"
+    proof: { file: app/(admin)/__tests__/aVerdictRedrawsOnlyTheCasesItChanged.test.tsx, test: "a page more draws the cases it brings, and none of the cases already on the docket" }
+
   - id: shape-gwp-asan-unrun
     class: RUNTIME-gwp-asan-crashes-hermes
     source: shape
@@ -6738,8 +6774,8 @@ mutants:
     source: shape
     edits:
       - file: app/(admin)/tribunal.tsx
-        find: "                    accessible={multiSelectMode}\n"
-        replace: "                    accessible={multiSelectMode || undefined}\n"
+        find: "      accessible={multiSelectMode}\n"
+        replace: "      accessible={multiSelectMode || undefined}\n"
     proof: { file: app/(admin)/__tests__/everyVerdictIsReachedByAScreenReader.test.tsx, test: "reaches every verdict, the accused and the evidence, each as its own stop, not lost inside the case card" }
 
   - id: shape-stack-row-offers-no-remove

@@ -61,6 +61,7 @@ SPEED:
   - SPEED-a-screen-takes-a-store-whole
   - SPEED-a-page-waits-for-what-it-knows
   - DB-the-rule-asked-twice-a-row
+  - SPEED-a-mark-redraws-the-words
 SIDE:
   - DB-certification-held-twice
   - COPY-one-act-told-as-another
