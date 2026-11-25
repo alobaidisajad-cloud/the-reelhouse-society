@@ -1511,7 +1511,7 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useProfileData.ts
-        find: "      if (isMounted.current && uid === targetUserIdRef.current) setTabAnswered((a) => ({ ...a, [tab]: true }));\n"
+        find: "      if (stillAsked()) setTabAnswered((a) => ({ ...a, [tab]: true }));\n"
         replace: ""
     proof: { file: src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx, test: "a room is answered once its read comes back, not when it is asked, and not by a failed one" }
 
@@ -1520,7 +1520,7 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useProfileData.ts
-        find: "        if (!isMounted.current || uid !== targetUserIdRef.current || _roomAbortRef.current[tab] !== controller) return;\n        dispatch({ type: 'SET_WATCHLIST_PAGE', items: result.items, cursor: result.nextCursor, append: false });"
+        find: "        if (!isMounted.current || uid !== targetUserIdRef.current || !roomTurns.isLast(tab, mine)) return;\n        dispatch({ type: 'SET_WATCHLIST_PAGE', items: result.items, cursor: result.nextCursor, append: false });"
         replace: "        if (!isMounted.current || uid !== targetUserIdRef.current) return;\n        dispatch({ type: 'SET_WATCHLIST_PAGE', items: result.items, cursor: result.nextCursor, append: false });"
     proof: { file: src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx, test: "a search records the filters its rows answer; a search overtaken lands neither its rows nor its filters" }
 
@@ -2639,8 +2639,8 @@ mutants:
     source: shape
     edits:
       - file: src/services/StackService.ts
-        find: "      .order('film_id', { ascending: true })\n      .range(offset"
-        replace: "      .range(offset"
+        find: "        .order('created_at', { ascending: true })\n        .order('film_id', { ascending: true })\n        .limit(HELD_FILMS),"
+        replace: "        .order('created_at', { ascending: true })\n        .limit(HELD_FILMS),"
     proof: { file: src/utils/__tests__/aPageEndsOnAKeyNoTwoRowsShare.guard.test.ts, test: "ends every paged read of the app on a key no two of its rows share" }
 
   - id: shape-paper-kept-never-drawn
@@ -4315,18 +4315,18 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "    const from = st0.critiquesRead[postId] ?? (st0.critiques[postId] ?? []).length;"
-        replace: "    const from = (st0.critiques[postId] ?? []).length;"
-    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique of the member's own, set at the top, does not move the next page past a row" }
+        find: "  const left = next.held.filter((id) => !shown.has(id));"
+        replace: "  const left = next.held.slice(Math.max(0, shown.size - COMMENT_PAGE_SIZE));"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique of the member's own, set at the top, is not read again and moves no row past the next page" }
 
   - id: shape-withdrawn-row-still-counted
     class: READ-a-page-begun-past-its-row
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "      critiquesRead: { ...st.critiquesRead, [postId]: Math.max(0, (st.critiquesRead[postId] ?? 0) - 1) },"
-        replace: "      critiquesRead: st.critiquesRead,"
-    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique withdrawn from a page read moves the next page back one, so none is skipped" }
+        find: "    const q = after\n      ? page().lte('created_at', after.at).or(`created_at.lt.${after.at},and(created_at.eq.${after.at},id.lt.${after.id})`)\n      : page();"
+        replace: "    const q = after ? page().range(shown.size, shown.size + COMMENT_PAGE_SIZE - 1) : page();"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique filed, and one withdrawn, between two pages move no row past the next page" }
 
   - id: shape-leave-put-back-by-a-read
     class: WRITE-a-failure-put-back-by-a-read
@@ -9827,6 +9827,11 @@ mutants:
     source: past
     commit: 6da4022c
     files: [src/stores/lounge.ts]
+    # The fix no longer reverses (the catch-up's turns took lines beside its hunk); this puts the page-by-page catch-up back by hand.
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      const { data: newer, error: newerError } = await supabase\n        .from('lounge_messages')\n        .select(MESSAGE_COLUMNS)\n        .eq('lounge_id', loungeId)\n        .or(`created_at.gt.${newestHeld.created_at},and(created_at.eq.${newestHeld.created_at},id.gt.${newestHeld.id})`)\n        .order('created_at', { ascending: true })\n        .order('id', { ascending: true })\n        .limit(MESSAGE_WINDOW);\n      if (newerError) return;\n      const rows = (newer ?? []) as unknown as LoungeMessageRow[];"
+        replace: "      const rows: LoungeMessageRow[] = [];\n      let cursor = { created_at: newestHeld.created_at, id: newestHeld.id };\n      for (let page = 0; page < MESSAGE_WINDOW / MESSAGE_PAGE; page++) {\n        const { data: newer, error: newerError } = await supabase\n          .from('lounge_messages')\n          .select(MESSAGE_COLUMNS)\n          .eq('lounge_id', loungeId)\n          .or(`created_at.gt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.gt.${cursor.id})`)\n          .order('created_at', { ascending: true })\n          .order('id', { ascending: true })\n          .limit(MESSAGE_PAGE);\n        if (newerError) return;\n        const got = (newer ?? []) as unknown as LoungeMessageRow[];\n        rows.push(...got);\n        const last = got.at(-1);\n        if (got.length < MESSAGE_PAGE || !last) break;\n        cursor = { created_at: last.created_at, id: last.id };\n      }"
     proof: { file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "walks no read of the house page by page at launch, and every walk away from it is judged" }
 
   - id: shape-the-walk-finder-reads-no-while
@@ -10470,3 +10475,12 @@ mutants:
         find: "  if (ts.isReturnStatement(s) || ts.isThrowStatement(s)) return true;"
         replace: "  if (ts.isReturnStatement(s) || ts.isThrowStatement(s) || ts.isContinueStatement(s)) return true;"
     proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a reducer's dispatch is a write: found unchecked, passed behind a turn or a cleanup's flag" }
+
+  - id: shape-a-held-order-read-not-a-page
+    class: READ-a-page-ordered-by-a-key-rows-share
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aPageEndsOnAKeyNoTwoRowsShare.guard.test.ts
+        find: "    const range = inRead(ranged) ? ranged : keyset ? end : inRead(holds) ? holds : -1;"
+        replace: "    const range = inRead(ranged) ? ranged : keyset ? end : -1;"
+    proof: { file: src/utils/__tests__/aPageEndsOnAKeyNoTwoRowsShare.guard.test.ts, test: "says NO to a page ordered by a moment or a rank alone, and not to one ended by an id or a stack's film" }

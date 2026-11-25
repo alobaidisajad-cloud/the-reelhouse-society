@@ -2832,9 +2832,9 @@ classes:
     count: 2
     source: { kind: reviewer, ref: "review round 3, every feature, 2026-11-15" }
     methods:
-      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique of the member's own, set at the top, does not move the next page past a row" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique of the member's own, set at the top, is not read again and moves no row past the next page" }
       - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a row the house sent and the parser dropped still stands in the order: the next page follows it" }
-      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique withdrawn from a page read moves the next page back one, so none is skipped" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique filed, and one withdrawn, between two pages move no row past the next page" }
       - { kind: running, file: src/hooks/__tests__/aNextPageStartsAfterTheLastRowRead.test.tsx, test: "a filing withdrawn while the member reads does not make the next page skip the one after the page" }
       - { kind: running, file: src/hooks/__tests__/aNextPageStartsAfterTheLastRowRead.test.tsx, test: "a filing filed while the member reads does not draw one already on screen a second time" }
     fix: "the next page begins at the rows the house has sent, less those withdrawn since (critiquesRead); too few asks a row twice, which the merge drops (mutants shape-next-page-from-rows-held, shape-withdrawn-row-still-counted); a member's room and a film's Dispatch archive page after the last row read, never at an offset (mutant shape-room-next-page-from-the-top)"
