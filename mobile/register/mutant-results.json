@@ -7423,7 +7423,7 @@
     "class": "TEST-a-seed-leaves-a-house-production-never-holds",
     "mutant": "shape-the-load-seed-leaves-the-ballots-to-the-schedule",
     "proof": "m1",
-    "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "commit": "1daa352aa905ac7080f3f2dc4b5d2a5c961b1503",
     "verdict": "caught"
   },
   {
@@ -7437,7 +7437,7 @@
     "class": "TEST-a-seed-leaves-a-house-production-never-holds",
     "mutant": "shape-the-load-seed-dates-the-regard-at-its-minute",
     "proof": "m3",
-    "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "commit": "1daa352aa905ac7080f3f2dc4b5d2a5c961b1503",
     "verdict": "caught"
   },
   {
@@ -7465,7 +7465,7 @@
     "class": "TEST-a-job-that-ends-itself-read-as-schema",
     "mutant": "shape-the-snapshot-reads-every-job-as-schema",
     "proof": "m3",
-    "commit": "dae06a10f5c001818af96bd6ad0ee125af1c37e1",
+    "commit": "1daa352aa905ac7080f3f2dc4b5d2a5c961b1503",
     "verdict": "caught"
   },
   {
@@ -7529,6 +7529,27 @@
     "mutant": "shape-a-wall-hung-on-the-real-day",
     "proof": "m1",
     "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-a-row-a-recorded-car-laid-reaches-no-copy",
+    "mutant": "shape-the-fill-row-left-out-of-the-snapshot",
+    "proof": "m1",
+    "commit": "1daa352aa905ac7080f3f2dc4b5d2a5c961b1503",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-a-row-a-recorded-car-laid-reaches-no-copy",
+    "mutant": "shape-the-load-house-votes-uncounted",
+    "proof": "m2",
+    "commit": "1daa352aa905ac7080f3f2dc4b5d2a5c961b1503",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-a-row-a-recorded-car-laid-reaches-no-copy",
+    "mutant": "shape-the-lab-members-unlisted",
+    "proof": "m2",
+    "commit": "1daa352aa905ac7080f3f2dc4b5d2a5c961b1503",
     "verdict": "caught"
   }
 ]
