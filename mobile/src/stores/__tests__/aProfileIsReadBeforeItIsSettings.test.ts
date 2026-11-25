@@ -97,4 +97,22 @@ describe('a profile read again while one is out', () => {
     await standing;
     expect((useAuthStore.getState().user as unknown as Record<string, unknown>).is_banned).toBe(false);
   });
+
+  it('the rank history asked at a sign-in and asked again lays the later asked, whichever lands last', async () => {
+    // The house's answer as it stands when asked: a rank granted by the shop, then by the store.
+    const sources = ['paytabs', 'apple'];
+    const house = supabaseFake({ rows: { profiles: [{ ...PROFILE }] }, rpc: { my_entitlement_source: () => sources.shift() ?? null, get_user_blocks: [], get_my_follows: [] } });
+    const held = heldClient(house.client, { rpcs: ['my_entitlement_source'] });
+    mockHouse = { client: held.client } as never;
+    const signIn = () => useAuthStore.getState().adoptSession({ id: ME, email: 'ana@example.com' } as never, { ...PROFILE });
+    signIn();
+    await asked();
+    signIn();
+    await asked();
+    await held.release('my_entitlement_source', 1);
+    await asked();
+    await held.release('my_entitlement_source', 0);
+    await asked();
+    expect(useAuthStore.getState().user?.entitlement_source).toBe('apple');
+  });
 });

@@ -498,3 +498,6 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/e2e/db/fixtures/up-down-up/jobs-left-down.sql | — |  |
 | mobile/e2e/db/fixtures/up-down-up/jobs-left-up.sql | — |  |
 | mobile/e2e/db/fixtures/up-down-up/jobs-up.sql | — |  |
+| mobile/supabase/diagnostics/a_stacks_films_are_read_in_their_order_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261126_00_a_stacks_films_are_read_in_their_order.sql | — |  |
+| supabase/migrations/20261126_00_a_stacks_films_are_read_in_their_order.sql | — |  |

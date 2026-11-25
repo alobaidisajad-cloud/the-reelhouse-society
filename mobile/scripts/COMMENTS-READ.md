@@ -2138,3 +2138,5 @@ files of the reading map this one does not.
 | src/utils/turns.ts | — |  |
 | src/services/__tests__/aStacksFilmsAreReadInTheOrderHeld.test.ts | — |  |
 | src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts | — |  |
+| src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx | — |  |
+| src/hooks/__tests__/theDoorsCountIsLaidInItsTurn.test.tsx | — |  |

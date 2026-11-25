@@ -248,7 +248,8 @@ export function answersDrawnOverNewer(file: string, text: string): string[] {
     const writes = AW.ownNodes(body.fn, (m) => {
       if (!ts.isCallExpression(m)) return null;
       const t = m.expression.getText(sf);
-      return (/^set[A-Z]\w*$/.test(t) && !NOT_STATE.test(t)) || t === 'set' || /\.(setQueryData|setQueriesData|setState)$/.test(t)
+      // A reducer's `dispatch(` is a state setter too: a hook's useReducer lays its answers through it.
+      return (/^set[A-Z]\w*$/.test(t) && !NOT_STATE.test(t)) || t === 'set' || t === 'dispatch' || /\.(setQueryData|setQueriesData|setState)$/.test(t)
         || /^(get\(\)|\w+\.getState\(\))\.set[A-Z]\w*$/.test(t) ? m : null;
     });
     // A read of the member's marks lays each mark only where no act of theirs came since it was
@@ -344,6 +345,26 @@ describe('each rule says no to its planted shape', () => {
       export const s = { retryOne: async (id) => { if (out.has(id)) return; out.add(id); try { const r = await ask(id); set({ r }); } finally { out.delete(id); } } };`)).toEqual([]);
     expect(answersDrawnOverNewer('src/stores/planted.ts', `const out = new Set(); const sent = new Set();
       export const s = { retryOne: async (id) => { if (sent.has(id)) return; out.add(id); try { const r = await ask(id); set({ r }); } finally { out.delete(id); } } };`)).toEqual(['src/stores/planted.ts:retryOne (2)']);
+  });
+
+  it('1: a reducer\'s dispatch is a write: found unchecked, passed behind a turn or a cleanup\'s flag', () => {
+    const hook = (body: string) => `export function useP() { const [state, dispatch] = useReducer(r, s); const [rooms] = useState(turns);
+      ${body} }`;
+    expect(answersDrawnOverNewer('src/hooks/planted.ts', hook(`const loadMore = async () => { const r = await ask(); dispatch({ type: 'PAGE', r }); };`)))
+      .toEqual(['src/hooks/planted.ts:loadMore (2)']);
+    expect(answersDrawnOverNewer('src/hooks/planted.ts', hook(`useEffect(() => { void ask().finally(() => dispatch({ type: 'DONE' })); }, [q]);`)))
+      .toEqual(['src/hooks/planted.ts:an effect (2)']);
+    expect(answersDrawnOverNewer('src/hooks/planted.ts', hook(`const loadMore = async () => { const mine = rooms.now('w'); const r = await ask(); if (!rooms.isLast('w', mine)) return; dispatch({ type: 'PAGE', r }); };
+      useEffect(() => { let gone = false; void ask().finally(() => { if (!gone) dispatch({ type: 'DONE' }); }); return () => { gone = true; }; }, [q]);`))).toEqual([]);
+    // A wait in a branch that leaves the function is before nothing after that branch; one in a branch that stays is.
+    const more = (first: string) => hook(`const loadMore = async () => { ${first} dispatch({ type: 'BUSY' });
+      const mine = rooms.now('w'); const r = await ask(); if (!rooms.isLast('w', mine)) return; dispatch({ type: 'PAGE', r }); };`);
+    expect(answersDrawnOverNewer('src/hooks/planted.ts', more('if (self) return note(await ask());'))).toEqual([]);
+    expect(answersDrawnOverNewer('src/hooks/planted.ts', more('if (self) { note(await ask()); }'))).toEqual(['src/hooks/planted.ts:loadMore (2)']);
+    expect(answersDrawnOverNewer('src/hooks/planted.ts', more('for (const x of xs) { if (x) { note(await ask()); continue; } }'))).toEqual(['src/hooks/planted.ts:loadMore (2)']);
+    // A dispatch a store hands in, not a reducer's, is no different: what it lays is still checked.
+    expect(answersDrawnOverNewer('src/stores/planted.ts', `export async function readOne(dispatch) { const r = await ask(); dispatch(r); }`))
+      .toEqual(['src/stores/planted.ts:readOne (1)']);
   });
 
   it('1: a pull lowers only the flag its RefreshControl holds, raised before it waited', () => {

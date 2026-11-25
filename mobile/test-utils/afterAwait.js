@@ -86,12 +86,26 @@ function ownNodes(fn, pick) {
   return out;
 }
 
-/** Whether a wait and a node stand in the two branches of one `if` or `?:`: the one never runs before the other. */
+/** A statement that always leaves its function (a return or a throw at its end; `continue` and `break` do not). */
+function leavesFn(s) {
+  if (!s) return false;
+  if (ts.isReturnStatement(s) || ts.isThrowStatement(s)) return true;
+  if (ts.isBlock(s)) return s.statements.length > 0 && leavesFn(s.statements[s.statements.length - 1]);
+  if (ts.isIfStatement(s)) return leavesFn(s.thenStatement) && leavesFn(s.elseStatement);
+  return false;
+}
+
+/**
+ * Whether a wait never runs before a node: the two stand in the two branches of one `if` or `?:`, or
+ * the wait stands in a branch of an `if` that leaves the function, and the node after that `if`.
+ */
 function otherBranch(wait, node) {
   const within = (n, branch) => !!branch && n.getStart() >= branch.getStart() && n.getEnd() <= branch.getEnd();
   for (let p = wait.parent; p; p = p.parent) {
     const [a, b] = ts.isIfStatement(p) ? [p.thenStatement, p.elseStatement] : ts.isConditionalExpression(p) ? [p.whenTrue, p.whenFalse] : [null, null];
     if ((within(wait, a) && within(node, b)) || (within(wait, b) && within(node, a))) return true;
+    if (ts.isIfStatement(p) && !within(node, p) && [a, b].some((x) => within(wait, x) && leavesFn(x))) return true;
+    if (isFn(p)) return false;
   }
   return false;
 }

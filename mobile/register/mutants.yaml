@@ -10131,3 +10131,342 @@ mutants:
         find: "  WHILE private.member_grams_fill(5000) <> 'complete' LOOP"
         replace: "  WHILE false LOOP"
     proof: { file: e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts, test: "each seed laying a source with its triggers off makes every kept table of it again" }
+
+  - id: shape-the-corridor-laid-out-of-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      // Overtaken: a newer read lays its own answer; an act of the member's since, a read asked after it.\n      if (!corridorTurns.isLast(CORRIDOR, mine)) return newestCorridorRead === mine ? get().fetchLounges() : undefined;\n      set({ lounges: enriched"
+        replace: "      set({ lounges: enriched"
+    proof: { file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "read twice, lays the later asked, whichever lands last" }
+
+  - id: shape-a-leave-takes-no-corridor-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "    // A read of the corridor out now, or asked while the leave is out, is older than it.\n    corridorTurns.take(CORRIDOR);\n"
+        replace: ""
+      - file: src/stores/lounge.ts
+        find: "      .eq('user_id', user.id)\n      .select('id');\n    corridorTurns.take(CORRIDOR);\n"
+        replace: "      .eq('user_id', user.id)\n      .select('id');\n"
+    proof: { file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "a read asked before a leave never draws the room left as the member's again" }
+
+  - id: shape-a-room-read-laid-out-of-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "        if (!memberUnchanged(startedAs) || !roomLists.isLast(loungeId, mine)) return;"
+        replace: "        if (!memberUnchanged(startedAs)) return;"
+    proof: { file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "read whole twice keep the newer read's words when the older lands last" }
+
+  - id: shape-an-older-page-of-words-laid-on-a-new-list
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "        if (!roomLists.isLast(loungeId, mine)) return get().loadMoreMessages(loungeId);\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "a page of older words asked before the room was read again from its newest is asked again of the new list" }
+
+  - id: shape-a-catch-up-laid-over-the-words-since
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      if (!roomMarks.isLast(loungeId, mine)) return overtaken();\n      type Mark"
+        replace: "      type Mark"
+    proof: { file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "a catch-up asked before a withdrawal never puts the words back" }
+
+  - id: shape-a-resend-tried-twice
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "    if (resending.has(messageId)) return false;\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "a send held in the queue, tried again twice, is tried once, and stands sent" }
+
+  - id: shape-newest-critiques-paged-from-the-top
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    const q = after\n      ? page().lte('created_at', after.at).or(`created_at.lt.${after.at},and(created_at.eq.${after.at},id.lt.${after.id})`)\n      : page();"
+        replace: "    const q = page();"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique filed, and one withdrawn, between two pages move no row past the next page" }
+
+  - id: shape-certified-critiques-walk-the-moving-order
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "  const left = next.held.filter((id) => !shown.has(id));"
+        replace: "  const left: string[] = [];"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "counts that move while the member reads skip and repeat no row of the order held" }
+
+  - id: shape-past-the-held-order-a-page-begun-where-the-last-began
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    next: { ...next, past: full && last ? { count: last.certify_count, at: last.created_at, id: last.id } : null },"
+        replace: "    next: { ...next, past: full ? next.past : null },"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "past the order held, by the last row read as it was read: no row is drawn twice" }
+
+  - id: shape-past-the-held-order-a-film-drawn-twice
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/services/StackService.ts
+        find: "      films: filmsOf(read.filter((r) => !shown.has(filmKeysOf(r)?.film_id ?? -1))),"
+        replace: "      films: filmsOf(read),"
+    proof: { file: src/services/__tests__/aStacksFilmsAreReadInTheOrderHeld.test.ts, test: "films moved while the member reads skip and repeat no film of the order held, and past it none is drawn twice" }
+
+  - id: shape-a-stacks-films-walk-the-moving-order
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/services/StackService.ts
+        find: "    const left = at.held.filter((id) => !shown.has(id));"
+        replace: "    const left: number[] = [];"
+    proof: { file: src/services/__tests__/aStacksFilmsAreReadInTheOrderHeld.test.ts, test: "films moved while the member reads skip and repeat no film of the order held, and past it none is drawn twice" }
+
+  - id: shape-unranked-films-never-reached
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/services/StackService.ts
+        find: "      reads.push(rowsOf(films().is('rank_position', null)\n        .order('created_at', { ascending: true }).order('film_id', { ascending: true }).limit(STACK_ITEMS_LIMIT)));\n"
+        replace: ""
+    proof: { file: src/services/__tests__/aStacksFilmsAreReadInTheOrderHeld.test.ts, test: "films with no rank come last, as the order has them, and a page past the order held reaches them" }
+
+  - id: shape-a-profile-room-laid-out-of-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "roomSignal(_roomAbortRef, 'watchlist'), state.activeFilters.watchlist);\n          if (!stillAsked()) return;"
+        replace: "roomSignal(_roomAbortRef, 'watchlist'), state.activeFilters.watchlist);\n          if (uid !== targetUserIdRef.current) return;"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "opened twice: the later read is laid, whichever lands last" }
+
+  - id: shape-an-older-search-failure-said-over-the-newer
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "        if (isMounted.current && uid === targetUserIdRef.current && roomTurns.isLast(tab, mine)) setTabFailed((f) => ({ ...f, ['watchlist']: true }));"
+        replace: "        if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, ['watchlist']: true }));"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "searched again: an older search that fails says nothing over the newer one that answered" }
+
+  - id: shape-own-logs-retry-said-out-of-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "      if (!isMounted.current || !roomTurns.isLast('logs', mine)) return;"
+        replace: "      if (!isMounted.current) return;"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "your own logs retried twice: the later retry says how the read went" }
+
+  - id: shape-a-member-file-laid-out-of-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "      ]);\n      if (!stillAsked()) return;\n      // Heal follower"
+        replace: "      ]);\n      if (!isMounted.current) return;\n      // Heal follower"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "read again while the last read is out: the later read is laid, whichever lands last" }
+
+  - id: shape-a-page-of-logs-laid-on-a-new-first-page
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: " || (!narrowed && !roomTurns.isLast('file', file))) return;"
+        replace: ") return;"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the member's logs: read again while a next page is out, the page lands on no new first page" }
+
+  - id: shape-a-watchlist-page-laid-on-a-new-list
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "      if (uid !== targetUserIdRef.current || !roomTurns.isLast('watchlist', mine)) return;"
+        replace: "      if (uid !== targetUserIdRef.current) return;"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the watchlist: searched while its next page is out, the page lands on no new list" }
+
+  - id: shape-a-shelf-page-laid-on-a-new-list
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "      if (uid !== targetUserIdRef.current || !roomTurns.isLast('physical', mine)) return;"
+        replace: "      if (uid !== targetUserIdRef.current) return;"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the shelf: searched while its next page is out, the page lands on no new list" }
+
+  - id: shape-a-stacks-page-laid-on-a-new-list
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "      if (uid !== targetUserIdRef.current || !roomTurns.isLast('lists', mine)) return;"
+        replace: "      if (uid !== targetUserIdRef.current) return;"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the stacks: searched while their next page is out, the page lands on no new list" }
+
+  - id: shape-a-watchlist-page-lowers-the-search-flag
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "    } finally {\n      if (isMounted.current && flagTurns.isLast('watchlist', held)) dispatch"
+        replace: "    } finally {\n      if (isMounted.current) dispatch"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the watchlist: a page let go lowers no flag a newer search of the room raised" }
+
+  - id: shape-a-shelf-page-lowers-the-search-flag
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "    } finally {\n      if (isMounted.current && flagTurns.isLast('vault', held)) dispatch"
+        replace: "    } finally {\n      if (isMounted.current) dispatch"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the shelf: a page let go lowers no flag a newer search of the room raised" }
+
+  - id: shape-a-stacks-page-lowers-the-search-flag
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "    } finally {\n      if (isMounted.current && flagTurns.isLast('lists', held)) dispatch"
+        replace: "    } finally {\n      if (isMounted.current) dispatch"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the stacks: a page let go lowers no flag a newer search of the room raised" }
+
+  - id: shape-a-logs-page-lowers-the-search-flag
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "    } finally {\n      if (isMounted.current && flagTurns.isLast(lockKey, held)) dispatch"
+        replace: "    } finally {\n      if (isMounted.current) dispatch"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the member's archive: a page let go lowers no flag a newer search of the archive raised" }
+
+  - id: shape-an-older-search-lowers-the-newer-flag
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "        if (isMounted.current && flagTurns.isLast('watchlist', held)) dispatch"
+        replace: "        if (isMounted.current) dispatch"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "a search overtaken by a newer one lowers no flag the newer one raised" }
+
+  - id: shape-a-member-left-lowers-the-next-spinner
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "    else void fetchUserData().finally(() => { if (!gone) dispatch({ type: 'SET_LOADING', payload: false }); });"
+        replace: "    else void fetchUserData().finally(() => { dispatch({ type: 'SET_LOADING', payload: false }); });"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "a member left while their read is out lowers no spinner over the next member's read" }
+
+  - id: shape-the-summary-laid-under-a-whole-read
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "      && roomTurns.isLast('file', file) && roomTurns.isLast('summary', mine);"
+        replace: "      && roomTurns.isLast('summary', mine);"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the summary asked again lands on no newer read of the file, nor under a later retry" }
+
+  - id: shape-the-summary-retried-out-of-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "      && roomTurns.isLast('file', file) && roomTurns.isLast('summary', mine);"
+        replace: "      && roomTurns.isLast('file', file);"
+    proof: { file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the summary asked again lands on no newer read of the file, nor under a later retry" }
+
+  - id: shape-the-doors-count-laid-out-of-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useFollowRequests.ts
+        find: "  if (!countTurns.isLast(COUNT, mine)) return newestCount === mine ? refreshFollowRequestCount() : undefined;\n"
+        replace: ""
+    proof: { file: src/hooks/__tests__/theDoorsCountIsLaidInItsTurn.test.tsx, test: "a count asked earlier that lands last is laid over no newer one" }
+
+  - id: shape-an-admission-takes-no-count-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useFollowRequests.ts
+        find: "    // Optimistic: drop the row + decrement the badge immediately. A read of the count out now is older.\n    countTurns.take(COUNT);\n"
+        replace: "    // Optimistic: drop the row + decrement the badge immediately. A read of the count out now is older.\n"
+      - file: src/hooks/useFollowRequests.ts
+        find: "      : (await FollowRequestService.decline(req.requesterId)) ? 'declined' : 'failed';\n    countTurns.take(COUNT);\n"
+        replace: "      : (await FollowRequestService.decline(req.requesterId)) ? 'declined' : 'failed';\n"
+    proof: { file: src/hooks/__tests__/theDoorsCountIsLaidInItsTurn.test.tsx, test: "a count read while an admission was out is asked again, and the admitted member stays off the badge" }
+
+  - id: shape-a-next-page-laid-on-another-circle
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: app/(modals)/social-modal.tsx
+        find: "            if (!isMounted.current || gen !== listGen.current) return;"
+        replace: "            if (!isMounted.current) return;"
+    proof: { file: app/(modals)/__tests__/social-modal.telemetry.test.tsx, test: "a next page asked of the list before it was read again lands on no other list" }
+
+  - id: shape-an-older-summons-laid-over-the-newer
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "      if (!evidenceTurns.isLast(reportId, mine)) return;\n      setEvidence(prev => ({ ...prev, [reportId]: { loading: false } }));"
+        replace: "      setEvidence(prev => ({ ...prev, [reportId]: { loading: false } }));"
+    proof: { file: app/(admin)/__tests__/tribunal.test.tsx, test: "an older summons that fails late takes no exhibit away, and says nothing over it" }
+
+  - id: shape-a-rank-history-laid-out-of-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "  if (!memberUnchanged(userId) || !rankTurns.isLast(userId, mine)) return;"
+        replace: "  if (!memberUnchanged(userId)) return;"
+    proof: { file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "the rank history asked at a sign-in and asked again lays the later asked, whichever lands last" }
+
+  - id: shape-a-set-kept-as-a-mark-unseen
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "    for (const m of t.matchAll(/\\b(\\w+)\\.(?:set|add)\\(/g)) raised.add(m[1] ?? '');\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: and passes a thing's turn still its last, marks laid where untouched since asked, and a wait in the other branch" }
+
+  - id: shape-any-write-under-a-once-mode-taken-as-its-flag
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "      if (w.arguments.length !== 1 || w.arguments[0]?.kind !== ts.SyntaxKind.FalseKeyword) return false;\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: and passes a thing's turn still its last, marks laid where untouched since asked, and a wait in the other branch" }
+
+  - id: shape-a-reducers-dispatch-not-a-write
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: " || t === 'dispatch' ||"
+        replace: " ||"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a reducer's dispatch is a write: found unchecked, passed behind a turn or a cleanup's flag" }
+
+  - id: shape-a-continue-taken-as-leaving-the-function
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: test-utils/afterAwait.js
+        find: "  if (ts.isReturnStatement(s) || ts.isThrowStatement(s)) return true;"
+        replace: "  if (ts.isReturnStatement(s) || ts.isThrowStatement(s) || ts.isContinueStatement(s)) return true;"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a reducer's dispatch is a write: found unchecked, passed behind a turn or a cleanup's flag" }

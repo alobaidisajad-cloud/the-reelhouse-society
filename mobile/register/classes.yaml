@@ -5304,6 +5304,38 @@ classes:
       - { kind: running, file: src/stores/__tests__/aBlockMadeWhileTheListsAreReadStays.test.ts, test: "of two reads, the later asked is laid, whichever lands last" }
       - { kind: running, file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "lays the later asked, whichever lands last" }
       - { kind: running, file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "a read of the member's standing asked before a whole read lands nowhere after it" }
+      - { kind: running, file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "read twice, lays the later asked, whichever lands last" }
+      - { kind: running, file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "a read asked before a leave never draws the room left as the member's again" }
+      - { kind: running, file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "read whole twice keep the newer read's words when the older lands last" }
+      - { kind: running, file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "a page of older words asked before the room was read again from its newest is asked again of the new list" }
+      - { kind: running, file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "a catch-up asked before a withdrawal never puts the words back" }
+      - { kind: running, file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "a send held in the queue, tried again twice, is tried once, and stands sent" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique filed, and one withdrawn, between two pages move no row past the next page" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "counts that move while the member reads skip and repeat no row of the order held" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "past the order held, by the last row read as it was read: no row is drawn twice" }
+      - { kind: running, file: src/services/__tests__/aStacksFilmsAreReadInTheOrderHeld.test.ts, test: "films moved while the member reads skip and repeat no film of the order held, and past it none is drawn twice" }
+      - { kind: running, file: src/services/__tests__/aStacksFilmsAreReadInTheOrderHeld.test.ts, test: "films with no rank come last, as the order has them, and a page past the order held reaches them" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "opened twice: the later read is laid, whichever lands last" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "searched again: an older search that fails says nothing over the newer one that answered" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "your own logs retried twice: the later retry says how the read went" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "read again while the last read is out: the later read is laid, whichever lands last" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the member's logs: read again while a next page is out, the page lands on no new first page" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the watchlist: searched while its next page is out, the page lands on no new list" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the shelf: searched while its next page is out, the page lands on no new list" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the stacks: searched while their next page is out, the page lands on no new list" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the watchlist: a page let go lowers no flag a newer search of the room raised" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the shelf: a page let go lowers no flag a newer search of the room raised" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the stacks: a page let go lowers no flag a newer search of the room raised" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the member's archive: a page let go lowers no flag a newer search of the archive raised" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "a search overtaken by a newer one lowers no flag the newer one raised" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "a member left while their read is out lowers no spinner over the next member's read" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the summary asked again lands on no newer read of the file, nor under a later retry" }
+      - { kind: running, file: src/hooks/__tests__/theDoorsCountIsLaidInItsTurn.test.tsx, test: "a count asked earlier that lands last is laid over no newer one" }
+      - { kind: running, file: src/hooks/__tests__/theDoorsCountIsLaidInItsTurn.test.tsx, test: "a count read while an admission was out is asked again, and the admitted member stays off the badge" }
+      - { kind: running, file: app/(modals)/__tests__/social-modal.telemetry.test.tsx, test: "a next page asked of the list before it was read again lands on no other list" }
+      - { kind: running, file: app/(admin)/__tests__/tribunal.test.tsx, test: "an older summons that fails late takes no exhibit away, and says nothing over it" }
+      - { kind: running, file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "the rank history asked at a sign-in and asked again lays the later asked, whichever lands last" }
+      - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a reducer's dispatch is a write: found unchecked, passed behind a turn or a cleanup's flag" }
     sweep: { read: [appCode], found: 42, fixed: 18, judged: 10, commit: f4bbe2ac, finder: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, result: "anAnswerIsStillTheOneAsked widened (stage C, C22) to every app file (services and helpers too), a store's own setter called from outside it, a pull's onRefresh/handleRefresh, catchUp and retry reads, and a wait in the other branch of an if no longer counted: 26 re-asked reads with no token (6 newly seen), 8 pulls that only lower their RefreshControl's flag (judged by rule), 2 judged by name, 4 pages by count (2 fixed before). Fixed in C22 with src/utils/turns.ts (a thing's turn, taken by its reads and by acts on it as they begin and settle) and actsAsAsked (a marks read lays nothing the member acted on since it was asked): the filing, its ballot count, its critiques and their next page, the member's filing, critique, record and stack certifications, the Vault's notes, the block lists, the profile, the rank history and the standing (14; with the 4 fixed before, 18). Still to fix, listed in the test: 12 reads (the salons' list, messages and catch-up and retry, the profile rooms and their retry, the follow requests and their count, the social sheet's next page, the tribunal's evidence) and 2 pages (a stack's films, a filing's critiques)" }
     places: [none]
 
