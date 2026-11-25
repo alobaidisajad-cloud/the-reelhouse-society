@@ -58,6 +58,7 @@ const READS: Judged = {
   'src/components/lounge/__tests__/zz-lounge.gen.test.tsx': { sites: 1, why: 'the salons of a drawn page, last spoken in minutes back from now; the test reads only that a page was drawn' },
   'src/features/settings/__tests__/theSignOutNamesWhatItErases.test.tsx': { sites: 3, why: 'refused writes stamped now only to be writes; the test counts them, never their age' },
   'src/hooks/__tests__/aFeedMovesOnlyAtItsTop.test.tsx': { sites: 1, why: 'when the file opened, so the clock can be set an hour on from it: an age, not a day' },
+  'src/hooks/__tests__/aMemberFileReadAgainKeepsItsLaterPages.test.tsx': { sites: 1, why: 'when the file opened, so the clock can be set six minutes on from it: an age, not a day' },
   'src/hooks/__tests__/aPageIsCurrentOnReturn.test.tsx': { sites: 1, why: 'when the file opened, so the clock can be set a time on from it: an age, not a day' },
   'src/hooks/__tests__/theWelcomeIsNotLostInTheBreath.test.tsx': { sites: 1, why: 'a member who joined a minute before now, under timers faked in the beforeEach: new at any hour' },
   'src/hooks/__tests__/theWelcomeWaitsForTheLobby.test.tsx': { sites: 1, why: 'a member who joined a minute before now, under timers faked in the beforeEach: new at any hour' },
