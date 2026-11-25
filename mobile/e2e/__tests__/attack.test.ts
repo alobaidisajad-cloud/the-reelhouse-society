@@ -53,8 +53,33 @@ const JUDGED: [Record<string, unknown>, string, string][] = [
   [{ action: 'call' }, 'called result:false [1]', 'wrong result'],
   [{ action: 'call' }, 'called then:false', 'wrong effect'],
   [{ action: 'call' }, '42501 permission denied for function f', 'error'],
+  [{ action: 'call', refusedWith: 'RH429' }, 'RH429 RATE_LIMITED', 'error'],
+  [{ action: 'call', refusedWith: 'RH429' }, '42501 The Lounge is an Archivist feature', 'error otherwise'],
 ];
 const FIXTURE_SNAPSHOT = 'CREATE TABLE public.logs (\nCREATE VIEW public.old_name WITH (security_invoker=true) AS\nCREATE TABLE public.new_table (\n';
+const HOUSE = join(__dirname, '..', '..', 'test-utils', 'house.js');
+/** A house as production holds it, and what a pending migration then makes and changes. */
+const RULES_BEFORE = [
+  'CREATE TABLE public.t (', '    id uuid', ');',
+  'GRANT SELECT,INSERT ON TABLE public.t TO authenticated;',
+  'CREATE TABLE public.h (', '    id uuid', ');',
+  'CREATE FUNCTION public.g() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$;',
+  'CREATE TRIGGER kept BEFORE INSERT ON public.t FOR EACH ROW EXECUTE FUNCTION public.g();',
+  'CREATE POLICY seen ON public.t FOR SELECT TO authenticated USING (true);',
+].join('\n');
+const RULES_PENDING = [
+  // A trigger's function made to refuse: the trigger is a gate now.
+  "CREATE OR REPLACE FUNCTION public.g() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'no'; END $$;",
+  // A trigger that refuses nothing, a rule for the house's own role, and one on a table no member reaches: no mutant is made of them.
+  'CREATE FUNCTION public.n() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$;',
+  'CREATE TRIGGER plain BEFORE INSERT ON public.t FOR EACH ROW EXECUTE FUNCTION public.n();',
+  'CREATE POLICY p_house ON public.t FOR SELECT TO service_role USING (true);',
+  'CREATE POLICY p_closed ON public.h FOR SELECT TO authenticated USING (true);',
+  // A new rule on a table members reach, and one on a table made now, which Supabase gives them.
+  'CREATE POLICY p_new ON public.t AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (false);',
+  'CREATE TABLE public.fresh (', '    id uuid', ');',
+  'CREATE POLICY p_fresh ON public.fresh FOR SELECT USING (true);',
+].join('\n');
 
 type Answers = {
   tables: string[]; coverage: { unjudged: string[]; gone: string[] }; fixtureTables: string[];
@@ -68,7 +93,9 @@ type Answers = {
   verdict: { total: number; killed: { id: string; by: string }[]; notApplied: string[]; living: string[]; stale: string[] };
   passes: boolean[];
   across: string[]; acrossPlanted: string[][]; paced: string[];
+  rules: { real: Untried; claims: number; bare: Untried; claimed: Untried; typo: Untried };
 };
+type Untried = { untried: string[]; unheld: string[] };
 
 const answers: Answers = (() => {
   const program = `
@@ -150,6 +177,25 @@ const answers: Answers = (() => {
         const c = a.plan({ tables: {}, probes: [{ name: 'p', table: 't', as: ['free'], kind: 'insert', row: { id: '{new}' }, expect: 'refused', refusedWith: 'RH429' }] })[0];
         return [a.judge(c, 'RH429 RATE_LIMITED'), a.judge(c, '42501 new row violates row-level security policy'), a.judge(c, 'rows:1')];
       })(),
+      rules: await (async () => {
+        // The house as production holds it, and as it will once the pending migrations are applied.
+        const house = (await import(${JSON.stringify(pathToFileURL(HOUSE).href)})).default;
+        const { text, pendingFrom } = house.houseText();
+        const real = a.untriedRules(matrix, house.read(text.slice(0, pendingFrom), { pendingFrom }), house.read(text, { pendingFrom }),
+          a.madeTables(text.slice(pendingFrom)));
+        const before = ${JSON.stringify(RULES_BEFORE)};
+        const pending = ${JSON.stringify(RULES_PENDING)};
+        const from = before.length + 1;
+        const planted = (m) => a.untriedRules(m, house.read(before, { pendingFrom: from }), house.read(before + '\\n' + pending, { pendingFrom: from }),
+          a.madeTables(pending));
+        return {
+          real, claims: a.claims(matrix).length,
+          bare: planted({ tables: {} }),
+          claimed: planted({ tables: { fresh: { rules: ['policy public.fresh "p_fresh"'] } }, probes: [{ rules: ['policy public.t "p_new"'] }],
+            mutantsJudged: { 'trigger t "kept" dropped': 'a second lock' } }),
+          typo: planted({ probes: [{ rules: ['policy public.t "p_neww"'] }] }),
+        };
+      })(),
       columns: a.columnsOf(fs.readFileSync(${JSON.stringify(SNAPSHOT)}, 'utf8').replace(/\\r/g, '')).interactions,
       dated: [a.dated('interactions', { id: 'x' }, { interactions: ['id', 'created_at'] }).created_at,
         a.dated('interactions', { created_at: 'mine' }, { interactions: ['created_at'] }).created_at,
@@ -196,6 +242,20 @@ describe('the written table covers every relation a client can name', () => {
 
   it("holds a pace's probe to the pace's own refusal, never another rule's", () => {
     expect(answers.paced).toEqual(['refused', 'refused otherwise', 'ok']);
+  });
+
+  it('names every row rule and gate a pending migration makes or changes by the try written to notice it, or judges why none can', () => {
+    // A rule no try notices lives through the nightly's mutants, seen only that night: so it is named by
+    // its try, or judged, before it is pushed.
+    expect(answers.rules.real).toEqual({ untried: [], unheld: [] });
+    expect(answers.rules.claims).toBeGreaterThan(20);
+    // Planted: a function made to refuse turns its trigger into a gate, and a new rule on a table members
+    // reach, or on one made now, is named; a trigger that refuses nothing, a rule for the house's own
+    // role or on a table no member reaches, and a rule left as it was are not.
+    expect(answers.rules.bare).toEqual({ untried: ['policy public.fresh "p_fresh"', 'policy public.t "p_new"', 'trigger t "kept"'], unheld: [] });
+    // A claim, on a table's grid or a probe, or a judgement answers for each; a claim naming no rule is named.
+    expect(answers.rules.claimed).toEqual({ untried: [], unheld: [] });
+    expect(answers.rules.typo.unheld).toEqual(['policy public.t "p_neww"']);
   });
 
   it("asks the avatars bucket's table and each live channel, not only public's tables", () => {

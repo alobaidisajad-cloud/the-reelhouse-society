@@ -262,7 +262,7 @@ Decisions, as of 2026-09-28:
 | `e2e/__tests__/advisers.test.ts` | The advisers' allowlist and the sealed world's config.toml. |
 | `e2e/__tests__/advisories.test.ts` | The reports its own runs of advisories.mjs wrote, and the advisories' allowlist. |
 | `e2e/__tests__/anonKey.test.ts` | The E2E workflow and the sealed world's config.toml. |
-| `e2e/__tests__/attack.test.ts` | The attack matrix, the schema snapshot and the pending migrations: every table, view and callable function production will have must have its written rules. |
+| `e2e/__tests__/attack.test.ts` | The attack matrix, the schema snapshot and the pending migrations, the house as production holds it and as it will (test-utils/house.js): every table, view and callable function production will have must have its written rules, and every row rule and gate a pending migration makes or changes the try written to notice it, or a judgement of why none can. |
 | `e2e/__tests__/glideLogLevel.test.ts` | The E2E workflow and package.json. |
 | `e2e/__tests__/iosIpadJudge.test.ts` | The iPhone launch workflow, for the iPad's job: its stages, photographs and judge; and navMetrics' READING_MAX, the column the judge reads the beam in, held equal to its own. |
 | `e2e/__tests__/maestroReachedAStep.test.ts` | The iPhone launch workflow, for the iPad's job: a stage where Maestro reached no step is given once more, and one whose step failed never. |

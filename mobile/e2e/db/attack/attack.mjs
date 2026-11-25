@@ -328,6 +328,8 @@ export const plan = (matrix, columns = {}) => {
         const c = { label: `${fn} ${k.name ?? `#${i + 1}`} (${actor})`, table: fn, action: 'call', actor, target: 'call',
           expect: typeof k.expect === 'string' ? k.expect : allows(k.expect.ok, actor) ? 'ok' : 'error',
           call: fill(k.call, ctx) };
+        // A pace's case is refused by the pace itself (its SQLSTATE), as a pace's probe is.
+        if (k.refusedWith) c.refusedWith = k.refusedWith;
         if (k.lay) c.lay = Object.entries(k.lay).map(([t, row]) => `${insertSql(t, dated(t, fill(row, ctx), columns))};`).join(' ');
         if (k.result) c.result = fill(k.result, ctx);
         if (k.then) c.then = `SELECT (${fill(k.then, ctx)})`;
@@ -478,6 +480,14 @@ ROLLBACK;
 `;
 
 /**
+ * A trigger's function that keeps a row as it was, or refuses without RAISE EXCEPTION in its own body:
+ * a gate as much as one that raises. With those that raise, the triggers the mutants drop.
+ */
+export const GATE_FUNCTIONS = ['a_row_keeps_what_it_is', 'protect_privileged_profile_fields', 'protect_lounge_member_status',
+  'a_reply_quotes_its_message', 'enforce_privacy_on_follow', 'handle_privacy_switch'];
+const RAISES = /raise\s+exception/i;
+
+/**
  * The mutants (WORKLIST P0.68), made from the database itself: each row rule of public, storage
  * and realtime dropped, opened (USING and WITH CHECK true) and given to everyone; each trigger on
  * a public table dropped; each table whose members' writes are granted column by column granted
@@ -502,8 +512,7 @@ CREATE TEMP VIEW at_gates AS
 SELECT c.relname, t.tgname, f.proname
   FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_namespace n ON n.oid = c.relnamespace JOIN pg_proc f ON f.oid = t.tgfoid
  WHERE n.nspname = 'public' AND NOT t.tgisinternal
-   AND (f.prosrc ~* 'raise\\s+exception' OR f.proname IN ('a_row_keeps_what_it_is', 'protect_privileged_profile_fields',
-        'protect_lounge_member_status', 'a_reply_quotes_its_message', 'enforce_privacy_on_follow', 'handle_privacy_switch'));
+   AND (f.prosrc ~* 'raise\\s+exception' OR f.proname IN (${GATE_FUNCTIONS.map((f) => `'${f}'`).join(', ')}));
 INSERT INTO at_mutants
 SELECT format('policy %s.%s "%s" dropped', schemaname, tablename, policyname),
        format('DROP POLICY %I ON %I.%I', policyname, schemaname, tablename)
@@ -577,6 +586,61 @@ END $mutants$;
 SELECT 'AT-MUTANTS ' || json_object_agg(id, killed_by ORDER BY id) FROM at_killed;`;
 
 /**
+ * The rules the mutants weaken, read from text as production will hold them (test-utils/house.js's
+ * read), by the words their mutants' ids begin with, each with its definition: every row rule of
+ * public, storage and realtime a visitor or member meets (its roles theirs, and its command's privilege
+ * on its table theirs, or the table one a pending migration makes, which Supabase's default privileges
+ * give them), and every trigger on a public table whose function raises or is a GATE_FUNCTION.
+ * made: the tables a pending migration makes.
+ */
+export const rulesOf = (house, made = new Set()) => {
+  const out = new Map();
+  for (const t of house.triggers.values()) {
+    const fn = house.functions.get(t.fn);
+    if (!t.table.startsWith('public.') || !fn || !(RAISES.test(fn.body) || GATE_FUNCTIONS.includes(t.fn.split('.').pop()))) continue;
+    out.set(`trigger ${t.table.slice('public.'.length)} "${t.name}"`, JSON.stringify([t, fn.body]));
+  }
+  for (const p of house.policies.values()) {
+    const schema = p.table.split('.')[0];
+    const roles = p.roles.map((r) => r.toLowerCase());
+    const members = roles.includes('public') ? ['anon', 'authenticated'] : roles.filter((r) => r === 'anon' || r === 'authenticated');
+    const privileges = p.cmd === 'ALL' ? ACTIONS.map((a) => a.toUpperCase()) : [p.cmd];
+    const grants = house.tables.get(p.table);
+    const met = members.length > 0 && (schema !== 'public' || made.has(p.table)
+      || members.some((r) => [r, 'PUBLIC'].some((g) => privileges.some((x) => grants?.get(g)?.has(x)))));
+    if (['public', 'storage', 'realtime'].includes(schema) && met) out.set(`policy ${p.table} "${p.name}"`, JSON.stringify(p));
+  }
+  return out;
+};
+
+/** The public tables a migration's text makes. */
+export const madeTables = (sql) => new Set([...sql.matchAll(/^CREATE TABLE (?:IF NOT EXISTS )?(?<t>public\.\w+)/gm)].map((m) => m.groups.t));
+
+/** Every try's claim: the rules a table's grid, a probe, a function's case or a channel is written to notice. */
+export const claims = (matrix) => [
+  ...Object.values(matrix.tables ?? {}), ...(matrix.probes ?? []), ...(matrix.channels ?? []),
+  ...Object.values(matrix.functions ?? {}).flatMap((f) => f.cases ?? []),
+].flatMap((x) => x.rules ?? []);
+
+/**
+ * The rules a pending migration makes or changes (the rule, or its trigger's function) that no try
+ * claims and no judgement names: each would land untried, its mutant living until a nightly saw it.
+ * And each claim that names no rule the mutants weaken.
+ * before: the house as production holds it; after: as it will once the pending migrations are applied.
+ */
+export const untriedRules = (matrix, before, after, made = new Set()) => {
+  const was = rulesOf(before);
+  const will = rulesOf(after, made);
+  const claimed = new Set(claims(matrix));
+  const judged = Object.keys(matrix.mutantsJudged ?? {});
+  return {
+    untried: [...will].filter(([id, def]) => was.get(id) !== def && !claimed.has(id) && !judged.some((j) => j.startsWith(`${id} `)))
+      .map(([id]) => id).sort(),
+    unheld: [...claimed].filter((id) => !will.has(id)).sort(),
+  };
+};
+
+/**
  * An answer in the matrix's words: seen/unseen for a read, ok/refused for a write, or broken.
  * An update is ok only when the row then holds what was sent: a trigger that keeps a column
  * as it was has refused that change, however many rows the statement says it touched.
@@ -584,7 +648,7 @@ SELECT 'AT-MUTANTS ' || json_object_agg(id, killed_by ORDER BY id) FROM at_kille
 export const judge = (c, got) => {
   if (c.action === 'bare') return /^rows:\d+ then:true$/.test(got) || !got.startsWith('rows:') ? 'kept' : 'reached others';
   if (c.action === 'call') {
-    if (!got.startsWith('called')) return 'error';
+    if (!got.startsWith('called')) return !c.refusedWith || got.startsWith(`${c.refusedWith} `) ? 'error' : 'error otherwise';
     if (/ result:(false|null)/.test(got)) return 'wrong result';
     if (/ then:(false|null)/.test(got)) return 'wrong effect';
     return 'ok';
