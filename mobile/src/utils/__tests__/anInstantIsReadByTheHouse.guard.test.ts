@@ -7,8 +7,11 @@
  * range are read differently there. Fifty places did it, sorting salon messages and grouping
  * notices among them. Each reads through dateOf or instantOf (src/utils/instant.ts) now.
  *
- * Found by the type checker: a `new Date(x)` whose one argument may be a string (or is untyped)
- * stands only in instant.ts. A number of milliseconds, or a Date, is no text to read.
+ * Found by the type checker: a `new Date(x)` whose one argument may be a string (or is untyped),
+ * and any `Date.parse`, stands only in instant.ts. A number of milliseconds, or a Date, is no text to
+ * read. The edge functions, of both trees, run on another engine that rolls a 31st of February into
+ * March as well: each reads the stamps it is given itself (storeRecord.ts, reread.js), and none
+ * hands text to the engine either.
  */
 import { readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
@@ -21,7 +24,7 @@ const HOME = 'src/utils/instant.ts';
 const mayBeText = (t: ts.Type): boolean =>
   (t.isUnion() ? t.types.some(mayBeText) : !!(t.flags & (ts.TypeFlags.StringLike | ts.TypeFlags.Any | ts.TypeFlags.Unknown)));
 
-/** Each `new Date(x)` with text for its argument in `roots`, as file:line. */
+/** Each `new Date(x)` with text for its argument in `roots`, and each `Date.parse(x)` (whatever x is: it reads text), as file:line. */
 function textDates(program: ts.Program, roots: string[]): string[] {
   const checker = program.getTypeChecker();
   const found: string[] = [];
@@ -30,8 +33,10 @@ function textDates(program: ts.Program, roots: string[]): string[] {
     const sf = program.getSourceFile(file);
     if (!sf || rel === HOME) continue;
     const visit = (n: ts.Node): void => {
-      if (ts.isNewExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'Date'
-        && n.arguments?.length === 1 && n.arguments[0] && mayBeText(checker.getTypeAtLocation(n.arguments[0]))) {
+      const fromText = ts.isNewExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'Date'
+        && n.arguments?.length === 1 && n.arguments[0] && mayBeText(checker.getTypeAtLocation(n.arguments[0]));
+      const parsed = ts.isCallExpression(n) && n.expression.getText(sf).replace(/\s/g, '') === 'Date.parse';
+      if (fromText || parsed) {
         found.push(`${rel}:${sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1}  ${n.getText(sf)}`);
       }
       ts.forEachChild(n, visit);
@@ -52,6 +57,12 @@ it('hands no text to the engine to read as a date, but in instant.ts', () => {
   expect(textDates(ts.createProgram(roots, options()), roots)).toEqual([]);
 });
 
+it('hands no text to the engine to read as a date in any edge function, of either tree: each reads its stamps itself', () => {
+  const roots = files('functions', { ext: ['.ts', '.js'] });
+  expect(roots.filter((f) => /storeRecord\.ts$|reread\.js$/.test(f))).toHaveLength(2);
+  expect(textDates(ts.createProgram(roots, { ...options(), allowJs: true, checkJs: false }), roots)).toEqual([]);
+});
+
 it('finds a date made from text, and not one made from a number, a Date or nothing', () => {
   const file = join(MOBILE, 'src', 'planted.ts');
   const lines = [
@@ -61,13 +72,15 @@ it('finds a date made from text, and not one made from a number, a Date or nothi
     'const d = new Date(when);',
     'const e = new Date();',
     'const f = new Date(2026, 1, 9);',
+    'const g = Date.parse(stamp);',
+    'const h = Date.UTC(2026, 1, 9);',
   ];
   const text = `declare const stamp: string;\ndeclare const whatever: any;\ndeclare const ms: number;\ndeclare const when: Date;\n${lines.join('\n')}\n`;
   const host = ts.createCompilerHost(options());
   const read = host.getSourceFile;
   host.getSourceFile = (name, version) => (name.split('\\').join('/').endsWith('src/planted.ts') ? ts.createSourceFile(name, text, version) : read(name, version));
   const program = ts.createProgram([file], options(), host);
-  expect(textDates(program, [file]).map((f) => f.replace(/^[^ ]+ {2}/, ''))).toEqual(['new Date(stamp)', 'new Date(whatever)']);
+  expect(textDates(program, [file]).map((f) => f.replace(/^[^ ]+ {2}/, ''))).toEqual(['new Date(stamp)', 'new Date(whatever)', 'Date.parse(stamp)']);
 });
 
 it('is the guard instant.ts names', () => {

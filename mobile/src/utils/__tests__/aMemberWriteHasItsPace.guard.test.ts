@@ -9,8 +9,12 @@
  *   - every table a member may insert into is paced by a trigger or a restrictive rule that refuses
  *     a write past its pace, or is judged below with why no script can repeat it without end;
  *   - every such pace is exercised by a rehearsal, so it is seen to refuse;
- *   - every function a member may run that writes, writes only where a pace stands, paces itself,
- *     or is judged;
+ *   - every function a member may run that writes (in any schema, through any function it calls, or
+ *     a request sent out through pg_net), writes only where a pace stands, paces itself, or is judged;
+ *   - every trigger that adds rows when a member changes or takes away a row they may write (or writes
+ *     a relation no pace of its own counts, a view among them) is judged;
+ *   - every deployed edge function answers a pace of its own (a 429 it sends back), or is a door only
+ *     the house or the store opens, judged;
  *   - no edge function, in either tree, reads an address the caller writes (X-Forwarded-For and its
  *     like) but through the vouched-address helper;
  *   - every column of a member-written row that names a member is the writer themselves (bound to
@@ -47,27 +51,98 @@ export function pacedBy(h: House, table: string): string[] {
   return [...triggers, ...rules];
 }
 
+/** pg_net's queue: a request the house sends out (net.http_post) is a row there until it is sent. */
+export const NET_QUEUE = 'net.http_request_queue';
+
 /**
- * The public tables a function adds rows to (INSERT), its own temporary tables left out: what grows
- * when a script calls it in a loop. Changing or taking away rows already there grows nothing.
+ * The tables a function's own body adds rows to (INSERT), in any schema but its temporary one, and
+ * pg_net's queue for a request it sends: what grows when a script calls it in a loop. Changing or
+ * taking away rows already there grows nothing.
  */
 export function insertsOf(body: string): string[] {
   const out = new Set<string>();
-  for (const m of body.matchAll(/\bINSERT\s+INTO\s+(?:"?(\w+)"?\.)?"?(\w+)"?(?:\s+AS\s+\w+)?\s*(?:\(|VALUES\b|SELECT\b|DEFAULT\b)/gi)) {
-    if ((m[1] ?? 'public') !== 'public') continue;
-    out.add(`public.${m[2]}`);
+  for (const m of body.matchAll(/\bINSERT\s+INTO\s+(?:"?(?<schema>\w+)"?\.)?"?(?<table>\w+)"?(?:\s+AS\s+\w+)?\s*(?:\(|VALUES\b|SELECT\b|DEFAULT\b)/gi)) {
+    const schema = m.groups?.schema ?? 'public';
+    if (schema !== 'pg_temp') out.add(`${schema}.${m.groups?.table ?? ''}`);
+  }
+  if (/\bnet\s*\.\s*http_(?:post|get|delete)\s*\(/i.test(body)) out.add(NET_QUEUE);
+  return [...out].sort();
+}
+
+/** The house's functions a body calls, by schema and name (a bare name is public's, as search_path reads it). */
+export function callsOf(h: House, body: string): string[] {
+  const out = new Set<string>();
+  for (const m of body.matchAll(/\b(?:(?<schema>\w+)\s*\.\s*)?(?<name>\w+)\s*\(/g)) {
+    const name = `${m.groups?.schema ?? 'public'}.${m.groups?.name ?? ''}`;
+    if (h.functions.has(name)) out.add(name);
   }
   return [...out].sort();
 }
 
+/** What a function adds rows to, its own body's and every function's of the house it calls, however deep. */
+export function reachOf(h: House, name: string, seen: Set<string> = new Set()): string[] {
+  if (seen.has(name)) return [];
+  seen.add(name);
+  const body = h.functions.get(name)?.body ?? '';
+  return [...new Set([...insertsOf(body), ...callsOf(h, body).flatMap((c) => reachOf(h, c, seen))])].sort();
+}
+
+/** Every table a pace stands on, and those `bounded` names (their rows another paced table bounds). */
+const pacedTables = (h: House, bounded: readonly string[]): Set<string> =>
+  new Set([...h.tables.keys(), ...[...h.triggers.values()].map((t) => t.table)].filter((t) => pacedBy(h, t).length || bounded.includes(t)));
+
 /**
- * Member-run functions (no trigger's) that add rows where no pace stands, pace none themselves, and
- * are not the staff's alone; `bounded` names tables whose rows another paced table bounds.
+ * Member-run functions (no trigger's) that add rows where no pace stands, through their own body or
+ * any function they call, pace none themselves, and are not the staff's alone; `bounded` names tables
+ * whose rows another paced table bounds.
  */
 export function unpacedWriters(h: House, bounded: readonly string[] = []): string[] {
-  const paced = new Set([...h.tables.keys(), ...[...h.triggers.values()].map((t) => t.table)].filter((t) => pacedBy(h, t).length || bounded.includes(t)));
+  const paced = pacedTables(h, bounded);
   return [...h.functions.values()].filter((f) => f.name.startsWith('public.') && !f.returnsTrigger && membersRun(h, f.name)
-    && !PACES.test(f.body) && !STAFF_ONLY.test(f.body) && insertsOf(f.body).some((t) => !paced.has(t))).map((f) => f.name).sort();
+    && !PACES.test(f.body) && !STAFF_ONLY.test(f.body) && reachOf(h, f.name).some((t) => !paced.has(t))).map((f) => f.name).sort();
+}
+
+/** The relations row level security guards, read from the house's text: on any other, a grant alone lets a member write. */
+export const guarded = (text: string): Set<string> =>
+  new Set([...text.matchAll(/ALTER TABLE (?:ONLY )?(?<table>public\.\w+) ENABLE ROW LEVEL SECURITY/g)].map((m) => m.groups?.table ?? ''));
+
+/** Whether a member may do `event` (INSERT, UPDATE or DELETE) to a relation: the grant, and where rules guard it, a rule letting some row through. */
+export function mayWrite(h: House, rls: Set<string>, relation: string, event: string): boolean {
+  const granted = MEMBER.some((r) => [...(h.tables.get(relation)?.get(r) ?? [])].some((p) => p === event || p.startsWith(`${event}(`)));
+  if (!granted || !rls.has(relation)) return granted;
+  return [...h.policies.values()].some((p) => p.table === relation && [event, 'ALL'].includes(p.cmd) && !p.restrictive
+    && p.roles.some((r) => MEMBER.includes(r)) && !/^\s*false\s*$/i.test(p.check ?? p.using ?? 'false') && !STAFF_ONLY.test(`${p.using ?? ''} ${p.check ?? ''}`));
+}
+
+/**
+ * The triggers that add rows where no pace stands when a member writes a relation they may write, as
+ * `table:trigger`: a change, a removal, or an insert into a relation with no pace of its own (a paced
+ * insert's pace bounds what its triggers add).
+ */
+export function unpacedTriggers(h: House, rls: Set<string>, bounded: readonly string[] = []): string[] {
+  const paced = pacedTables(h, bounded);
+  const out = new Set<string>();
+  for (const t of h.triggers.values()) {
+    const events = t.events.filter((e) => ['INSERT', 'UPDATE', 'DELETE'].includes(e) && !(e === 'INSERT' && paced.has(t.table)) && mayWrite(h, rls, t.table, e));
+    if (events.length && reachOf(h, t.fn).some((x) => !paced.has(x))) out.add(`${t.table}:${t.name}`);
+  }
+  return [...out].sort();
+}
+
+/** Whether an edge function's code answers a pace of its own: a 429 it sends back, never one it was given. */
+export const answersAPace = (code: string): boolean => /\bstatus:\s*429\b|,\s*429\s*[,)]/.test(code);
+
+/** An edge function's code: its entry and every file of its own or the shared folder it imports, however deep. */
+export function functionCode(entry: string): string {
+  const seen = new Set<string>();
+  const read = (file: string): string => {
+    if (seen.has(file)) return '';
+    seen.add(file);
+    const text = stripComments(readFileSync(file, 'utf8'), file);
+    const near = [...text.matchAll(/\bfrom\s+['"](?<path>\.{1,2}\/[^'"]+)['"]/g)].map((m) => join(file, '..', m.groups?.path ?? ''));
+    return [text, ...near.map(read)].join('\n');
+  };
+  return read(entry);
 }
 
 /** Each column of a member-insertable table that names a member: from its foreign keys, and any *username* or author* column. */
@@ -140,6 +215,7 @@ const WRITERS: Record<string, string> = {
   'public.record_gate_event': 'counts each member once a day for each event (gate_counted): a repeat adds nothing',
   'public.request_lounge_membership': 'one notice to the host for each seat requested, and taking a seat is paced (check_write_pace on lounge_members)',
   'public.set_lounge_member_status': 'the host\'s own salon: one sanction row a seat, written over (ON CONFLICT), so a loop leaves one',
+  'public.relinquish_rank': 'gives up the caller\'s own rank from the store: one grant a member and source (rank_grants, written over or taken away), and the day\'s count of ranks given up moves only when a rank is (grant_entitlement counts a change alone)',
 };
 
 /** Columns naming a member that the rule neither binds to the writer nor the house sets, each judged. */
@@ -150,6 +226,32 @@ const NAMING: Record<string, string> = {
 /** Member-run functions that read blocks, each judged to answer only of the caller\'s own. */
 const BLOCK_READERS: Record<string, string> = {
   'public.get_user_blocks': 'the caller\'s own blocks and mutes, for their settings: rows where they are the blocker, never who blocked them',
+};
+
+/**
+ * Triggers that add rows where no pace stands when a member changes or takes away a row (or writes one
+ * a relation of no pace of its own lets in), each with why a script repeating it adds nothing without end.
+ */
+const TRIGGERS: Record<string, string> = {
+  'public.dispatch_posts:notify_answer': 'the answer a filing\'s author takes: the notice of the answer before is taken away as the next is written, so a filing keeps one at most, and its critic\'s phone is told once for each critique (answer: in certifications_pushed)',
+  'public.dispatch_posts:notify_ballot_closed': 'only the house freezes a ballot\'s totals (a member\'s change to them is put back, dispatch_posts_pin_columns), once, and the voters are told at a pace (closed_ballots_told)',
+  'public.interactions:log_counts_certify_delete': 'one count a record (log_counts, written over): a certification taken away moves it, it adds no row',
+  'public.interactions:log_counts_certify_update': 'one count a record (log_counts, written over)',
+  'public.log_comments:log_counts_critique_delete': 'one count a record (log_counts, written over): a critique taken away moves it, it adds no row',
+  'public.log_comments:log_counts_critique_update': 'one count a record (log_counts, written over)',
+  'public.logs:a_register_viewings_update': 'a record\'s viewings are the ones its history names, those it no longer names taken away: as many as its history holds (logs_viewing_history_len), and one record a film a member',
+  'public.logs:trg_verdict_film_logs_delete': 'one tally a film (film_tallies, films), moved in place',
+  'public.logs:trg_verdict_film_logs_update': 'one tally a film (film_tallies, films), moved in place',
+  'public.profiles:a_members_pieces_are_queued': 'the pieces of the member\'s own name, waiting only until the change settles in the same transaction (member_grams_settle takes them away)',
+  'public.profiles:a_members_pieces_are_settled': 'the pieces of the member\'s own name, the old ones taken away as the new are kept: as many as one name and one display name make',
+  'public.profiles:tr_handle_privacy_switch': 'a file made open admits the follow requests waiting, one notice each, and requests are marks check_interaction_rate_limit paces; admitted, they wait no more, so opening the file again admits none',
+};
+
+/** Deployed edge functions that answer no pace of their own, each with why no member's script repeats them without end. */
+const DOORS: Record<string, string> = {
+  'notify-push': 'only the house calls it, with the shared secret it holds (x-function-secret), for a notice a paced write made',
+  'revenuecat-webhook': 'only the store calls it, with the webhook\'s own secret',
+  'sync-films': 'it drains: it reads only the films outstanding, twenty at most a call, and asks TMDB nothing when none is; the films outstanding are the ones members keep, which their own paces bound',
 };
 
 const tbl = (name: string, insertPolicy = "CREATE POLICY own ON public.t FOR INSERT TO authenticated WITH CHECK ((user_id = ( SELECT auth.uid() AS uid)));\n") =>
@@ -186,6 +288,41 @@ describe('the rules, on planted text', () => {
     expect(unpacedWriters(read(tbl('t') + fn("IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin') THEN RAISE EXCEPTION 'no'; END IF; INSERT INTO public.t (id) VALUES (1);")))).toEqual([]);
     expect(unpacedWriters(read(tbl('t') + fn('INSERT INTO public.t (id) VALUES (1);')), ['public.t'])).toEqual([]);
     expect(insertsOf('INSERT INTO pg_temp.x (id) VALUES (1); DELETE FROM public.a WHERE x; INSERT INTO b SELECT 1; INSERT INTO public.c AS c (x) VALUES (1)')).toEqual(['public.b', 'public.c']);
+  });
+
+  it('find a member-run function that writes through another, into any schema, or sends a request out, with no pace', () => {
+    const fn = (name: string, body: string, granted = true) => `CREATE FUNCTION ${name}() RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$ BEGIN ${body} END $$;\n${granted ? `GRANT ALL ON FUNCTION ${name}() TO authenticated;\n` : ''}`;
+    const helper = fn('private.keep', 'INSERT INTO private.kept (id) VALUES (1);', false);
+    expect(unpacedWriters(read(helper + fn('public.w', 'PERFORM private.keep();')))).toEqual(['public.w']);
+    expect(unpacedWriters(read(fn('public.w', "PERFORM net.http_post(url := 'https://x.test');")))).toEqual(['public.w']);
+    expect(reachOf(read(helper + fn('public.w', 'PERFORM private.keep();')), 'public.w')).toEqual(['private.kept']);
+    // A function that paces itself before it calls the writer is no unpaced writer.
+    expect(unpacedWriters(read(helper + fn('public.w', "IF n > 9 THEN RAISE EXCEPTION 'RATE_LIMITED' USING ERRCODE = 'RH429'; END IF; PERFORM private.keep();")))).toEqual([]);
+  });
+
+  it('find a trigger that adds rows with no pace when a member changes or takes away a row they may write, or writes a view', () => {
+    const grows = "CREATE FUNCTION public.g() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN INSERT INTO public.notifications (id) VALUES (1); RETURN NEW; END $$;\n";
+    const rules = `ALTER TABLE public.t ENABLE ROW LEVEL SECURITY;\nCREATE POLICY up ON public.t FOR UPDATE TO authenticated USING ((user_id = ( SELECT auth.uid() AS uid)));\nGRANT UPDATE ON TABLE public.t TO authenticated;\n`;
+    const sql = tbl('t') + rules + grows + 'CREATE TRIGGER g AFTER UPDATE ON public.t FOR EACH ROW EXECUTE FUNCTION public.g();\n';
+    expect(unpacedTriggers(read(sql), guarded(sql))).toEqual(['public.t:g']);
+    // No rule lets a member change a row: the trigger is the house's alone.
+    const shut = sql.split('CREATE POLICY up').join('CREATE POLICY up_staff').split('USING ((user_id').join('USING (public.is_admin(auth.uid()) AND (user_id');
+    expect(unpacedTriggers(read(shut), guarded(shut))).toEqual([]);
+    // An insert the table's own pace counts bounds what its trigger adds.
+    const paced = `${tbl('t')}${grows}${paceFn}CREATE TRIGGER zz BEFORE INSERT ON public.t FOR EACH ROW EXECUTE FUNCTION public.pace();\nCREATE TRIGGER g AFTER INSERT ON public.t FOR EACH ROW EXECUTE FUNCTION public.g();\n`;
+    expect(unpacedTriggers(read(paced), guarded(paced))).toEqual([]);
+    // A view no rule guards, written through its trigger: the grant alone lets the member in.
+    const view = `GRANT INSERT ON TABLE public.v TO authenticated;\n${grows}CREATE TRIGGER g INSTEAD OF INSERT ON public.v FOR EACH ROW EXECUTE FUNCTION public.g();\n`;
+    expect(unpacedTriggers(read(view), guarded(view))).toEqual(['public.v:g']);
+  });
+
+  it('find an edge function that answers no pace of its own, and read what it imports', () => {
+    expect(answersAPace("return json({ error: 'Rate limit exceeded' }, 429, { 'Retry-After': '30' })")).toBe(true);
+    expect(answersAPace("return new Response(body, { status: 429 })")).toBe(true);
+    // A 429 the function was given by another service is no pace of its own.
+    expect(answersAPace('if (res.status === 429) { release(); }')).toBe(false);
+    const entry = join(__dirname, '..', '..', '..', 'supabase', 'functions', 'sync-entitlement', 'index.ts');
+    expect(functionCode(entry)).toContain('export async function applyStoreRecord');
   });
 
   it('find a column naming another member that the rule does not bind and the house does not set', () => {
@@ -275,6 +412,26 @@ describe('every write a member can repeat, in the house as production will hold 
   it('runs no member-run function that writes where no pace stands, unless it paces itself or is judged', () => {
     const found = unpacedWriters(h, Object.keys(BOUNDED));
     expect({ unjudged: found.filter((f) => !(f in WRITERS)), stale: Object.keys(WRITERS).filter((f) => !found.includes(f)) }).toEqual({ unjudged: [], stale: [] });
+  });
+
+  it('adds no row past a pace when a member changes, takes away or writes through a trigger, unless it is judged', () => {
+    const found = unpacedTriggers(h, guarded(houseText().text), Object.keys(BOUNDED));
+    expect(found.length).toBeGreaterThan(0);
+    expect({ unjudged: found.filter((t) => !(t in TRIGGERS)), stale: Object.keys(TRIGGERS).filter((t) => !found.includes(t)) }).toEqual({ unjudged: [], stale: [] });
+  });
+
+  it('lets no member call a deployed edge function without end: each answers a pace of its own, or is a door only the house or the store opens', () => {
+    const { DEPLOYED, WEB, MOBILE: MOBILE_TREE } = require(join(__dirname, '..', '..', '..', 'scripts', 'edge-functions.cjs')) as
+      { DEPLOYED: Record<string, { dir: string }>; WEB: string; MOBILE: string };
+    const root = join(__dirname, '..', '..', '..', '..');
+    expect([WEB, MOBILE_TREE].every((d) => Object.values(DEPLOYED).some((f) => f.dir === d))).toBe(true);
+    const entries = files('functions', { ext: ['.ts'] }).filter((f) => /[\\/]index\.ts$/.test(f));
+    const unpaced = Object.entries(DEPLOYED).filter(([name, { dir }]) => {
+      const entry = entries.find((f) => rel(f).split('\\').join('/').endsWith(`${name}/index.ts`) && join(root, dir, name, 'index.ts') === f);
+      if (!entry) throw new Error(`no code found for the deployed function ${name}`);
+      return !answersAPace(functionCode(entry));
+    }).map(([name]) => name).sort();
+    expect({ unjudged: unpaced.filter((n) => !(n in DOORS)), stale: Object.keys(DOORS).filter((n) => !unpaced.includes(n)) }).toEqual({ unjudged: [], stale: [] });
   });
 
   it('lets no member-written row name another member on the caller\'s word', () => {

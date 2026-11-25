@@ -114,6 +114,7 @@ const HOUSE_DAYS_JUDGED: Record<string, string> = {
   'check_critique_pace()': PACE_DAY,
   'check_interaction_rate_limit()': PACE_DAY,
   'check_write_pace()': PACE_DAY,
+  'a_members_call_is_paced(uuid, text)': PACE_DAY,
   'calendar_days(uuid)': "only the window read: the house's day less 364 to the house's day plus 1 holds every member's 52 weeks (today less 363) in any zone, west of UTC or east; the days drawn are the viewings' own",
   'log_viewing_add(uuid, uuid, jsonb)': "the default for a viewing given no day, which no phone sends: the rewatch names the member's own day (logOperations: watchedDate ?? localCalendarDate())",
   'get_user_analytics(uuid)': `current_streak (for older builds) and the newest run are chosen around the house's day with a day either side, and the phone judges the run on its own calendar (runStillStanding); and ${NO_ZONE}`,

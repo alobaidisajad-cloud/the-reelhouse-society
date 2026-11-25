@@ -2526,6 +2526,43 @@ mutants:
         replace: "  if (worded && trimmed === '') {"
     proof: { file: src/features/archive/__tests__/archiveImport.test.ts, test: "reads a month written as a word, either way round, by itself and not the engine" }
 
+  - id: shape-a-store-stamp-read-by-the-engine
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    # The kinds pass's instance put back: the store's end read by the engine.
+    edits:
+      - file: supabase/functions/_shared/storeRecord.ts
+        find: "(typeof d === 'string' ? stampOf(d) : NaN)"
+        replace: "(typeof d === 'string' ? Date.parse(d) : NaN)"
+    proof: { file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts, test: "hands no text to the engine to read as a date in any edge function, of either tree: each reads its stamps itself" }
+
+  - id: shape-a-release-day-read-by-the-engine
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    edits:
+      - file: ../supabase/functions/sync-films/reread.js
+        find: "release_date ? dayOf(release_date) + SETTLE_DAYS"
+        replace: "release_date ? Date.parse(release_date) + SETTLE_DAYS"
+    proof: { file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts, test: "hands no text to the engine to read as a date in any edge function, of either tree: each reads its stamps itself" }
+
+  - id: shape-a-store-stamp-past-its-month
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    edits:
+      - file: supabase/functions/_shared/storeRecord.ts
+        find: "  if (!whole) return NaN;"
+        replace: "  void whole;"
+    proof: { file: src/utils/__tests__/theStoreIsReadToTheLetter.test.ts, test: "reads an end field by field: a day no calendar shows is no end ahead, whatever the engine would roll it into" }
+
+  - id: shape-the-parse-finder-blind
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts
+        find: "const parsed = ts.isCallExpression(n) && "
+        replace: "const parsed = false && ts.isCallExpression(n) && "
+    proof: { file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts, test: "finds a date made from text, and not one made from a number, a Date or nothing" }
+
   - id: shape-critique-authors-asked-apart
     class: SPEED-a-page-waits-for-what-it-knows
     source: shape
@@ -9682,6 +9719,43 @@ mutants:
         find: "  if (c.refusedWith) return got.startsWith(`${c.refusedWith} `) ? 'refused' : 'refused otherwise';\n"
         replace: ""
     proof: { file: e2e/__tests__/attack.test.ts, test: "holds a pace's probe to the pace's own refusal, never another rule's" }
+
+  - id: shape-a-call-to-the-store-unpaced
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    # The kinds pass's instance put back: the member's call that asks the store answers no pace of its own.
+    edits:
+      - file: supabase/functions/sync-entitlement/index.ts
+        find: "Number(wait) }, 429, { 'Retry-After': wait });"
+        replace: "Number(wait) }, 503, { 'Retry-After': wait });"
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "lets no member call a deployed edge function without end: each answers a pace of its own, or is a door only the house or the store opens" }
+
+  - id: shape-a-write-through-a-call-unread
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts
+        find: "[...insertsOf(body), ...callsOf(h, body).flatMap((c) => reachOf(h, c, seen))]"
+        replace: "[...insertsOf(body)]"
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "runs no member-run function that writes where no pace stands, unless it paces itself or is judged" }
+
+  - id: shape-a-request-sent-out-unread
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts
+        find: "out.add(NET_QUEUE);"
+        replace: "void NET_QUEUE;"
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "find a member-run function that writes through another, into any schema, or sends a request out, with no pace" }
+
+  - id: shape-a-change-that-grows-unread
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts
+        find: "['INSERT', 'UPDATE', 'DELETE'].includes(e)"
+        replace: "['INSERT'].includes(e)"
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "adds no row past a pace when a member changes, takes away or writes through a trigger, unless it is judged" }
 
   - id: shape-a-stacks-count-read-past-its-stack
     class: DB-rule-kept-on-one-path

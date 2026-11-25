@@ -534,6 +534,17 @@ section('sync-entitlement — a member\'s rank, read from the store, never from 
   await drain();
   check(authDown.status === 503, 'Auth down is 503, never the member\'s token refused', said(authDown));
   check(await authBack(), 'and Auth answers again once it is back');
+
+  // The member's room to ask the store, spent: as a script calling it in a loop finds it.
+  sql(`INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n)
+       VALUES (${literal(three.id)}, 'store_read', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1)
+       ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()`);
+  const paced = await fn('sync-entitlement', { auth: three.token });
+  seen = await drain();
+  check(paced.status === 429 && paced.headers['retry-after'] === '30' && paced.json?.retry_after === 30,
+    'a member past the pace is told how long to wait', `${said(paced)}; Retry-After ${paced.headers['retry-after']}`);
+  check(seen.length === 0, 'and the store is not asked', JSON.stringify(seen.map((r) => r.path)));
+  sql(`DELETE FROM public.write_budget WHERE user_id = ${literal(three.id)} AND kind = 'store_read'`);
 }
 
 section('revenuecat-webhook — the store says something changed');
