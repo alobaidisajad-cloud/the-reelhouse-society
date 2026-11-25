@@ -1172,7 +1172,7 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-docket-copied-after-paint",
     "proof": "m20",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
@@ -1488,6 +1488,34 @@
     "mutant": "shape-words-unmemoised",
     "proof": "m1",
     "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-mark-redraws-the-words",
+    "mutant": "shape-docket-case-drawn-at-every-change",
+    "proof": "m2",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-mark-redraws-the-words",
+    "mutant": "shape-docket-case-compared-by-reference",
+    "proof": "m2",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-mark-redraws-the-words",
+    "mutant": "shape-docket-dismiss-made-anew",
+    "proof": "m2",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-mark-redraws-the-words",
+    "mutant": "shape-docket-record-reread-made-anew",
+    "proof": "m3",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
@@ -3944,21 +3972,21 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-urgent-emptied-on-return",
     "proof": "m25",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-urgent-emptied-on-pull",
     "proof": "m26",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-urgent-pull-fails-unsaid",
     "proof": "m27",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
@@ -4245,7 +4273,7 @@
     "class": "STATE-a-copy-drawn-after-the-house-let-it-go",
     "mutant": "shape-judged-case-stands",
     "proof": "m5",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
@@ -4721,21 +4749,21 @@
     "class": "STATE-a-copy-drawn-after-the-house-let-it-go",
     "mutant": "shape-gone-piece-offered-for-removal",
     "proof": "m6",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "STATE-a-copy-drawn-after-the-house-let-it-go",
     "mutant": "shape-judged-case-kept-on-the-docket",
     "proof": "m9",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-bulk-dismissal-counts-the-selected",
     "proof": "m62",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
@@ -5155,7 +5183,7 @@
     "class": "UI-a-control-lost-inside-one-stop",
     "mutant": "shape-case-card-one-stop",
     "proof": "m1",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
@@ -5218,7 +5246,7 @@
     "class": "UI-shown-but-not-said",
     "mutant": "shape-verdict-named-execute",
     "proof": "m8",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
@@ -6037,21 +6065,21 @@
     "class": "MOD-a-repeat-offender-read-as-a-first",
     "mutant": "shape-docket-reads-no-record",
     "proof": "m1",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "MOD-a-repeat-offender-read-as-a-first",
     "mutant": "shape-every-record-read-again-each-page",
     "proof": "m5",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "MOD-a-repeat-offender-read-as-a-first",
     "mutant": "shape-a-lift-drawn-struck",
     "proof": "m4",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
@@ -6128,28 +6156,28 @@
     "class": "MOD-the-evidence-changed-before-the-verdict",
     "mutant": "shape-reported-words-hidden-once-edited",
     "proof": "m1",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "MOD-the-evidence-changed-before-the-verdict",
     "mutant": "shape-gone-picture-drawn-blank",
     "proof": "m4",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "MOD-the-evidence-changed-before-the-verdict",
     "mutant": "shape-withheld-evidence-said-destroyed",
     "proof": "m5",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "MOD-reported-words-that-cannot-be-removed",
     "mutant": "shape-page-and-salon-offered-no-removal",
     "proof": "m1",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
@@ -6401,7 +6429,7 @@
     "class": "COPY-count-before-plural",
     "mutant": "shape-one-reports-said",
     "proof": "m1",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
@@ -7185,14 +7213,14 @@
     "class": "MOD-a-judge-hears-their-own-case",
     "mutant": "shape-a-moderator-judges-their-own-case",
     "proof": "m4",
-    "commit": "ec7d35d5925e3bb2585ec872074843ea7ad1af7d",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "MOD-a-judge-hears-their-own-case",
     "mutant": "shape-a-moderator-sweeps-their-own-case",
     "proof": "m5",
-    "commit": "ec7d35d5925e3bb2585ec872074843ea7ad1af7d",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
@@ -8200,21 +8228,21 @@
     "class": "STATE-pages-read-past-the-first-dropped",
     "mutant": "shape-tribunal-docket-read-again-from-the-top",
     "proof": "m13",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "STATE-pages-read-past-the-first-dropped",
     "mutant": "shape-tribunal-docket-forgets-how-far",
     "proof": "m13",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "STATE-pages-read-past-the-first-dropped",
     "mutant": "shape-tribunal-urgent-read-again-from-the-top",
     "proof": "m14",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
@@ -8284,14 +8312,14 @@
     "class": "WRITE-words-let-go-unsent",
     "mutant": "shape-verdict-reason-held-by-the-sheet-alone",
     "proof": "m17",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "WRITE-words-let-go-unsent",
     "mutant": "shape-verdict-reason-not-put-back",
     "proof": "m18",
-    "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
@@ -8473,14 +8501,14 @@
     "class": "TEXT-words-cut-where-they-are-read-whole",
     "mutant": "shape-a-past-verdicts-reason-cut-to-a-line",
     "proof": "m16",
-    "commit": "d9ad4944629a4a182bc25e33d13ba431ea9ea921",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
     "class": "TEXT-words-cut-where-they-are-read-whole",
     "mutant": "shape-a-reported-title-cut-at-two-lines",
     "proof": "m17",
-    "commit": "d9ad4944629a4a182bc25e33d13ba431ea9ea921",
+    "commit": "f3d8c8f893e67dbd697eb9750d76b11825c1c5f6",
     "verdict": "caught"
   },
   {
