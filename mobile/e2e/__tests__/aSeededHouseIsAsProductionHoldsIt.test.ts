@@ -25,6 +25,10 @@ import { join, relative } from 'path';
 import { read } from '@/test-utils/house';
 import { files } from '@/test-utils/universe';
 
+const { namedJobs } = require('../../scripts/jobs-that-end-themselves.cjs') as {
+  namedJobs: (body: string) => { call: string; name: string | null; statement: string }[];
+};
+
 const MOBILE = join(__dirname, '..', '..');
 const rel = (f: string) => relative(MOBILE, f).split('\\').join('/');
 const LOAD_SEED = 'e2e/load/seed.sql';
@@ -68,6 +72,11 @@ const analysedLast = (sql: string) => {
 
 /** Production's schedule as it stands: every job the snapshot's files schedule. */
 const SCHEDULE = files(['snapshot']).map((f) => readFileSync(f, 'utf8')).join('\n');
+/**
+ * The jobs the house's own functions put on the schedule and take off it (scripts/jobs-that-end-themselves.cjs):
+ * each stands only while its work waits, so it is no part of the schedule a seed runs once.
+ */
+const ENDS_ITSELF = new Set([...read().functions.values()].flatMap((fn) => namedJobs(fn.body)).map((j) => j.name));
 /** The seeds among the scripts that lay a house in SQL (one that writes through the API writes no SQL). */
 const SEEDS = files(['scripts']).filter((f) => /seed\.(?:sql|mjs)$/.test(f))
   .map((f) => ({ file: rel(f), text: readFileSync(f, 'utf8') })).filter((s) => /INSERT INTO public\./.test(s.text));
@@ -77,7 +86,8 @@ describe('the load house is as production\'s schedule leaves it', () => {
     expect(jobsIn(SCHEDULE).map((j) => j.name)).toEqual(expect.arrayContaining(['freeze-closed-ballots', 'lobby-edition']));
     const load = SEEDS.find((s) => s.file === LOAD_SEED);
     expect(load).toBeDefined();
-    expect(jobsNotRun(SCHEDULE, load?.text ?? '')).toEqual([]);
+    expect([...ENDS_ITSELF]).toEqual(expect.arrayContaining(['the-closed-ballots-are-told', 'the-lobby-edition-is-drafted']));
+    expect(jobsNotRun(SCHEDULE, load?.text ?? '').filter((name) => !ENDS_ITSELF.has(name))).toEqual([]);
   });
 
   it('finds a job the seed leaves to the schedule, and reads a command\'s own quotes', () => {

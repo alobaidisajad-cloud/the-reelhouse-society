@@ -1,17 +1,17 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_member_is_found_among_the_first_holders_of_a_piece_rehearsal.sql — 20261122_62. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_member_is_found_among_the_first_holders_of_a_piece_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_member_is_found_among_the_first_holders_of_a_piece_rehearsal.sql
 --
--- Before the car: it plants 15 members whose handles begin "qzw" and whose names begin "Qzn ", and 15 more
+-- 20261122_62 is applied on production (the train of 2026-11-24); this shows it still holds there, and on every sealed copy.
+-- It plants 15 members whose handles begin "qzw" and whose names begin "Qzn ", and 15 more
 -- whose handles begin "qzb" and whose names begin "Bn 1", a few handles and names around them and the
 -- member who searches, all with ids that sort after every member of the house; and asks 20261122_29's
 -- search_members, held here as it was, for each of the words searched (none of which any other member
 -- holds), a page of four and the next two.
--- The train then applies 20261122_62 here (with_train), every car before it already applied; a sealed
--- copy already holds it. Its lists are emptied and the job's place set just before the planted ids (the
+-- Then the car's lists are emptied and the job's place set just before the planted ids (the
 -- house before them read, as far as these words go), and the lists' cap made ten (a thousand in the
--- house), so each run of 15 is held past it, all rolled back: what runs after the car reads the planted
+-- house), so each run of 15 is held past it, all rolled back: what runs after that reads the planted
 -- alone, and holds the members' writes no longer at any size of the house.
 -- The planted are passed over by their own settling, and the search reads as before, until the job has
 -- read them, ten at a time, and marks the lists complete. Then each piece the planted ever held
@@ -32,7 +32,7 @@ BEGIN;
 RESET ROLE;
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
--- ── before the car: the planted members ──
+-- ── the planted members ──
 -- Their ids sort after every member of the house, so the job's place can be set just before them.
 SELECT pg_temp.rh_need('no member of the house whose id sorts among the planted (1 = none)',
   (SELECT CASE WHEN count(*) = 0 THEN 1 ELSE 0 END FROM public.profiles WHERE id >= 'ffffffff-0000-4000-8000-000000000000'), 1) AS done \gset rh_
@@ -219,9 +219,6 @@ INSERT INTO mg_was SELECT w.w, h.h, pg_temp.mg_find(true, w.w, h.h) FROM mg_word
 INSERT INTO mg_was SELECT w.w, h.h, pg_temp.mg_find(true, w.w, h.h) FROM mg_words w, (VALUES (false), (true)) h(h) WHERE w.n BETWEEN 11 AND 15;
 INSERT INTO mg_was SELECT w.w, h.h, pg_temp.mg_find(true, w.w, h.h) FROM mg_words w, (VALUES (false), (true)) h(h) WHERE w.n BETWEEN 16 AND 20;
 
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_62_a_member_is_found_among_the_first_holders_of_a_piece.sql
-\endif
 RESET ROLE;
 
 -- ── the job's place, just before the planted ──
@@ -230,7 +227,7 @@ RESET ROLE;
 UPDATE private.member_grams_filled SET after = 'ffffffff-0000-4000-8000-000000000000', members = 0, complete = false, ended = NULL, cap = 10;
 DELETE FROM private.member_grams;
 DELETE FROM private.member_gram_heads;
--- Settled now, as the commit would settle them (a sealed copy queued the planted as they joined).
+-- Settled now, as the commit would settle them (the planted were queued as they joined).
 SET CONSTRAINTS a_members_pieces_are_settled IMMEDIATE;
 SET CONSTRAINTS a_members_pieces_are_settled DEFERRED;
 SELECT pg_temp.rh_case('the planted, past the job''s place, are passed over by their own settling: nothing listed, nothing left waiting', '0|0',

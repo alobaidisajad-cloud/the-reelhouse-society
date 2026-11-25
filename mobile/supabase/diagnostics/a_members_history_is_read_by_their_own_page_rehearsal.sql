@@ -1,10 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_members_history_is_read_by_their_own_page_rehearsal.sql — 20261122_61. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_members_history_is_read_by_their_own_page_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_members_history_is_read_by_their_own_page_rehearsal.sql
 --
--- The train applies 20261122_61 here (with_train), every car before it already applied; a sealed copy
--- already holds it. Production's get_moderation_history_for_users is held here, as it was, to compare
+-- 20261122_61 is applied on production (the train of 2026-11-24); this shows it still holds there, and on every sealed copy.
+-- Production's get_moderation_history_for_users is held here, as it was, to compare
 -- with. On verdicts it plants (thirty on one member, four of them in one moment; two on another; none on
 -- a third; three on the member who asks last), as a moderator: every page asked (members named twice, a
 -- member with none, a null among them, no members at all; pages of none, of five unasked, of one, of
@@ -18,9 +18,6 @@
 BEGIN;
 \ir rehearsal_kit.sql
 
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_61_a_members_history_is_read_by_their_own_page.sql
-\endif
 RESET ROLE;
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

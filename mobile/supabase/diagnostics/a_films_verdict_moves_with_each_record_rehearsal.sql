@@ -1,10 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_films_verdict_moves_with_each_record_rehearsal.sql — 20261122_67. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_films_verdict_moves_with_each_record_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_films_verdict_moves_with_each_record_rehearsal.sql
 --
--- The train applies 20261122_67 here (with_train), every car before it already applied; a sealed copy
--- already holds it. Two members then write records of four films neither has logged: written, rated
+-- 20261122_67 is applied on production (the train of 2026-11-24); this shows it still holds there, and on every sealed copy.
+-- Two members then write records of four films neither has logged: written, rated
 -- again, moved to another film, withheld and given back, several in one statement, sent again over one
 -- already there, taken away. After each, every film touched is read two ways: its verdict as the house
 -- keeps it, and its records counted again as the house counted them before this car; the two are the
@@ -35,12 +35,6 @@ CREATE TEMP TABLE fv_films ON COMMIT DROP AS
    WHERE NOT EXISTS (SELECT 1 FROM public.logs l WHERE l.user_id IN (SELECT id FROM fv_members) AND l.film_id = f.id)
    ORDER BY f.log_count, f.id LIMIT 4;
 SELECT pg_temp.rh_need('films neither member has logged', (SELECT count(*) FROM fv_films), 4) AS done \gset rh_
-
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_67_a_films_verdict_moves_with_each_record.sql
-\endif
 
 -- ── the setting, as the house ──
 RESET ROLE;

@@ -1,10 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_beginning_is_gathered_as_one_range_rehearsal.sql — 20261122_29. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_beginning_is_gathered_as_one_range_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_beginning_is_gathered_as_one_range_rehearsal.sql
 --
--- The train applies 20261122_29 here (with_train), every car before it already applied; a sealed copy
--- already holds it. 20261122_23's search_members is held here, as it was, to compare with. It plants 1,050
+-- 20261122_29 is applied on production (the train of 2026-11-24); this shows it still holds there, and on every sealed copy.
+-- 20261122_23's search_members is held here, as it was, to compare with. It plants 1,050
 -- members whose handles begin with one run of letters and whose names begin with another (so a search of
 -- either has more than a thousand to walk), and a few handles and names around them (a run after an
 -- underscore, inside a word, a wildcard). As a member searching: search_members answers every search
@@ -18,9 +18,6 @@
 BEGIN;
 \ir rehearsal_kit.sql
 
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_29_a_beginning_is_gathered_as_one_range.sql
-\endif
 RESET ROLE;
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

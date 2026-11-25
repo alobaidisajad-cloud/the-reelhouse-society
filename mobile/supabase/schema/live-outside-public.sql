@@ -35,7 +35,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE EXECUTE ON FUNCTIONS FROM PUBL
 -- ── scheduled jobs
 SELECT cron.schedule_in_database('a-withheld-piece-is-deleted-unappealed', '17 * * * *', 'SELECT public.expire_withheld_pieces();', 'postgres', 'postgres', 't');
 SELECT cron.schedule_in_database('freeze-closed-ballots', '*/5 * * * *', 'SELECT public.freeze_closed_ballots();', 'postgres', 'postgres', 't');
-SELECT cron.schedule_in_database('lobby-edition', '5 * * * *', 'SELECT public.lobby_choose_edition();', 'postgres', 'postgres', 't');
+SELECT cron.schedule_in_database('lobby-edition', '5 * * * *', 'SELECT private.lobby_edition_begun();', 'postgres', 'postgres', 't');
 SELECT cron.schedule_in_database('the-job-history-is-kept-two-weeks', '23 4 * * *', 'DELETE FROM cron.job_run_details WHERE start_time < now() - interval ''14 days''', 'postgres', 'postgres', 't');
 
 -- ── vault secrets — names only; a stand-in must be made wherever this is built

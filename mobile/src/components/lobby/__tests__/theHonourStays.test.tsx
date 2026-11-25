@@ -15,6 +15,7 @@ import React, { act } from 'react';
 import { render } from '@testing-library/react-native';
 import { LobbyHonour } from '../LobbyHonour';
 import { supabaseFake } from '@/test-utils/supabaseFake';
+import { ALL_BUT_THE_DATE } from '@/test-utils/onlyTheDate';
 
 let mockSignedIn = true;
 jest.mock('@/src/stores/auth', () => ({
@@ -29,7 +30,11 @@ const ID = '22222222-2222-4222-8222-222222222222';
 const OTHER = '33333333-3333-4333-8333-333333333333';
 const AUTHOR = '44444444-4444-4444-8444-444444444444';
 const settle = () => act(async () => { for (let i = 0; i < 6; i++) await new Promise((res) => setTimeout(res, 0)); });
-const THIS_YEAR = new Date().getFullYear();
+// The clock stands still on 7 October 2026 (only the date is set): the editions below are this year's, so
+// each is said by its day and month alone.
+const THIS_YEAR = 2026;
+beforeEach(() => { jest.useFakeTimers({ now: new Date(2026, 9, 7, 12), doNotFake: ALL_BUT_THE_DATE }); });
+afterEach(() => { jest.useRealTimers(); });
 const hung = (edition: string, slot: 'log' | 'list' | 'post', place: number, target = ID) =>
   ({ edition, slot, place, target_id: target, author_id: AUTHOR, score: 10, chosen_at: `${edition}T06:00:00Z` });
 

@@ -21,6 +21,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import type { TestInstance } from 'test-renderer';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { testQueryClient } from '@/test-utils/testQueryClient';
+import { ALL_BUT_THE_DATE } from '@/test-utils/onlyTheDate';
 import { basename, join, relative } from 'path';
 import { files as universe } from '@/test-utils/universe';
 
@@ -419,6 +420,9 @@ describe('the print', () => {
 });
 
 describe('no counts', () => {
+  // The day stands still (only the date is set): the date this reads for its facts is the date the wall printed.
+  beforeEach(() => { jest.useFakeTimers({ now: new Date(2026, 9, 3, 12), doNotFake: ALL_BUT_THE_DATE }); });
+  afterEach(() => { jest.useRealTimers(); });
   it('the wall names the honoured and counts nothing: the only figures it prints are facts of the pieces', async () => {
     await drawWall();
     const text = allText();

@@ -8,20 +8,15 @@
  * records.
  *
  * This finder holds the rule to the house as production will hold it (the snapshot, then every pending
- * car): each statement of a trigger's function, and of every function of the house it calls, that
+ * car, read by test-utils/house): each statement of a trigger's function, and of every function of the house it calls, that
  * aggregates over a table of the house is bounded by one piece the write names (one stack's entries, one
  * salon's seats, one member's day), each judged here with its bound, or is a film's first move (counted
  * once, only where its kept sums are not found). Anything else counts what grows with the house at each
  * write, and is refused.
  */
-import { readFileSync } from 'fs';
-import { basename, join } from 'path';
 import { read, mask } from '@/test-utils/house';
-import { files } from '@/test-utils/universe';
 
 type House = ReturnType<typeof read>;
-
-const MOBILE = join(__dirname, '..', '..');
 
 /** An aggregate, and a table of the house a statement reads (a statement's own rows are no table of it). */
 const AGGREGATE = /\b(count|sum|avg|min|max|array_agg|jsonb_agg|jsonb_object_agg|string_agg|bool_or|bool_and)\s*\(/i;
@@ -97,15 +92,12 @@ const unbounded = (house: House) => [...counts(house).entries()]
   .filter(([key]) => !(key in BOUNDED) && !(key === FIRST_MOVE && isFirstMove(house)))
   .map(([key, c]) => `${key} (${c.triggers.join(', ')})`);
 
-/** The house as production will hold it, less the pending cars named. */
-function houseWithout(...cars: string[]): House {
-  const snapshot = readFileSync(join(MOBILE, 'supabase', 'schema', 'live-schema.sql'), 'utf8').replace(/\r/g, '');
-  const applied = new Set(readFileSync(join(MOBILE, 'supabase', 'APPLIED.txt'), 'utf8').split(/\r?\n/).map((l) => l.trim()));
-  const pending = files('migrations').filter((f) => !applied.has(basename(f)) && !cars.some((c) => basename(f).startsWith(c)))
-    .sort((a, b) => (basename(a) < basename(b) ? -1 : 1))
-    .map((f) => readFileSync(f, 'utf8').replace(/\r/g, '')).join('\n');
-  return read(`${snapshot}\n${pending}`, { pendingFrom: snapshot.length + 1 });
-}
+/** The film's verdict as production held it before 20261122_67: its trigger on each record, and the two functions it ran. */
+const BEFORE_67 = [
+  'CREATE FUNCTION public.note_film_verdict() RETURNS trigger\n    LANGUAGE plpgsql SECURITY DEFINER\n    AS $$\nBEGIN\n  IF TG_OP = \'DELETE\' THEN\n    PERFORM public.refresh_film_verdict(OLD.film_id);\n    RETURN OLD;\n  END IF;\n  PERFORM public.refresh_film_verdict(NEW.film_id);\n  IF TG_OP = \'UPDATE\' AND OLD.film_id IS DISTINCT FROM NEW.film_id THEN\n    PERFORM public.refresh_film_verdict(OLD.film_id);\n  END IF;\n  RETURN NEW;\nEND;\n$$;',
+  'CREATE FUNCTION public.refresh_film_verdict(p_film_id integer) RETURNS void\n    LANGUAGE plpgsql SECURITY DEFINER\n    AS $$\nBEGIN\n  INSERT INTO public.films AS f (id, avg_rating, rating_count, log_count)\n  SELECT p_film_id, ROUND(AVG(l.rating) FILTER (WHERE l.rating > 0), 2), COUNT(*) FILTER (WHERE l.rating > 0), COUNT(*)\n  FROM public.logs l\n  WHERE l.film_id = p_film_id\n    AND l.withheld_at IS NULL\n  ON CONFLICT (id) DO UPDATE\n    SET avg_rating = EXCLUDED.avg_rating, rating_count = EXCLUDED.rating_count, log_count = EXCLUDED.log_count;\nEND;\n$$;',
+  'CREATE TRIGGER trg_verdict_film_logs AFTER INSERT OR DELETE OR UPDATE OF film_id, rating ON public.logs FOR EACH ROW EXECUTE FUNCTION public.note_film_verdict();',
+].join('\n');
 
 const HOUSE = read();
 
@@ -117,8 +109,8 @@ describe('a write never counts the house again, in the house as production will 
     expect([...counts(HOUSE).keys()].sort()).toEqual([...Object.keys(BOUNDED), FIRST_MOVE].sort());
   });
 
-  it('finds the verdict counted again at each record, as production holds it before 20261122_67', () => {
-    expect(unbounded(houseWithout('20261122_67'))).toEqual([
+  it('finds the verdict counted again at each record, as production held it before 20261122_67', () => {
+    expect(unbounded(read(BEFORE_67))).toEqual([
       'public.refresh_film_verdict reads public.logs (trg_verdict_film_logs on public.logs)',
     ]);
   });

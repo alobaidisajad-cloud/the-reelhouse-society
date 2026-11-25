@@ -21,6 +21,7 @@ import { useDispatch } from '@/src/stores/dispatch';
 import { useBlockStore } from '@/src/stores/blockStore';
 import type { Filing } from '@/src/stores/dispatchTypes';
 import { dayLabel } from '@/src/components/dispatch/dayLabel';
+import { ALL_BUT_THE_DATE } from '@/test-utils/onlyTheDate';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 
 let mockUser: { id: string; username: string; tier?: string; is_social_private?: boolean } | null = { id: 'u1', username: 'me', is_social_private: false };
@@ -186,6 +187,8 @@ beforeEach(() => {
   mockPageAsks = 0; mockPageFails = false;
   put({});
 });
+// A test that set the date gives the real one back.
+afterEach(() => { jest.useRealTimers(); });
 
 /** A filing's certify control — its label says how many have certified it, when any have. */
 const CERTIFY = /^Certify this($|\. \d)/;
@@ -226,6 +229,8 @@ describe('the Dispatch feed', () => {
   });
 
   it('divides the days, and draws none above a first filing from today', async () => {
+    // The day stands still (only the date is set): the day this test names is the day the page draws.
+    jest.useFakeTimers({ now: new Date(2026, 9, 3, 12), doNotFake: ALL_BUT_THE_DATE });
     const now = new Date();
     const today = at(now.getFullYear(), now.getMonth() + 1, now.getDate(), 12);
     const yesterday = at(now.getFullYear(), now.getMonth() + 1, now.getDate() - 1, 12);
@@ -258,6 +263,8 @@ describe('the Dispatch feed', () => {
   });
 
   it('the saved page names the day above its first filing, even one filed today', async () => {
+    // The day stands still (only the date is set): the day this test names is the day the page draws.
+    jest.useFakeTimers({ now: new Date(2026, 9, 3, 12), doNotFake: ALL_BUT_THE_DATE });
     // Its head prints WHAT YOU KEPT, not the day.
     const now = new Date();
     const today = at(now.getFullYear(), now.getMonth() + 1, now.getDate(), 12);
@@ -269,6 +276,8 @@ describe('the Dispatch feed', () => {
 
   it('a filing of another year is divided under its day and its year, on the paper and the saved page', async () => {
     // Round 14: "WEDNESDAY, NOVEMBER 12" read as this year's, its weekday against this year's calendar.
+    // The day stands still (only the date is set): the day this test names is the day the page draws.
+    jest.useFakeTimers({ now: new Date(2026, 9, 3, 12), doNotFake: ALL_BUT_THE_DATE });
     const last = new Date().getFullYear() - 1;
     for (const savedOnly of [false, true]) {
       put({ savedOnly, filings: [filing({ id: 'a', createdAt: at(last, 11, 12, 12), body: 'Kept a year.' })] });

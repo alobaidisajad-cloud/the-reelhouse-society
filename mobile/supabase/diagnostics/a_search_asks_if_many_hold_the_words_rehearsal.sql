@@ -1,10 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_search_asks_if_many_hold_the_words_rehearsal.sql — 20261122_23. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_search_asks_if_many_hold_the_words_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_search_asks_if_many_hold_the_words_rehearsal.sql
 --
--- The train applies 20261122_23 here (with_train), every car before it already applied (20261122_22's index
--- among them); a sealed copy already holds it. 20261122_18's search_members is held here, as it was, to
+-- 20261122_23 is applied on production (the train of 2026-11-24); this shows it still holds there, and on every sealed copy.
+-- 20261122_18's search_members is held here, as it was, to
 -- compare with. On handles and names it plants (a run of digits at a handle's start, after an underscore
 -- and inside a word, in both cases, an underscore and a wildcard), as a member searching: search_members
 -- answers every search exactly as 20261122_18's did, the whole page with each closeness and the next page
@@ -18,9 +18,6 @@
 BEGIN;
 \ir rehearsal_kit.sql
 
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_23_a_search_asks_if_many_hold_the_words.sql
-\endif
 RESET ROLE;
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

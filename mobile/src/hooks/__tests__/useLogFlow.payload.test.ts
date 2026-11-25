@@ -7,6 +7,7 @@
  * and `getLocalDateString` functions directly.
  */
 import { buildLogPayload, validateLogSubmission, getLocalDateString, loadAutopsyForEdit, LogPayloadInput, AUTOPSY_INIT } from '../useLogFlow';
+import { ALL_BUT_THE_DATE } from '@/test-utils/onlyTheDate';
 
 function basePayloadInput(overrides: Partial<LogPayloadInput> = {}): LogPayloadInput {
   return {
@@ -206,6 +207,10 @@ describe('loadAutopsyForEdit', () => {
 });
 
 describe('getLocalDateString', () => {
+  // The clock stands still late on the member's 29 December (only the date is set): the day each test
+  // reads is the day the function reads, and five days on is in the next year.
+  beforeEach(() => { jest.useFakeTimers({ now: new Date(2026, 11, 29, 23, 30), doNotFake: ALL_BUT_THE_DATE }); });
+  afterEach(() => { jest.useRealTimers(); });
   it('returns today in YYYY-MM-DD format with no offset', () => {
     const result = getLocalDateString();
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);

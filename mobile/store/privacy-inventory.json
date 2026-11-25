@@ -55,7 +55,7 @@
       "what": "What a member does to others' writing and to members: endorsements, votes, saves, certifications, follows, blocks, and the reports they file.",
       "purpose": "Shown to the members it concerns (an endorsement, a follow), keeping a blocked member away, and moderation.",
       "linked": true, "required": false, "clients": ["app", "website"],
-      "kept": ["public.interactions", "public.dispatch_votes", "public.dispatch_saves", "public.dispatch_certifications", "public.dossier_certifications_legacy", "public.user_blocks", "public.reports", "public.certifications_pushed", "public.interaction_budget", "public.interaction_churn"],
+      "kept": ["public.interactions", "public.dispatch_votes", "public.dispatch_saves", "public.dispatch_certifications", "public.dossier_certifications_legacy", "public.user_blocks", "public.reports", "public.certifications_pushed", "public.interaction_budget", "public.interaction_churn", "public.write_budget"],
       "sentTo": ["supabase"],
       "apple": { "type": "Other User Content", "purposes": ["App Functionality"] },
       "play": { "type": "App activity: Other actions", "purposes": ["App functionality"] }
@@ -296,7 +296,8 @@
     "public.viewing_notes_removed": { "data": ["writing"], "kind": "record" },
     "public.warnings": { "data": ["moderation"], "kind": "record" },
     "public.watchlists": { "data": ["writing"], "kind": "own" },
-    "public.withheld_pieces": { "data": ["moderation"], "kind": "record" }
+    "public.withheld_pieces": { "data": ["moderation"], "kind": "record" },
+    "public.write_budget": { "data": ["actions"], "kind": "record" }
   },
   "memberColumnsWithoutKey": {
     "why": "Columns that hold a member's id with no foreign key to say so (WORKLIST P3.6), and the id columns named like them that hold something else.",

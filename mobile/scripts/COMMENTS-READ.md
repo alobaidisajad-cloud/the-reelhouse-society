@@ -2129,3 +2129,5 @@ files of the reading map this one does not.
 | scripts/__tests__/aTrainIsRehearsedOnACopyFirst.test.ts | — |  |
 | supabase/diagnostics/pretrain.cjs | — |  |
 | e2e/__tests__/aPlanIsCheckedOnASealedCopyAlone.test.ts | — |  |
+| test-utils/__tests__/aTestReadsAClockItHasSet.test.ts | — |  |
+| test-utils/onlyTheDate.ts | — |  |

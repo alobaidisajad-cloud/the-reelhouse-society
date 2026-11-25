@@ -116,7 +116,8 @@ describe('screen-times.mjs', () => {
     writeFileSync(join(dir, 'learning.json'), JSON.stringify({ learning: { film: old } }));
     const stale = run(LOG, { lobby: c(3000, 3000) }, '--learning', join(dir, 'learning.json'));
     expect(stale.code).toBe(1);
-    expect(stale.out).toContain('✗ film has been learning 15 days, over 14');
+    // Sixteen when the UTC day turns between this file's reading of the clock and the script's own.
+    expect(stale.out).toMatch(/✗ film has been learning 1[56] days, over 14/);
     const today = new Date().toISOString().slice(0, 10);
     writeFileSync(join(dir, 'learning.json'), JSON.stringify({ learning: { lobby: today } }));
     const both = run(LOG, { lobby: c(3000, 3000), film: c(3000, 3000) }, '--learning', join(dir, 'learning.json'));

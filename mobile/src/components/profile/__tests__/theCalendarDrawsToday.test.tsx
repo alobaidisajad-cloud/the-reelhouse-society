@@ -11,8 +11,13 @@ import React, { act } from 'react';
 import { render } from '@testing-library/react-native';
 import NitrateCalendarGrid from '../NitrateCalendarGrid';
 import { calendarDateString } from '@/src/utils/timeAgo';
+import { ALL_BUT_THE_DATE } from '@/test-utils/onlyTheDate';
 
 jest.mock('expo-haptics', () => ({ impactAsync: jest.fn(), notificationAsync: jest.fn(), selectionAsync: jest.fn() }));
+
+// The day stands still (only the date is set): the days these tests count back from are the calendar's own today.
+beforeEach(() => { jest.useFakeTimers({ now: new Date(2026, 9, 3, 12), doNotFake: ALL_BUT_THE_DATE }); });
+afterEach(() => { jest.useRealTimers(); });
 
 const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return calendarDateString(d)!; };
 

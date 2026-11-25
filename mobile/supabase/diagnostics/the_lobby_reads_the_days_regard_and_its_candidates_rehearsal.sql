@@ -1,10 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- the_lobby_reads_the_days_regard_and_its_candidates_rehearsal.sql — 20261122_66. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs the_lobby_reads_the_days_regard_and_its_candidates_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs the_lobby_reads_the_days_regard_and_its_candidates_rehearsal.sql
 --
--- The train applies 20261122_66 here (with_train), every car before it already applied; a sealed copy
--- already holds it. The house's own record set aside (rolled back), four members file logs, stacks and
+-- 20261122_66 is applied on production (the train of 2026-11-24); this shows it still holds there, and on every sealed copy.
+-- The house's own record set aside (rolled back), four members file logs, stacks and
 -- filings just before today's edition and mark them: certified by two, by a banned member alone, critiqued
 -- twice by one, a critique the house withheld, a private stack, an unmarked newest piece. Today's edition
 -- is then chosen three ways, each undone after: by the chooser as production held it (copied here), by the
@@ -19,9 +19,6 @@
 BEGIN;
 \ir rehearsal_kit.sql
 
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_66_the_lobby_reads_the_days_regard_and_its_candidates.sql
-\endif
 RESET ROLE;
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
@@ -37,7 +34,7 @@ DELETE FROM public.user_blocks WHERE blocker_id IN (SELECT id FROM lr_cast) AND 
 -- The edition of 2 January 2001: its moment 00:00 UTC; everything below made in the minutes before it. A day
 -- before the house's first piece, so the only pieces older than the edition are the ones made here: the chooser
 -- as production held it reads every piece older than its edition (load 45122008179: past 30 s at 500,000
--- members, under the car's locks), and here it reads these alone, as the new chooser does.
+-- members), and here it reads these alone, as the new chooser does.
 CREATE TEMP TABLE lr_clock ON COMMIT DROP AS
   SELECT date '2001-01-02' AS today, (date '2001-01-02')::timestamp AT TIME ZONE 'UTC' AS moment;
 SELECT pg_temp.rh_case('no record of the house is older than the edition', '0', (SELECT count(*) FROM public.logs WHERE created_at < (SELECT moment FROM lr_clock))::text) AS done \gset rh_

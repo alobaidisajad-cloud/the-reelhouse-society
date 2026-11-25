@@ -1,9 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_new_row_is_dated_by_the_house_rehearsal.sql — 20261122_25. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_new_row_is_dated_by_the_house_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_new_row_is_dated_by_the_house_rehearsal.sql
 --
--- The train applies 20261122_25 here (with_train), every car before it already applied; a sealed copy already holds it.
+-- 20261122_25 is applied on production (the train of 2026-11-24); this shows it still holds there, and on every sealed copy.
 -- Then a member, acting as themselves, writes rows dated in the past and in the future: the house dates
 -- each as it lands, keeps an imported record's past date but never a future one, and paces records
 -- by a room no date gets past (stage C, the kinds pass). Every row here is undone with the
@@ -28,7 +28,7 @@ GRANT SELECT ON rehearsal_members TO anon, authenticated;
 -- write here grows with their archive; and each record written here moves its film's verdict, which the
 -- house counted again from every record of the film until 20261122_67 (the load house's film 1, the
 -- lowest id, holds half the house's records: 1.1 s a record at 500,000 members, load 45122008179), so no
--- write here grows with a film's records either, and the car's locks are held only as long as these few cases.
+-- write here grows with a film's records either.
 CREATE TEMP TABLE nrd_films ON COMMIT DROP AS
   SELECT f.id, row_number() OVER (ORDER BY f.log_count, f.id) AS k
     FROM public.films f
@@ -36,12 +36,6 @@ CREATE TEMP TABLE nrd_films ON COMMIT DROP AS
    ORDER BY f.log_count, f.id LIMIT 3;
 GRANT SELECT ON nrd_films TO authenticated;
 SELECT pg_temp.rh_need('films the member has not logged', (SELECT count(*) FROM nrd_films), 3) AS done \gset rh_
-
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_25_a_new_row_is_dated_by_the_house.sql
-\endif
 
 -- ── the setting, as the house ──
 RESET ROLE;

@@ -1,10 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_year_of_viewings_reads_that_year_rehearsal.sql — 20261122_21. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_year_of_viewings_reads_that_year_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_year_of_viewings_reads_that_year_rehearsal.sql
 --
--- The train applies 20261122_21 here (with_train), every car before it already applied (20261122_19's keys
--- and 20261122_20's index among them); a sealed copy already holds it. A member is given films seen once
+-- 20261122_21 is applied on production (the train of 2026-11-24); this shows it still holds there, and on every sealed copy.
+-- A member is given films seen once
 -- on days inside and outside the calendar's reach, films seen again (an earlier viewing written as a day,
 -- as a moment, as no day at all, as a day that is not one, two on one day, one in a year long past), a
 -- withheld film seen again, and a year of 1,200 viewings. Then as the member, a stranger, a follower and a
@@ -21,10 +21,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_21_a_year_of_viewings_reads_that_year.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup; the house's clock.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

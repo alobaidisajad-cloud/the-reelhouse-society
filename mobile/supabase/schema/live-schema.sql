@@ -164,6 +164,47 @@ $$;
 
 
 --
+-- Name: a_films_verdict_moves(integer, integer, integer, numeric); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.a_films_verdict_moves(p_film integer, p_logs integer, p_rated integer, p_sum numeric) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  t private.film_tallies%ROWTYPE;
+BEGIN
+  IF p_film IS NULL OR p_film <= 0 THEN
+    RETURN;
+  END IF;
+
+  UPDATE private.film_tallies
+     SET logs = logs + p_logs, rated = rated + p_rated, rating_sum = rating_sum + p_sum
+   WHERE film_id = p_film
+  RETURNING * INTO t;
+
+  IF NOT FOUND THEN
+    -- The film's first move: its records counted once (a withheld one is in no film's verdict, H-B10).
+    INSERT INTO private.film_tallies AS k (film_id, logs, rated, rating_sum)
+    SELECT p_film, count(*), count(*) FILTER (WHERE l.rating > 0), COALESCE(sum(l.rating) FILTER (WHERE l.rating > 0), 0)
+      FROM public.logs l
+     WHERE l.film_id = p_film
+       AND l.withheld_at IS NULL
+    ON CONFLICT (film_id) DO UPDATE
+      SET logs = k.logs + p_logs, rated = k.rated + p_rated, rating_sum = k.rating_sum + p_sum
+    RETURNING * INTO t;
+  END IF;
+
+  INSERT INTO public.films AS f (id, avg_rating, rating_count, log_count)
+  VALUES (p_film, CASE WHEN t.rated > 0 THEN ROUND(t.rating_sum / t.rated, 2) END, t.rated, t.logs)
+  ON CONFLICT (id) DO UPDATE
+    SET avg_rating   = EXCLUDED.avg_rating,
+        rating_count = EXCLUDED.rating_count,
+        log_count    = EXCLUDED.log_count;
+END $$;
+
+
+--
 -- Name: a_judge_is_refused(uuid, uuid, uuid); Type: FUNCTION; Schema: private; Owner: -
 --
 
@@ -178,6 +219,34 @@ CREATE FUNCTION private.a_judge_is_refused(p_judge uuid, p_ruler uuid, p_target 
     WHEN p_ruler IS NOT NULL AND p_judge IS NOT DISTINCT FROM p_ruler THEN 'OWN_VERDICT'
   END
 $$;
+
+
+--
+-- Name: a_members_pieces_are_queued(); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.a_members_pieces_are_queued() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' AND OLD.username IS NOT DISTINCT FROM NEW.username
+     AND OLD.display_name IS NOT DISTINCT FROM NEW.display_name THEN
+    RETURN NULL;
+  END IF;
+  IF TG_OP <> 'INSERT' THEN
+    INSERT INTO private.member_grams_waiting (gram, username, id, sign)
+    SELECT g, OLD.username, OLD.id, -1 FROM unnest(private.member_grams_of(OLD.username, OLD.display_name)) g;
+  END IF;
+  IF TG_OP <> 'DELETE' THEN
+    INSERT INTO private.member_grams_waiting (gram, username, id, sign)
+    SELECT g, NEW.username, NEW.id, 1 FROM unnest(private.member_grams_of(NEW.username, NEW.display_name)) g;
+  END IF;
+  -- Counted, so the settling knows at once whether anything waits (the transaction's own setting).
+  PERFORM set_config('reelhouse.member_grams_queued',
+                     (COALESCE(NULLIF(current_setting('reelhouse.member_grams_queued', true), ''), '0')::bigint + 1)::text, true);
+  RETURN NULL;
+END $$;
 
 
 --
@@ -438,6 +507,29 @@ END $_$;
 
 
 --
+-- Name: a_vote_is_counted(); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.a_vote_is_counted() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF TG_OP IN ('DELETE', 'UPDATE') THEN
+    -- An option's last vote takes its row with it.
+    DELETE FROM private.ballot_counts WHERE post_id = OLD.post_id AND option_index = OLD.option_index AND n <= 1;
+    UPDATE private.ballot_counts SET n = n - 1
+     WHERE post_id = OLD.post_id AND option_index = OLD.option_index;
+  END IF;
+  IF TG_OP IN ('INSERT', 'UPDATE') THEN
+    INSERT INTO private.ballot_counts AS c (post_id, option_index, n) VALUES (NEW.post_id, NEW.option_index, 1)
+    ON CONFLICT (post_id, option_index) DO UPDATE SET n = c.n + 1;
+  END IF;
+  RETURN NULL;
+END $$;
+
+
+--
 -- Name: a_withheld_piece_holds_it(text, uuid); Type: FUNCTION; Schema: private; Owner: -
 --
 
@@ -606,6 +698,83 @@ COMMENT ON FUNCTION private.can_view_user_data(target_uid uuid) IS 'Whether the 
 
 
 --
+-- Name: closed_ballots_told(integer); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.closed_ballots_told(p_voters integer DEFAULT 500) RETURNS text
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    SET lock_timeout TO '100ms'
+    AS $$
+DECLARE
+  v_left  integer := GREATEST(COALESCE(p_voters, 500), 1);
+  v_told  integer := 0;
+  v_n     integer;
+  v_wrote integer;
+  v_ids   uuid[];
+  v_open  boolean;
+  v_msg   text;
+  q       record;
+BEGIN
+  IF NOT pg_try_advisory_xact_lock(hashtext('private.closed_ballots_told')) THEN
+    RETURN 'waited';
+  END IF;
+  FOR q IN SELECT w.post_id, w.author, w.title, w.after FROM private.ballot_notices_waiting w ORDER BY w.queued_at, w.post_id LOOP
+    EXIT WHEN v_left = 0;
+    -- A ballot no voter can open now (ended, withheld by the house, unpublished, or gone) is told to no one more.
+    SELECT p.ended_at IS NULL AND p.withheld_at IS NULL AND COALESCE(p.is_published, false) INTO v_open
+      FROM public.dispatch_posts p WHERE p.id = q.post_id;
+    IF NOT COALESCE(v_open, false) THEN
+      DELETE FROM private.ballot_notices_waiting WHERE post_id = q.post_id;
+      CONTINUE;
+    END IF;
+    -- Its next voters, by its key (post_id, user_id): one range from the last told, that one left out.
+    SELECT array_agg(v.user_id ORDER BY v.user_id) INTO v_ids
+      FROM (SELECT dv.user_id FROM public.dispatch_votes dv
+             WHERE dv.post_id = q.post_id
+               AND dv.user_id >= COALESCE(q.after, '00000000-0000-0000-0000-000000000000'::uuid)
+               AND dv.user_id IS DISTINCT FROM q.after
+             ORDER BY dv.user_id LIMIT v_left) v;
+    v_n := COALESCE(cardinality(v_ids), 0);
+    IF v_n > 0 THEN
+      v_msg := CASE WHEN btrim(COALESCE(q.title, '')) = ''
+                    THEN 'A ballot you voted in has closed.'
+                    ELSE 'The ballot “' || btrim(q.title) || '” you voted in has closed.' END;
+      -- Each voter, but one who blocked or muted the author, or whom the author blocked: the same test
+      -- dispatch_notify makes of every other Dispatch notice; and a voter whose account is gone, never.
+      INSERT INTO public.notifications (user_id, type, from_user_id, message, metadata, group_key)
+      SELECT t.id, 'ballot', q.author, v_msg,
+             jsonb_build_object('dispatch_post_id', q.post_id, 'kind', 'ballot', 'title', q.title),
+             'endorse:post:' || q.post_id
+        FROM unnest(v_ids) t(id)
+       WHERE NOT EXISTS (SELECT 1 FROM public.user_blocks b
+                          WHERE (b.blocker_id = t.id AND b.blocked_id = q.author)
+                             OR (b.blocker_id = q.author AND b.blocked_id = t.id AND b.type = 'block'))
+         AND EXISTS (SELECT 1 FROM public.profiles pr WHERE pr.id = t.id)
+       ORDER BY t.id;
+      GET DIAGNOSTICS v_wrote = ROW_COUNT;
+      v_told := v_told + v_wrote;
+    END IF;
+    IF v_n < v_left THEN
+      -- Every voter reached: the ballot leaves the list.
+      DELETE FROM private.ballot_notices_waiting WHERE post_id = q.post_id;
+    ELSE
+      UPDATE private.ballot_notices_waiting SET after = v_ids[v_n] WHERE post_id = q.post_id;
+    END IF;
+    v_left := v_left - v_n;
+  END LOOP;
+  -- Nothing waits: the job leaves the schedule (a ballot put on the list puts it back).
+  IF NOT EXISTS (SELECT 1 FROM private.ballot_notices_waiting) THEN
+    IF to_regclass('cron.job') IS NOT NULL THEN
+      PERFORM cron.unschedule(j.jobid) FROM cron.job j WHERE j.jobname = 'the-closed-ballots-are-told';
+    END IF;
+    RETURN 'told ' || v_told || ', none waits';
+  END IF;
+  RETURN 'told ' || v_told;
+END $$;
+
+
+--
 -- Name: hidden_authors(); Type: FUNCTION; Schema: private; Owner: -
 --
 
@@ -651,6 +820,620 @@ $$;
 --
 
 COMMENT ON FUNCTION private.is_hidden_by(viewer_id uuid, author_id uuid) IS 'Whether an author is hidden from the caller (the session decides who the caller is; viewer_id is ignored). Never served by the API.';
+
+
+--
+-- Name: lobby_edition_begun(); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.lobby_edition_begun() RETURNS text
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_edition date := (now() AT TIME ZONE 'UTC')::date;
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtext('public.lobby_choose_edition'));
+  IF NOT EXISTS (SELECT 1 FROM public.lobby_editions WHERE edition = v_edition) THEN
+    INSERT INTO private.lobby_drafts (edition) VALUES (v_edition) ON CONFLICT (edition) DO NOTHING;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM private.lobby_drafts) THEN
+    RETURN 'chosen already';
+  END IF;
+  IF to_regclass('cron.job') IS NOT NULL THEN
+    IF NOT EXISTS (SELECT 1 FROM cron.job j WHERE j.jobname = 'the-lobby-edition-is-drafted') THEN
+      PERFORM cron.schedule('the-lobby-edition-is-drafted', '1 seconds', 'SELECT private.lobby_edition_drafted();');
+    END IF;
+  END IF;
+  RETURN 'drafted';
+END $$;
+
+
+--
+-- Name: lobby_edition_drafted(integer); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.lobby_edition_drafted(p_rows integer DEFAULT 2000) RETURNS text
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    SET lock_timeout TO '100ms'
+    AS $$
+DECLARE
+  v_edition date;
+BEGIN
+  IF NOT pg_try_advisory_xact_lock(hashtext('public.lobby_choose_edition')) THEN
+    RETURN 'waited';
+  END IF;
+  SELECT d.edition INTO v_edition FROM private.lobby_drafts d ORDER BY d.edition LIMIT 1;
+  IF v_edition IS NULL THEN
+    IF to_regclass('cron.job') IS NOT NULL THEN
+      PERFORM cron.unschedule(j.jobid) FROM cron.job j WHERE j.jobname = 'the-lobby-edition-is-drafted';
+    END IF;
+    RETURN 'none drafted';
+  END IF;
+  RETURN private.lobby_edition_step(v_edition, p_rows);
+END $$;
+
+
+--
+-- Name: lobby_edition_step(date, integer); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.lobby_edition_step(p_edition date, p_rows integer DEFAULT 2000) RETURNS text
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    SET lock_timeout TO '100ms'
+    AS $$
+DECLARE
+  -- the edition's moment: 00:00 UTC of its day; its regard is the day before it
+  v_end     timestamptz := p_edition::timestamp AT TIME ZONE 'UTC';
+  v_start   timestamptz := (p_edition::timestamp AT TIME ZONE 'UTC') - interval '1 day';
+  v_rows    integer := GREATEST(COALESCE(p_rows, 2000), 1);
+  v_judge   integer := GREATEST(COALESCE(p_rows, 2000) / 5, 1);
+  d         record;
+  v_from    timestamptz;
+  v_slot    text;
+  v_how     text;
+  v_ats     timestamptz[];
+  v_ids     uuid[];
+  v_targets uuid[];
+  v_members uuid[];
+  v_slots   text[];
+  v_n       integer;
+  v_chosen  integer;
+BEGIN
+  SELECT * INTO d FROM private.lobby_drafts WHERE edition = p_edition FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN 'not drafted';
+  END IF;
+  -- From the last row read (one range of each source's index of when it was given), that row left out.
+  v_from := GREATEST(v_start, COALESCE(d.after_at, v_start));
+
+  IF d.stage BETWEEN 1 AND 6 THEN
+    -- who marked what in the day before, and how: 'c' certified, 'q' critiqued; a source a stage
+    IF d.stage = 1 THEN
+      v_slot := 'log'; v_how := 'c';
+      SELECT array_agg(x.created_at ORDER BY x.created_at, x.id), array_agg(x.id ORDER BY x.created_at, x.id),
+             array_agg(x.target_log_id ORDER BY x.created_at, x.id), array_agg(x.user_id ORDER BY x.created_at, x.id)
+        INTO v_ats, v_ids, v_targets, v_members
+        FROM (SELECT x.created_at, x.id, x.target_log_id, x.user_id FROM public.interactions x
+               WHERE x.type = 'endorse_log' AND x.created_at >= v_from AND x.created_at < v_end
+                 AND (d.after_at IS NULL OR (x.created_at, x.id) > (d.after_at, d.after_id))
+               ORDER BY x.created_at, x.id LIMIT v_rows) x;
+    ELSIF d.stage = 2 THEN
+      v_slot := 'log'; v_how := 'q';
+      SELECT array_agg(c.created_at ORDER BY c.created_at, c.id), array_agg(c.id ORDER BY c.created_at, c.id),
+             array_agg(c.log_id ORDER BY c.created_at, c.id), array_agg(c.user_id ORDER BY c.created_at, c.id)
+        INTO v_ats, v_ids, v_targets, v_members
+        FROM (SELECT c.created_at, c.id, c.log_id, c.user_id FROM public.log_comments c
+               WHERE c.user_id IS NOT NULL AND c.withheld_at IS NULL  -- a critique the house withholds is no regard (H-B10)
+                 AND c.created_at >= v_from AND c.created_at < v_end
+                 AND (d.after_at IS NULL OR (c.created_at, c.id) > (d.after_at, d.after_id))
+               ORDER BY c.created_at, c.id LIMIT v_rows) c;
+    ELSIF d.stage = 3 THEN
+      v_slot := 'list'; v_how := 'c';
+      SELECT array_agg(x.created_at ORDER BY x.created_at, x.id), array_agg(x.id ORDER BY x.created_at, x.id),
+             array_agg(x.target_list_id ORDER BY x.created_at, x.id), array_agg(x.user_id ORDER BY x.created_at, x.id)
+        INTO v_ats, v_ids, v_targets, v_members
+        FROM (SELECT x.created_at, x.id, x.target_list_id, x.user_id FROM public.interactions x
+               WHERE x.type = 'endorse_list' AND x.created_at >= v_from AND x.created_at < v_end
+                 AND (d.after_at IS NULL OR (x.created_at, x.id) > (d.after_at, d.after_id))
+               ORDER BY x.created_at, x.id LIMIT v_rows) x;
+    ELSIF d.stage = 4 THEN
+      v_slot := 'list'; v_how := 'q';
+      SELECT array_agg(c.created_at ORDER BY c.created_at, c.id), array_agg(c.id ORDER BY c.created_at, c.id),
+             array_agg(c.list_id ORDER BY c.created_at, c.id), array_agg(c.user_id ORDER BY c.created_at, c.id)
+        INTO v_ats, v_ids, v_targets, v_members
+        FROM (SELECT c.created_at, c.id, c.list_id, c.user_id FROM public.list_comments c
+               WHERE c.user_id IS NOT NULL AND c.withheld_at IS NULL  -- a critique the house withholds is no regard (H-B10)
+                 AND c.created_at >= v_from AND c.created_at < v_end
+                 AND (d.after_at IS NULL OR (c.created_at, c.id) > (d.after_at, d.after_id))
+               ORDER BY c.created_at, c.id LIMIT v_rows) c;
+    ELSIF d.stage = 5 THEN
+      v_slot := 'post'; v_how := 'c';
+      SELECT array_agg(c.created_at ORDER BY c.created_at, c.id), array_agg(c.id ORDER BY c.created_at, c.id),
+             array_agg(c.post_id ORDER BY c.created_at, c.id), array_agg(c.user_id ORDER BY c.created_at, c.id)
+        INTO v_ats, v_ids, v_targets, v_members
+        FROM (SELECT c.created_at, c.id, c.post_id, c.user_id FROM public.dispatch_certifications c
+               WHERE c.post_id IS NOT NULL AND c.created_at >= v_from AND c.created_at < v_end
+                 AND (d.after_at IS NULL OR (c.created_at, c.id) > (d.after_at, d.after_id))
+               ORDER BY c.created_at, c.id LIMIT v_rows) c;
+    ELSE
+      v_slot := 'post'; v_how := 'q';
+      SELECT array_agg(c.created_at ORDER BY c.created_at, c.id), array_agg(c.id ORDER BY c.created_at, c.id),
+             array_agg(c.post_id ORDER BY c.created_at, c.id), array_agg(c.user_id ORDER BY c.created_at, c.id)
+        INTO v_ats, v_ids, v_targets, v_members
+        FROM (SELECT c.created_at, c.id, c.post_id, c.user_id FROM public.dispatch_comments c
+               WHERE c.user_id IS NOT NULL AND c.withheld_at IS NULL  -- a critique the house withholds is no regard (H-B10)
+                 AND c.created_at >= v_from AND c.created_at < v_end
+                 AND (d.after_at IS NULL OR (c.created_at, c.id) > (d.after_at, d.after_id))
+               ORDER BY c.created_at, c.id LIMIT v_rows) c;
+    END IF;
+    v_n := COALESCE(cardinality(v_ids), 0);
+    IF v_n > 0 THEN
+      -- Never its author's own (the piece looked up by its key); a banned member's regard counts for
+      -- nothing. Each member's regard of a piece kept once a way, the piece a candidate.
+      WITH kept AS (
+        INSERT INTO private.lobby_draft_regard (edition, slot, target, how, member)
+        SELECT p_edition, v_slot, t.target, v_how, t.member
+          FROM unnest(v_targets, v_members) t(target, member)
+         WHERE t.member <> CASE v_slot
+                             WHEN 'log'  THEN (SELECT l.user_id FROM public.logs l WHERE l.id = t.target)
+                             WHEN 'list' THEN (SELECT x.user_id FROM public.lists x WHERE x.id = t.target)
+                             ELSE             (SELECT p.user_id FROM public.dispatch_posts p WHERE p.id = t.target)
+                           END
+           AND EXISTS (SELECT 1 FROM public.profiles m WHERE m.id = t.member AND NOT coalesce(m.is_banned, false))
+        ON CONFLICT DO NOTHING
+        RETURNING target
+      )
+      INSERT INTO private.lobby_draft_candidates (edition, slot, id)
+      SELECT DISTINCT p_edition, v_slot, k.target FROM kept k
+      ON CONFLICT DO NOTHING;
+    END IF;
+    IF v_n < v_rows THEN
+      UPDATE private.lobby_drafts SET stage = d.stage + 1, after_at = NULL, after_id = NULL WHERE edition = p_edition;
+    ELSE
+      UPDATE private.lobby_drafts SET after_at = v_ats[v_n], after_id = v_ids[v_n] WHERE edition = p_edition;
+    END IF;
+    RETURN 'regard ' || v_n;
+  END IF;
+
+  IF d.stage = 7 THEN
+    -- The pieces honoured before, and the newest of each kind (which a quiet day reaches), as candidates.
+    INSERT INTO private.lobby_draft_candidates (edition, slot, id)
+    SELECT p_edition, x.slot, x.id FROM (
+      SELECT e.slot, e.target_id AS id
+        FROM public.lobby_editions e
+       WHERE e.edition < p_edition AND e.place <= CASE e.slot WHEN 'post' THEN 3 ELSE 1 END
+      UNION
+      (SELECT 'log'::text, n.id FROM public.logs n
+         JOIN public.profiles np ON np.id = n.user_id
+        WHERE n.review IS NOT NULL AND n.review <> ''  -- as logs_reviewed_newest holds them
+          AND char_length(btrim(coalesce(n.review, ''))) >= 30 AND NOT coalesce(n.is_spoiler, false)
+          AND n.created_at < v_end
+          AND NOT coalesce(np.is_banned, false) AND NOT coalesce(np.is_social_private, false)
+          AND NOT EXISTS (SELECT 1 FROM public.lobby_editions h
+                           WHERE h.edition < p_edition AND h.place <= 1 AND h.slot = 'log' AND h.target_id = n.id)
+        ORDER BY n.created_at DESC, n.id DESC LIMIT 24)
+      UNION
+      (SELECT 'list'::text, n.id FROM public.lists n
+         JOIN public.profiles np ON np.id = n.user_id
+        WHERE n.is_private IS NOT TRUE AND n.created_at < v_end  -- open to all, as lists_open_newest holds them
+          AND (SELECT count(*) FROM public.list_items i WHERE i.list_id = n.id) >= 4
+          AND NOT coalesce(np.is_banned, false) AND NOT coalesce(np.is_social_private, false)
+          AND NOT EXISTS (SELECT 1 FROM public.lobby_editions h
+                           WHERE h.edition < p_edition AND h.place <= 1 AND h.slot = 'list' AND h.target_id = n.id)
+        ORDER BY n.created_at DESC, n.id DESC LIMIT 24)
+      UNION
+      (SELECT 'post'::text, n.id FROM public.dispatch_posts n
+         JOIN public.profiles np ON np.id = n.user_id
+        WHERE n.is_published AND n.withheld_at IS NULL  -- as dispatch_posts_paper_latest holds them
+          AND n.ended_at IS NULL AND n.spoiler_label IS NULL AND n.created_at < v_end
+          AND char_length(btrim(coalesce(n.title, '') || ' ' || coalesce(nullif(n.full_content, ''), n.body, ''))) >= 30
+          AND NOT coalesce(np.is_banned, false) AND NOT coalesce(np.is_social_private, false)
+          AND NOT EXISTS (SELECT 1 FROM public.lobby_editions h
+                           WHERE h.edition < p_edition AND h.place <= 3 AND h.slot = 'post' AND h.target_id = n.id)
+        ORDER BY n.created_at DESC, n.id DESC LIMIT 24)
+    ) x
+    ON CONFLICT DO NOTHING;
+    UPDATE private.lobby_drafts SET stage = 8, after_at = NULL, after_id = NULL, after_slot = NULL WHERE edition = p_edition;
+    RETURN 'candidates';
+  END IF;
+
+  IF d.stage = 8 THEN
+    -- The next candidates, by their key from the last judged; each read by its key and judged as every
+    -- piece always was, with its day.
+    SELECT array_agg(k.slot ORDER BY k.slot, k.id), array_agg(k.id ORDER BY k.slot, k.id) INTO v_slots, v_ids
+      FROM (SELECT k.slot, k.id FROM private.lobby_draft_candidates k
+             WHERE k.edition = p_edition
+               AND (d.after_slot IS NULL OR (k.slot, k.id) > (d.after_slot, d.after_id))
+             ORDER BY k.slot, k.id LIMIT v_judge) k;
+    v_n := COALESCE(cardinality(v_ids), 0);
+    IF v_n > 0 THEN
+      INSERT INTO private.lobby_draft_pieces (edition, slot, id, author, created_at, day)
+      SELECT p_edition, a.slot, a.id, a.author, a.created_at,
+             (SELECT count(*) FROM private.lobby_draft_regard r WHERE r.edition = p_edition AND r.slot = a.slot AND r.target = a.id)
+        FROM (
+          SELECT 'log'::text AS slot, l.id, l.user_id AS author, l.created_at
+            FROM unnest(v_slots, v_ids) k(slot, id)
+            CROSS JOIN LATERAL (SELECT x.id, x.user_id, x.created_at, x.review, x.is_spoiler, x.withheld_at
+                                  FROM public.logs x WHERE x.id = k.id OFFSET 0) l
+            JOIN public.profiles p ON p.id = l.user_id
+           WHERE k.slot = 'log'
+             AND btrim(coalesce(l.review, '')) <> '' AND NOT coalesce(l.is_spoiler, false)
+             AND l.withheld_at IS NULL  -- a piece the house withholds never hangs (H-B10)
+             AND l.created_at < v_end
+             AND NOT coalesce(p.is_banned, false) AND NOT coalesce(p.is_social_private, false)
+             AND NOT EXISTS (SELECT 1 FROM public.lobby_withheld w WHERE w.kind = 'log' AND w.target_id = l.id)
+             AND NOT EXISTS (SELECT 1 FROM public.reports r WHERE r.content_type = 'log' AND r.content_id = l.id::text
+                                                              AND coalesce(r.status, 'pending') = 'pending')
+          UNION ALL
+          SELECT 'list', s.id, s.user_id, s.created_at
+            FROM unnest(v_slots, v_ids) k(slot, id)
+            CROSS JOIN LATERAL (SELECT x.id, x.user_id, x.created_at, x.is_private, x.withheld_at
+                                  FROM public.lists x WHERE x.id = k.id OFFSET 0) s
+            JOIN public.profiles p ON p.id = s.user_id
+           WHERE k.slot = 'list'
+             AND NOT coalesce(s.is_private, false)
+             AND s.withheld_at IS NULL  -- a piece the house withholds never hangs (H-B10)
+             AND (SELECT count(*) FROM public.list_items i WHERE i.list_id = s.id) >= 4
+             AND s.created_at < v_end
+             AND NOT coalesce(p.is_banned, false) AND NOT coalesce(p.is_social_private, false)
+             AND NOT EXISTS (SELECT 1 FROM public.lobby_withheld w WHERE w.kind = 'list' AND w.target_id = s.id)
+             AND NOT EXISTS (SELECT 1 FROM public.reports r WHERE r.content_type = 'list' AND r.content_id = s.id::text
+                                                              AND coalesce(r.status, 'pending') = 'pending')
+          UNION ALL
+          SELECT 'post', d2.id, d2.user_id, d2.created_at
+            FROM unnest(v_slots, v_ids) k(slot, id)
+            CROSS JOIN LATERAL (SELECT x.id, x.user_id, x.created_at, x.is_published, x.withheld_at, x.ended_at, x.spoiler_label
+                                  FROM public.dispatch_posts x WHERE x.id = k.id OFFSET 0) d2
+            JOIN public.profiles p ON p.id = d2.user_id
+           WHERE k.slot = 'post'
+             AND coalesce(d2.is_published, false) AND d2.withheld_at IS NULL AND d2.ended_at IS NULL
+             AND d2.spoiler_label IS NULL AND d2.created_at < v_end
+             AND NOT coalesce(p.is_banned, false) AND NOT coalesce(p.is_social_private, false)
+             AND NOT EXISTS (SELECT 1 FROM public.lobby_withheld w WHERE w.kind = 'post' AND w.target_id = d2.id)
+             AND NOT EXISTS (SELECT 1 FROM public.reports r WHERE r.content_type = 'dispatch_post' AND r.content_id = d2.id::text
+                                                              AND coalesce(r.status, 'pending') = 'pending')
+        ) a
+      ON CONFLICT DO NOTHING;
+    END IF;
+    IF v_n < v_judge THEN
+      UPDATE private.lobby_drafts SET stage = 9, after_slot = NULL, after_id = NULL WHERE edition = p_edition;
+    ELSE
+      UPDATE private.lobby_drafts SET after_slot = v_slots[v_n], after_id = v_ids[v_n] WHERE edition = p_edition;
+    END IF;
+    RETURN 'judged ' || v_n;
+  END IF;
+
+  -- Stage 9: the edition placed from the pieces judged, as it always was placed.
+  WITH honoured AS (
+    -- what the wall has shown before: first log, first stack, first three filings
+    SELECT e.slot, e.target_id, e.author_id, e.edition
+      FROM public.lobby_editions e
+     WHERE e.edition < p_edition AND e.place <= CASE e.slot WHEN 'post' THEN 3 ELSE 1 END
+  ),
+  scored AS (
+    SELECT a.slot, a.id, a.author, a.created_at, a.day,
+           EXISTS (SELECT 1 FROM honoured h WHERE h.slot = a.slot AND h.target_id = a.id) AS had_its_day,
+           EXISTS (SELECT 1 FROM honoured h WHERE h.author_id = a.author AND h.edition >= p_edition - 7) AS honoured_lately
+      FROM private.lobby_draft_pieces a WHERE a.edition = p_edition
+  ),
+  ranked AS (
+    SELECT s.*,
+           row_number() OVER (PARTITION BY s.slot
+                              ORDER BY s.had_its_day, s.day DESC, s.honoured_lately,
+                                       s.created_at DESC, s.id) AS merit
+      FROM scored s
+  ),
+  -- one member, one bill: each author's second piece in a slot, and the first log's author among stacks
+  spread AS (
+    SELECT r.*,
+           row_number() OVER (PARTITION BY r.slot, r.author ORDER BY r.merit) AS nth,
+           (r.slot = 'list' AND r.author = (SELECT author FROM ranked WHERE slot = 'log' AND merit = 1)) AS holds_the_log
+      FROM ranked r
+  ),
+  placed AS (
+    SELECT s.slot, s.id, s.author, s.day,
+           row_number() OVER (PARTITION BY s.slot
+                              ORDER BY s.holds_the_log, (s.slot = 'post' AND s.nth > 1), s.merit) AS place
+      FROM spread s
+  )
+  INSERT INTO public.lobby_editions (edition, slot, place, target_id, author_id, score)
+  SELECT p_edition, slot, place, id, author, day FROM placed WHERE place <= 12;
+
+  GET DIAGNOSTICS v_chosen = ROW_COUNT;
+
+  -- The authors of what hangs are told without a push — once a piece, never again (the notices already
+  -- told found by the index of the Lobby's own notices).
+  INSERT INTO public.notifications (user_id, type, message, group_key)
+  SELECT e.author_id, 'featured',
+         CASE e.slot WHEN 'log'  THEN 'Your log hangs in the Lobby today.'
+                     WHEN 'list' THEN 'Your stack hangs in the Lobby today.'
+                     ELSE             'Your filing hangs in the Lobby today.' END,
+         'lobby:' || e.slot || ':' || e.target_id
+    FROM public.lobby_editions e
+   WHERE e.edition = p_edition
+     AND e.place <= CASE e.slot WHEN 'post' THEN 3 ELSE 1 END
+     AND NOT EXISTS (SELECT 1 FROM public.notifications n
+                      WHERE n.type = 'featured' AND n.group_key = 'lobby:' || e.slot || ':' || e.target_id);
+
+  -- The draft goes: its rows emptied at once when no other draft waits.
+  DELETE FROM private.lobby_drafts WHERE edition = p_edition;
+  IF NOT EXISTS (SELECT 1 FROM private.lobby_drafts) THEN
+    TRUNCATE private.lobby_draft_regard, private.lobby_draft_candidates, private.lobby_draft_pieces;
+  ELSE
+    DELETE FROM private.lobby_draft_regard WHERE edition = p_edition;
+    DELETE FROM private.lobby_draft_candidates WHERE edition = p_edition;
+    DELETE FROM private.lobby_draft_pieces WHERE edition = p_edition;
+  END IF;
+  RETURN 'chosen ' || v_chosen;
+END $$;
+
+
+--
+-- Name: logs_seen_again_in(uuid, date, date); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.logs_seen_again_in(p_user_id uuid, p_first date, p_last date) RETURNS uuid[]
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT coalesce(array_agg(l.id), '{}'::uuid[])
+    FROM public.logs l
+   WHERE jsonb_typeof(l.viewing_history) = 'array' AND l.viewing_history <> '[]'::jsonb
+     AND private.viewing_months(l.user_id, l.viewing_history, l.created_at) && private.viewing_months_between(p_user_id, p_first, p_last);
+$$;
+
+
+--
+-- Name: member_grams; Type: TABLE; Schema: private; Owner: -
+--
+
+CREATE TABLE private.member_grams (
+    gram text NOT NULL COLLATE pg_catalog."C",
+    username text NOT NULL,
+    id uuid NOT NULL
+);
+
+
+--
+-- Name: member_grams_apply(private.member_grams[], private.member_grams[]); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.member_grams_apply(p_gone private.member_grams[], p_came private.member_grams[]) RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    AS $$
+DECLARE
+  v_off_g text[];
+  v_off_n integer[];
+  v_on_g  text[];
+  v_on_n  integer[];
+  v_cut   text[] := '{}';
+  v_last  text[] := '{}';
+  v_gram  text;
+  v_k     integer;
+  v_at    text;
+  v_n     integer;
+  v_cap   integer;
+BEGIN
+  -- Nothing to settle (members the job has not reached): the lists not touched.
+  IF cardinality(p_gone) = 0 AND cardinality(p_came) = 0 THEN
+    RETURN 0;
+  END IF;
+  SELECT f.cap INTO v_cap FROM private.member_grams_filled f;
+  -- A head for each new piece; then every piece touched, locked in one order.
+  INSERT INTO private.member_gram_heads (gram, holders, listed, upto)
+  SELECT DISTINCT c.gram, 0, 0, NULL::text FROM unnest(p_came) c ORDER BY 1
+  ON CONFLICT (gram) DO NOTHING;
+  PERFORM 1 FROM private.member_gram_heads h
+   WHERE h.gram IN (SELECT g.gram FROM unnest(p_gone) g UNION SELECT c.gram FROM unnest(p_came) c)
+   ORDER BY h.gram FOR UPDATE;
+  -- The leavers off the lists; the comers on, where their piece lists every holder or they sort at or
+  -- before its last. Each counted by piece.
+  WITH off AS (
+    DELETE FROM private.member_grams m USING unnest(p_gone) g
+     WHERE m.gram = g.gram AND m.username = g.username AND m.id = g.id
+    RETURNING m.gram
+  ) SELECT coalesce(array_agg(o.gram), '{}'), coalesce(array_agg(o.n), '{}') INTO v_off_g, v_off_n
+      FROM (SELECT off.gram, count(*)::integer AS n FROM off GROUP BY off.gram) o;
+  WITH came AS (
+    INSERT INTO private.member_grams (gram, username, id)
+    SELECT c.gram, c.username, c.id FROM unnest(p_came) c JOIN private.member_gram_heads h ON h.gram = c.gram
+     WHERE h.upto IS NULL OR c.username <= h.upto
+    RETURNING gram
+  ) SELECT coalesce(array_agg(o.gram), '{}'), coalesce(array_agg(o.n), '{}') INTO v_on_g, v_on_n
+      FROM (SELECT came.gram, count(*)::integer AS n FROM came GROUP BY came.gram) o;
+  -- A list past its cap (a thousand) ends at its thousandth: those past it go, the last of them first.
+  FOR v_gram, v_k IN
+    SELECT h.gram, h.listed + o.n - coalesce(f.n, 0) - v_cap
+      FROM unnest(v_on_g, v_on_n) o(gram, n) JOIN private.member_gram_heads h ON h.gram = o.gram
+      LEFT JOIN unnest(v_off_g, v_off_n) f(gram, n) ON f.gram = o.gram
+     WHERE h.listed + o.n - coalesce(f.n, 0) > v_cap
+     ORDER BY h.gram
+  LOOP
+    DELETE FROM private.member_grams m
+     WHERE m.gram = v_gram
+       AND m.username IN (SELECT x.username FROM private.member_grams x WHERE x.gram = v_gram ORDER BY x.username DESC LIMIT v_k);
+    SELECT max(m.username) INTO v_at FROM private.member_grams m WHERE m.gram = v_gram;
+    v_cut := v_cut || v_gram;
+    v_last := v_last || v_at;
+  END LOOP;
+  -- Each head written once: its holders by the change, its list as it now ends.
+  UPDATE private.member_gram_heads h
+     SET holders = h.holders + d.came - d.gone,
+         listed  = CASE WHEN c.last IS NOT NULL THEN v_cap ELSE h.listed + d.went_on - d.came_off END,
+         upto    = CASE WHEN c.last IS NOT NULL THEN c.last
+                        WHEN h.holders + d.came - d.gone = h.listed + d.went_on - d.came_off THEN NULL
+                        ELSE h.upto END
+    FROM (SELECT x.gram, sum(x.came) AS came, sum(x.gone) AS gone, sum(x.went_on) AS went_on, sum(x.came_off) AS came_off
+            FROM (SELECT c.gram, 1 AS came, 0 AS gone, 0 AS went_on, 0 AS came_off FROM unnest(p_came) c
+                  UNION ALL SELECT g.gram, 0, 1, 0, 0 FROM unnest(p_gone) g
+                  UNION ALL SELECT o.gram, 0, 0, o.n, 0 FROM unnest(v_on_g, v_on_n) o(gram, n)
+                  UNION ALL SELECT f.gram, 0, 0, 0, f.n FROM unnest(v_off_g, v_off_n) f(gram, n)) x
+           GROUP BY x.gram) d
+    LEFT JOIN (SELECT unnest(v_cut) AS gram, unnest(v_last) AS last) c ON c.gram = d.gram
+   WHERE h.gram = d.gram;
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  RETURN v_n;
+END $$;
+
+
+--
+-- Name: member_grams_fill(integer); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.member_grams_fill(p_members integer DEFAULT 500) RETURNS text
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    SET lock_timeout TO '100ms'
+    AS $$
+DECLARE
+  v_after    uuid;
+  v_complete boolean;
+  v_came     private.member_grams[];
+  v_read     integer;
+  v_last     uuid;
+BEGIN
+  SELECT f.complete INTO v_complete FROM private.member_grams_filled f;
+  IF NOT v_complete THEN
+    -- Read again once the lock is held: the last run's end, and every member committed before it. Its
+    -- row is held too, and a run gives way at once to whoever holds it.
+    BEGIN
+      PERFORM pg_advisory_xact_lock(hashtext('private.member_grams_fill'));
+      SELECT f.complete, f.after INTO v_complete, v_after FROM private.member_grams_filled f FOR UPDATE NOWAIT;
+    EXCEPTION WHEN lock_not_available THEN
+      RETURN 'waited';
+    END;
+  END IF;
+  IF v_complete THEN
+    IF to_regclass('cron.job') IS NOT NULL THEN
+      PERFORM cron.unschedule(j.jobid) FROM cron.job j WHERE j.jobname = 'the-members-pieces-are-listed';
+    END IF;
+    RETURN 'complete';
+  END IF;
+  -- The next members after the last run's, each with every piece they hold.
+  WITH next AS (
+    SELECT p.id, p.username, p.display_name FROM public.profiles p
+     -- One range of the ids from the last run's end (the same plan at every run), its end itself left out.
+     WHERE p.id >= COALESCE(v_after, '00000000-0000-0000-0000-000000000000'::uuid) AND p.id IS DISTINCT FROM v_after
+     ORDER BY p.id LIMIT GREATEST(p_members, 1)
+  )
+  SELECT array_agg(ROW(g.g, n.username, n.id)::private.member_grams) FILTER (WHERE g.g IS NOT NULL),
+         count(DISTINCT n.id), (array_agg(n.id ORDER BY n.id DESC))[1]
+    INTO v_came, v_read, v_last
+    FROM next n LEFT JOIN LATERAL unnest(private.member_grams_of(n.username, n.display_name)) g(g) ON true;
+  IF v_read = 0 THEN
+    UPDATE private.member_grams_filled SET complete = true, ended = now();
+    ANALYZE private.member_gram_heads;
+    ANALYZE private.member_grams;
+    RETURN 'complete';
+  END IF;
+  PERFORM private.member_grams_apply('{}', COALESCE(v_came, '{}'));
+  UPDATE private.member_grams_filled SET after = v_last, members = members + v_read;
+  RETURN 'listed ' || v_read;
+END $$;
+
+
+--
+-- Name: member_grams_of(text, text); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.member_grams_of(p_handle text, p_name text) RETURNS text[]
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    AS $$
+  -- Each three characters of the handle and of the name, lower case, once, in byte order (the order the
+  -- pieces are locked in): marked "a" as held anywhere (a search of handles and names), and the handle's
+  -- marked "h" as well (a search of handles alone).
+  SELECT coalesce(array_agg(DISTINCT g.gram ORDER BY g.gram), '{}'::text[])
+    FROM (SELECT (v.f || substr(v.x, i, 3)) COLLATE "C" AS gram
+            FROM (VALUES (lower(p_handle), 'a'), (lower(p_name), 'a'), (lower(p_handle), 'h')) v(x, f)
+           CROSS JOIN LATERAL generate_series(1, char_length(v.x) - 2) i) g
+$$;
+
+
+--
+-- Name: member_grams_settle(); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.member_grams_settle() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    AS $$
+DECLARE
+  v_queued   text := COALESCE(current_setting('reelhouse.member_grams_queued', true), '');
+  v_complete boolean;
+  v_after    uuid;
+BEGIN
+  -- Run once a written member as the transaction commits: the first settles everything waiting, the rest
+  -- find nothing new.
+  IF v_queued = '' OR v_queued = COALESCE(current_setting('reelhouse.member_grams_settled', true), '') THEN
+    RETURN NULL;
+  END IF;
+  -- While the job is filling the lists, only the members it has passed are settled here (it reads the
+  -- others as they stand): its lock is taken, shared, before its row is read, so a batch of the job
+  -- reads this transaction's writes once committed or lists them before this reads how far it went.
+  SELECT f.complete, f.after INTO v_complete, v_after FROM private.member_grams_filled f;
+  IF NOT v_complete THEN
+    PERFORM pg_advisory_xact_lock_shared(hashtext('private.member_grams_fill'));
+    SELECT f.complete, f.after INTO v_complete, v_after FROM private.member_grams_filled f;
+  END IF;
+  -- Each member's net change to each piece: joined and left in one transaction is no change.
+  PERFORM private.member_grams_apply(
+    ARRAY(SELECT ROW(w.gram, w.username, w.id)::private.member_grams FROM private.member_grams_waiting w
+           WHERE w.txid = txid_current() AND (v_complete OR w.id <= v_after)
+           GROUP BY w.gram, w.username, w.id HAVING sum(w.sign) < 0),
+    ARRAY(SELECT ROW(w.gram, w.username, w.id)::private.member_grams FROM private.member_grams_waiting w
+           WHERE w.txid = txid_current() AND (v_complete OR w.id <= v_after)
+           GROUP BY w.gram, w.username, w.id HAVING sum(w.sign) > 0));
+  DELETE FROM private.member_grams_waiting WHERE txid = txid_current();
+  PERFORM set_config('reelhouse.member_grams_settled', v_queued, true);
+  RETURN NULL;
+END $$;
+
+
+--
+-- Name: member_pattern_grams(text); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.member_pattern_grams(p_pattern text) RETURNS text[]
+    LANGUAGE plpgsql IMMUTABLE STRICT PARALLEL SAFE
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    AS $$
+DECLARE
+  v_text text := lower(p_pattern);
+  v_n    integer := char_length(v_text);
+  v_i    integer := 1;
+  v_c    text;
+  v_seg  text := '';
+  v_out  text[] := '{}';
+BEGIN
+  -- The pieces every holder of the words holds: each three characters of each run of the words between
+  -- wildcards, its escapes read, lower case as ILIKE reads them. NULL when no run has three.
+  WHILE v_i <= v_n + 1 LOOP
+    v_c := CASE WHEN v_i <= v_n THEN substr(v_text, v_i, 1) END;
+    IF v_c = '\' AND v_i < v_n THEN
+      v_seg := v_seg || substr(v_text, v_i + 1, 1);
+      v_i := v_i + 2;
+      CONTINUE;
+    END IF;
+    IF v_c IS NULL OR v_c IN ('%', '_') THEN
+      FOR k IN 1 .. char_length(v_seg) - 2 LOOP
+        v_out := v_out || substr(v_seg, k, 3);
+      END LOOP;
+      v_seg := '';
+    ELSE
+      v_seg := v_seg || v_c;
+    END IF;
+    v_i := v_i + 1;
+  END LOOP;
+  IF cardinality(v_out) = 0 THEN
+    RETURN NULL;
+  END IF;
+  RETURN (SELECT array_agg(DISTINCT g ORDER BY g) FROM unnest(v_out) g);
+END $$;
 
 
 --
@@ -902,6 +1685,38 @@ $$;
 
 
 --
+-- Name: viewings_between(uuid, date, date); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.viewings_between(p_user_id uuid, p_first date, p_last date) RETURNS TABLE(log_id uuid, viewing_id uuid, film_id integer, film_title text, poster_path text, rating numeric, day date)
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT l.id, l.viewing_id, l.film_id, l.film_title, l.poster_path, l.rating, l.watched_date
+    FROM public.logs l
+   WHERE l.user_id = p_user_id
+     AND l.watched_date BETWEEN p_first AND p_last
+     AND (l.withheld_at IS NULL OR l.user_id = (SELECT auth.uid()))  -- withheld: its author's alone (H-B10)
+  UNION ALL
+  SELECT l.id, h.viewing_id, l.film_id, l.film_title, l.poster_path, h.rating, h.day
+    FROM public.logs l
+   CROSS JOIN LATERAL (
+     SELECT CASE WHEN pg_input_is_valid(e->>'viewingId', 'uuid') THEN (e->>'viewingId')::uuid END AS viewing_id,
+            COALESCE(CASE WHEN e->>'date' ~ '^\d{4}-\d{2}-\d{2}' AND pg_input_is_valid(left(e->>'date', 10), 'date')
+                          THEN left(e->>'date', 10)::date END,
+                     l.created_at::date) AS day,
+            CASE WHEN pg_input_is_valid(e->>'rating', 'numeric') THEN (e->>'rating')::numeric END AS rating
+       FROM jsonb_array_elements(CASE WHEN jsonb_typeof(l.viewing_history) = 'array' THEN l.viewing_history ELSE '[]'::jsonb END) e
+      WHERE jsonb_typeof(e) = 'object'
+   ) h
+   WHERE l.id = ANY ((SELECT private.logs_seen_again_in(p_user_id, p_first, p_last))::uuid[])
+     AND l.user_id = p_user_id
+     AND (l.withheld_at IS NULL OR l.user_id = (SELECT auth.uid()))  -- withheld: its author's alone (H-B10)
+     AND h.day BETWEEN p_first AND p_last;
+$$;
+
+
+--
 -- Name: a_block_stands_between(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1137,6 +1952,38 @@ BEGIN
   THEN
     RETURN NULL;
   END IF;
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: a_new_row_is_dated(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.a_new_row_is_dated() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_row jsonb := to_jsonb(NEW);
+  v_at  timestamptz := now();
+  v_set jsonb := '{}'::jsonb;
+BEGIN
+  -- The house's own writes keep their dates: only a member's or a visitor's request runs as these roles.
+  IF current_user NOT IN ('authenticated', 'anon') THEN
+    RETURN NEW;
+  END IF;
+  -- 'not_after': a date in the past is kept (an imported archive's), one after now is now.
+  IF TG_ARGV[0] = 'not_after' AND NEW.created_at IS NOT NULL THEN
+    v_at := LEAST(NEW.created_at, v_at);
+  END IF;
+  v_set := jsonb_build_object('created_at', v_at);
+  IF v_row ? 'updated_at' THEN v_set := v_set || jsonb_build_object('updated_at', v_at); END IF;
+  IF v_row ? 'edited_at' THEN v_set := v_set || jsonb_build_object('edited_at', NULL); END IF;
+  IF v_row ? 'withheld_at' THEN v_set := v_set || jsonb_build_object('withheld_at', NULL); END IF;
+  IF v_row ? 'ended_at' THEN v_set := v_set || jsonb_build_object('ended_at', NULL); END IF;
+  IF v_row ? 'deleted_at' THEN v_set := v_set || jsonb_build_object('deleted_at', NULL); END IF;
+  NEW := jsonb_populate_record(NEW, v_set);
   RETURN NEW;
 END $$;
 
@@ -1640,8 +2487,10 @@ CREATE FUNCTION public.ballot_tally(p_post uuid) RETURNS jsonb
                'total', COALESCE(sum(t.n), 0),
                'counts', COALESCE(jsonb_object_agg(t.option_index, t.n)
                                   FILTER (WHERE t.option_index IS NOT NULL), '{}'::jsonb))
-        FROM (SELECT option_index, count(*) AS n FROM public.dispatch_votes
-               WHERE post_id = p_post GROUP BY option_index) t)
+        -- Each option's votes as counted when they were cast (private.ballot_counts): never the
+        -- ballot's every vote read again.
+        FROM (SELECT c.option_index, c.n FROM private.ballot_counts c
+               WHERE c.post_id = p_post AND c.n > 0) t)
   END
 $$;
 
@@ -1704,8 +2553,7 @@ CREATE FUNCTION public.calendar_days(p_user_id uuid) RETURNS TABLE(day date, fil
   -- The grid's 364 days end on the member's today: the house's yesterday, today or tomorrow.
   -- Each viewing on its own day: a rewatch adds a night, it never moves the one before it.
   SELECT v.day, count(*)::integer
-    FROM public.member_viewings(p_user_id) v
-   WHERE v.day BETWEEN (now() AT TIME ZONE 'UTC')::date - 364 AND (now() AT TIME ZONE 'UTC')::date + 1
+    FROM private.viewings_between(p_user_id, (now() AT TIME ZONE 'UTC')::date - 364, (now() AT TIME ZONE 'UTC')::date + 1) v
    GROUP BY v.day
    ORDER BY v.day DESC;
 $$;
@@ -1947,6 +2795,115 @@ BEGIN
       RAISE EXCEPTION 'RATE_LIMITED' USING ERRCODE = 'RH429', DETAIL = 'target',
         HINT = GREATEST(1, ceil(extract(epoch FROM v_since + interval '1 hour' - v_now)))::integer::text;
     END IF;
+  END IF;
+
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: check_write_pace(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.check_write_pace() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_now      timestamptz := now();
+  v_day      date := (now() AT TIME ZONE 'UTC')::date;
+  v_kind     text;
+  v_room     real;
+  v_every    real;
+  v_ceiling  integer;
+  v_member   uuid;
+  v_again    boolean;
+  v_tokens   real;
+  v_count    integer;
+  v_midnight integer := ceil(extract(epoch FROM ((v_day + 1)::timestamp AT TIME ZONE 'UTC') - v_now))::integer;
+BEGIN
+  -- The house's own writes are not paced: a member's request always carries the member.
+  IF auth.uid() IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- The kind, its room, the seconds for one more, its day's ceiling, and whether this row is already there.
+  IF TG_TABLE_NAME = 'logs' THEN
+    v_kind := 'record'; v_room := 50000; v_every := 0.1; v_ceiling := 100000;
+    v_again := EXISTS (SELECT 1 FROM public.logs WHERE user_id = NEW.user_id AND film_id = NEW.film_id);
+  ELSIF TG_TABLE_NAME = 'lists' THEN
+    v_kind := 'stack'; v_room := 500; v_every := 10; v_ceiling := 2000;
+    v_again := EXISTS (SELECT 1 FROM public.lists WHERE id = NEW.id);
+  ELSIF TG_TABLE_NAME = 'list_items' THEN
+    v_kind := 'stack_entry'; v_room := 20000; v_every := 0.1; v_ceiling := 100000;
+    v_again := EXISTS (SELECT 1 FROM public.list_items WHERE list_id = NEW.list_id AND film_id = NEW.film_id);
+  ELSIF TG_TABLE_NAME = 'dispatch_posts' THEN
+    v_kind := 'filing'; v_room := 10; v_every := 360; v_ceiling := 50;
+    v_again := EXISTS (SELECT 1 FROM public.dispatch_posts WHERE id = NEW.id);
+  ELSIF TG_TABLE_NAME = 'lounges' THEN
+    v_kind := 'salon'; v_room := 5; v_every := 3600; v_ceiling := 20;
+    v_again := EXISTS (SELECT 1 FROM public.lounges WHERE id = NEW.id);
+  ELSIF TG_TABLE_NAME = 'lounge_message_reactions' THEN
+    v_kind := 'reaction'; v_room := 120; v_every := 2; v_ceiling := 2000;
+    v_again := EXISTS (SELECT 1 FROM public.lounge_message_reactions
+                        WHERE message_id = NEW.message_id AND user_id = NEW.user_id AND reaction = NEW.reaction);
+  ELSIF TG_TABLE_NAME = 'dispatch_certifications' THEN
+    v_kind := 'certification'; v_room := 120; v_every := 2; v_ceiling := 2000;
+    v_again := EXISTS (SELECT 1 FROM public.dispatch_certifications WHERE id = NEW.id);
+  ELSIF TG_TABLE_NAME = 'dispatch_saves' THEN
+    v_kind := 'save'; v_room := 300; v_every := 1; v_ceiling := 3000;
+    v_again := EXISTS (SELECT 1 FROM public.dispatch_saves WHERE user_id = NEW.user_id AND post_id = NEW.post_id);
+  ELSIF TG_TABLE_NAME = 'dispatch_votes' THEN
+    v_kind := 'vote'; v_room := 120; v_every := 1; v_ceiling := 2000;
+    v_again := EXISTS (SELECT 1 FROM public.dispatch_votes WHERE post_id = NEW.post_id AND user_id = NEW.user_id);
+  ELSIF TG_TABLE_NAME = 'user_blocks' THEN
+    v_kind := 'block'; v_room := 100; v_every := 1; v_ceiling := 1000;
+    v_again := EXISTS (SELECT 1 FROM public.user_blocks WHERE blocker_id = NEW.blocker_id AND blocked_id = NEW.blocked_id);
+  ELSIF TG_TABLE_NAME = 'watchlists' THEN
+    v_kind := 'watchlist_entry'; v_room := 20000; v_every := 0.1; v_ceiling := 100000;
+    v_again := EXISTS (SELECT 1 FROM public.watchlists WHERE user_id = NEW.user_id AND film_id = NEW.film_id);
+  ELSIF TG_TABLE_NAME = 'physical_archive' THEN
+    v_kind := 'shelf_entry'; v_room := 2000; v_every := 0.5; v_ceiling := 10000;
+    v_again := EXISTS (SELECT 1 FROM public.physical_archive WHERE user_id = NEW.user_id AND film_id = NEW.film_id);
+  ELSIF TG_TABLE_NAME = 'member_drafts' THEN
+    v_kind := 'draft'; v_room := 300; v_every := 1; v_ceiling := 5000;
+    v_again := EXISTS (SELECT 1 FROM public.member_drafts WHERE user_id = NEW.user_id AND kind = NEW.kind AND scope = NEW.scope);
+  ELSIF TG_TABLE_NAME = 'push_subscriptions' THEN
+    v_kind := 'push_address'; v_room := 20; v_every := 60; v_ceiling := 100;
+    v_again := EXISTS (SELECT 1 FROM public.push_subscriptions WHERE endpoint = NEW.endpoint);
+  ELSIF TG_TABLE_NAME = 'lounge_members' THEN
+    v_kind := 'seat'; v_room := 60; v_every := 10; v_ceiling := 500;
+    v_again := EXISTS (SELECT 1 FROM public.lounge_members WHERE lounge_id = NEW.lounge_id AND user_id = NEW.user_id);
+  ELSE
+    RETURN NEW;
+  END IF;
+  IF v_again THEN
+    RETURN NEW;
+  END IF;
+
+  -- The member whose room it is: the one asking (a row names its own member; a stack entry, a list).
+  v_member := auth.uid();
+
+  -- The room, refilled for the time since, less this write; and the day's count. One row, one
+  -- statement: a member's writes of a kind at the same moment wait on each other here.
+  INSERT INTO public.write_budget AS b (user_id, kind, tokens, refilled_at, day, n)
+  VALUES (v_member, v_kind, v_room - 1, v_now, v_day, 1)
+  ON CONFLICT (user_id, kind) DO UPDATE SET
+    tokens      = LEAST(v_room, b.tokens + GREATEST(0, extract(epoch FROM v_now - b.refilled_at))::real / v_every) - 1,
+    refilled_at = GREATEST(b.refilled_at, v_now),
+    day         = v_day,
+    n           = (CASE WHEN b.day = v_day THEN b.n ELSE 0 END) + 1
+  RETURNING tokens, n INTO v_tokens, v_count;
+
+  IF v_tokens < 0 THEN
+    -- The refill's seconds for each write short of one.
+    RAISE EXCEPTION 'RATE_LIMITED' USING ERRCODE = 'RH429', DETAIL = 'member',
+      HINT = GREATEST(1, ceil(-v_tokens * v_every))::integer::text;
+  END IF;
+  IF v_count > v_ceiling THEN
+    -- The day's own word, so a ceiling met a minute before midnight is never told as a pace.
+    RAISE EXCEPTION 'RATE_LIMITED' USING ERRCODE = 'RH429', DETAIL = 'day',
+      HINT = GREATEST(1, v_midnight)::text;
   END IF;
 
   RETURN NEW;
@@ -2749,31 +3706,25 @@ CREATE FUNCTION public.dispatch_notify_ballot_closed() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-DECLARE v record; msg text;
 BEGIN
   IF NEW.frozen_totals IS NULL OR OLD.frozen_totals IS NOT NULL THEN RETURN NEW; END IF;
   -- A ballot no voter can open (ended, withheld by the house, or unpublished) is told to no one.
   IF NEW.ended_at IS NOT NULL OR NEW.withheld_at IS NOT NULL OR NOT coalesce(NEW.is_published, false) THEN
     RETURN NEW;
   END IF;
-  msg := CASE WHEN btrim(coalesce(NEW.title,'')) = ''
-              THEN 'A ballot you voted in has closed.'
-              ELSE 'The ballot “' || btrim(NEW.title) || '” you voted in has closed.' END;
-  -- Each voter, but one who blocked or muted the author, or whom the author blocked: the same test
-  -- dispatch_notify makes of every other Dispatch notice.
-  FOR v IN SELECT DISTINCT dv.user_id FROM public.dispatch_votes dv
-            WHERE dv.post_id = NEW.id
-              AND NOT EXISTS (SELECT 1 FROM public.user_blocks b
-                               WHERE (b.blocker_id = dv.user_id AND b.blocked_id = NEW.user_id)
-                                  OR (b.blocker_id = NEW.user_id AND b.blocked_id = dv.user_id AND b.type = 'block'))
-  LOOP
-    INSERT INTO public.notifications (user_id, type, from_user_id, message, metadata, group_key)
-    SELECT v.user_id, 'ballot', NEW.user_id, msg,
-           jsonb_build_object('dispatch_post_id', NEW.id, 'kind', 'ballot',
-                              'title', NEW.title),
-           'endorse:post:' || NEW.id
-     WHERE EXISTS (SELECT 1 FROM public.profiles WHERE id = v.user_id);
-  END LOOP;
+  -- A ballot no one voted in has no one to tell.
+  IF NOT EXISTS (SELECT 1 FROM public.dispatch_votes dv WHERE dv.post_id = NEW.id) THEN
+    RETURN NEW;
+  END IF;
+  PERFORM pg_advisory_xact_lock(hashtext('private.closed_ballots_told'));
+  INSERT INTO private.ballot_notices_waiting (post_id, author, title)
+  VALUES (NEW.id, NEW.user_id, NEW.title)
+  ON CONFLICT (post_id) DO NOTHING;
+  IF to_regclass('cron.job') IS NOT NULL THEN
+    IF NOT EXISTS (SELECT 1 FROM cron.job j WHERE j.jobname = 'the-closed-ballots-are-told') THEN
+      PERFORM cron.schedule('the-closed-ballots-are-told', '1 seconds', 'SELECT private.closed_ballots_told();');
+    END IF;
+  END IF;
   RETURN NEW;
 END $$;
 
@@ -3138,43 +4089,6 @@ END $$;
 --
 
 COMMENT ON FUNCTION public.end_filing(p_post uuid, p_by text) IS 'Withdraw a filing. Each branch proves its own right: the author proves ownership, the house proves role = admin. Before 2026-09-10 the house branch proved nothing and was granted to anon, so any caller could erase any filing.';
-
-
---
--- Name: enforce_log_insert_ceiling(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.enforce_log_insert_ceiling() RETURNS trigger
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_existing integer;
-  v_incoming integer;
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RETURN NULL;
-  END IF;
-
-  SELECT count(*) INTO v_incoming FROM inserted WHERE user_id = auth.uid();
-  IF v_incoming = 0 THEN
-    RETURN NULL;
-  END IF;
-
-  SELECT count(*) INTO v_existing
-    FROM public.logs
-   WHERE user_id = auth.uid()
-     AND created_at > now() - interval '1440 minutes';
-
-  IF v_existing > 20000 THEN
-    RAISE EXCEPTION
-      'Daily log limit reached (20000 in 24 hours). % rows in this write would exceed it.',
-      v_incoming
-      USING ERRCODE = '54000';
-  END IF;
-
-  RETURN NULL;
-END $$;
 
 
 --
@@ -3652,10 +4566,15 @@ BEGIN
              'frozen_at', now()
            ) AS totals
       FROM public.dispatch_posts p
-      LEFT JOIN (
-        SELECT post_id, option_index, count(*) AS n
-          FROM public.dispatch_votes GROUP BY post_id, option_index
-      ) v ON v.post_id = p.id
+      -- Each closing ballot's options as counted when the votes were cast (private.ballot_counts), read
+      -- by the ballot (OFFSET 0 keeps it a lookup per ballot): never every vote of the house grouped again
+      -- each time the schedule runs.
+      LEFT JOIN LATERAL (
+        SELECT c.option_index, c.n
+          FROM private.ballot_counts c
+         WHERE c.post_id = p.id AND c.n > 0
+        OFFSET 0
+      ) v ON true
      WHERE p.kind = 'ballot'
        AND p.closes_at <= now()
        AND p.frozen_totals IS NULL
@@ -3763,10 +4682,33 @@ CREATE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT 
   -- letter pieces; "m1" counted by them took 506.9 ms, load 43292798767): such a search is counted by
   -- its one- and two-letter pieces instead (lists_short_grams, profiles_short_grams), and walks only
   -- when it has none (all wildcards).
+  -- Asked first of the newest 300 public stacks, each asked the words by its title and its author's
+  -- handle: when three in twenty of a page's worth hold them (9 for 60), the words are held by one stack
+  -- in about 33 or more, so the walk meets its page within some 2,000 stacks, and no index that gathers
+  -- every holder is read ("m1" gathered 11,112 members of 100,000 from the short pieces, in
+  -- proportion to the house).
+  -- How many of the newest 300 hold the words (to 9 for 60), and so how far the walk would go for its page:
+  -- a page in 300 / hits stacks. The matches are counted to that reach at most (1,000 when none of the 300
+  -- holds them), and walked only when they are as many: a word one stack in 75 holds ("stack 12", 1,110
+  -- stacks at 500,000 members, load 45122008179) is read by its matches, never walked through 4,500 stacks
+  -- (13,406 rows, 109.8 ms). Either way a search reads at most its reach, whatever the house's size.
+  sampled AS MATERIALIZED (
+    SELECT s.hits, CASE WHEN s.hits > 0 THEN GREATEST(1000, p_limit * 300 / s.hits) ELSE 1000 END AS reach
+      FROM (SELECT count(*)::integer AS hits FROM (
+              SELECT 1 FROM (SELECT l.title, l.user_id FROM lists l
+                              WHERE l.is_private = false
+                              ORDER BY l.created_at DESC, l.id DESC
+                              LIMIT 300) w
+               WHERE COALESCE(w.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\', false)
+                  OR COALESCE((SELECT pu.username FROM profiles pu WHERE pu.id = w.user_id)
+                                ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\', false)
+               LIMIT GREATEST(p_limit * 3 / 20, 1)) newest) s
+  ),
   many AS MATERIALIZED (
     SELECT CASE WHEN COALESCE(p_search, '') = '' OR (p_search !~ '[[:alnum:]]{3}' AND (SELECT grams FROM short) IS NULL) THEN true
+                WHEN (SELECT hits FROM sampled) >= GREATEST(p_limit * 3 / 20, 1) THEN true
                 WHEN p_search !~ '[[:alnum:]]{3}' THEN (
-      SELECT count(*) >= 1000 FROM (
+      SELECT count(*) >= (SELECT reach FROM sampled) FROM (
         SELECT l.id FROM lists l
          WHERE l.is_private = false
            AND private.search_grams(l.title, l.description) @> (SELECT grams FROM short)
@@ -3776,10 +4718,10 @@ CREATE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT 
          CROSS JOIN LATERAL (SELECT l.id FROM lists l WHERE l.user_id = pu.id AND l.is_private = false OFFSET 0) l
          WHERE private.search_grams(pu.username, pu.display_name) @> (SELECT grams FROM short)
            AND COALESCE(pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\', false)
-        LIMIT 1000
+        LIMIT (SELECT reach FROM sampled)
       ) counted_short)
                 ELSE (
-      SELECT count(*) >= 1000 FROM (
+      SELECT count(*) >= (SELECT reach FROM sampled) FROM (
         SELECT l.id FROM lists l
          WHERE l.is_private = false
            AND l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
@@ -3789,7 +4731,7 @@ CREATE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT 
         SELECT l.id FROM profiles pu
          CROSS JOIN LATERAL (SELECT l.id FROM lists l WHERE l.user_id = pu.id AND l.is_private = false OFFSET 0) l
          WHERE pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
-        LIMIT 1000
+        LIMIT (SELECT reach FROM sampled)
       ) counted) END AS walk
   ),
   -- The matches of a few, newest first, before anything is asked of them.
@@ -3886,7 +4828,10 @@ CREATE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT 
     public.list_certify_count(l.id) AS certify_count,
     l.is_ranked
   FROM page pg
-  JOIN lists l ON l.id = pg.id
+  -- Each stack of the page read by its id (OFFSET 0 keeps it a lookup per stack): never every stack of
+  -- the house hashed to be joined to a page of sixty.
+  CROSS JOIN LATERAL (SELECT l.id, l.title, l.description, l.user_id, l.created_at, l.is_ranked
+                        FROM lists l WHERE l.id = pg.id OFFSET 0) l
   JOIN profiles p ON p.id = l.user_id
   ORDER BY l.created_at DESC, l.id DESC;
 $$;
@@ -4113,8 +5058,12 @@ $$;
 CREATE FUNCTION public.get_lounge_unread_counts() RETURNS TABLE(lounge_id uuid, unread_count bigint, last_message_at timestamp with time zone)
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
+    SET enable_bitmapscan TO 'off'
     AS $$
   WITH me AS (SELECT auth.uid() AS id, (SELECT private.hidden_authors()) AS hidden),
+  -- The members hidden, as a set: each word counted asks it once, by its hash, never the whole list
+  -- (the whale of the load house hides 500: 26 ms of its count went to walking the list for each word).
+  hidden AS MATERIALIZED (SELECT h.u FROM me, unnest(me.hidden) h(u) WHERE h.u IS NOT NULL),
   rooms AS (
     SELECT lm.lounge_id, lm.last_read_at, (NOT l.is_private OR lm.status IN ('approved', 'muted')) AS readable
       FROM me
@@ -4123,30 +5072,32 @@ CREATE FUNCTION public.get_lounge_unread_counts() RETURNS TABLE(lounge_id uuid, 
   )
   SELECT
     r.lounge_id,
-    -- A room read before is counted from that moment alone: its index (lounge_messages_room_newest)
-    -- starts there, so only the messages since are read, each from its row to ask whose words it
-    -- carries. One test asking "never read, or since" could start nowhere, and read every message the
-    -- room holds (291 ms for a member in 200 rooms of the load house). A room never read: all of it.
+    -- The newest hundred dispatches since the reading (a room never read: its newest hundred), read in
+    -- the order of lounge_messages_room_newest, so the read stops at a hundred however many there are;
+    -- then those the member may read and did not write counted. A room read before is read from that
+    -- moment alone: one test asking "never read, or since" could start nowhere.
     CASE WHEN r.readable THEN (
       CASE WHEN r.last_read_at IS NULL THEN (
         SELECT count(*) FROM (
-          SELECT 1 FROM public.lounge_messages m
+          SELECT m.user_id, m.carries_words_of FROM public.lounge_messages m
            WHERE m.lounge_id = r.lounge_id
-             AND m.user_id <> me.id
-             AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
-             AND NOT COALESCE(m.carries_words_of && me.hidden, false)
+           ORDER BY m.created_at DESC, m.id DESC
            LIMIT 100
-        ) unread
+        ) w
+         WHERE w.user_id <> me.id
+           AND w.user_id NOT IN (SELECT h.u FROM hidden h)
+           AND NOT COALESCE(w.carries_words_of && me.hidden, false)
       ) ELSE (
         SELECT count(*) FROM (
-          SELECT 1 FROM public.lounge_messages m
+          SELECT m.user_id, m.carries_words_of FROM public.lounge_messages m
            WHERE m.lounge_id = r.lounge_id
              AND m.created_at > r.last_read_at
-             AND m.user_id <> me.id
-             AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
-             AND NOT COALESCE(m.carries_words_of && me.hidden, false)
+           ORDER BY m.created_at DESC, m.id DESC
            LIMIT 100
-        ) unread
+        ) w
+         WHERE w.user_id <> me.id
+           AND w.user_id NOT IN (SELECT h.u FROM hidden h)
+           AND NOT COALESCE(w.carries_words_of && me.hidden, false)
       ) END
     ) ELSE 0 END AS unread_count,
     -- The last word the member can read: one from a member they hid moved the card to the front
@@ -4208,20 +5159,24 @@ CREATE FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  SELECT r.id, r.report_id, r.target_user_id, r.admin_id, r.action, r.reason,
-         r.duration_hours, r.expires_at, r.created_at, r.lifted_at, r.appeal_status
-  FROM (
-    SELECT m.*,
-           ROW_NUMBER() OVER (PARTITION BY m.target_user_id ORDER BY m.created_at DESC, m.id DESC) AS rn
-    FROM public.mod_actions m
-    WHERE m.target_user_id = ANY(COALESCE(p_user_ids, ARRAY[]::uuid[]))
-      AND EXISTS (
-        SELECT 1 FROM public.profiles p
-        WHERE p.id = (SELECT auth.uid()) AND p.role = 'admin'
-      )
-  ) r
-  WHERE r.rn <= LEAST(GREATEST(COALESCE(p_per_user, 5), 0), 20)
-  ORDER BY r.target_user_id, r.created_at DESC, r.id DESC;
+  -- Each member named once, then read alone: their newest verdicts from the front of
+  -- idx_mod_actions_target, to their page and no further.
+  SELECT m.id, m.report_id, m.target_user_id, m.admin_id, m.action, m.reason,
+         m.duration_hours, m.expires_at, m.created_at, m.lifted_at, m.appeal_status
+    FROM (SELECT DISTINCT u FROM unnest(COALESCE(p_user_ids, ARRAY[]::uuid[])) u WHERE u IS NOT NULL) who
+   CROSS JOIN LATERAL (
+     SELECT a.id, a.report_id, a.target_user_id, a.admin_id, a.action, a.reason,
+            a.duration_hours, a.expires_at, a.created_at, a.lifted_at, a.appeal_status
+       FROM public.mod_actions a
+      WHERE a.target_user_id = who.u
+      ORDER BY a.created_at DESC, a.id DESC
+      LIMIT LEAST(GREATEST(COALESCE(p_per_user, 5), 0), 20)
+   ) m
+   WHERE EXISTS (
+     SELECT 1 FROM public.profiles p
+      WHERE p.id = (SELECT auth.uid()) AND p.role = 'admin'
+   )
+   ORDER BY m.target_user_id, m.created_at DESC, m.id DESC;
 $$;
 
 
@@ -5768,165 +6723,19 @@ CREATE FUNCTION public.lobby_choose_edition(p_edition date DEFAULT ((now() AT TI
     SET search_path TO 'public', 'pg_temp'
     AS $$
 DECLARE
-  -- the edition's moment: 00:00 UTC of its day; its regard is the day before it
-  v_end   timestamptz := p_edition::timestamp AT TIME ZONE 'UTC';
-  v_start timestamptz := (p_edition::timestamp AT TIME ZONE 'UTC') - interval '1 day';
-  v_chosen integer;
+  v_said text;
 BEGIN
   -- One chooser at a time; and an edition, once chosen, is never chosen again.
   PERFORM pg_advisory_xact_lock(hashtext('public.lobby_choose_edition'));
   IF EXISTS (SELECT 1 FROM public.lobby_editions WHERE edition = p_edition) THEN
     RETURN 0;
   END IF;
-
-  WITH regard AS (
-    -- who marked what in the day before, and how: 'c' certified, 'q' critiqued; never its author
-    SELECT 'log'::text AS slot, x.target_log_id AS target, x.user_id AS member, 'c' AS how
-      FROM public.interactions x JOIN public.logs l ON l.id = x.target_log_id
-     WHERE x.type = 'endorse_log' AND x.user_id <> l.user_id AND x.created_at >= v_start AND x.created_at < v_end
-    UNION ALL
-    SELECT 'log', c.log_id, c.user_id, 'q'
-      FROM public.log_comments c JOIN public.logs l ON l.id = c.log_id
-     WHERE c.user_id IS NOT NULL AND c.user_id <> l.user_id AND c.created_at >= v_start AND c.created_at < v_end
-       AND c.withheld_at IS NULL  -- a critique the house withholds is no regard (H-B10)
-    UNION ALL
-    SELECT 'list', x.target_list_id, x.user_id, 'c'
-      FROM public.interactions x JOIN public.lists s ON s.id = x.target_list_id
-     WHERE x.type = 'endorse_list' AND x.user_id <> s.user_id AND x.created_at >= v_start AND x.created_at < v_end
-    UNION ALL
-    SELECT 'list', c.list_id, c.user_id, 'q'
-      FROM public.list_comments c JOIN public.lists s ON s.id = c.list_id
-     WHERE c.user_id IS NOT NULL AND c.user_id <> s.user_id AND c.created_at >= v_start AND c.created_at < v_end
-       AND c.withheld_at IS NULL  -- (H-B10)
-    UNION ALL
-    SELECT 'post', c.post_id, c.user_id, 'c'
-      FROM public.dispatch_certifications c JOIN public.dispatch_posts d ON d.id = c.post_id
-     WHERE c.post_id IS NOT NULL AND c.user_id <> d.user_id AND c.created_at >= v_start AND c.created_at < v_end
-    UNION ALL
-    SELECT 'post', c.post_id, c.user_id, 'q'
-      FROM public.dispatch_comments c JOIN public.dispatch_posts d ON d.id = c.post_id
-     WHERE c.user_id IS NOT NULL AND c.user_id <> d.user_id AND c.created_at >= v_start AND c.created_at < v_end
-       AND c.withheld_at IS NULL  -- (H-B10)
-  ),
-  counted AS (
-    -- a banned member's regard counts for nothing
-    SELECT r.slot, r.target, count(DISTINCT r.how || r.member::text) AS day
-      FROM regard r
-      JOIN public.profiles m ON m.id = r.member
-     WHERE NOT coalesce(m.is_banned, false)
-     GROUP BY r.slot, r.target
-  ),
-  -- what the wall has shown before: first log, first stack, first three filings
-  honoured AS (
-    SELECT e.slot, e.target_id, e.author_id, e.edition
-      FROM public.lobby_editions e
-     WHERE e.edition < p_edition AND e.place <= CASE e.slot WHEN 'post' THEN 3 ELSE 1 END
-  ),
-  -- the pieces that may hang (the counted ones, and the newest, which a quiet day reaches)
-  able AS (
-    SELECT 'log'::text AS slot, l.id, l.user_id AS author, l.created_at
-      FROM public.logs l JOIN public.profiles p ON p.id = l.user_id
-     WHERE btrim(coalesce(l.review, '')) <> '' AND NOT coalesce(l.is_spoiler, false)
-       AND l.withheld_at IS NULL  -- a piece the house withholds never hangs (H-B10)
-       AND l.created_at < v_end
-       AND NOT coalesce(p.is_banned, false) AND NOT coalesce(p.is_social_private, false)
-       AND NOT EXISTS (SELECT 1 FROM public.lobby_withheld w WHERE w.kind = 'log' AND w.target_id = l.id)
-       AND NOT EXISTS (SELECT 1 FROM public.reports r WHERE r.content_type = 'log' AND r.content_id = l.id::text
-                                                        AND coalesce(r.status, 'pending') = 'pending')
-       AND (l.id IN (SELECT target FROM counted WHERE slot = 'log')
-            OR l.id IN (SELECT n.id FROM public.logs n
-                          JOIN public.profiles np ON np.id = n.user_id
-                         WHERE char_length(btrim(coalesce(n.review, ''))) >= 30 AND NOT coalesce(n.is_spoiler, false)
-                           AND n.created_at < v_end
-                           AND NOT coalesce(np.is_banned, false) AND NOT coalesce(np.is_social_private, false)
-                           AND NOT EXISTS (SELECT 1 FROM honoured h WHERE h.slot = 'log' AND h.target_id = n.id)
-                         ORDER BY n.created_at DESC LIMIT 24)
-            OR l.id IN (SELECT target_id FROM honoured WHERE slot = 'log'))
-    UNION ALL
-    SELECT 'list', s.id, s.user_id, s.created_at
-      FROM public.lists s JOIN public.profiles p ON p.id = s.user_id
-     WHERE NOT coalesce(s.is_private, false)
-       AND s.withheld_at IS NULL  -- a piece the house withholds never hangs (H-B10)
-       AND (SELECT count(*) FROM public.list_items i WHERE i.list_id = s.id) >= 4
-       AND s.created_at < v_end
-       AND NOT coalesce(p.is_banned, false) AND NOT coalesce(p.is_social_private, false)
-       AND NOT EXISTS (SELECT 1 FROM public.lobby_withheld w WHERE w.kind = 'list' AND w.target_id = s.id)
-       AND NOT EXISTS (SELECT 1 FROM public.reports r WHERE r.content_type = 'list' AND r.content_id = s.id::text
-                                                        AND coalesce(r.status, 'pending') = 'pending')
-       AND (s.id IN (SELECT target FROM counted WHERE slot = 'list')
-            OR s.id IN (SELECT n.id FROM public.lists n
-                          JOIN public.profiles np ON np.id = n.user_id
-                         WHERE NOT coalesce(n.is_private, false) AND n.created_at < v_end
-                           AND (SELECT count(*) FROM public.list_items i WHERE i.list_id = n.id) >= 4
-                           AND NOT coalesce(np.is_banned, false) AND NOT coalesce(np.is_social_private, false)
-                           AND NOT EXISTS (SELECT 1 FROM honoured h WHERE h.slot = 'list' AND h.target_id = n.id)
-                         ORDER BY n.created_at DESC LIMIT 24)
-            OR s.id IN (SELECT target_id FROM honoured WHERE slot = 'list'))
-    UNION ALL
-    SELECT 'post', d.id, d.user_id, d.created_at
-      FROM public.dispatch_posts d JOIN public.profiles p ON p.id = d.user_id
-     WHERE coalesce(d.is_published, false) AND d.withheld_at IS NULL AND d.ended_at IS NULL
-       AND d.spoiler_label IS NULL AND d.created_at < v_end
-       AND NOT coalesce(p.is_banned, false) AND NOT coalesce(p.is_social_private, false)
-       AND NOT EXISTS (SELECT 1 FROM public.lobby_withheld w WHERE w.kind = 'post' AND w.target_id = d.id)
-       AND NOT EXISTS (SELECT 1 FROM public.reports r WHERE r.content_type = 'dispatch_post' AND r.content_id = d.id::text
-                                                        AND coalesce(r.status, 'pending') = 'pending')
-       AND (d.id IN (SELECT target FROM counted WHERE slot = 'post')
-            OR d.id IN (SELECT n.id FROM public.dispatch_posts n
-                          JOIN public.profiles np ON np.id = n.user_id
-                         WHERE coalesce(n.is_published, false) AND n.withheld_at IS NULL AND n.ended_at IS NULL
-                           AND n.spoiler_label IS NULL AND n.created_at < v_end
-                           AND char_length(btrim(coalesce(n.title, '') || ' ' || coalesce(nullif(n.full_content, ''), n.body, ''))) >= 30
-                           AND NOT coalesce(np.is_banned, false) AND NOT coalesce(np.is_social_private, false)
-                           AND NOT EXISTS (SELECT 1 FROM honoured h WHERE h.slot = 'post' AND h.target_id = n.id)
-                         ORDER BY n.created_at DESC LIMIT 24)
-            OR d.id IN (SELECT target_id FROM honoured WHERE slot = 'post'))
-  ),
-  scored AS (
-    SELECT a.slot, a.id, a.author, a.created_at, coalesce(c.day, 0) AS day,
-           EXISTS (SELECT 1 FROM honoured h WHERE h.slot = a.slot AND h.target_id = a.id) AS had_its_day,
-           EXISTS (SELECT 1 FROM honoured h WHERE h.author_id = a.author AND h.edition >= p_edition - 7) AS honoured_lately
-      FROM able a LEFT JOIN counted c ON c.slot = a.slot AND c.target = a.id
-  ),
-  ranked AS (
-    SELECT s.*,
-           row_number() OVER (PARTITION BY s.slot
-                              ORDER BY s.had_its_day, s.day DESC, s.honoured_lately,
-                                       s.created_at DESC, s.id) AS merit
-      FROM scored s
-  ),
-  -- one member, one bill: each author's second piece in a slot, and the first log's author among stacks
-  spread AS (
-    SELECT r.*,
-           row_number() OVER (PARTITION BY r.slot, r.author ORDER BY r.merit) AS nth,
-           (r.slot = 'list' AND r.author = (SELECT author FROM ranked WHERE slot = 'log' AND merit = 1)) AS holds_the_log
-      FROM ranked r
-  ),
-  placed AS (
-    SELECT s.slot, s.id, s.author, s.day,
-           row_number() OVER (PARTITION BY s.slot
-                              ORDER BY s.holds_the_log, (s.slot = 'post' AND s.nth > 1), s.merit) AS place
-      FROM spread s
-  )
-  INSERT INTO public.lobby_editions (edition, slot, place, target_id, author_id, score)
-  SELECT p_edition, slot, place, id, author, day FROM placed WHERE place <= 12;
-
-  GET DIAGNOSTICS v_chosen = ROW_COUNT;
-
-  -- The authors of what hangs are told without a push — once a piece, never again.
-  INSERT INTO public.notifications (user_id, type, message, group_key)
-  SELECT e.author_id, 'featured',
-         CASE e.slot WHEN 'log'  THEN 'Your log hangs in the Lobby today.'
-                     WHEN 'list' THEN 'Your stack hangs in the Lobby today.'
-                     ELSE             'Your filing hangs in the Lobby today.' END,
-         'lobby:' || e.slot || ':' || e.target_id
-    FROM public.lobby_editions e
-   WHERE e.edition = p_edition
-     AND e.place <= CASE e.slot WHEN 'post' THEN 3 ELSE 1 END
-     AND NOT EXISTS (SELECT 1 FROM public.notifications n
-                      WHERE n.type = 'featured' AND n.group_key = 'lobby:' || e.slot || ':' || e.target_id);
-
-  RETURN v_chosen;
+  INSERT INTO private.lobby_drafts (edition) VALUES (p_edition) ON CONFLICT (edition) DO NOTHING;
+  LOOP
+    v_said := private.lobby_edition_step(p_edition, 1000000);
+    EXIT WHEN v_said LIKE 'chosen %';
+  END LOOP;
+  RETURN substr(v_said, 8)::integer;
 END;
 $$;
 
@@ -6482,21 +7291,50 @@ CREATE FUNCTION public.note_film_verdict() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
+DECLARE
+  m record;
 BEGIN
-  IF TG_OP = 'DELETE' THEN
-    PERFORM public.refresh_film_verdict(OLD.film_id);
-    RETURN OLD;
+  IF TG_OP = 'INSERT' THEN
+    FOR m IN
+      SELECT n.film_id, count(*)::integer AS logs, (count(*) FILTER (WHERE n.rating > 0))::integer AS rated,
+             COALESCE(sum(n.rating) FILTER (WHERE n.rating > 0), 0) AS rating_sum
+        FROM moved_in n
+       WHERE n.withheld_at IS NULL AND n.film_id > 0
+       GROUP BY n.film_id
+       ORDER BY n.film_id
+    LOOP
+      PERFORM private.a_films_verdict_moves(m.film_id, m.logs, m.rated, m.rating_sum);
+    END LOOP;
+  ELSIF TG_OP = 'DELETE' THEN
+    FOR m IN
+      SELECT o.film_id, -count(*)::integer AS logs, -(count(*) FILTER (WHERE o.rating > 0))::integer AS rated,
+             -COALESCE(sum(o.rating) FILTER (WHERE o.rating > 0), 0) AS rating_sum
+        FROM moved_out o
+       WHERE o.withheld_at IS NULL AND o.film_id > 0
+       GROUP BY o.film_id
+       ORDER BY o.film_id
+    LOOP
+      PERFORM private.a_films_verdict_moves(m.film_id, m.logs, m.rated, m.rating_sum);
+    END LOOP;
+  ELSE
+    FOR m IN
+      SELECT x.film_id, sum(x.s)::integer AS logs, COALESCE(sum(x.s) FILTER (WHERE x.rating > 0), 0)::integer AS rated,
+             COALESCE(sum(x.s * x.rating) FILTER (WHERE x.rating > 0), 0) AS rating_sum
+        FROM (SELECT n.film_id, n.rating, 1 AS s FROM moved_in n WHERE n.withheld_at IS NULL
+              UNION ALL
+              SELECT o.film_id, o.rating, -1 AS s FROM moved_out o WHERE o.withheld_at IS NULL) x
+       WHERE x.film_id > 0
+       GROUP BY x.film_id
+      HAVING sum(x.s) <> 0
+          OR COALESCE(sum(x.s) FILTER (WHERE x.rating > 0), 0) <> 0
+          OR COALESCE(sum(x.s * x.rating) FILTER (WHERE x.rating > 0), 0) <> 0
+       ORDER BY x.film_id
+    LOOP
+      PERFORM private.a_films_verdict_moves(m.film_id, m.logs, m.rated, m.rating_sum);
+    END LOOP;
   END IF;
-
-  PERFORM public.refresh_film_verdict(NEW.film_id);
-
-  IF TG_OP = 'UPDATE' AND OLD.film_id IS DISTINCT FROM NEW.film_id THEN
-    PERFORM public.refresh_film_verdict(OLD.film_id);
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
+  RETURN NULL;
+END $$;
 
 
 --
@@ -7092,23 +7930,7 @@ CREATE FUNCTION public.refresh_film_verdict(p_film_id integer) RETURNS void
     SET search_path TO 'public', 'pg_temp'
     AS $$
 BEGIN
-  IF p_film_id IS NULL OR p_film_id <= 0 THEN
-    RETURN;
-  END IF;
-
-  INSERT INTO public.films AS f (id, avg_rating, rating_count, log_count)
-  SELECT
-    p_film_id,
-    ROUND(AVG(l.rating) FILTER (WHERE l.rating > 0), 2),
-    COUNT(*) FILTER (WHERE l.rating > 0),
-    COUNT(*)
-  FROM public.logs l
-  WHERE l.film_id = p_film_id
-    AND l.withheld_at IS NULL  -- a log the house withholds is in no film's verdict (H-B10)
-  ON CONFLICT (id) DO UPDATE
-    SET avg_rating   = EXCLUDED.avg_rating,
-        rating_count = EXCLUDED.rating_count,
-        log_count    = EXCLUDED.log_count;
+  PERFORM private.a_films_verdict_moves(p_film_id, 0, 0, 0);
 END;
 $$;
 
@@ -7920,6 +8742,32 @@ DECLARE
   v_got    integer := 0;
   v_n      integer;
   v_short  text := '';
+  v_many   boolean;
+  v_walk   boolean;
+  v_bitmap text := current_setting('enable_bitmapscan');
+  v_sort   text := current_setting('enable_sort');
+  v_seq    text := current_setting('enable_seqscan');
+  v_index  text := current_setting('enable_indexscan');
+  -- The words' letters before their first wildcard, their escapes read: where a handle beginning with them starts.
+  v_lead   text := regexp_replace(substring(COALESCE(p_pattern, '') from '^((?:[^%_\\]|\\.)*)'), '\\(.)', '\1', 'g');
+  -- The words' pieces of three (private.member_pattern_grams): every holder of the words holds each,
+  -- anywhere ("a") or, for a search of handles alone, in the handle ("h"). Only once the job has listed
+  -- every member (private.member_grams_filled), and the reader's own transaction has no member's write
+  -- waiting to be settled (settled as it commits, so the lists do not hold them yet): until then,
+  -- searched as before.
+  v_grams  text[] := CASE WHEN COALESCE(current_setting('reelhouse.member_grams_queued', true), '')
+                               = COALESCE(current_setting('reelhouse.member_grams_settled', true), '')
+                           AND (SELECT f.complete FROM private.member_grams_filled f)
+                          THEN (SELECT array_agg((CASE WHEN COALESCE(p_handles_only, false) THEN 'h' ELSE 'a' END || g) COLLATE "C")
+                                  FROM unnest(private.member_pattern_grams(COALESCE(p_pattern, ''))) g) END;
+  v_known  integer;
+  v_rare   integer;
+  v_gram   text;
+  v_upto   text;
+  v_listed boolean := false;
+  -- How many a gathering keeps before the handles are walked instead (a thousand); with a list, its cap
+  -- (a thousand): the list is walked instead.
+  v_wide   integer := 1000;
 BEGIN
   IF COALESCE(p_pattern, '') = '' THEN
     RETURN;
@@ -7930,32 +8778,85 @@ BEGIN
   -- The handle that is the words: words with no wildcard left once their escapes are read are one
   -- handle, any case, so the case-blind unique index (profiles_username_lower_unique) finds it at once
   -- (ILIKE is that same lower() on both sides: the equality adds no member and takes none away).
-  -- A name that begins with the words is asked the same of its lower case (ILIKE is lower() LIKE lower()),
-  -- so its beginning is found in profiles_display_name_beginning (20261122_17), never by the trigram of
-  -- a word's start that every name holding such a word anywhere also holds.
+  -- A handle or a name that begins with the words is asked the same of its lower case (ILIKE is lower()
+  -- LIKE lower()), so its beginning is found in profiles_username_beginning (20261122_22) or
+  -- profiles_display_name_beginning (20261122_17), never by the trigram of a word's start that every
+  -- handle or name holding such a word anywhere also holds.
   v_tests := ARRAY[
     format('p.username ILIKE %L ESCAPE %L', p_pattern, '\')
       || CASE WHEN regexp_replace(p_pattern, '\\.', '', 'g') !~ '[%_\\]'
               THEN format(' AND lower(p.username) = lower(%L)', regexp_replace(p_pattern, '\\(.)', '\1', 'g')) ELSE '' END,
-    format('p.username ILIKE %L ESCAPE %L', p_pattern || '%', '\'),
-    CASE WHEN v_names THEN format('p.display_name ILIKE %L ESCAPE %L AND lower(p.display_name) LIKE %L ESCAPE %L', p_pattern || '%', '\', lower(p_pattern) || '%', '\') ELSE 'false' END,
+    -- A beginning is asked as one range of its lower case alone: the ILIKE inside COALESCE, which no index
+    -- reads, so the planner never gathers by the trigram of a word's start (a handle beginning with "m1"
+    -- gathered all 11,112 of 100,000 before the first thousand were kept). Unknown only where the column
+    -- is, so a member with no name is ruled in or out as before.
+    format('COALESCE(p.username ILIKE %L ESCAPE %L, false) AND lower(p.username) LIKE %L ESCAPE %L', p_pattern || '%', '\', lower(p_pattern) || '%', '\'),
+    CASE WHEN v_names THEN format('COALESCE(p.display_name ILIKE %L ESCAPE %L, false) AND lower(p.display_name) LIKE %L ESCAPE %L', p_pattern || '%', '\', lower(p_pattern) || '%', '\') ELSE 'false' END,
     format('(p.username ILIKE %L ESCAPE %L', '%' || p_pattern || '%', '\')
       || CASE WHEN v_names THEN format(' OR p.display_name ILIKE %L ESCAPE %L)', '%' || p_pattern || '%', '\') ELSE ')' END
   ];
-  -- Words without three letters or digits in a row hold no trigram inside a handle or a name: the
-  -- gatherings of who holds them anywhere (the one read's own, and the last closeness) then read by
-  -- their one- and two-letter pieces (profiles_short_grams), never member by member through the house,
-  -- the words' own test asked inside COALESCE so no plan reads a trigram index for them whole. A handle
-  -- or a name that begins with them is found by its trigrams as before (a beginning has its own).
-  IF p_pattern !~ '[[:alnum:]]{3}' AND private.pattern_grams(p_pattern) IS NOT NULL THEN
-    v_short := format(' AND private.search_grams(p.username, p.display_name) @> %L::text[]', private.pattern_grams(p_pattern));
+  IF v_grams IS NOT NULL THEN
+    -- Words with a piece of three: the pieces' heads say who could hold them. A piece no member holds:
+    -- no member holds the words, in any closeness.
+    SELECT count(*), min(h.holders) FILTER (WHERE substr(h.gram, 2) ~ '^[[:alnum:]]{3}$') INTO v_known, v_rare
+      FROM private.member_gram_heads h WHERE h.gram = ANY (v_grams) AND h.holders > 0;
+    IF v_known < cardinality(v_grams) THEN
+      RETURN;
+    END IF;
+    -- The list read: the smallest of those that list every holder; else the one listing furthest into
+    -- the handles (its holders of the words are exact up to its last, and a page is likeliest met there).
+    SELECT h.gram, h.upto INTO v_gram, v_upto
+      FROM private.member_gram_heads h WHERE h.gram = ANY (v_grams)
+     ORDER BY h.upto IS NOT NULL, CASE WHEN h.upto IS NULL THEN h.holders END, h.upto DESC
+     LIMIT 1;
+    v_listed := true;
+    v_many := false;
+    SELECT f.cap INTO v_wide FROM private.member_grams_filled f;
+    IF v_upto IS NULL THEN
+      -- It lists every holder: whoever holds the words is among them, a thousand at most.
+      EXECUTE format('SELECT array_agg(p.id) FROM private.member_grams g JOIN public.profiles p ON p.id = g.id WHERE g.gram = $2 AND COALESCE(%s, false) AND NOT COALESCE(p.id = ANY ($1), false)',
+                     v_tests[4])
+        INTO v_few USING v_hidden, v_gram;
+    ELSIF v_rare <= 5 * v_wide THEN
+      -- Its rarest piece of three letters or digits is held by 5,000 or fewer: the trigram indexes gather
+      -- no more than they hold of it (a bitmap of all the words' trigrams, never a walk or a scan).
+      PERFORM set_config('enable_seqscan', 'off', true); PERFORM set_config('enable_indexscan', 'off', true);
+      EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s AND NOT COALESCE(p.id = ANY ($1), false) LIMIT %s) p',
+                     v_tests[4], v_wide + 1)
+        INTO v_few USING v_hidden;
+      PERFORM set_config('enable_seqscan', v_seq, true); PERFORM set_config('enable_indexscan', v_index, true);
+    ELSE
+      -- Held by more: who holds the words anywhere is walked in the list at once, never gathered.
+      v_many := true;
+    END IF;
+  ELSE
+    -- Words without three letters or digits in a row hold no trigram inside a handle or a name: the
+    -- gatherings of who holds them anywhere (the one read's own, and the last closeness) then read by
+    -- their one- and two-letter pieces (profiles_short_grams), never member by member through the house,
+    -- the words' own test asked inside COALESCE so no plan reads a trigram index for them whole. A handle
+    -- or a name that begins with them is found by its trigrams as before (a beginning has its own).
+    IF p_pattern !~ '[[:alnum:]]{3}' AND private.pattern_grams(p_pattern) IS NOT NULL THEN
+      v_short := format(' AND private.search_grams(p.username, p.display_name) @> %L::text[]', private.pattern_grams(p_pattern));
+    END IF;
+    -- Many or few, first, by a walk that reads the same number of members at any size of the house: the
+    -- first 2,000 handles in their own order (profiles_username_unique), each asked the words' own test.
+    -- When 20 or more of them hold the words (one in a hundred), so many do that each closeness's page is
+    -- met by walking the handles in order within a few thousand, and the indexes of the pieces and the
+    -- trigrams, which gather every member who holds the words before the first is read (22,248 for "m1",
+    -- 81,929 for "1" at 100,000 members), are not read for them.
+    EXECUTE format('SELECT count(*) FROM (SELECT p.id, p.username, p.display_name FROM public.profiles p ORDER BY p.username LIMIT 2000) p WHERE COALESCE(%s, false) AND NOT COALESCE(p.id = ANY ($1), false)',
+                   v_tests[4])
+      INTO v_n USING v_hidden;
+    v_many := v_n >= 20;
+    -- Fewer: who holds the words at all (the one read's own WHERE), gathered once by the plan the words
+    -- want, up to a thousand: when fewer hold them, the page is the one read's own over just those few, by id.
+    IF NOT v_many THEN
+      EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s%s AND NOT COALESCE(p.id = ANY ($1), false) LIMIT 1001) p',
+                     CASE WHEN v_short = '' THEN v_tests[4] ELSE format('COALESCE(%s, false)', v_tests[4]) END, v_short)
+        INTO v_few USING v_hidden;
+    END IF;
   END IF;
-  -- Who holds the words at all (the one read's own WHERE), gathered once by the plan the words want,
-  -- up to a thousand: when fewer hold them, the page is the one read's own over just those few, by id.
-  EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s%s AND NOT COALESCE(p.id = ANY ($1), false) LIMIT 1001) p',
-                 CASE WHEN v_short = '' THEN v_tests[4] ELSE format('COALESCE(%s, false)', v_tests[4]) END, v_short)
-    INTO v_few USING v_hidden;
-  IF COALESCE(cardinality(v_few), 0) <= 1000 THEN
+  IF NOT v_many AND COALESCE(cardinality(v_few), 0) <= v_wide THEN
     RETURN QUERY
     SELECT m.id, m.username, m.avatar_url, m.role, m.closeness
       FROM (
@@ -7979,30 +8880,73 @@ BEGIN
   -- holds so many that its handles are walked in their own order (profiles_username_unique) and the
   -- page is met within the first few hundred. The walk asks its test as one the planner cannot weigh
   -- (COALESCE), so it is planned as a walk however few it guesses: its guess of a name's beginning
-  -- once took 100,000 for 4, and sorted them all.
+  -- once took 100,000 for 4, and sorted them all. When the first walk found many, the last closeness
+  -- (who holds the words anywhere) is walked at once, never gathered.
+  -- Words with a piece of three walk a name's beginning and the words anywhere in the piece's list
+  -- instead (every member of those closenesses holds the piece), never the handles.
   FOR v_tier IN 0..3 LOOP
     IF (p_cursor_closeness IS NULL OR v_tier >= p_cursor_closeness) AND v_tests[v_tier + 1] <> 'false' THEN
       v_past := CASE WHEN v_tier = p_cursor_closeness THEN format(' AND p.username > %L', p_cursor_username) ELSE '' END;
-      EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s%s%s%s AND NOT COALESCE(p.id = ANY ($1), false) LIMIT 1001) p',
-                     CASE WHEN v_short = '' OR v_tier < 3 THEN v_tests[v_tier + 1] ELSE format('COALESCE(%s, false)', v_tests[v_tier + 1]) END, v_not, v_past,
-                     CASE WHEN v_tier = 3 THEN v_short ELSE '' END)
-        INTO v_few USING v_hidden;
-      IF COALESCE(cardinality(v_few), 0) <= 1000 THEN
+      v_walk := v_many AND v_tier = 3;
+      IF NOT v_walk THEN
+        -- A beginning is gathered in its index's own order (USING ~<~, as text_pattern_ops holds it), so the
+        -- range is read row by row and stops at its thousand and one, never gathered whole first: no bitmap
+        -- for this one statement (a bitmap gathers the whole range before the first row is kept), set back
+        -- as it was at once, so the trigram and short pieces' gatherings, which only a bitmap reads, are not touched.
+        -- The words anywhere, when a list stands for them, are gathered by a bitmap alone (no more than the
+        -- trigram indexes hold of a piece 5,000 or fewer hold).
+        IF v_tier IN (1, 2) THEN PERFORM set_config('enable_bitmapscan', 'off', true); PERFORM set_config('enable_sort', 'off', true); END IF;
+        IF v_tier = 3 AND v_listed THEN PERFORM set_config('enable_seqscan', 'off', true); PERFORM set_config('enable_indexscan', 'off', true); END IF;
+        EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s%s%s%s AND NOT COALESCE(p.id = ANY ($1), false)%s LIMIT %s) p',
+                       CASE WHEN v_short = '' OR v_tier < 3 THEN v_tests[v_tier + 1] ELSE format('COALESCE(%s, false)', v_tests[v_tier + 1]) END, v_not, v_past,
+                       CASE WHEN v_tier = 3 THEN v_short ELSE '' END,
+                       CASE v_tier WHEN 1 THEN ' ORDER BY lower(p.username) USING ~<~' WHEN 2 THEN ' ORDER BY lower(p.display_name) USING ~<~' ELSE '' END,
+                       v_wide + 1)
+          INTO v_few USING v_hidden;
+        IF v_tier IN (1, 2) THEN PERFORM set_config('enable_bitmapscan', v_bitmap, true); PERFORM set_config('enable_sort', v_sort, true); END IF;
+        IF v_tier = 3 AND v_listed THEN PERFORM set_config('enable_seqscan', v_seq, true); PERFORM set_config('enable_indexscan', v_index, true); END IF;
+        v_walk := COALESCE(cardinality(v_few), 0) > v_wide;
+      END IF;
+      IF NOT v_walk THEN
         RETURN QUERY
         SELECT p.id, p.username, p.avatar_url, p.role, v_tier
           FROM public.profiles p
          WHERE p.id = ANY (COALESCE(v_few, '{}'::uuid[]))
          ORDER BY p.username
          LIMIT v_limit - v_got;
+      ELSIF v_listed AND v_tier IN (2, 3) THEN
+        -- Walked in the list, in handle order, from the cursor: exact up to the list's last handle. A page
+        -- it cannot meet lies past it, where only more letters can narrow the search: said, never read.
+        RETURN QUERY EXECUTE format(
+          'SELECT p.id, p.username, p.avatar_url, p.role, %s
+             FROM private.member_grams g JOIN public.profiles p ON p.id = g.id
+            WHERE g.gram = $2%s
+              AND COALESCE(%s, false)%s%s
+              AND NOT COALESCE(p.id = ANY ($1), false)
+            ORDER BY g.username
+            LIMIT %s',
+          v_tier, CASE WHEN v_tier = p_cursor_closeness THEN format(' AND g.username > %L', p_cursor_username) ELSE '' END,
+          v_tests[v_tier + 1], v_not, v_past, v_limit - v_got)
+        USING v_hidden, v_gram;
+        GET DIAGNOSTICS v_n = ROW_COUNT;
+        IF v_n < v_limit - v_got AND v_upto IS NOT NULL THEN
+          RAISE EXCEPTION 'TOO_WIDE' USING ERRCODE = '54000', HINT = 'More letters narrow the search.';
+        END IF;
       ELSE
+        -- A handle that begins with the words is walked from where such handles start: every one sorts at
+        -- or after the words' letters before any wildcard, in upper or lower case, whichever sorts first
+        -- (in any collation a word sorts after its own beginning, and a case changes no letter's place
+        -- among the others), so the walk never reads every handle before them ("m19" read 10,000 first).
         RETURN QUERY EXECUTE format(
           'SELECT p.id, p.username, p.avatar_url, p.role, %s
              FROM public.profiles p
-            WHERE COALESCE(%s, false)%s%s
+            WHERE COALESCE(%s, false)%s%s%s
               AND NOT COALESCE(p.id = ANY ($1), false)
             ORDER BY p.username
             LIMIT %s',
-          v_tier, v_tests[v_tier + 1], v_not, v_past, v_limit - v_got)
+          v_tier, v_tests[v_tier + 1], v_not, v_past,
+          CASE WHEN v_tier = 1 AND v_lead <> '' THEN format(' AND p.username >= LEAST(upper(%L), lower(%L))', v_lead, v_lead) ELSE '' END,
+          v_limit - v_got)
         USING v_hidden;
       END IF;
       GET DIAGNOSTICS v_n = ROW_COUNT;
@@ -9213,14 +10157,168 @@ CREATE FUNCTION public.year_viewings(p_user_id uuid, p_year integer, p_before_da
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  SELECT v.log_id, v.viewing_id, v.film_id, l.film_title, l.poster_path, v.rating, v.day
-    FROM public.member_viewings(p_user_id) v
-    JOIN public.logs l ON l.id = v.log_id
-   WHERE v.day >= make_date(p_year, 1, 1) AND v.day < make_date(p_year + 1, 1, 1)
-     AND (p_before_day IS NULL OR (v.day, v.viewing_id) < (p_before_day, p_before_viewing))
+  SELECT v.log_id, v.viewing_id, v.film_id, v.film_title, v.poster_path, v.rating, v.day
+    FROM private.viewings_between(p_user_id, make_date(p_year, 1, 1),
+                                  CASE WHEN p_before_day IS NULL THEN make_date(p_year, 12, 31)
+                                       ELSE LEAST(make_date(p_year, 12, 31), p_before_day) END) v
+   WHERE (p_before_day IS NULL OR (v.day, v.viewing_id) < (p_before_day, p_before_viewing))
    ORDER BY v.day DESC, v.viewing_id DESC
    LIMIT 1000;
 $$;
+
+
+--
+-- Name: ballot_counts; Type: TABLE; Schema: private; Owner: -
+--
+
+CREATE TABLE private.ballot_counts (
+    post_id uuid NOT NULL,
+    option_index smallint NOT NULL,
+    n integer NOT NULL,
+    CONSTRAINT ballot_counts_n_check CHECK ((n >= 0))
+);
+
+
+--
+-- Name: ballot_notices_waiting; Type: TABLE; Schema: private; Owner: -
+--
+
+CREATE TABLE private.ballot_notices_waiting (
+    post_id uuid NOT NULL,
+    author uuid NOT NULL,
+    title text,
+    after uuid,
+    queued_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: film_tallies; Type: TABLE; Schema: private; Owner: -
+--
+
+CREATE TABLE private.film_tallies (
+    film_id integer NOT NULL,
+    logs bigint NOT NULL,
+    rated bigint NOT NULL,
+    rating_sum numeric NOT NULL,
+    CONSTRAINT film_tallies_logs_check CHECK ((logs >= 0)),
+    CONSTRAINT film_tallies_rated_check CHECK ((rated >= 0)),
+    CONSTRAINT film_tallies_rating_sum_check CHECK ((rating_sum >= (0)::numeric))
+);
+
+
+--
+-- Name: lobby_draft_candidates; Type: TABLE; Schema: private; Owner: -
+--
+
+CREATE TABLE private.lobby_draft_candidates (
+    edition date NOT NULL,
+    slot text NOT NULL,
+    id uuid NOT NULL
+);
+
+
+--
+-- Name: lobby_draft_pieces; Type: TABLE; Schema: private; Owner: -
+--
+
+CREATE TABLE private.lobby_draft_pieces (
+    edition date NOT NULL,
+    slot text NOT NULL,
+    id uuid NOT NULL,
+    author uuid NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    day integer NOT NULL
+);
+
+
+--
+-- Name: lobby_draft_regard; Type: TABLE; Schema: private; Owner: -
+--
+
+CREATE TABLE private.lobby_draft_regard (
+    edition date NOT NULL,
+    slot text NOT NULL,
+    target uuid NOT NULL,
+    how text NOT NULL,
+    member uuid NOT NULL
+);
+
+
+--
+-- Name: lobby_drafts; Type: TABLE; Schema: private; Owner: -
+--
+
+CREATE TABLE private.lobby_drafts (
+    edition date NOT NULL,
+    stage smallint DEFAULT 1 NOT NULL,
+    after_at timestamp with time zone,
+    after_id uuid,
+    after_slot text,
+    began timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT lobby_drafts_stage_check CHECK (((stage >= 1) AND (stage <= 9)))
+);
+
+
+--
+-- Name: member_gram_heads; Type: TABLE; Schema: private; Owner: -
+--
+
+CREATE TABLE private.member_gram_heads (
+    gram text NOT NULL COLLATE pg_catalog."C",
+    holders integer NOT NULL,
+    listed integer NOT NULL,
+    upto text,
+    CONSTRAINT member_gram_heads_check CHECK (((upto IS NULL) = (listed = holders))),
+    CONSTRAINT member_gram_heads_holders_check CHECK ((holders >= 0)),
+    CONSTRAINT member_gram_heads_listed_check CHECK (((listed >= 0) AND (listed <= 1000)))
+);
+
+
+--
+-- Name: member_grams_filled; Type: TABLE; Schema: private; Owner: -
+--
+
+CREATE TABLE private.member_grams_filled (
+    one boolean DEFAULT true NOT NULL,
+    after uuid,
+    members integer DEFAULT 0 NOT NULL,
+    complete boolean DEFAULT false NOT NULL,
+    cap integer DEFAULT 1000 NOT NULL,
+    began timestamp with time zone DEFAULT now() NOT NULL,
+    ended timestamp with time zone,
+    CONSTRAINT member_grams_filled_cap_check CHECK (((cap >= 1) AND (cap <= 1000))),
+    CONSTRAINT member_grams_filled_one_check CHECK (one)
+);
+
+
+--
+-- Name: member_grams_waiting; Type: TABLE; Schema: private; Owner: -
+--
+
+CREATE TABLE private.member_grams_waiting (
+    txid bigint DEFAULT txid_current() NOT NULL,
+    gram text NOT NULL COLLATE pg_catalog."C",
+    username text NOT NULL,
+    id uuid NOT NULL,
+    sign smallint NOT NULL,
+    seq bigint NOT NULL,
+    CONSTRAINT member_grams_waiting_sign_check CHECK ((sign = ANY (ARRAY['-1'::integer, 1])))
+);
+
+
+--
+-- Name: member_grams_waiting_seq_seq; Type: SEQUENCE; Schema: private; Owner: -
+--
+
+ALTER TABLE private.member_grams_waiting ALTER COLUMN seq ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME private.member_grams_waiting_seq_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
 
 
 --
@@ -10501,6 +11599,116 @@ COMMENT ON TABLE public.withheld_pieces IS 'Each piece a REMOVE CONTENT withhold
 
 
 --
+-- Name: write_budget; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.write_budget (
+    user_id uuid NOT NULL,
+    kind text NOT NULL,
+    tokens real NOT NULL,
+    refilled_at timestamp with time zone NOT NULL,
+    day date NOT NULL,
+    n integer DEFAULT 0 NOT NULL,
+    CONSTRAINT write_budget_kind CHECK ((kind = ANY (ARRAY['stack'::text, 'stack_entry'::text, 'filing'::text, 'salon'::text, 'reaction'::text, 'certification'::text, 'save'::text, 'vote'::text, 'block'::text, 'watchlist_entry'::text, 'shelf_entry'::text, 'draft'::text, 'push_address'::text, 'seat'::text, 'record'::text])))
+);
+
+
+--
+-- Name: TABLE write_budget; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.write_budget IS 'Each member''s room, per kind, to write what they may repeat at will (records, stacks and their entries, filings, salons, reactions, certifications, saves, votes, blocks, watchlist and shelf entries, drafts, push addresses), refilled with time, and the count of the house''s day: written by check_write_pace alone; no client reads or writes it.';
+
+
+--
+-- Name: ballot_counts ballot_counts_pkey; Type: CONSTRAINT; Schema: private; Owner: -
+--
+
+ALTER TABLE ONLY private.ballot_counts
+    ADD CONSTRAINT ballot_counts_pkey PRIMARY KEY (post_id, option_index);
+
+
+--
+-- Name: ballot_notices_waiting ballot_notices_waiting_pkey; Type: CONSTRAINT; Schema: private; Owner: -
+--
+
+ALTER TABLE ONLY private.ballot_notices_waiting
+    ADD CONSTRAINT ballot_notices_waiting_pkey PRIMARY KEY (post_id);
+
+
+--
+-- Name: film_tallies film_tallies_pkey; Type: CONSTRAINT; Schema: private; Owner: -
+--
+
+ALTER TABLE ONLY private.film_tallies
+    ADD CONSTRAINT film_tallies_pkey PRIMARY KEY (film_id);
+
+
+--
+-- Name: lobby_draft_candidates lobby_draft_candidates_pkey; Type: CONSTRAINT; Schema: private; Owner: -
+--
+
+ALTER TABLE ONLY private.lobby_draft_candidates
+    ADD CONSTRAINT lobby_draft_candidates_pkey PRIMARY KEY (edition, slot, id);
+
+
+--
+-- Name: lobby_draft_pieces lobby_draft_pieces_pkey; Type: CONSTRAINT; Schema: private; Owner: -
+--
+
+ALTER TABLE ONLY private.lobby_draft_pieces
+    ADD CONSTRAINT lobby_draft_pieces_pkey PRIMARY KEY (edition, slot, id);
+
+
+--
+-- Name: lobby_draft_regard lobby_draft_regard_pkey; Type: CONSTRAINT; Schema: private; Owner: -
+--
+
+ALTER TABLE ONLY private.lobby_draft_regard
+    ADD CONSTRAINT lobby_draft_regard_pkey PRIMARY KEY (edition, slot, target, how, member);
+
+
+--
+-- Name: lobby_drafts lobby_drafts_pkey; Type: CONSTRAINT; Schema: private; Owner: -
+--
+
+ALTER TABLE ONLY private.lobby_drafts
+    ADD CONSTRAINT lobby_drafts_pkey PRIMARY KEY (edition);
+
+
+--
+-- Name: member_gram_heads member_gram_heads_pkey; Type: CONSTRAINT; Schema: private; Owner: -
+--
+
+ALTER TABLE ONLY private.member_gram_heads
+    ADD CONSTRAINT member_gram_heads_pkey PRIMARY KEY (gram);
+
+
+--
+-- Name: member_grams_filled member_grams_filled_pkey; Type: CONSTRAINT; Schema: private; Owner: -
+--
+
+ALTER TABLE ONLY private.member_grams_filled
+    ADD CONSTRAINT member_grams_filled_pkey PRIMARY KEY (one);
+
+
+--
+-- Name: member_grams member_grams_pkey; Type: CONSTRAINT; Schema: private; Owner: -
+--
+
+ALTER TABLE ONLY private.member_grams
+    ADD CONSTRAINT member_grams_pkey PRIMARY KEY (gram, username) INCLUDE (id);
+
+
+--
+-- Name: member_grams_waiting member_grams_waiting_pkey; Type: CONSTRAINT; Schema: private; Owner: -
+--
+
+ALTER TABLE ONLY private.member_grams_waiting
+    ADD CONSTRAINT member_grams_waiting_pkey PRIMARY KEY (txid, seq);
+
+
+--
 -- Name: analytics_budget analytics_budget_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11069,6 +12277,14 @@ ALTER TABLE ONLY public.withheld_pieces
 
 
 --
+-- Name: write_budget write_budget_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.write_budget
+    ADD CONSTRAINT write_budget_pkey PRIMARY KEY (user_id, kind);
+
+
+--
 -- Name: analytics_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11185,6 +12401,13 @@ CREATE INDEX dispatch_posts_answer ON public.dispatch_posts USING btree (answer_
 --
 
 CREATE INDEX dispatch_posts_author ON public.dispatch_posts USING btree (user_id, created_at DESC);
+
+
+--
+-- Name: dispatch_posts_ballots_to_close; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_posts_ballots_to_close ON public.dispatch_posts USING btree (closes_at) WHERE ((kind = 'ballot'::text) AND (frozen_totals IS NULL) AND (ended_at IS NULL));
 
 
 --
@@ -11699,6 +12922,13 @@ CREATE INDEX lists_description_trigram ON public.lists USING gin (description ex
 
 
 --
+-- Name: lists_open_newest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX lists_open_newest ON public.lists USING btree (created_at DESC, id DESC) WHERE (is_private IS NOT TRUE);
+
+
+--
 -- Name: lists_short_grams; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11860,6 +13090,13 @@ CREATE INDEX notifications_created_at_idx ON public.notifications USING btree (c
 
 
 --
+-- Name: notifications_lobby_told; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notifications_lobby_told ON public.notifications USING btree (group_key) WHERE (type = 'featured'::text);
+
+
+--
 -- Name: notifications_member_newest; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11927,6 +13164,13 @@ CREATE INDEX profiles_tier_idx ON public.profiles USING btree (tier);
 --
 
 CREATE INDEX profiles_under_sanction ON public.profiles USING btree (lower(COALESCE(username, ''::text)), id) WHERE (is_banned OR (suspended_until IS NOT NULL));
+
+
+--
+-- Name: profiles_username_beginning; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX profiles_username_beginning ON public.profiles USING btree (lower(username) text_pattern_ops);
 
 
 --
@@ -12336,6 +13580,153 @@ CREATE TRIGGER a_lpn_belongs_to_its_viewing BEFORE INSERT OR UPDATE ON public.lo
 
 
 --
+-- Name: profiles a_members_pieces_are_queued; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_members_pieces_are_queued AFTER INSERT OR DELETE OR UPDATE OF username, display_name ON public.profiles FOR EACH ROW EXECUTE FUNCTION private.a_members_pieces_are_queued();
+
+
+--
+-- Name: profiles a_members_pieces_are_settled; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE CONSTRAINT TRIGGER a_members_pieces_are_settled AFTER INSERT OR DELETE OR UPDATE OF username, display_name ON public.profiles DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION private.member_grams_settle();
+
+
+--
+-- Name: analytics_events a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.analytics_events FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: dispatch_certifications a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.dispatch_certifications FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: dispatch_comments a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.dispatch_comments FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: dispatch_posts a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.dispatch_posts FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: dispatch_saves a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.dispatch_saves FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: dispatch_votes a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.dispatch_votes FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: interactions a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.interactions FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: list_comments a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.list_comments FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: list_items a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.list_items FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('not_after');
+
+
+--
+-- Name: lists a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.lists FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('not_after');
+
+
+--
+-- Name: log_comments a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: logs a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.logs FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('not_after');
+
+
+--
+-- Name: lounge_message_reactions a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.lounge_message_reactions FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: lounge_messages a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.lounge_messages FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: lounges a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.lounges FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: physical_archive a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.physical_archive FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('not_after');
+
+
+--
+-- Name: push_subscriptions a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.push_subscriptions FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: user_blocks a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.user_blocks FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');
+
+
+--
+-- Name: watchlists a_new_row_is_dated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.watchlists FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('not_after');
+
+
+--
 -- Name: notifications a_notice_gone_is_told; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -12424,6 +13815,13 @@ CREATE TRIGGER a_shared_card_is_the_houses BEFORE INSERT ON public.lounge_messag
 --
 
 CREATE TRIGGER a_spoiler_take_veils_its_cards AFTER UPDATE OF spoiler_label ON public.dispatch_posts FOR EACH ROW WHEN (((old.spoiler_label IS DISTINCT FROM new.spoiler_label) AND (new.ended_at IS NULL))) EXECUTE FUNCTION public.a_spoiler_take_veils_its_cards();
+
+
+--
+-- Name: dispatch_votes a_vote_is_counted; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_vote_is_counted AFTER INSERT OR DELETE OR UPDATE OF post_id, option_index ON public.dispatch_votes FOR EACH ROW EXECUTE FUNCTION private.a_vote_is_counted();
 
 
 --
@@ -12882,13 +14280,6 @@ CREATE TRIGGER tr_handle_privacy_switch BEFORE UPDATE ON public.profiles FOR EAC
 
 
 --
--- Name: logs tr_log_insert_ceiling; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER tr_log_insert_ceiling AFTER INSERT ON public.logs REFERENCING NEW TABLE AS inserted FOR EACH STATEMENT EXECUTE FUNCTION public.enforce_log_insert_ceiling();
-
-
---
 -- Name: interactions tr_notify_interaction; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -13120,10 +14511,24 @@ CREATE TRIGGER trg_sync_denormalized_username AFTER UPDATE OF username ON public
 
 
 --
--- Name: logs trg_verdict_film_logs; Type: TRIGGER; Schema: public; Owner: -
+-- Name: logs trg_verdict_film_logs_delete; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER trg_verdict_film_logs AFTER INSERT OR DELETE OR UPDATE OF film_id, rating ON public.logs FOR EACH ROW EXECUTE FUNCTION public.note_film_verdict();
+CREATE TRIGGER trg_verdict_film_logs_delete AFTER DELETE ON public.logs REFERENCING OLD TABLE AS moved_out FOR EACH STATEMENT EXECUTE FUNCTION public.note_film_verdict();
+
+
+--
+-- Name: logs trg_verdict_film_logs_insert; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_verdict_film_logs_insert AFTER INSERT ON public.logs REFERENCING NEW TABLE AS moved_in FOR EACH STATEMENT EXECUTE FUNCTION public.note_film_verdict();
+
+
+--
+-- Name: logs trg_verdict_film_logs_update; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_verdict_film_logs_update AFTER UPDATE ON public.logs REFERENCING OLD TABLE AS moved_out NEW TABLE AS moved_in FOR EACH STATEMENT EXECUTE FUNCTION public.note_film_verdict();
 
 
 --
@@ -13166,6 +14571,111 @@ CREATE TRIGGER zz_a_critique_is_paced BEFORE INSERT ON public.log_comments FOR E
 --
 
 CREATE TRIGGER zz_a_salon_day_has_a_ceiling BEFORE INSERT ON public.lounge_messages FOR EACH ROW EXECUTE FUNCTION public.lounge_messages_daily_ceiling();
+
+
+--
+-- Name: dispatch_certifications zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.dispatch_certifications FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: dispatch_posts zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.dispatch_posts FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: dispatch_saves zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.dispatch_saves FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: dispatch_votes zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.dispatch_votes FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: list_items zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.list_items FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: lists zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.lists FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: logs zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.logs FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: lounge_members zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.lounge_members FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: lounge_message_reactions zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.lounge_message_reactions FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: lounges zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.lounges FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: member_drafts zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.member_drafts FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: physical_archive zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.physical_archive FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: push_subscriptions zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.push_subscriptions FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: user_blocks zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.user_blocks FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
+
+
+--
+-- Name: watchlists zz_a_write_is_paced; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.watchlists FOR EACH ROW EXECUTE FUNCTION public.check_write_pace();
 
 
 --
@@ -13790,6 +15300,14 @@ ALTER TABLE ONLY public.watchlists
 
 ALTER TABLE ONLY public.withheld_pieces
     ADD CONSTRAINT withheld_pieces_mod_action_id_fkey FOREIGN KEY (mod_action_id) REFERENCES public.mod_actions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: write_budget write_budget_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.write_budget
+    ADD CONSTRAINT write_budget_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -14766,13 +16284,6 @@ CREATE POLICY logs_hide_blocked ON public.logs AS RESTRICTIVE FOR SELECT TO auth
 
 
 --
--- Name: logs logs_insert_rate_limit; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY logs_insert_rate_limit ON public.logs AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.rate_limit_check('logs'::text, 'user_id'::text, 20000, 1440));
-
-
---
 -- Name: logs logs_select_authorized; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -15290,6 +16801,12 @@ CREATE POLICY watchlists_select_authorized ON public.watchlists FOR SELECT USING
 ALTER TABLE public.withheld_pieces ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: write_budget; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.write_budget ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: -
 --
 
@@ -15327,11 +16844,25 @@ GRANT ALL ON FUNCTION private.a_filings_line(p_kind text, p_title text, p_body t
 
 
 --
+-- Name: FUNCTION a_films_verdict_moves(p_film integer, p_logs integer, p_rated integer, p_sum numeric); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.a_films_verdict_moves(p_film integer, p_logs integer, p_rated integer, p_sum numeric) FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION a_judge_is_refused(p_judge uuid, p_ruler uuid, p_target uuid); Type: ACL; Schema: private; Owner: -
 --
 
 REVOKE ALL ON FUNCTION private.a_judge_is_refused(p_judge uuid, p_ruler uuid, p_target uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION private.a_judge_is_refused(p_judge uuid, p_ruler uuid, p_target uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION a_members_pieces_are_queued(); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.a_members_pieces_are_queued() FROM PUBLIC;
 
 
 --
@@ -15366,6 +16897,13 @@ GRANT ALL ON TABLE public.lounge_messages TO service_role;
 REVOKE ALL ON FUNCTION private.a_shared_card(p_msg public.lounge_messages, p_refuse_gone boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION private.a_shared_card(p_msg public.lounge_messages, p_refuse_gone boolean) TO authenticated;
 GRANT ALL ON FUNCTION private.a_shared_card(p_msg public.lounge_messages, p_refuse_gone boolean) TO service_role;
+
+
+--
+-- Name: FUNCTION a_vote_is_counted(); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.a_vote_is_counted() FROM PUBLIC;
 
 
 --
@@ -15405,6 +16943,13 @@ GRANT ALL ON FUNCTION private.can_view_user_data(target_uid uuid) TO service_rol
 
 
 --
+-- Name: FUNCTION closed_ballots_told(p_voters integer); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.closed_ballots_told(p_voters integer) FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION hidden_authors(); Type: ACL; Schema: private; Owner: -
 --
 
@@ -15422,6 +16967,72 @@ REVOKE ALL ON FUNCTION private.is_hidden_by(viewer_id uuid, author_id uuid) FROM
 GRANT ALL ON FUNCTION private.is_hidden_by(viewer_id uuid, author_id uuid) TO anon;
 GRANT ALL ON FUNCTION private.is_hidden_by(viewer_id uuid, author_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION private.is_hidden_by(viewer_id uuid, author_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION lobby_edition_begun(); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.lobby_edition_begun() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION lobby_edition_drafted(p_rows integer); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.lobby_edition_drafted(p_rows integer) FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION lobby_edition_step(p_edition date, p_rows integer); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.lobby_edition_step(p_edition date, p_rows integer) FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION logs_seen_again_in(p_user_id uuid, p_first date, p_last date); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.logs_seen_again_in(p_user_id uuid, p_first date, p_last date) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.logs_seen_again_in(p_user_id uuid, p_first date, p_last date) TO anon;
+GRANT ALL ON FUNCTION private.logs_seen_again_in(p_user_id uuid, p_first date, p_last date) TO authenticated;
+GRANT ALL ON FUNCTION private.logs_seen_again_in(p_user_id uuid, p_first date, p_last date) TO service_role;
+
+
+--
+-- Name: FUNCTION member_grams_apply(p_gone private.member_grams[], p_came private.member_grams[]); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.member_grams_apply(p_gone private.member_grams[], p_came private.member_grams[]) FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION member_grams_fill(p_members integer); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.member_grams_fill(p_members integer) FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION member_grams_of(p_handle text, p_name text); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.member_grams_of(p_handle text, p_name text) FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION member_grams_settle(); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.member_grams_settle() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION member_pattern_grams(p_pattern text); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.member_pattern_grams(p_pattern text) FROM PUBLIC;
 
 
 --
@@ -15506,6 +17117,16 @@ GRANT ALL ON FUNCTION private.viewing_months_between(p_user uuid, p_first date, 
 
 
 --
+-- Name: FUNCTION viewings_between(p_user_id uuid, p_first date, p_last date); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.viewings_between(p_user_id uuid, p_first date, p_last date) FROM PUBLIC;
+GRANT ALL ON FUNCTION private.viewings_between(p_user_id uuid, p_first date, p_last date) TO anon;
+GRANT ALL ON FUNCTION private.viewings_between(p_user_id uuid, p_first date, p_last date) TO authenticated;
+GRANT ALL ON FUNCTION private.viewings_between(p_user_id uuid, p_first date, p_last date) TO service_role;
+
+
+--
 -- Name: FUNCTION a_block_stands_between(p_one uuid, p_other uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -15583,6 +17204,14 @@ GRANT ALL ON FUNCTION public.a_follow_takes_its_notice() TO service_role;
 
 REVOKE ALL ON FUNCTION public.a_hidden_members_word_is_not_written() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.a_hidden_members_word_is_not_written() TO service_role;
+
+
+--
+-- Name: FUNCTION a_new_row_is_dated(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.a_new_row_is_dated() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.a_new_row_is_dated() TO service_role;
 
 
 --
@@ -15805,6 +17434,14 @@ REVOKE ALL ON FUNCTION public.check_interaction_rate_limit() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.check_interaction_rate_limit() TO anon;
 GRANT ALL ON FUNCTION public.check_interaction_rate_limit() TO authenticated;
 GRANT ALL ON FUNCTION public.check_interaction_rate_limit() TO service_role;
+
+
+--
+-- Name: FUNCTION check_write_pace(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.check_write_pace() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.check_write_pace() TO service_role;
 
 
 --
@@ -16349,16 +17986,6 @@ GRANT ALL ON FUNCTION public.dossiers_write() TO service_role;
 REVOKE ALL ON FUNCTION public.end_filing(p_post uuid, p_by text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.end_filing(p_post uuid, p_by text) TO authenticated;
 GRANT ALL ON FUNCTION public.end_filing(p_post uuid, p_by text) TO service_role;
-
-
---
--- Name: FUNCTION enforce_log_insert_ceiling(); Type: ACL; Schema: public; Owner: -
---
-
-REVOKE ALL ON FUNCTION public.enforce_log_insert_ceiling() FROM PUBLIC;
-GRANT ALL ON FUNCTION public.enforce_log_insert_ceiling() TO anon;
-GRANT ALL ON FUNCTION public.enforce_log_insert_ceiling() TO authenticated;
-GRANT ALL ON FUNCTION public.enforce_log_insert_ceiling() TO service_role;
 
 
 --
@@ -18408,6 +20035,13 @@ GRANT ALL ON TABLE public.watchlists TO service_role;
 --
 
 GRANT ALL ON TABLE public.withheld_pieces TO service_role;
+
+
+--
+-- Name: TABLE write_budget; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.write_budget TO service_role;
 
 
 --

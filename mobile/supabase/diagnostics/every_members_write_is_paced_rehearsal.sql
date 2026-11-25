@@ -1,9 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- every_members_write_is_paced_rehearsal.sql — 20261122_24. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs every_members_write_is_paced_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs every_members_write_is_paced_rehearsal.sql
 --
--- The train applies 20261122_24 here (with_train), every car before it already applied; a sealed copy already holds it.
+-- 20261122_24 is applied on production (the train of 2026-11-24); this shows it still holds there, and on every sealed copy.
 -- Then the house and a member in good standing, acting as themselves, find each write a member can
 -- repeat at will paced (stage C, the kinds pass). Every row here is undone with the transaction. Read
 -- each NOTICE as  case|expected|got ; the last line is the verdict, and any miss makes psql exit non-zero.
@@ -48,12 +48,6 @@ WITH made AS (INSERT INTO public.lounge_messages (lounge_id, user_id, content)
               VALUES ((SELECT id FROM wp_planted WHERE what = 'salon'), (SELECT id FROM rehearsal_members WHERE n = 2), 'rh pace word') RETURNING id)
 INSERT INTO wp_planted SELECT 'message', id FROM made;
 SELECT pg_temp.rh_need('a take, a ballot, a salon and its message, planted', (SELECT count(id) FROM wp_planted), 4) AS done \gset rh_
-
--- The train applies it here first (with_train), on production as the cars before it left it; a sealed
--- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_24_every_members_write_is_paced.sql
-\endif
 
 -- ── the pace on every write a member repeats at will ──
 RESET ROLE;

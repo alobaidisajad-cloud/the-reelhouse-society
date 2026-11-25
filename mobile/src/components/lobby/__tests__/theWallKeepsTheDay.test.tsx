@@ -13,6 +13,7 @@ import { AppState } from 'react-native';
 import { render } from '@testing-library/react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { testQueryClient } from '@/test-utils/testQueryClient';
+import { ALL_BUT_THE_DATE } from '@/test-utils/onlyTheDate';
 
 import { Text } from '@/src/components/text';
 import { supabase } from '@/src/lib/supabase';
@@ -97,6 +98,9 @@ describe('the clock', () => {
 });
 
 describe('the wall', () => {
+  // The day stands still at noon UTC, well inside its day: the day read as the wall is hung is the day
+  // read as it is judged. Only the date is set; the timers stay real, so the awaits below still end.
+  beforeEach(() => { jest.useFakeTimers({ now: new Date('2026-10-03T12:00:00Z'), doNotFake: ALL_BUT_THE_DATE }); });
   const wallOf = (edition: string): Wall => ({ edition, log: null, stack: null, filings: [] });
   async function hang(edition: string) {
     const client = testQueryClient();

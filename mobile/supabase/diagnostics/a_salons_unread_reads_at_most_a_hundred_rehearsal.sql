@@ -1,10 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_salons_unread_reads_at_most_a_hundred_rehearsal.sql — 20261122_60. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_salons_unread_reads_at_most_a_hundred_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_salons_unread_reads_at_most_a_hundred_rehearsal.sql
 --
--- The train applies 20261122_60 here (with_train), every car before it already applied; a sealed copy
--- already holds it. Production's get_lounge_unread_counts is held here, as it was, to compare with. In
+-- 20261122_60 is applied on production (the train of 2026-11-24); this shows it still holds there, and on every sealed copy.
+-- Production's get_lounge_unread_counts is held here, as it was, to compare with. In
 -- salons it plants, as the member who reads them: a salon never read (150 new), one read before (old
 -- words, then new ones, the member's own, a hidden member's, and one carrying a hidden member's words),
 -- a private one the member still awaits, one with 3,000 new since the reading, and one whose newest
@@ -18,9 +18,6 @@
 BEGIN;
 \ir rehearsal_kit.sql
 
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_60_a_salons_unread_reads_at_most_a_hundred.sql
-\endif
 RESET ROLE;
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

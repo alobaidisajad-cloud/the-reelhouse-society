@@ -1,10 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- the_reels_stack_search_reads_its_page_by_id_rehearsal.sql — 20261122_26. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs the_reels_stack_search_reads_its_page_by_id_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs the_reels_stack_search_reads_its_page_by_id_rehearsal.sql
 --
--- The train applies 20261122_26 here (with_train), every car before it already applied; a sealed copy
--- already holds it. 20261122_15's get_filtered_stacks_auth_cursor_v2 is held here, as it was, to compare
+-- 20261122_26 is applied on production (the train of 2026-11-24); this shows it still holds there, and on every sealed copy.
+-- 20261122_15's get_filtered_stacks_auth_cursor_v2 is held here, as it was, to compare
 -- with. On stacks it plants (many new ones holding a word, many by an author whose handle holds another,
 -- a few old ones, a private one, a withheld one, and one by a member the searcher blocked), as a member
 -- searching: the Reel's stack search answers every search exactly as 20261122_15's did, the whole page and
@@ -17,9 +17,6 @@
 BEGIN;
 \ir rehearsal_kit.sql
 
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_26_the_reels_stack_search_reads_its_page_by_id.sql
-\endif
 RESET ROLE;
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

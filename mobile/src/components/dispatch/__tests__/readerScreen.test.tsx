@@ -25,6 +25,7 @@ import { useBlockStore } from '@/src/stores/blockStore';
 import { toFiling } from '@/src/stores/dispatchTypes';
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import { storage } from '@/src/stores/mmkv-storage';
+import { ALL_BUT_THE_DATE } from '@/test-utils/onlyTheDate';
 
 let mockRow: Record<string, unknown> | null = null;
 /** The filing's own read fails, as it does offline. */
@@ -212,6 +213,9 @@ const mount = async () => {
  * on the state it was put on undid nothing (nightly 2026-10-21, in a random order).
  */
 const AS_BUILT = useDispatch.getState();
+
+// A test that set the date gives the real one back.
+afterEach(() => { jest.useRealTimers(); });
 
 beforeEach(() => {
   mockUser = { id: 'u1', username: 'me' };
@@ -817,6 +821,8 @@ describe('the reader', () => {
 
   it('an essay filed in another year says its year in the byline and on the card; this year’s does not', async () => {
     // Round 14: "7 MIN · NOV 12" read as this year for an essay filed the November before.
+    // The day stands still (only the date is set): the year this test names is the year the page draws in.
+    jest.useFakeTimers({ now: new Date(2026, 9, 3, 12), doNotFake: ALL_BUT_THE_DATE });
     const thisYear = new Date(Date.now()).getFullYear();
     mockRow = row({ created_at: `${thisYear - 1}-11-12T12:00:00Z` });
     const old = await mount();

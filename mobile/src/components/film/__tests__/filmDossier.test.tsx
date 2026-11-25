@@ -9,6 +9,10 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { FilmDossier, formatMoney, languageName } from '../FilmDossier';
 import { isAhead, oneDash, releaseOf, yearOf } from '../releaseOf';
+import { ALL_BUT_THE_DATE } from '@/test-utils/onlyTheDate';
+
+// A test that set the date gives the real one back.
+afterEach(() => { jest.useRealTimers(); });
 
 const film = {
   genres: [{ id: 1, name: 'Adventure' }],
@@ -182,6 +186,8 @@ describe('a release is said as it is', () => {
   });
 
   it('the particulars draw the row it gives', () => {
+    // The day stands still (only the date is set): a film that opens in 2031 is still to open.
+    jest.useFakeTimers({ now: new Date(2026, 9, 3, 12), doNotFake: ALL_BUT_THE_DATE });
     const t = render(<FilmDossier {...base} film={{ ...film, release_date: '2031-07-16', status: 'Post Production' }} />);
     expect(t.getByText('OPENS')).toBeTruthy();
     expect(t.queryByText('RELEASE')).toBeNull();

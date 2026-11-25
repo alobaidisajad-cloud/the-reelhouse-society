@@ -9107,7 +9107,7 @@ mutants:
     class: DB-a-count-that-starts-nowhere
     source: shape
     edits:
-      - file: ../supabase/migrations/20261122_60_a_salons_unread_reads_at_most_a_hundred.sql
+      - file: supabase/schema/live-schema.sql
         find: "             AND m.created_at > r.last_read_at\n"
         replace: "             AND (r.last_read_at IS NULL OR m.created_at > r.last_read_at)\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "counts from a reading moment by the index: no count asks \"never read, or since\" of a joined row in one test" }
@@ -9125,7 +9125,7 @@ mutants:
     class: DB-the-rule-asked-twice-a-row
     source: shape
     edits:
-      - file: ../supabase/migrations/20261122_26_the_reels_stack_search_reads_its_page_by_id.sql
+      - file: supabase/schema/live-schema.sql
         find: "        AND private.can_view_user_data(l.user_id)\n"
         replace: "        AND public.can_view_user_data(l.user_id)\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks each rule where it lives: no function asks hidden_authors, is_hidden_by or can_view_user_data by its public name, two calls where one is the rule" }
@@ -9197,7 +9197,7 @@ mutants:
     class: DB-words-read-past-a-row-rule
     source: shape
     edits:
-      - file: ../supabase/migrations/20261122_62_a_member_is_found_among_the_first_holders_of_a_piece.sql
+      - file: supabase/schema/live-schema.sql
         find: "RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness integer)\n    LANGUAGE plpgsql STABLE SECURITY DEFINER\n"
         replace: "RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness integer)\n    LANGUAGE plpgsql STABLE\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "finds members by the words of a handle or a name only as the house, past the profiles rule that would take their indexes" }
@@ -9399,9 +9399,9 @@ mutants:
     class: SEC-a-write-a-script-repeats-without-end
     source: shape
     edits:
-      - file: ../supabase/migrations/20261122_24_every_members_write_is_paced.sql
-        find: "CREATE OR REPLACE TRIGGER zz_a_write_is_paced\n  BEFORE INSERT ON public.lists\n"
-        replace: "CREATE OR REPLACE TRIGGER zz_a_write_is_paced\n  BEFORE UPDATE ON public.lists\n"
+      - file: supabase/schema/live-schema.sql
+        find: "CREATE TRIGGER zz_a_write_is_paced BEFORE INSERT ON public.lists FOR"
+        replace: "CREATE TRIGGER zz_a_write_is_paced BEFORE UPDATE ON public.lists FOR"
     proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "paces every table a member may insert into, or judges why no script can repeat it without end" }
 
   - id: shape-the-critique-pace-taken-off
@@ -9620,18 +9620,19 @@ mutants:
     class: SEC-a-write-a-script-repeats-without-end
     source: shape
     edits:
-      - file: ../supabase/migrations/20261122_25_a_new_row_is_dated_by_the_house.sql
-        find: "CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');\n"
+      - file: supabase/schema/live-schema.sql
+        find: "CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');\n"
         replace: ""
     proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "dates every member's new row by the house, or judges why the member's own date orders and counts nothing another reads" }
 
   - id: shape-a-pace-counted-by-the-writers-date
     class: SEC-a-write-a-script-repeats-without-end
     source: shape
+    # The pace 20261122_25 dropped, put back as production held it: it counts a day of records by their own dates.
     edits:
-      - file: ../supabase/migrations/20261122_25_a_new_row_is_dated_by_the_house.sql
-        find: "DROP POLICY IF EXISTS logs_insert_rate_limit ON public.logs;\n"
-        replace: ""
+      - file: supabase/schema/live-schema.sql
+        find: "-- Name: logs logs_select_authorized; Type: POLICY; Schema: public; Owner: -\n"
+        replace: "CREATE POLICY logs_insert_rate_limit ON public.logs AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (public.rate_limit_check('logs'::text, 'user_id'::text, 20000, 1440));\n\n-- Name: logs logs_select_authorized; Type: POLICY; Schema: public; Owner: -\n"
     proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "counts no pace by a date the member may write" }
 
   - id: shape-a-pace-probe-refused-by-any-rule
@@ -9925,9 +9926,9 @@ mutants:
     class: SPEED-a-write-counts-the-house-again
     source: shape
     edits:
-      - file: ../supabase/migrations/20261122_67_a_films_verdict_moves_with_each_record.sql
-        find: "  IF NOT FOUND THEN"
-        replace: "  IF true THEN"
+      - file: supabase/schema/live-schema.sql
+        find: "  RETURNING * INTO t;\n\n  IF NOT FOUND THEN"
+        replace: "  RETURNING * INTO t;\n\n  IF true THEN"
     proof: { file: e2e/__tests__/aWriteNeverCountsTheHouseAgain.test.ts, test: "bounds each read a write's trigger aggregates by one piece the write names, or counts a film once, at its first move" }
   - id: shape-a-write-that-counts-through-a-call-passed-over
     class: SPEED-a-write-counts-the-house-again
@@ -9936,7 +9937,7 @@ mutants:
       - file: e2e/__tests__/aWriteNeverCountsTheHouseAgain.test.ts
         find: "for (const call of code(fn.body).matchAll(CALL)) reached(house, call[1] ?? '', seen);"
         replace: "for (const call of code(fn.body).matchAll(CALL)) if (!seen) reached(house, call[1] ?? '', seen);"
-    proof: { file: e2e/__tests__/aWriteNeverCountsTheHouseAgain.test.ts, test: "finds the verdict counted again at each record, as production holds it before 20261122_67" }
+    proof: { file: e2e/__tests__/aWriteNeverCountsTheHouseAgain.test.ts, test: "finds the verdict counted again at each record, as production held it before 20261122_67" }
   - id: shape-a-job-command-read-as-a-call
     class: SPEED-a-write-counts-the-house-again
     source: shape
@@ -9961,3 +9962,12 @@ mutants:
         find: "(BEFORE|AFTER|INSTEAD OF)\\s+([\\w\\s,]+?)\\s+ON"
         replace: "(BEFORE|AFTER|INSTEAD OF)\\s+([\\w\\s]+?)\\s+ON"
     proof: { file: test-utils/__tests__/house.test.ts, test: "reads a trigger on two or more columns, and one that keeps the statement's rows" }
+  - id: shape-a-wall-hung-on-the-real-day
+    class: TEST-a-verdict-that-turns-with-the-clock
+    source: shape
+    # The run's own instance put back: the wall's tests read the real day again, their clock set at no moment.
+    edits:
+      - file: src/components/lobby/__tests__/theWallKeepsTheDay.test.tsx
+        find: "jest.useFakeTimers({ now: new Date('2026-10-03T12:00:00Z'), doNotFake: ALL_BUT_THE_DATE }); });"
+        replace: "jest.useFakeTimers({ doNotFake: ALL_BUT_THE_DATE }); });"
+    proof: { file: test-utils/__tests__/aTestReadsAClockItHasSet.test.ts, test: "reads the clock only after setting it at a fixed moment, or where its file is judged, as often as it is judged" }

@@ -1,10 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_ballots_votes_are_counted_as_they_are_cast_rehearsal.sql — 20261122_27. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_ballots_votes_are_counted_as_they_are_cast_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_ballots_votes_are_counted_as_they_are_cast_rehearsal.sql
 --
--- The train applies 20261122_27 here (with_train), every car before it already applied; a sealed copy
--- already holds it. On a ballot it plants, voted in by five members, as a voter: the tally says each
+-- 20261122_27 is applied on production (the train of 2026-11-24); this shows it still holds there, and on every sealed copy.
+-- On a ballot it plants, voted in by five members, as a voter: the tally says each
 -- option's votes as the votes counted again say them; a hundred ballots of the house are counted as their
 -- votes are; a vote taken back is taken off its option, and an option left with none is no longer named; the
 -- totals the freeze reads when the ballot closes are the votes counted again; no member reads the counts
@@ -16,9 +16,6 @@
 BEGIN;
 \ir rehearsal_kit.sql
 
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261122_27_a_ballots_votes_are_counted_as_they_are_cast.sql
-\endif
 RESET ROLE;
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
@@ -60,8 +57,8 @@ END $f$;
 
 SELECT pg_temp.rh_case('the tally says each option''s votes as the votes counted again say them', '{"total": 5, "counts": {"0": 3, "1": 1, "2": 1}}',
   (SELECT pg_temp.bc_tally('5eed0000-0000-4000-8000-0000000b0c27'))::text) AS done \gset rh_
--- The votes already cast, counted by the car's filling: a hundred ballots of the house, each by its own
--- index (never every vote of the house read while the car holds the votes against new ones).
+-- The votes already cast, as 20261122_27's filling counted them and each vote since has moved them: a
+-- hundred ballots of the house, each by its own index (never every vote of the house read).
 CREATE TEMP TABLE bc_some ON COMMIT DROP AS
   SELECT p.id FROM public.dispatch_posts p WHERE p.kind = 'ballot' ORDER BY p.id LIMIT 100;
 SELECT pg_temp.rh_case('the ballots of the house are counted as their votes are', 'none',
@@ -79,8 +76,7 @@ SELECT pg_temp.rh_case('a vote taken back is taken off its option, and an option
 
 -- The ballot closes: the totals the freeze reads for it (each closing ballot's counts, by the ballot, as
 -- freeze_closed_ballots joins them) are the votes counted again. The freeze itself is not run here: it
--- would close every ballot of the house waiting to close, and tell each voter, while the car holds the
--- votes and the filings.
+-- would close every ballot of the house waiting to close, inside this transaction.
 UPDATE public.dispatch_posts SET closes_at = now() - interval '1 minute' WHERE id = '5eed0000-0000-4000-8000-0000000b0c27';
 SELECT pg_temp.rh_case('the totals frozen when the ballot closes are its votes counted again', 'true',
   ((SELECT jsonb_build_object('total', coalesce(sum(v.n), 0),

@@ -22,6 +22,7 @@ import {
   detectDateFormat,
   csvLooksLike,
 } from '../archiveImport';
+import { ALL_BUT_THE_DATE } from '@/test-utils/onlyTheDate';
 
 jest.mock('@/src/lib/supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
 jest.mock('@/src/lib/tmdb', () => ({ tmdb: { search: jest.fn() } }));
@@ -40,10 +41,13 @@ jest.mock('expo-file-system/legacy', () => ({
 // the fallback for a corrupt row, so with the UTC day a member east of UTC importing in
 // the morning had every entry watched TODAY silently clamped back to yesterday.
 //
-// Computed independently here rather than imported from the util, so this states what
-// the behaviour should be instead of agreeing with whatever the code happens to do.
-const _now = new Date();
-const TODAY = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`;
+// Written out here rather than imported from the util, so this states what the behaviour
+// should be instead of agreeing with whatever the code happens to do. The clock stands still
+// half an hour into the member's 1 January 2027 (only the date is set): east of UTC that is
+// still 31 December there, so the UTC day would show; and the day never turns under a test.
+const TODAY = '2027-01-01';
+beforeEach(() => { jest.useFakeTimers({ now: new Date(2027, 0, 1, 0, 30), doNotFake: ALL_BUT_THE_DATE }); });
+afterEach(() => { jest.useRealTimers(); });
 
 describe('parseCSVRows / parseCSV', () => {
   it('handles quoted fields with embedded commas, newlines, and escaped quotes', () => {
@@ -646,9 +650,10 @@ describe('import invariants', () => {
 
   it('a large archive parses without pathological slowdown', () => {
     const rows = Array.from({ length: 20_000 }, (_, i) => `Film ${i},2000,4`).join('\n');
-    const started = Date.now();
+    // Timed on the forward clock: the date stands still in this file.
+    const started = performance.now();
     expect(parseCSV(`Name,Year,Rating\n${rows}`)).toHaveLength(20_000);
-    expect(Date.now() - started).toBeLessThan(5000);
+    expect(performance.now() - started).toBeLessThan(5000);
   });
 
   it('hundreds of rewatches collapse to one row with a complete history', () => {

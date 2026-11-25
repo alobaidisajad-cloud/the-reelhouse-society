@@ -29,6 +29,12 @@
 import { formatDate, formatDateMonthYear, formatDateMonthDay, formatDateMonthDayInYear, formatClockTime, localCalendarDate, timeAgo, timeUntil } from '../timeAgo';
 import { formatDossierDate } from '@/src/components/person/PersonHero';
 import { buildFilingMark } from '@/src/components/log/logRecord';
+import { ALL_BUT_THE_DATE } from '@/test-utils/onlyTheDate';
+
+// The clock stands still late in the member's evening (only the date is set): west of UTC it is already
+// tomorrow there, and the day a test reads is the day the code under it reads.
+beforeEach(() => { jest.useFakeTimers({ now: new Date(2026, 9, 3, 23, 30), doNotFake: ALL_BUT_THE_DATE }); });
+afterEach(() => { jest.useRealTimers(); });
 
 /** The zone the suite is currently running under — reported so a green run is auditable. */
 const TZ = process.env.TZ ?? '(system default)';
