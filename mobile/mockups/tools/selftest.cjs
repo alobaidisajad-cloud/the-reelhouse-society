@@ -720,11 +720,11 @@ for (const [name, want] of [['short-cut', ['SHORT']], ['short-fits', []]]) {
 fs.rmSync(HDIR, { recursive: true, force: true });
 
 /**
- * What proves each kind layout.cjs reports, both ways: the checks above that must say it (a fault
- * the phone shows) and the near misses that must not (what the phone allows, drawn as close to the
- * fault as it can be). A rule proven only one way is blind, or calls a fault what the phone does.
- * Each is read back from what this run printed; theMeasuringRulesSayNo holds this list to the
- * kinds layout.cjs reports and to the cases' own wants.
+ * What proves each kind the measuring tools report (layout.cjs, align.cjs), both ways: the checks
+ * above that must say it (a fault the phone shows) and the near misses that must not (what the phone
+ * allows, drawn as close to the fault as it can be). A rule proven only one way is blind, or calls a
+ * fault what the phone does. Each is read back from what this run printed; theMeasuringRulesSayNo
+ * holds this list to the kinds the tools report and to the cases' own wants.
  */
 const PROVES = {
   RUN: { says: ['run'], allows: ['glowline', 'control'] },
@@ -751,6 +751,9 @@ const PROVES = {
   HANG: { says: ['hangicon', 'hangpast', 'hangcut', 'hangsub', 'hangfloor', 'hangopenicon'], allows: ['hangclean', 'hangopen'] },
   SHADOW: { says: ['clipshadow'], allows: ['splitshadow'] },
   LOST: { says: ['sites-lost'], allows: ['sites-kept'] },
+  // align.cjs's
+  EDGE: { says: ['alignedge'], allows: ['alignclean', 'alignindent'] },
+  BASELINE: { says: ['alignbase'], allows: ['alignclean'] },
 };
 /** One printed answer: its label, the column after it, and what it wanted. */
 const answered = ANSWERS.flatMap((line) => {

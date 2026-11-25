@@ -7,7 +7,8 @@
  * and each rule's cases are a test of their own, named for what the case proves, so a rule broken
  * in layout.cjs fails its own named test. Every case the self-test's own list holds (its CASES,
  * read from its syntax tree) must be answered in every pass, and every other check it makes must
- * say ok.
+ * say ok. Every kind a measuring tool reports is proven both ways, a check that says it and a near
+ * miss the phone allows (its PROVES list), held here with no browser and read back from the run.
  *
  * The check measures in a real browser (Playwright's Chromium, installed beside the repo's root
  * packages). Where none is installed (the jest parts in CI install none; CI runs the self-test in
@@ -17,6 +18,7 @@ import { spawnSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import ts from 'typescript';
+import { files, rel } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const SELFTEST = join(MOBILE, 'mockups', 'tools', 'selftest.cjs');
@@ -48,14 +50,14 @@ export function casesOf(text: string): string[] {
   return names;
 }
 
-/** The kinds layout.cjs reports: each `kind:` it writes into a finding, and each line it prints led by one. */
+/** The kinds a measuring tool reports: each `kind:` it writes into a finding (in capitals), and each line it prints led by one. */
 export function kindsOf(text: string): string[] {
-  const sf = ts.createSourceFile('layout.cjs', text, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const sf = ts.createSourceFile('tool.cjs', text, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
   const kinds = new Set<string>();
   const literals = (e: ts.Expression): string[] => (ts.isStringLiteral(e) ? [e.text]
     : ts.isConditionalExpression(e) ? [...literals(e.whenTrue), ...literals(e.whenFalse)] : []);
   const visit = (n: ts.Node) => {
-    if (ts.isPropertyAssignment(n) && n.name.getText(sf) === 'kind') literals(n.initializer).forEach((k) => kinds.add(k));
+    if (ts.isPropertyAssignment(n) && n.name.getText(sf) === 'kind') literals(n.initializer).filter((k) => /^[A-Z]{3,}$/.test(k)).forEach((k) => kinds.add(k));
     if (ts.isCallExpression(n) && n.expression.getText(sf) === 'console.log' && n.arguments[0] && ts.isTemplateExpression(n.arguments[0])) {
       const led = /^(?<kind>[A-Z]{3,}) {2}/.exec(n.arguments[0].head.text)?.groups?.kind;
       if (led) kinds.add(led);
@@ -64,6 +66,12 @@ export function kindsOf(text: string): string[] {
   };
   visit(sf);
   return [...kinds].sort();
+}
+
+/** Every kind the measuring tools report: each tool of mockups/tools/ the scripts universe holds, the self-test aside. */
+function toolKinds(): string[] {
+  const tools = files('scripts').filter((f) => /^mockups\/tools\/[^/]+\.c?js$/.test(rel(f)) && !rel(f).endsWith('/selftest.cjs'));
+  return [...new Set(tools.flatMap((f) => kindsOf(readFileSync(f, 'utf8'))))].sort();
 }
 
 type Proof = { says: string[]; allows: string[] };
@@ -144,12 +152,13 @@ export function unproven(kinds: string[], proves: Record<string, Proof>, wants: 
   return wrong;
 }
 
-describe('every kind the layout check reports is proven both ways', () => {
-  const LAYOUT = readFileSync(join(MOBILE, 'mockups', 'tools', 'layout.cjs'), 'utf8');
+describe('every kind the measuring tools report is proven both ways', () => {
+  const KINDS = toolKinds();
   const TEST = readFileSync(SELFTEST, 'utf8');
 
   it('reads the kinds, the proofs and the cases, not empty lists', () => {
-    expect(kindsOf(LAYOUT).length).toBeGreaterThan(20);
+    expect(KINDS.length).toBeGreaterThan(20);
+    expect(KINDS).toEqual(expect.arrayContaining(['EDGE', 'BASELINE', 'LOST', 'UNMEASURED']));
     expect(Object.keys(provesOf(TEST)).length).toBeGreaterThan(20);
     expect(wantsOf(TEST).hangicon).toEqual(['HANG']);
     expect(wantsOf(TEST).nameclipped).toEqual(['CUT', 'NAME']);
@@ -157,17 +166,17 @@ describe('every kind the layout check reports is proven both ways', () => {
   });
 
   it('each kind has a check that says it and a near miss the phone allows, each wanting what the list says', () => {
-    expect(unproven(kindsOf(LAYOUT), provesOf(TEST), wantsOf(TEST), TEST)).toEqual([]);
+    expect(unproven(KINDS, provesOf(TEST), wantsOf(TEST), TEST)).toEqual([]);
   });
 
   it('finds the kinds it was made for, put back: four with no check at all, and a rule proven only as a fault', () => {
     const proves = provesOf(TEST);
     const without = Object.fromEntries(Object.entries(proves).filter(([k]) => !['ORDER', 'BENEATH', 'COLOUR', 'SHORT'].includes(k)));
-    expect(unproven(kindsOf(LAYOUT), without, wantsOf(TEST), TEST).sort()).toEqual([
+    expect(unproven(KINDS, without, wantsOf(TEST), TEST).sort()).toEqual([
       'BENEATH: no proof', 'COLOUR: no proof', 'ORDER: no proof', 'SHORT: no proof',
     ]);
     const oneWay = { ...proves, SMALL: { says: proves.SMALL?.says ?? [], allows: [] } };
-    expect(unproven(kindsOf(LAYOUT), oneWay, wantsOf(TEST), TEST)).toEqual(['SMALL: proven only as a fault']);
+    expect(unproven(KINDS, oneWay, wantsOf(TEST), TEST)).toEqual(['SMALL: proven only as a fault']);
   });
 
   it('can say NO: a kind with no proof, one proven one way, a near miss that wants it, a label that is nothing', () => {
@@ -225,8 +234,8 @@ withTheBrowser('the layout check’s own self-test', () => {
     expect([exit, rows.length > 0]).toEqual([0, true]);
   });
 
-  it('proves every kind it reports both ways, by what this very run answered (proves-*)', () => {
-    const kinds = kindsOf(readFileSync(join(MOBILE, 'mockups', 'tools', 'layout.cjs'), 'utf8'));
+  it('proves every kind the tools report both ways, by what this very run answered (proves-*)', () => {
+    const kinds = toolKinds();
     for (const k of kinds) holds(`proves-${k}`);
     expect(rows.filter((r) => r.label.startsWith('proves-')).length).toBe(kinds.length);
   });
