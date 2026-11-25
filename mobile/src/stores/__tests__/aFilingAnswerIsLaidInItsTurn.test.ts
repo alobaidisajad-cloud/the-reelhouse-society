@@ -125,7 +125,7 @@ describe('a filing\'s critiques', () => {
   it('a next page asked of the list before it was read again is not laid on the new one', async () => {
     useDispatch.setState({
       critiques: { [TAKE]: [{ id: C1, postId: TAKE }] }, critiquesOrder: { [TAKE]: 'NEWEST' },
-      critiquesHasMore: { [TAKE]: true }, critiquesRead: { [TAKE]: 1 },
+      critiquesHasMore: { [TAKE]: true }, critiquesNext: { [TAKE]: { order: 'NEWEST', after: { at: '2026-11-15T11:00:00Z', id: C1 } } },
     } as never);
     mockHouse.rows('dispatch_comments').push(critique(C0, '2026-11-15T10:30:00Z'));
     void useDispatch.getState().loadMoreCritiques(TAKE);
@@ -136,9 +136,9 @@ describe('a filing\'s critiques', () => {
     await mockHeld.release('dispatch_comments', 0);
     await mockHeld.releaseAll();
     // The list read again is the three, read whole; the old next page (C0, from the old list's row 1)
-    // laid on it would count four rows read, and the next page would begin past a row.
+    // laid on it would stand under the new list's cursor.
     expect(useDispatch.getState().critiques[TAKE]?.map((c) => c.id)).toEqual([C2, C1, C0]);
-    expect(useDispatch.getState().critiquesRead[TAKE]).toBe(3);
+    expect(useDispatch.getState().critiquesNext[TAKE]).toEqual({ order: 'NEWEST', after: { at: '2026-11-15T10:30:00Z', id: C0 } });
     expect(useDispatch.getState().critiquesLoadingMore[TAKE]).toBe(false);
   });
 });

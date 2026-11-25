@@ -16,14 +16,29 @@ import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 import { FollowRequestService, FollowRequest } from '@/src/services/FollowRequestService';
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
+import { turns } from '@/src/utils/turns';
+
+/**
+ * The count at the door, in turns (src/utils/turns.ts): a read of it takes one as it is asked, and
+ * each admission, refusal or clearing takes one as it begins and one as it settles. An older count
+ * lands nowhere; one overtaken by an answer at the door alone is asked again.
+ */
+const countTurns = turns();
+const COUNT = 'count';
+/** The turn of the newest read of the count asked. */
+let newestCount = 0;
 
 /** Refresh the cached pending-request count (banner/badge). Safe to call anywhere. */
 export async function refreshFollowRequestCount(): Promise<void> {
   const myId = useAuthStore.getState().user?.id;
   if (!myId) return;
+  const mine = countTurns.take(COUNT);
+  newestCount = mine;
   // The members the door leaves out (blocked or muted) are left out of its count too.
   const { blocked, muted } = useBlockStore.getState();
   const n = await FollowRequestService.count(myId, [...blocked, ...muted]);
+  if (!stillSignedIn(myId)) return;
+  if (!countTurns.isLast(COUNT, mine)) return newestCount === mine ? refreshFollowRequestCount() : undefined;
   // A count that could not be read leaves the last one standing.
   if (n !== null) useSocialStore.getState().setPendingRequestCount(n);
 }
@@ -168,13 +183,15 @@ export function useFollowRequests(enabled: boolean) {
     // The press is a selection; an admission's success is felt only when the house admitted someone.
     TactileEngine.selection();
     const me = useAuthStore.getState().user?.id;
-    // Optimistic: drop the row + decrement the badge immediately.
+    // Optimistic: drop the row + decrement the badge immediately. A read of the count out now is older.
+    countTurns.take(COUNT);
     setItems(prev => prev.filter(r => r.requesterId !== req.requesterId));
     const cur = useSocialStore.getState().pendingRequestCount;
     setCount(Math.max(0, cur - 1));
     const answer = admit
       ? await FollowRequestService.accept(req.requesterId)
       : (await FollowRequestService.decline(req.requesterId)) ? 'declined' : 'failed';
+    countTurns.take(COUNT);
     const ok = answer !== 'failed';
     busy.current.delete(req.requesterId);
     // Answered: the house took its notice, and the bell lets it go too, whether or not the door
@@ -206,11 +223,13 @@ export function useFollowRequests(enabled: boolean) {
     const hadMore = hasMoreRef.current;
     TactileEngine.warn();
     const me = useAuthStore.getState().user?.id;
+    countTurns.take(COUNT);
     setItems([]);
     setCount(0);
     hasMoreRef.current = false;
     setHasMore(false);
     const n = await FollowRequestService.declineAll();
+    countTurns.take(COUNT);
     if (n >= 0) useNotificationStore.getState().forgetRequestNotices(null);
     // Said, and counted again, though the door was closed meanwhile (as one answer is, above).
     if (n < 0 && stillSignedIn(me)) {

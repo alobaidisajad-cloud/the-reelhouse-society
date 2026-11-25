@@ -244,12 +244,13 @@ describe('the form can never destroy a stack', () => {
 
   it('reads the rest of a stack past its first page, and then its films may be moved and are sent whole (P4.9)', async () => {
     const { StackService } = require('@/src/services/StackService') as typeof import('@/src/services/StackService');
-    const rest = jest.spyOn(StackService, 'getStackItemsPage').mockResolvedValueOnce([{ id: 999, title: 'The Third Man', poster_path: null }]);
+    const rest = jest.spyOn(StackService, 'getStackItemsPage').mockResolvedValueOnce({ films: [{ id: 999, title: 'The Third Man', poster_path: null }], place: { held: [], past: null }, more: false });
     mockParams = { editId: STACK_ID };
     mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: FILMS.length + 1 } };
     const r = mount();
     await waitFor(() => expect(r.getByText('The Third Man')).toBeTruthy());
-    expect(rest.mock.calls).toEqual([[STACK_ID, FILMS.length]]);
+    // No order held with the first page here: the order is read with the rest, the films held left out.
+    expect(rest.mock.calls).toEqual([[STACK_ID, null, new Set(FILMS.map((f) => f.id))]]);
     expect(r.queryByText(/larger than this sheet can hold/)).toBeNull();
     expect(r.getByLabelText('Remove Blade Runner')).toBeTruthy();
     await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });

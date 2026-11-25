@@ -1299,14 +1299,14 @@ describe('the critiques as they stand, sent or waiting', () => {
 describe('a stack past its first page (P4.9)', () => {
   it('is drawn whole as it is scrolled: the 501st film after the 500, in rank order, read once', async () => {
     const { StackService } = jest.requireMock('@/src/services/StackService') as { StackService: { getStackItemsPage: jest.Mock } };
-    StackService.getStackItemsPage.mockResolvedValueOnce([{ id: 501, title: 'Film 501', poster_path: null }]);
+    StackService.getStackItemsPage.mockResolvedValueOnce({ films: [{ id: 501, title: 'Film 501', poster_path: null }], place: { held: [], past: null }, more: false });
     const first = Array.from({ length: 500 }, (_, i) => ({ id: i + 1, title: `Film ${i + 1}`, poster_path: null }));
     const r = mount({ films: first, filmCount: 501 });
     await act(async () => {});
     expect(r.getByText(/FIRST 500/)).toBeTruthy();
 
     await act(async () => { await mockEndReached?.(); });
-    expect(StackService.getStackItemsPage.mock.calls).toEqual([[STACK_ID, 500]]);
+    expect(StackService.getStackItemsPage.mock.calls).toEqual([[STACK_ID, null, new Set(first.map((f) => f.id))]]);
     expect(r.queryByText(/FIRST/)).toBeNull();
     const drawn = JSON.stringify(r.toJSON());
     expect(drawn.indexOf('Film 500')).toBeLessThan(drawn.indexOf('Film 501'));
@@ -1393,7 +1393,7 @@ describe('review round 5', () => {
 
   it('the films read past the first page stay when a critique rewrites the stack’s count', async () => {
     const { StackService } = jest.requireMock('@/src/services/StackService') as { StackService: { getStackItemsPage: jest.Mock } };
-    StackService.getStackItemsPage.mockResolvedValueOnce([{ id: 3, title: 'Film Three', poster_path: null }]);
+    StackService.getStackItemsPage.mockResolvedValueOnce({ films: [{ id: 3, title: 'Film Three', poster_path: null }], place: { held: [], past: null }, more: false });
     const films = [{ id: 1, title: 'Film One', poster_path: null }, { id: 2, title: 'Film Two', poster_path: null }];
     const r = mount({ films, filmCount: 3 });
     await act(async () => {});

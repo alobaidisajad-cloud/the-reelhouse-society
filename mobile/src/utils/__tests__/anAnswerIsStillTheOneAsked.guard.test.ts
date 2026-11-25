@@ -54,20 +54,7 @@ const CANNOT_BE_OVERTAKEN: Record<string, string> = {
  * Found by this sweep, and not yet fixed: each a finding, owned by stage C (kinds LATE). The list
  * only shrinks: a read fixed here is no longer found, and its entry then fails until it is taken out.
  */
-const STILL_TO_FIX = [
-  'app/(admin)/tribunal.tsx:summonEvidence',
-  'src/hooks/useFollowRequests.ts:refreshFollowRequestCount',
-  'src/hooks/useProfileData.ts:retryRoom',
-  'src/stores/lounge.ts:catchUpMessages',
-  'src/stores/lounge.ts:retryMessage',
-  'app/(modals)/social-modal.tsx:loadMore',
-  'src/hooks/useFollowRequests.ts:load',
-  'src/hooks/useProfileData.ts:loadTabData',
-  'src/hooks/useProfileData.ts:refreshTabWithFilters',
-  'src/stores/lounge.ts:fetchLounges',
-  'src/stores/lounge.ts:fetchMessages',
-  'src/stores/lounge.ts:loadMoreMessages',
-];
+const STILL_TO_FIX: string[] = [];
 
 /**
  * A page asked by its count, by file, with why its rows cannot move under it. Each is still found:
@@ -76,7 +63,7 @@ const STILL_TO_FIX = [
 const PAGED_BY_COUNT: Record<string, string> = {};
 
 /** Pages asked by their count found by this sweep, not yet fixed (as STILL_TO_FIX). */
-const PAGES_STILL_TO_FIX = ['src/services/StackService.ts', 'src/stores/dispatch.ts'];
+const PAGES_STILL_TO_FIX: string[] = [];
 
 const isEquality = (k: ts.SyntaxKind) => k === ts.SyntaxKind.EqualsEqualsEqualsToken || k === ts.SyntaxKind.ExclamationEqualsEqualsToken;
 
@@ -142,8 +129,30 @@ function selfName(fn: ts.Node): string | null {
 function oneAtATime(fn: ts.FunctionLikeDeclaration, sf: ts.SourceFile): boolean {
   const body = fn.body;
   if (!body || !ts.isBlock(body)) return false;
-  const firstWait = Math.min(...AW.ownNodes(fn, (m) => (ts.isAwaitExpression(m) ? m.getStart() : null)), body.getEnd());
-  const before = body.statements.filter((s) => s.getEnd() <= firstWait);
+  return markedOnce(body.statements.filter((s) => s.getEnd() <= firstWaitOf(fn)), sf);
+}
+
+/** Where a function first waits (its body's end when it never does). */
+function firstWaitOf(fn: ts.FunctionLikeDeclaration): number {
+  return Math.min(...AW.ownNodes(fn, (m) => (ts.isAwaitExpression(m) ? m.getStart() : null)), fn.body?.getEnd() ?? Infinity);
+}
+
+/**
+ * The modes of a read that go one at a time: before its first wait, `if (mode === 'more') { … }`
+ * raises its own mark and leaves when it is up. A write made only under the same condition is that
+ * one read's own (its flag lowered): no newer read of that mode can be out. By the condition's text.
+ */
+function oneAtATimeWhen(fn: ts.FunctionLikeDeclaration, sf: ts.SourceFile): Set<string> {
+  const body = fn.body;
+  if (!body || !ts.isBlock(body)) return new Set();
+  const firstWait = firstWaitOf(fn);
+  return new Set(body.statements.filter((s): s is ts.IfStatement => s.getEnd() <= firstWait && ts.isIfStatement(s)
+    && !s.elseStatement && ts.isBlock(s.thenStatement) && markedOnce([...s.thenStatement.statements], sf))
+    .map((s) => s.expression.getText(sf)));
+}
+
+/** Statements that leave while their own mark is up, and raise it after. */
+function markedOnce(before: ts.Statement[], sf: ts.SourceFile): boolean {
   const raised = new Set<string>();
   for (const s of before) {
     const t = s.getText(sf);
@@ -152,7 +161,8 @@ function oneAtATime(fn: ts.FunctionLikeDeclaration, sf: ts.SourceFile): boolean 
     for (const m of t.matchAll(/(?<mark>\w+):\s*\{\s*\.\.\.\w+\.(?<again>\w+),\s*\[\w+\]:\s*true\s*\}/g)) if (m.groups?.mark === m.groups?.again) raised.add(m.groups?.mark ?? '');
     // An assignment to a mark already there, never a new const: a value read is no mark raised.
     for (const m of t.matchAll(/(?<!\b(?:const|let|var)\s+)(?<![.\w])(\w+)(?:\.current)?\s*=\s*(?!=)(?!null\b|false\b|undefined\b|0\b)/g)) raised.add(m[1] ?? '');
-    for (const m of t.matchAll(/\b(\w+)\.set\(/g)) raised.add(m[1] ?? '');
+    // A mark kept in a Map or a Set (`inflight.set(id, …)`, `resending.add(id)`).
+    for (const m of t.matchAll(/\b(\w+)\.(?:set|add)\(/g)) raised.add(m[1] ?? '');
   }
   return before.some((s, i) => ts.isIfStatement(s) && !s.elseStatement
     && (ts.isReturnStatement(s.thenStatement) || (ts.isBlock(s.thenStatement) && s.thenStatement.statements.some((x) => ts.isReturnStatement(x))))
@@ -247,9 +257,19 @@ export function answersDrawnOverNewer(file: string, text: string): string[] {
       if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && (askedAt.get(n.expression.text) ?? Infinity) < since) return true;
       return ts.forEachChild(n, (c) => (seek(c) ? true : undefined)) === true;
     });
+    // A flag lowered only under a mode that goes one at a time: that read's own flag. Its answer is
+    // still checked: a read of another mode (the list's top) may have begun since.
+    const onceModes = oneAtATimeWhen(body.fn, sf);
+    const underOnceMode = (w: ts.CallExpression) => {
+      if (w.arguments.length !== 1 || w.arguments[0]?.kind !== ts.SyntaxKind.FalseKeyword) return false;
+      for (let p: ts.Node = w; p.parent && p !== body.fn; p = p.parent) {
+        if (ts.isIfStatement(p.parent) && p.parent.thenStatement === p && onceModes.has(p.parent.expression.getText(sf))) return true;
+      }
+      return false;
+    };
     const unasked = writes.filter((w) => {
       const since = AW.lastWaitBefore(body, w.getStart(), w);
-      return since >= 0 && !AW.coveredAfter(body.fn, w, since, check) && !laidWhereUntouched(w, since) && !pullLowered(w);
+      return since >= 0 && !AW.coveredAfter(body.fn, w, since, check) && !laidWhereUntouched(w, since) && !pullLowered(w) && !underOnceMode(w);
     });
     if (unasked.length) out.push(`${file}:${name || 'an effect'} (${unasked.map((w) => AW.lineOf(sf, w)).join(', ')})`);
   }
@@ -312,6 +332,18 @@ describe('each rule says no to its planted shape', () => {
     // One read per thing only when the mark it checks is the one it raises.
     expect(answersDrawnOverNewer('src/stores/planted.ts', `export const s = { loadForLog: async (id) => { if (get().loading[id]) { return; }
       set((s) => ({ busy: { ...s.loading, [id]: true } })); const r = await ask(id); set({ r }); } };`)).toEqual(['src/stores/planted.ts:loadForLog (2)']);
+    // A mode that goes one at a time lowers its own flag unchecked; its answer, and another flag, are still checked.
+    const paged = (after: string) => `export function useP() { const load = async (mode) => {
+      if (mode === 'more') { if (busy.current) return; busy.current = true; setMoreBusy(true); }
+      try { const r = await ask(); } finally { ${after} } }; return load; }`;
+    expect(answersDrawnOverNewer('src/hooks/planted.ts', paged(`if (mode === 'more') { busy.current = false; setMoreBusy(false); }`))).toEqual([]);
+    expect(answersDrawnOverNewer('src/hooks/planted.ts', paged(`if (mode === 'more') { setRows(r); }`))).toEqual(['src/hooks/planted.ts:load (3)']);
+    expect(answersDrawnOverNewer('src/hooks/planted.ts', paged(`if (mode !== 'more') { setMoreBusy(false); }`))).toEqual(['src/hooks/planted.ts:load (3)']);
+    // A Set kept as the mark: one try of each thing at a time, when the set checked is the one added to.
+    expect(answersDrawnOverNewer('src/stores/planted.ts', `const out = new Set(); const sent = new Set();
+      export const s = { retryOne: async (id) => { if (out.has(id)) return; out.add(id); try { const r = await ask(id); set({ r }); } finally { out.delete(id); } } };`)).toEqual([]);
+    expect(answersDrawnOverNewer('src/stores/planted.ts', `const out = new Set(); const sent = new Set();
+      export const s = { retryOne: async (id) => { if (sent.has(id)) return; out.add(id); try { const r = await ask(id); set({ r }); } finally { out.delete(id); } } };`)).toEqual(['src/stores/planted.ts:retryOne (2)']);
   });
 
   it('1: a pull lowers only the flag its RefreshControl holds, raised before it waited', () => {

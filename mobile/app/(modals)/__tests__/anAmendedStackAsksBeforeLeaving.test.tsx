@@ -173,7 +173,7 @@ it('an amendment of a stack deleted elsewhere since the sheet opened says it is 
 
 it('the rest of a long stack, read after the sheet opened, is not counted as an amendment', async () => {
   const { StackService } = require('@/src/services/StackService') as typeof import('@/src/services/StackService');
-  const rest = jest.spyOn(StackService, 'getStackItemsPage').mockResolvedValueOnce([{ id: 999, title: 'The Third Man', poster_path: null }]);
+  const rest = jest.spyOn(StackService, 'getStackItemsPage').mockResolvedValueOnce({ films: [{ id: 999, title: 'The Third Man', poster_path: null }], place: { held: [], past: null }, more: false });
   mockParams = { editId: STACK_ID };
   mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: FILMS.length + 1 } };
   const r = render(<ListModal />);

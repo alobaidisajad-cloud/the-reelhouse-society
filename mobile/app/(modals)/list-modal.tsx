@@ -8,7 +8,7 @@ import { RemoteImage } from '@/src/components/Picture';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 import { RoomRetrieving, RoomUnreachable } from '@/src/components/profile/RoomParts';
-import { StackService } from '@/src/services/StackService';
+import { StackService, type StackPlace } from '@/src/services/StackService';
 import { logger } from '@/src/utils/logger';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -387,10 +387,14 @@ export default function ListModal() {
         let live = true;
         void (async () => {
             const all = [...films];
+            // The order held as the stack's first page was read, then past it; a film already held is not taken twice.
+            let place = (editList as { filmsNext?: StackPlace } | null)?.filmsNext ?? null;
             while (all.length < trueFilmCount) {
-                const page = await StackService.getStackItemsPage(stackId, all.length);
-                if (page.length === 0) break;
-                all.push(...page);
+                const page = await StackService.getStackItemsPage(stackId, place, new Set(all.map((f) => f.id)));
+                const have = new Set(all.map((f) => f.id));
+                all.push(...page.films.filter((f) => !have.has(f.id)));
+                place = page.place;
+                if (!page.more) break;
             }
             if (!live || all.length < trueFilmCount) return;
             queryClient.setQueryData(['stack', stackId], (was: any) => (was ? { ...was, list: { ...was.list, films: all } } : was));

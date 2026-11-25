@@ -211,6 +211,11 @@ export default function SocialModal() {
 
     // ── Data fetching ──────────────────────────────────────────────────────────
     const userId = user?.id;
+    /**
+     * Each read of the list whole (opening, a mode or member changed, TRY AGAIN): a next page asked of
+     * the list before it is laid on no other, and only the newest read whole is shown.
+     */
+    const listGen = useRef(0);
     /** What the sheet shows, read: a circle's page, a member's own lounges, or nothing to read. Nothing on screen changes here. */
     type SocialRead = { profiles: SocialProfile[]; cursor: typeof cursor } | { lounges: { id: string; name: string }[] } | null;
     const readSocial = useCallback(async (): Promise<SocialRead> => {
@@ -236,6 +241,8 @@ export default function SocialModal() {
             setProfiles(read.profiles);
             setCursor(read.cursor);
             setMoreFailed(false);
+            // A next page of the list before is let go: the new list's own may be asked.
+            setLoadingMore(false);
         } else if (read) {
             setLounges(read.lounges);
         }
@@ -267,7 +274,8 @@ export default function SocialModal() {
         // Roped: the salons are not read, for a sheet that will not offer them.
         if (roped) return;
         let live = true;
-        readSocial().then((read) => { if (live) showRead(read); }, (err) => { if (live) showFailure(err); });
+        const gen = ++listGen.current;
+        readSocial().then((read) => { if (live && gen === listGen.current) showRead(read); }, (err) => { if (live && gen === listGen.current) showFailure(err); });
         return () => { live = false; };
     }, [valid, roped, readSocial, showRead, showFailure]);
 
@@ -276,9 +284,11 @@ export default function SocialModal() {
         if (!cursor || loadingMore || (mode !== 'followers' && mode !== 'following')) return;
         setLoadingMore(true);
         setMoreFailed(false);
+        // The list this page follows: read again whole meanwhile, the page belongs to no list shown.
+        const gen = listGen.current;
         try {
             const result = await ProfileService.getSocialConnections(params.userId!, mode, { cursor });
-            if (!isMounted.current) return;
+            if (!isMounted.current || gen !== listGen.current) return;
             setProfiles((prev) => {
                 const seen = new Set(prev.map((p) => p.id));
                 return [...prev, ...(result.profiles || []).filter((p) => !seen.has(p.id))];
@@ -287,9 +297,10 @@ export default function SocialModal() {
         } catch (err) {
             logger.debug('[SocialModal] More failed:', err);
             if (!isNetworkError(err)) captureError(err, { scope: 'socialModal.loadMore', mode });
-            if (isMounted.current) setMoreFailed(true);
+            if (isMounted.current && gen === listGen.current) setMoreFailed(true);
         } finally {
-            if (isMounted.current) setLoadingMore(false);
+            // Overtaken, its flag was let go as the list was read again.
+            if (isMounted.current && gen === listGen.current) setLoadingMore(false);
         }
     }, [cursor, loadingMore, mode, params.userId]);
 
@@ -422,7 +433,8 @@ export default function SocialModal() {
         setTimedOut(false);
         setLoading(true);
         setFailed(false);
-        readSocial().then(showRead, showFailure);
+        const gen = ++listGen.current;
+        readSocial().then((read) => { if (gen === listGen.current) showRead(read); }, (err) => { if (gen === listGen.current) showFailure(err); });
     }, [readSocial, showRead, showFailure]);
 
     return (

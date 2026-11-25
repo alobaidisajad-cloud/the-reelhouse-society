@@ -14,6 +14,7 @@ import { isArchivistPlusTier } from '@/src/utils/tier';
 import { readCachedCounts, writeCachedCounts } from '@/src/utils/profileCountsCache';
 import type { TasteProfile } from '@/src/constants/taste';
 import { isNarrowed, ROOMS, type Room } from '@/src/utils/roomFilters';
+import { turns } from '@/src/utils/turns';
 
 export type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'passport' | 'projector' | 'calendar';
 /** The paged collections a room asks "more" of (the archive and the ledger share the logs). */
@@ -395,6 +396,11 @@ export function useProfileData({
   // cancelled a room in flight on every pull, and left it marked read and empty.
   const _fetchAbortRef = useRef<AbortController | null>(null);
   const _roomAbortRef = useRef<Record<string, AbortController>>({});
+  /**
+   * Each room's reads, in turns (src/utils/turns.ts): a room asked again while its read is out (a
+   * retry, a record changed, a tab opened twice, a new search) lays the later asked, whichever lands last.
+   */
+  const [roomTurns] = useState(turns);
 
   // Track current target user ID to prevent cross-user data bleed
   const targetUserIdRef = useRef<string | undefined>(undefined);
@@ -551,6 +557,10 @@ export function useProfileData({
     if (!canAccessTierTab(tab)) return;
 
     const uid = state.targetUser.id;
+    const room = tab === 'projector' || tab === 'passport' ? 'analytics' : tab;
+    const mine = roomTurns.take(room);
+    /** Still the member shown, and this room's last read asked. */
+    const stillAsked = () => isMounted.current && uid === targetUserIdRef.current && roomTurns.isLast(room, mine);
     setTabFailed((f) => (f[tab] ? { ...f, [tab]: false } : f));
     try {
       if (tab === 'watchlist' && (!state.tabDataLoaded.watchlist || forceRefresh)) {
@@ -559,7 +569,7 @@ export function useProfileData({
           if (!(await fetchWatchlist())) throw new Error('The watchlist could not be read');
         } else {
           const result = await ProfileDataService.fetchOtherUserWatchlist(uid, undefined, undefined, roomSignal(_roomAbortRef, 'watchlist'), state.activeFilters.watchlist);
-          if (uid !== targetUserIdRef.current) return;
+          if (!stillAsked()) return;
           dispatch({ type: 'SET_WATCHLIST_PAGE', items: result.items, cursor: result.nextCursor });
         }
       } else if (tab === 'physical' && (!state.tabDataLoaded.physical || forceRefresh)) {
@@ -568,7 +578,7 @@ export function useProfileData({
           if (!(await fetchPhysicalArchive())) throw new Error('The shelf could not be read');
         } else {
           const result = await ProfileDataService.fetchOtherUserVault(state.targetUser, undefined, undefined, roomSignal(_roomAbortRef, 'physical'), state.activeFilters.physical);
-          if (uid !== targetUserIdRef.current) return;
+          if (!stillAsked()) return;
           dispatch({ type: 'SET_VAULT_PAGE', items: result.items, cursor: result.nextCursor });
         }
       } else if (tab === 'lists' && (!state.tabDataLoaded.lists || forceRefresh)) {
@@ -577,7 +587,7 @@ export function useProfileData({
           if (!(await fetchLists())) throw new Error('The stacks could not be read');
         } else {
           const result = await ProfileDataService.fetchOtherUserLists(uid, undefined, undefined, roomSignal(_roomAbortRef, 'lists'), state.activeFilters.lists);
-          if (uid !== targetUserIdRef.current) return;
+          if (!stillAsked()) return;
           dispatch({ type: 'SET_LISTS_PAGE', items: result.items, cursor: result.nextCursor });
         }
       } else if ((tab === 'projector' || tab === 'passport') && (!state.tabDataLoaded.analytics || forceRefresh)) {
@@ -595,7 +605,7 @@ export function useProfileData({
         // nothing on screen waits, and the function drains the whole backlog,
         // so a lost ping costs nothing.
         ProfileDataService.pingFilmSync();
-        if (!isMounted.current || uid !== targetUserIdRef.current) return;
+        if (!stillAsked()) return;
         if (serverAnalyticsPayload) {
           dispatch({ type: 'SET_SERVER_ANALYTICS', payload: serverAnalyticsPayload });
         }
@@ -608,19 +618,19 @@ export function useProfileData({
         // The Projector's logs are not the member's year: for another member
         // below the Auteur rank it reads none.
         const calData = await ProfileDataService.fetchCalendarData(state.targetUser, roomSignal(_roomAbortRef, 'calendar'));
-        if (!isMounted.current || uid !== targetUserIdRef.current) return;
+        if (!stillAsked()) return;
         dispatch({ type: 'SET_CALENDAR_DATA', payload: calData });
       } else {
         return;
       }
-      if (isMounted.current && uid === targetUserIdRef.current) setTabAnswered((a) => ({ ...a, [tab]: true }));
+      if (stillAsked()) setTabAnswered((a) => ({ ...a, [tab]: true }));
     } catch (err: unknown) {
         if (err instanceof Error && err.name === 'AbortError') return;
         // Log in both dev and prod — routes to Sentry breadcrumbs in production
         logger.warn('[ProfileFetch] loadTabData error:', err);
         // Revert the loaded state so the user can try again — and say so: the
-        // room stood at "RETRIEVING" for as long as the member stayed.
-        if (isMounted.current) {
+        // room stood at "RETRIEVING" for as long as the member stayed. A newer read of the room says its own.
+        if (stillAsked()) {
           setTabFailed((f) => ({ ...f, [tab]: true }));
           if (tab === 'projector' || tab === 'passport') {
             dispatch({ type: 'SET_TAB_LOADED', tabs: { analytics: false } });
@@ -630,7 +640,7 @@ export function useProfileData({
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.targetUser, state.tabDataLoaded, isSelf, fetchWatchlist, fetchPhysicalArchive, fetchLists]);
+  }, [state.targetUser, state.tabDataLoaded, isSelf, fetchWatchlist, fetchPhysicalArchive, fetchLists, roomTurns]);
 
   // ── The member's own record changed ── a seal, an amendment, a rewatch or a removal, from any
   // screen, or the queue delivering one (hearRecordsChanged, which the Reel's cards hear too). What
@@ -834,20 +844,21 @@ export function useProfileData({
 
     const controller = restartRoom(_roomAbortRef, tab);
     const uid = state.targetUser.id;
+    const mine = roomTurns.take(tab);
 
     if (tab === 'ledger' || tab === 'archive') {
       const lockKey = tab === 'archive' ? 'logs_archive' : 'logs_ledger';
       dispatch({ type: 'SET_LOADING_MORE', key: lockKey, value: true });
       try {
         const result = await ProfileDataService.fetchOtherUserLogs(uid, 50, undefined, controller.signal, filters);
-        if (!isMounted.current || uid !== targetUserIdRef.current || _roomAbortRef.current[tab] !== controller) return;
+        if (!isMounted.current || uid !== targetUserIdRef.current || !roomTurns.isLast(tab, mine)) return;
         dispatch({ type: 'SET_LOGS_PAGE', tab: tab as 'archive' | 'ledger', items: result.items, cursor: result.nextCursor, append: false });
         setTabFailed((f) => (f[tab as ProfileTab] ? { ...f, [tab]: false } : f));
         setAnsweredFilters((a) => ({ ...a, [tab]: filters }));
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] refreshTabWithFilters logs error:', err);
-        if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, [tab]: true }));
+        if (isMounted.current && uid === targetUserIdRef.current && roomTurns.isLast(tab, mine)) setTabFailed((f) => ({ ...f, [tab]: true }));
       } finally {
         if (isMounted.current && _roomAbortRef.current[tab] === controller) dispatch({ type: 'SET_LOADING_MORE', key: lockKey, value: false });
       }
@@ -855,14 +866,14 @@ export function useProfileData({
       dispatch({ type: 'SET_LOADING_MORE', key: 'watchlist', value: true });
       try {
         const result = await ProfileDataService.fetchOtherUserWatchlist(uid, 50, undefined, controller.signal, filters);
-        if (!isMounted.current || uid !== targetUserIdRef.current || _roomAbortRef.current[tab] !== controller) return;
+        if (!isMounted.current || uid !== targetUserIdRef.current || !roomTurns.isLast(tab, mine)) return;
         dispatch({ type: 'SET_WATCHLIST_PAGE', items: result.items, cursor: result.nextCursor, append: false });
         setTabFailed((f) => (f['watchlist' as ProfileTab] ? { ...f, ['watchlist']: false } : f));
         setAnsweredFilters((a) => ({ ...a, [tab]: filters }));
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] refreshTabWithFilters watchlist error:', err);
-        if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, ['watchlist']: true }));
+        if (isMounted.current && uid === targetUserIdRef.current && roomTurns.isLast(tab, mine)) setTabFailed((f) => ({ ...f, ['watchlist']: true }));
       } finally {
         if (isMounted.current && _roomAbortRef.current[tab] === controller) dispatch({ type: 'SET_LOADING_MORE', key: 'watchlist', value: false });
       }
@@ -870,14 +881,14 @@ export function useProfileData({
       dispatch({ type: 'SET_LOADING_MORE', key: 'vault', value: true });
       try {
         const result = await ProfileDataService.fetchOtherUserVault(state.targetUser, 50, undefined, controller.signal, filters);
-        if (!isMounted.current || uid !== targetUserIdRef.current || _roomAbortRef.current[tab] !== controller) return;
+        if (!isMounted.current || uid !== targetUserIdRef.current || !roomTurns.isLast(tab, mine)) return;
         dispatch({ type: 'SET_VAULT_PAGE', items: result.items, cursor: result.nextCursor, append: false });
         setTabFailed((f) => (f['physical' as ProfileTab] ? { ...f, ['physical']: false } : f));
         setAnsweredFilters((a) => ({ ...a, [tab]: filters }));
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] refreshTabWithFilters vault error:', err);
-        if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, ['physical']: true }));
+        if (isMounted.current && uid === targetUserIdRef.current && roomTurns.isLast(tab, mine)) setTabFailed((f) => ({ ...f, ['physical']: true }));
       } finally {
         if (isMounted.current && _roomAbortRef.current[tab] === controller) dispatch({ type: 'SET_LOADING_MORE', key: 'vault', value: false });
       }
@@ -885,19 +896,19 @@ export function useProfileData({
       dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: true });
       try {
         const result = await ProfileDataService.fetchOtherUserLists(uid, 50, undefined, controller.signal, filters);
-        if (!isMounted.current || uid !== targetUserIdRef.current || _roomAbortRef.current[tab] !== controller) return;
+        if (!isMounted.current || uid !== targetUserIdRef.current || !roomTurns.isLast(tab, mine)) return;
         dispatch({ type: 'SET_LISTS_PAGE', items: result.items, cursor: result.nextCursor, append: false });
         setTabFailed((f) => (f.lists ? { ...f, lists: false } : f));
         setAnsweredFilters((a) => ({ ...a, [tab]: filters }));
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] refreshTabWithFilters lists error:', err);
-        if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, lists: true }));
+        if (isMounted.current && uid === targetUserIdRef.current && roomTurns.isLast(tab, mine)) setTabFailed((f) => ({ ...f, lists: true }));
       } finally {
         if (isMounted.current && _roomAbortRef.current[tab] === controller) dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: false });
       }
     }
-  }, [state.targetUser, state.activeFilters, isSelf]);
+  }, [state.targetUser, state.activeFilters, isSelf, roomTurns]);
 
   /**
    * Ask a room again, after its read failed: the filtered read for a room that
@@ -932,13 +943,17 @@ export function useProfileData({
       }
     }
     if (isSelf && (tab === 'archive' || tab === 'ledger')) {
+      // Your logs, under both rooms: asked again while out, the later asked says how it went.
+      const mine = roomTurns.take('logs');
       setTabFailed((f) => ({ ...f, archive: false, ledger: false }));
-      if (!(await fetchLogs())) setTabFailed((f) => ({ ...f, archive: true, ledger: true }));
+      const read = await fetchLogs();
+      if (!isMounted.current || !roomTurns.isLast('logs', mine)) return;
+      if (!read) setTabFailed((f) => ({ ...f, archive: true, ledger: true }));
       else setTabAnswered((a) => ({ ...a, archive: true, ledger: true }));
       return;
     }
     return loadTabData(tab, true);
-  }, [state.activeFilters, isSelf, refreshTabWithFilters, fetchLogs, loadTabData]);
+  }, [state.activeFilters, isSelf, refreshTabWithFilters, fetchLogs, loadTabData, roomTurns]);
 
   return {
     targetUser: state.targetUser, setTargetUser: (u: ProfileUser | null | ((prev: ProfileUser | null) => ProfileUser | null)) => {
