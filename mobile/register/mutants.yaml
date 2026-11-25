@@ -11294,3 +11294,21 @@ mutants:
         find: "if ((SHORTS || mustBeWhole) && truncates(e)) {"
         replace: "if (mustBeWhole && truncates(e)) {"
     proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a one-line text the phone ends with an ellipsis is listed as shortened (short-cut)" }
+  - id: shape-sign-in-forwards-no-address
+    class: AUTH-sign-in-counted-together
+    source: shape
+    # The member's address no longer sent to Auth: every sign-in by handle counted at the function's one address.
+    edits:
+      - file: ../supabase/functions/sign-in-with-username/index.ts
+        find: "        ...(SECRET_KEY && forAuth && ADDRESS.test(forAuth) ? { 'Sb-Forwarded-For': forAuth } : {}),\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aSignInIsCountedAtItsMembersAddress.guard.test.ts, test: "counts every password the house tries at the member's own address" }
+  - id: shape-sign-in-with-the-public-key
+    class: AUTH-sign-in-counted-together
+    source: shape
+    # The public key in the secret key's place: Auth reads no forwarded address from it.
+    edits:
+      - file: ../supabase/functions/sign-in-with-username/index.ts
+        find: "    const key = SECRET_KEY || ANON_KEY\n"
+        replace: "    const key = ANON_KEY\n"
+    proof: { file: src/utils/__tests__/aSignInIsCountedAtItsMembersAddress.guard.test.ts, test: "counts every password the house tries at the member's own address" }

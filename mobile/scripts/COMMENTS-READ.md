@@ -2165,3 +2165,7 @@ files of the reading map this one does not.
 | src/components/dispatch/paper/__tests__/aReportedFilingIsReadWholeBeforeItIsRuledOn.test.tsx | — |  |
 | src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts | — |  |
 | app/(admin)/__tests__/aVerdictRedrawsOnlyTheCasesItChanged.test.tsx | — |  |
+| scripts/secrets-history.cjs | — |  |
+| src/utils/__tests__/aFailureOfTheHouseIsSaidAsTheHouses.test.ts | — |  |
+| src/utils/__tests__/aSignInIsCountedAtItsMembersAddress.guard.test.ts | — |  |
+| src/utils/__tests__/theHousesFailureIsTheHouses.guard.test.ts | — |  |

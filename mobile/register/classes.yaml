@@ -418,7 +418,7 @@ classes:
     area: security
     seriousness: serious
     status: OPEN
-    count: 21
+    count: 18
     open_in_production: true
 
   - id: BUILD-upload-carries-ignored-files
@@ -511,15 +511,23 @@ classes:
     area: server
     seriousness: behaviour
     status: OPEN
-    count: 2
+    count: 4
     open_in_production: true
 
   - id: AUTH-sign-in-counted-together
+    title: Every sign-in by handle reached Supabase Auth from the edge function's own address, so Auth's per-address limit on password sign-ins was one count shared by every member signing in by handle, and wrong passwords past it (or one busy evening) refused every member's sign-in by handle until the window passed
     area: security
     seriousness: serious
     status: OPEN
     count: 1
-    open_in_production: true
+    source: { kind: reviewer, ref: "P0.78; Supabase docs, Auth rate limits (token: 150 per 5 minutes per IP; Sb-Forwarded-For with a secret key), 2026-10-16" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aSignInIsCountedAtItsMembersAddress.guard.test.ts, test: "counts every password the house tries at the member's own address" }
+      - { kind: static, file: src/utils/__tests__/aSignInIsCountedAtItsMembersAddress.guard.test.ts, test: "a request to a paced door with no member's address, or with the public key, is found; forwarded with the secret key, it is not" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "a caller writing a new X-Forwarded-For on each attempt is still held by its vouched address, at the old pace (20 a minute)" }
+    fix: "sign-in-with-username checks the password with the project's secret key (SUPABASE_SECRET_KEYS default, sb_secret_) and forwards the member's address (Sb-Forwarded-For: the address the platform vouches for), so Auth counts each member at their own address. Live since the owner's steps of 2026-11-10 (a default secret key; Authentication, Rate Limits, IP Address Forwarding on) with the function as the repo holds it (functions:check, 2026-11-25: all 7 deployed functions match), and production's answers name the vouched source (x-rh-caller-source: cf, 2026-11-25). The finder reads every server file (both functions trees, the website's api/) for a call to an Auth door Auth paces by address: supabase-js's own sign-in calls are refused, and a request without the member's address or the secret key"
+    sweep: { read: [functions, website], found: 0, fixed: 0, judged: 0, commit: f675618a, finder: src/utils/__tests__/aSignInIsCountedAtItsMembersAddress.guard.test.ts, result: "one request to a paced Auth door in all the server code (the handle sign-in's), forwarded with the secret key; none other" }
+    places: [none]
 
   - id: TEST-event-not-awaited
     title: A fireEvent, act or renderHook nobody waits for (all three are async in Testing Library 14), so what the test checks next can be the screen from before the event, and a negative passes on a stale tree (TST-08)

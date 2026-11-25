@@ -33,7 +33,7 @@ production shows only its id, area, seriousness and count here.
 | NAV-launch-link-overridden | navigation | behaviour | OPEN | 2 | A launch by a link (a sign-up or password email's, a shared one) lands on the tab the member last used instead of the page the link names, because the half-hour return to the last tab judged the launch by the first path drawn, which on a phone can be the Lobby's while the link is still being read |
 | RN-react-destroyed-on-mount | navigation | serious | OPEN | 0 | React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed |
 | RN-props-before-mount | navigation | serious | OPEN | 2 | Under load, Reanimated sends a new screen's animated props to Android before Fabric has made the views (an image's load event runs its pending updates at once), so the update names a view that does not exist yet and React is destroyed |
-| SEC-secret-committed | security | serious | OPEN | 21 | open in production |
+| SEC-secret-committed | security | serious | OPEN | 18 | open in production |
 | BUILD-upload-carries-ignored-files | release | serious | OPEN | 0 | An EAS build's upload carries files git keeps out |
 | DB-breaking-change-unexplained | database | serious | OPEN | 0 | A database change narrows what a shipped client relies on, with no reason why it is safe |
 | DB-apply-not-one-unit | database | serious | OPEN | 0 | A migration that cannot apply as one unit under the time limits |
@@ -43,8 +43,8 @@ production shows only its id, area, seriousness and count here.
 | E2E-open-overlay-drawn-by-animation-alone | tests | behaviour | OPEN | 0 | An open overlay whose resting state is drawn only by its animated style, so an animated style not applied leaves it open and invisible |
 | NET-request-without-time-limit | runtime | behaviour | OPEN | 1 | A request to the server with no time limit of its own, so one caught by a change of network holds it, and the queued writes behind it, for as long as Android's connection waits |
 | EDGE-function-unexercised | server | behaviour | OPEN | 0 | A deployed edge function no test serves and asks, so its refusals, its failures and the calls it makes out are known only from production |
-| FN-the-house-failing-told-as-theirs | server | behaviour | OPEN | 2 | open in production |
-| AUTH-sign-in-counted-together | security | serious | OPEN | 1 | open in production |
+| FN-the-house-failing-told-as-theirs | server | behaviour | OPEN | 4 | open in production |
+| AUTH-sign-in-counted-together | security | serious | OPEN | 1 | Every sign-in by handle reached Supabase Auth from the edge function's own address, so Auth's per-address limit on password sign-ins was one count shared by every member signing in by handle, and wrong passwords past it (or one busy evening) refused every member's sign-in by handle until the window passed |
 | TEST-event-not-awaited | tests | code | OPEN | 0 | A fireEvent, act or renderHook nobody waits for (all three are async in Testing Library 14), so what the test checks next can be the screen from before the event, and a negative passes on a stale tree (TST-08) |
 | TEST-press-inside-the-debounce | tests | code | OPEN | 0 | A test presses the same control twice inside its 400 ms debounce (PressableScale reads Date.now; jest's clock and a test's real one both stay inside it), so the second press never reaches the screen and a check that nothing happened passes for that alone (TST-14) |
 | TEST-absence-unanchored | tests | code | OPEN | 0 | A test finds things absent on a screen it never shows drawn, so a blank screen, a crash caught upstream or a list still loading passes it as well as the right one (TST-09) |

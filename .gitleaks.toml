@@ -1,4 +1,4 @@
-# The secrets scan's rules: gitleaks' own, and four shapes its own miss, each
+# The secrets scan's rules: gitleaks' own, and five shapes its own miss, each
 # one this repository has leaked before. A finding is excused only by its
 # fingerprint in .gitleaksignore, each with its reason; no path is ever
 # allowed, and the one value allowed is named where it is. mobile/src/utils/__tests__/secretsScan.guard.test.ts
@@ -40,3 +40,15 @@ description = "A web-push VAPID private key: 43 base64url characters after a lab
 regex = '''(?i)(?:vapid[^\n]{0,40}?priv|private[ _-]?key)[^\n]{0,60}?[=:]\s*['"]?([A-Za-z0-9_-]{43})(?:[^A-Za-z0-9_-]|$)'''
 secretGroup = 1
 keywords = ["vapid", "private"]
+
+# gitleaks' generic rule wants the value right after a key's name and its = or
+# :, so it reads past a key in a fallback after `||`, in backticks, in the
+# middle of a query or in a built bundle. A key of TMDB's v3 shape, 32 hex
+# characters standing alone, is a finding wherever it stands; a Sentry DSN's
+# public key (after a slash, before an @) is not one.
+[[rules]]
+id = "hex-key-32"
+description = "A key of 32 hex characters standing alone: TMDB's v3 API key has this shape"
+regex = '''(?:^|[^0-9A-Za-z_./-])([0-9a-f]{32})(?:[^0-9A-Za-z_@]|$)'''
+secretGroup = 1
+entropy = 3.0

@@ -69,6 +69,15 @@ section('tmdb-proxy — the apps\' only road to TMDB, its key never handed back'
   check(tmdbBusy.status === 429 && tmdbBusy.headers['retry-after'] === '7', 'TMDB\'s own 429 is passed on with its Retry-After', `${said(tmdbBusy)} ${JSON.stringify(tmdbBusy.headers)}`);
   await drain();
 
+  // TMDB refusing the house's key is the house's failure: 503 naming the secret, and not kept.
+  await scriptStandIns({ tmdbKeyRefused: true });
+  const keyRefused = await fn('tmdb-proxy', { body: { path: '/movie/608' } });
+  await scriptStandIns({ tmdbKeyRefused: false });
+  const keyMended = await fn('tmdb-proxy', { body: { path: '/movie/608' } });
+  check(keyRefused.status === 503 && keyRefused.json?.need === 'TMDB_API_KEY', 'TMDB refusing the key is 503, naming the secret', said(keyRefused));
+  check(keyMended.status === 200 && keyMended.headers['x-cache'] === 'MISS', 'and the refusal is not kept: with the key mended, TMDB is asked again', said(keyMended));
+  await drain();
+
   // One address asking TMDB without end: held at its pail (1,200 at once, then 20 a second), told
   // when to ask again, the website let read it; what the cache holds is still answered. The address
   // is the one the platform vouches for (Cloudflare's CF-Connecting-IP here); each call also writes
@@ -512,6 +521,19 @@ section('sync-entitlement — a member\'s rank, read from the store, never from 
   const lapsed = await fn('sync-entitlement', { auth: three.token });
   await drain();
   check(lapsed.status === 200 && lapsed.json?.storeTier === 'cinephile' && tierOf(three.id) === 'cinephile', 'a subscription that ended takes the store\'s rank away', `${said(lapsed)}; ${tierOf(three.id)}`);
+
+  // Auth itself down: the member's token could not be checked, which is the house's failure (503,
+  // the app keeps the purchase and asks again), never "Invalid or expired token".
+  container('stop', 'auth');
+  let authDown;
+  try {
+    authDown = await fn('sync-entitlement', { auth: three.token });
+  } finally {
+    container('start', 'auth');
+  }
+  await drain();
+  check(authDown.status === 503, 'Auth down is 503, never the member\'s token refused', said(authDown));
+  check(await authBack(), 'and Auth answers again once it is back');
 }
 
 section('revenuecat-webhook — the store says something changed');

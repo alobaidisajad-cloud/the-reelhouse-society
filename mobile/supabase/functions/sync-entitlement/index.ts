@@ -39,7 +39,15 @@ serve(async (req: Request) => {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: { user }, error: authError } = await anonClient.auth.getUser();
-    if (authError || !user) return json({ error: 'Invalid or expired token' }, 401);
+    if (authError) {
+      // Auth refusing the token (its 4xx) is the caller's; Auth unreachable or failing is the
+      // house's, 503, so the app's queue keeps the purchase and asks again.
+      if (typeof authError.status === 'number' && authError.status >= 400 && authError.status < 500) {
+        return json({ error: 'Invalid or expired token' }, 401);
+      }
+      return json({ error: 'Sign-in could not be checked' }, 503);
+    }
+    if (!user) return json({ error: 'Invalid or expired token' }, 401);
 
     const storeKey = Deno.env.get('REVENUECAT_SECRET_KEY');
     if (!storeKey) return json({ error: 'The store is not configured' }, 500);
