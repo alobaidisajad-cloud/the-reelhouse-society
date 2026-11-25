@@ -22,7 +22,7 @@ const drawCase = (body: string) => render(
 /** The unclamped copy answers how many lines the words wrap to. */
 const measure = async (r: ReturnType<typeof drawCase>, lines: number) => {
   await act(async () => {
-    fireEvent(r.getByTestId('case-measure', { includeHiddenElements: true }), 'textLayout', { nativeEvent: { lines: Array.from({ length: lines }, () => ({})) } });
+    await fireEvent(r.getByTestId('case-measure', { includeHiddenElements: true }), 'textLayout', { nativeEvent: { lines: Array.from({ length: lines }, () => ({})) } });
   });
 };
 

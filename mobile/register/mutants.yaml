@@ -11150,3 +11150,57 @@ mutants:
         find: "            if (data && past) {\n                asked = want - data.length;"
         replace: "            while (data && past && data.length < want) {\n                asked = Math.min(BOARD_READ_MOST, want - data.length);"
     proof: { file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "walks no read of the house page by page at launch, and every walk away from it is judged" }
+
+  - id: shape-cut-finder-reads-a-field-on-an-error-only
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts
+        find: "if (FIELD.has(name) && !NOT_A_MEMBER.has(on)) { found = n.getText(); return; }"
+        replace: "if (FIELD.has(name) && NOT_A_MEMBER.has(on)) { found = n.getText(); return; }"
+    proof: { file: src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts, test: "finds a member’s words cut where no tap opens them, and passes a film’s, an error’s, another field, an expander and a card" }
+
+  - id: shape-cut-finder-follows-no-local
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts
+        find: "if (made && depth < 2) found = memberWords(made, locals, depth + 1) && n.text;"
+        replace: "if (made && depth < 0) found = memberWords(made, locals, depth + 1) && n.text;"
+    proof: { file: src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts, test: "finds the instances it was made for, put back" }
+
+  - id: shape-cut-finder-passes-every-clamp-it-is-given
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts
+        find: 'const lifts = clamp?.initializer && /\bundefined\b/.test(clamp.initializer.getText(sf));'
+        replace: "const lifts = !!clamp?.initializer;"
+    proof: { file: src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts, test: "finds a member’s words cut where no tap opens them, and passes a film’s, an error’s, another field, an expander and a card" }
+
+  - id: shape-a-past-verdicts-reason-cut-to-a-line
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "            <Text style={s.historyReason} selectable>"
+        replace: "            <Text style={s.historyReason} numberOfLines={1}>"
+    proof: { file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "a past verdict’s reason on the record is drawn whole, never cut to a line" }
+
+  - id: shape-a-reported-title-cut-at-two-lines
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "<Text style={s.evidenceTitle} selectable>{words.title}</Text>"
+        replace: "<Text style={s.evidenceTitle} numberOfLines={2}>{words.title}</Text>"
+    proof: { file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "a reported title is drawn whole, as it stands and as it was reported" }
+
+  - id: shape-a-reported-filing-ruled-on-three-lines
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/PaperMore.tsx
+        find: "numberOfLines={whole ? undefined : CASE_LINES}"
+        replace: "numberOfLines={CASE_LINES}"
+    proof: { file: src/components/dispatch/paper/__tests__/aReportedFilingIsReadWholeBeforeItIsRuledOn.test.tsx, test: "cut at three lines opens whole on READ IT WHOLE, and folds again" }
