@@ -13,6 +13,8 @@
 --   read and written in one statement); its arithmetic now has one home, private.a_members_room_is_spent,
 --   which check_write_pace spends through as before, word for word.
 --   a_members_call_is_paced is the house's alone (service_role): no member may run it or read a room.
+--   This car goes first, sync-entitlement's deploy after it (deployed before, its call finds no pace to ask
+--   and answers 502); on the way down, the function goes back first, then the undo.
 -- Undo: mobile/supabase/migrations-down/20261125_10_a_members_call_to_the_store_is_paced.sql
 -- ════════════════════════════════════════════════════════════════════════════
 SET LOCAL lock_timeout = '2s';

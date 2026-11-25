@@ -41,7 +41,6 @@ LIB:
 ABUSE:
   - SEC-a-sign-in-pace-hardened
   - AUTH-a-member-held-out-by-anothers-guesses
-  - SEC-a-write-a-script-repeats-without-end
   - SEC-a-card-that-speaks-for-another
   - SEC-a-rule-helper-served-to-members
   - DATA-a-count-anyone-can-inflate

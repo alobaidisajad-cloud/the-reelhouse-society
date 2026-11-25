@@ -2559,8 +2559,8 @@ mutants:
     source: shape
     edits:
       - file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts
-        find: "const parsed = ts.isCallExpression(n) && "
-        replace: "const parsed = false && ts.isCallExpression(n) && "
+        find: "=== 'Date.parse';"
+        replace: "=== 'Date.parsed';"
     proof: { file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts, test: "finds a date made from text, and not one made from a number, a Date or nothing" }
 
   - id: shape-critique-authors-asked-apart
