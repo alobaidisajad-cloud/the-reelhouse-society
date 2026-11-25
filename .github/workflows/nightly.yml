@@ -287,17 +287,17 @@ jobs:
   # Each mutant (register/mutants.yaml) puts one mistake of a class back, and the
   # class's own test must fail on it; a mutant that survives or no longer applies
   # turns the night red. The verdicts are kept as ids and verdicts only.
-  # In eight parts: in three, 941 mutants took 47 and 53 minutes, and the third ran out of its
+  # In nine parts: in three, 941 mutants took 47 and 53 minutes, and the third ran out of its
   # hour (nightly 44721686811: 10 to 11.4 s a mutant, and the measuring tools' about three
   # minutes each with their browser). ciWorkflows.guard holds the parts to a measured budget.
   mutants:
-    name: 🧪 Every mutant, each caught by its class's own test, part ${{ matrix.part }} of 8
+    name: 🧪 Every mutant, each caught by its class's own test, part ${{ matrix.part }} of 9
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        part: [1, 2, 3, 4, 5, 6, 7, 8]
+        part: [1, 2, 3, 4, 5, 6, 7, 8, 9]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -385,7 +385,7 @@ jobs:
         working-directory: ./mobile
         env:
           TZ: UTC
-        run: node scripts/mutants.cjs --part ${{ matrix.part }}/8 --results mutant-results.json --fresh
+        run: node scripts/mutants.cjs --part ${{ matrix.part }}/9 --results mutant-results.json --fresh
 
       - name: Keep the verdicts
         if: ${{ !cancelled() }}

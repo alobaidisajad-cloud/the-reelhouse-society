@@ -453,7 +453,7 @@ export const PaperCase = memo(function PaperCase({
   const words = (
     <>
       {isRTLText(body) ? RTL_MARK : null}
-      <Text style={[p.leadIn, LEAD_STYLE[kind]]}>{nameOf(kind)} — </Text>
+      <Text style={[p.leadIn, LEAD_STYLE[kind]]} {...scaledTextProps}>{nameOf(kind)} — </Text>
       {body}
     </>
   );
