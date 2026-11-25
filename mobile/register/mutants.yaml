@@ -9432,8 +9432,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "    if (isNetworkError(e) || isRateLimited(e)) {\n      enqueueMutation(queued);"
-        replace: "    if (isNetworkError(e)) {\n      enqueueMutation(queued);"
+        find: "    if (isNetworkError(e) || isRateLimited(e)) {\n      if (enqueueMutation(queued)) acts.queue();"
+        replace: "    if (isNetworkError(e)) {\n      if (enqueueMutation(queued)) acts.queue();"
     proof: { file: src/stores/__tests__/dispatchGuards.test.ts, test: "keeps a certification, a save and a vote for later: never undone, reported or said as a refusal" }
 
   - id: shape-a-held-filing-said-as-the-wire
@@ -10472,8 +10472,8 @@ mutants:
     source: shape
     edits:
       - file: supabase/schema/live-schema.sql
-        find: "'endorse:log:' || NEW.log_id);"
-        replace: "NULL);"
+        find: "                'endorse:log:' || NEW.log_id,\n                jsonb_build_object('comment_id', NEW.id));"
+        replace: "                NULL,\n                jsonb_build_object('comment_id', NEW.id));"
     proof: { file: src/utils/__tests__/aNoticeOpensWhatItIsAbout.guard.test.ts, test: "opens the room it is about" }
 
   - id: shape-notice-route-trusted
@@ -11066,8 +11066,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/dispatch/ComposeDesks.tsx
-        find: "      letGo();\n      reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Filed');"
-        replace: "      reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Filed');"
+        find: "      letGo();\n      reelToast.success(filedSaid(filed, 'Filed'));"
+        replace: "      reelToast.success(filedSaid(filed, 'Filed'));"
     proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "kept once the desk rests, and at once if it closes first; filed, the draft goes" }
 
   - id: shape-amend-kept-as-a-new-take
