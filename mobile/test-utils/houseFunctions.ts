@@ -1,5 +1,5 @@
 /**
- * houseFunctions — every function of the house's public schema as production will hold it: the
+ * houseFunctions — every function of the house's public and private schemas as production will hold it: the
  * schema snapshot's, each replaced, made or dropped by the migrations production has not had yet,
  * in name order (PENDING_SQL). The reader of function bodies for the finders that judge what the
  * house says and computes (aDayIsReadOnItsOwnCalendar).
@@ -42,13 +42,17 @@ function closeOf(sql: string, open: number): number {
   return sql.length;
 }
 
+/** A function's name as the finders know it: bare in public, `private.<name>` in the house's private schema. */
+const withSchema = (schema: string | undefined, name: string | undefined): string =>
+  `${schema ? `${schema.toLowerCase()}.` : ''}${(name ?? '').toLowerCase()}`;
+
 type Act = { key: string; at: number; fn?: Omit<HouseFunction, 'from'> };
 
 /** What a SQL text does to the functions, in its own order: each one it makes (with `fn`) or drops. */
 function actsIn(sql: string): Act[] {
   const made: Act[] = [];
   const dropped: Act[] = [];
-  for (const m of sql.matchAll(/CREATE (?:OR REPLACE )?FUNCTION (?:public\.)?"?(\w+)"?\s*\(/gi)) {
+  for (const m of sql.matchAll(/CREATE (?:OR REPLACE )?FUNCTION (?:public\.|(?<schema>private)\.)?"?(?<name>\w+)"?\s*\(/gi)) {
     const open = (m.index ?? 0) + m[0].length - 1;
     const close = closeOf(sql, open);
     const types = topLevel(sql.slice(open + 1, close)).map(typeOf).join(', ');
@@ -58,20 +62,20 @@ function actsIn(sql: string): Act[] {
     if (!a) continue;
     const start = a.index + a[0].length;
     const end = sql.indexOf(a[1] ?? '', start);
-    const name = (m[1] ?? '').toLowerCase();
+    const name = withSchema(m.groups?.schema, m.groups?.name);
     made.push({ key: `${name}(${types})`, at: m.index ?? 0, fn: { name, types, body: sql.slice(start, end < 0 ? sql.length : end) } });
   }
-  for (const m of sql.matchAll(/DROP FUNCTION (?:IF EXISTS )?(?:public\.)?"?(\w+)"?\s*\(/gi)) {
+  for (const m of sql.matchAll(/DROP FUNCTION (?:IF EXISTS )?(?:public\.|(?<schema>private)\.)?"?(?<name>\w+)"?\s*\(/gi)) {
     const open = (m.index ?? 0) + m[0].length - 1;
     const types = topLevel(sql.slice(open + 1, closeOf(sql, open))).map(typeOf).join(', ');
-    dropped.push({ key: `${(m[1] ?? '').toLowerCase()}(${types})`, at: m.index ?? 0 });
+    dropped.push({ key: `${withSchema(m.groups?.schema, m.groups?.name)}(${types})`, at: m.index ?? 0 });
   }
   return [...made, ...dropped].sort((x, y) => x.at - y.at);
 }
 
 let held: HouseFunction[] | null = null;
 
-/** Every public function as production will hold it once the pending migrations are applied. */
+/** Every public and private function as production will hold it once the pending migrations are applied. */
 export function houseFunctions(): HouseFunction[] {
   if (held) return held;
   const byKey = new Map<string, HouseFunction>();

@@ -11114,3 +11114,30 @@ mutants:
         find: "  if (!memberId || !words.trim() || useAuthStore.getState().user?.id !== memberId) return;"
         replace: "  if (!memberId || !words.trim()) return;"
     proof: { file: src/hooks/__tests__/aWordWrittenIsKept.test.tsx, test: "words refused after their box went are put back, after any written there since, for the member signed in alone" }
+
+  - id: shape-the-house-reader-blind-to-private
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: test-utils/houseFunctions.ts
+        find: "const name = withSchema(m.groups?.schema, m.groups?.name);"
+        replace: "const name = withSchema(undefined, m.groups?.name);"
+    proof: { file: src/utils/__tests__/aNoticeOpensWhatItIsAbout.guard.test.ts, test: "opens the room it is about" }
+
+  - id: shape-a-private-table-ended-read-as-a-members
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts
+        find: "  private: { own: 'the house"
+        replace: "  privat: { own: 'the house"
+    proof: { file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "3: every table whose rows are ended is named with how another phone holding one learns" }
+
+  - id: shape-share-sending-left-raised
+    class: STATE-a-request-held-after-its-answer
+    source: shape
+    edits:
+      - file: src/components/ShareToLoungeModal.tsx
+        find: "        }).finally(() => setSending(false));"
+        replace: "        });"
+    proof: { file: src/utils/__tests__/aMarkInFlightEndsWithItsAnswer.guard.test.ts, test: "ends with its answer: lowered in a finally, or named with what ends it" }

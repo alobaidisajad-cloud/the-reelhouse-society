@@ -195,7 +195,7 @@ function ShareSheet({
             captureError(e, { where: 'shareToLounge.send', shareType });
             putBackWords(me, 'share', sharing, content);
             reelToast.error('Signal failed to transmit. Try again.');
-        });
+        }).finally(() => setSending(false));
 
         onClose();
     };

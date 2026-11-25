@@ -335,6 +335,7 @@ const ENDED: Record<string, Ended> = {
   sign_in_devices: { own: 'the house\'s sign-in pace record' },
   storage: { own: 'files the house keeps, read through the rows that name them' },
   auth: { own: 'the sign-in service\'s own tables' },
+  private: { own: 'the house\'s private tables (counts, drafts and queues its jobs keep), which the API never serves to a phone' },
 };
 
 /** The columns whose setting ends a row for its readers. */
@@ -344,8 +345,8 @@ const ENDING = /\b(withheld_at|ended_at|deleted_at|dissolved_at|removed_at|withd
 export function tablesEndedBySql(bodies: string[]): Set<string> {
   const out = new Set<string>();
   for (const body of bodies) {
-    for (const m of body.matchAll(/DELETE\s+FROM\s+(?:public\.|storage\.|auth\.)?(\w+)/gi)) {
-      out.add(/storage\./i.test(m[0]) ? 'storage' : /auth\./i.test(m[0]) ? 'auth' : m[1]!.toLowerCase());
+    for (const m of body.matchAll(/DELETE\s+FROM\s+(?:public\.|storage\.|auth\.|private\.)?(\w+)/gi)) {
+      out.add(/storage\./i.test(m[0]) ? 'storage' : /auth\./i.test(m[0]) ? 'auth' : /private\./i.test(m[0]) ? 'private' : m[1]!.toLowerCase());
     }
     for (const m of body.matchAll(/UPDATE\s+(?:public\.)?(\w+)(?:\s+(?:AS\s+)?\w+)?\s+SET\s+([\s\S]*?)(?:\bWHERE\b|;|\bRETURNING\b)/gi)) {
       if (ENDING.test(m[2]!)) out.add(m[1]!.toLowerCase());
