@@ -2131,3 +2131,4 @@ files of the reading map this one does not.
 | e2e/__tests__/aPlanIsCheckedOnASealedCopyAlone.test.ts | — |  |
 | test-utils/__tests__/aTestReadsAClockItHasSet.test.ts | — |  |
 | test-utils/onlyTheDate.ts | — |  |
+| e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts | — |  |

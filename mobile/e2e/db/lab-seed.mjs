@@ -147,6 +147,17 @@ UPDATE public.lounges l SET member_count = c.n
 UPDATE public.films f SET log_count = c.n, rating_count = c.rated, avg_rating = c.avg
   FROM (SELECT film_id AS id, count(*) AS n, count(*) FILTER (WHERE rating > 0) AS rated,
                round(avg(rating) FILTER (WHERE rating > 0), 2) AS avg FROM public.logs GROUP BY 1) c WHERE f.id = c.id;
+-- The members' pieces of three listed again from the first member, as 20261122_62's job lists them:
+-- the lab's members were laid unqueued.
+UPDATE private.member_grams_filled SET after = NULL, members = 0, complete = false, ended = NULL;
+DELETE FROM private.member_grams;
+DELETE FROM private.member_gram_heads;
+DELETE FROM private.member_grams_waiting;
+DO $$
+BEGIN
+  WHILE private.member_grams_fill(5000) <> 'complete' LOOP
+  END LOOP;
+END $$;
 COMMIT;
 SELECT public.lobby_choose_edition() AS lobby_edition_rows;
 -- The house analysed once it is laid down, as production's tables always hold their statistics.

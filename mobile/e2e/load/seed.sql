@@ -332,6 +332,33 @@ UPDATE public.dispatch_posts d SET certify_count = c.n
   FROM (SELECT post_id AS id, count(*) AS n FROM public.dispatch_certifications WHERE post_id IS NOT NULL GROUP BY 1) c WHERE d.id = c.id;
 UPDATE public.lounges l SET member_count = c.n
   FROM (SELECT lounge_id AS id, count(*) AS n FROM public.lounge_members WHERE status = 'approved' GROUP BY 1) c WHERE l.id = c.id;
+-- Each log's certifications and critiques, as 20261003_03 counted them and its triggers keep them.
+INSERT INTO public.log_counts (log_id, certify_count, critique_count)
+SELECT x.log_id, sum(x.certify)::integer, sum(x.critique)::integer FROM (
+  SELECT i.target_log_id AS log_id, 1 AS certify, 0 AS critique
+    FROM public.interactions i WHERE i.type = 'endorse_log' AND i.target_log_id IS NOT NULL
+  UNION ALL
+  SELECT c.log_id, 0, 1 FROM public.log_comments c
+) x
+GROUP BY x.log_id
+ON CONFLICT (log_id) DO UPDATE SET certify_count = EXCLUDED.certify_count, critique_count = EXCLUDED.critique_count;
+-- Each ballot's votes by option, as 20261122_27 counted them and its trigger keeps them (the closing
+-- below freezes the totals from these counts).
+INSERT INTO private.ballot_counts (post_id, option_index, n)
+SELECT v.post_id, v.option_index, count(*) FROM public.dispatch_votes v GROUP BY v.post_id, v.option_index
+ON CONFLICT (post_id, option_index) DO UPDATE SET n = EXCLUDED.n;
+-- The members' pieces of three listed as 20261122_62's job lists them: the copy was built with the
+-- fill complete over no member, and the members laid since were never queued; so the lists start
+-- again from the first member and the job's runs are made until it marks them complete.
+UPDATE private.member_grams_filled SET after = NULL, members = 0, complete = false, ended = NULL;
+DELETE FROM private.member_grams;
+DELETE FROM private.member_gram_heads;
+DELETE FROM private.member_grams_waiting;
+DO $$
+BEGIN
+  WHILE private.member_grams_fill(5000) <> 'complete' LOOP
+  END LOOP;
+END $$;
 
 -- ── what the house's schedule would have done ───────────────────────────────
 -- Each job production schedules (supabase/schema/live-outside-public.sql), run once as its schedule runs

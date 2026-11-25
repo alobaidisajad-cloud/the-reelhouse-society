@@ -223,7 +223,9 @@ RESET ROLE;
 
 -- ── the job's place, just before the planted ──
 -- Its row first (a run of the job meanwhile gives way at once), then the lists emptied: the planted are
--- the members still to be read, and each list holds ten at most.
+-- the members still to be read, and each list holds ten at most. The row the car laid stands wherever
+-- the car is (production, and a copy built from the snapshot, which carries it).
+SELECT pg_temp.rh_need('the fill''s one row, as the car laid it', (SELECT count(*) FROM private.member_grams_filled), 1) AS done \gset rh_
 UPDATE private.member_grams_filled SET after = 'ffffffff-0000-4000-8000-000000000000', members = 0, complete = false, ended = NULL, cap = 10;
 DELETE FROM private.member_grams;
 DELETE FROM private.member_gram_heads;

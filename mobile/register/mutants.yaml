@@ -9971,3 +9971,28 @@ mutants:
         find: "jest.useFakeTimers({ now: new Date('2026-10-03T12:00:00Z'), doNotFake: ALL_BUT_THE_DATE }); });"
         replace: "jest.useFakeTimers({ doNotFake: ALL_BUT_THE_DATE }); });"
     proof: { file: test-utils/__tests__/aTestReadsAClockItHasSet.test.ts, test: "reads the clock only after setting it at a fixed moment, or where its file is judged, as often as it is judged" }
+  - id: shape-the-fill-row-left-out-of-the-snapshot
+    class: TEST-a-row-a-recorded-car-laid-reaches-no-copy
+    source: shape
+    # The run's own instance put back: the snapshot carries no row of the fill, as before the train was recorded.
+    edits:
+      - file: supabase/schema/live-outside-public.sql
+        find: "INSERT INTO private.member_grams_filled (one, complete) VALUES (true, true) ON CONFLICT (one) DO NOTHING;"
+        replace: "-- (none)"
+    proof: { file: e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts, test: "each row a car lays is carried by the snapshot, kept, planted or moved; each job it schedules stands or is kept" }
+  - id: shape-the-load-house-votes-uncounted
+    class: TEST-a-row-a-recorded-car-laid-reaches-no-copy
+    source: shape
+    edits:
+      - file: e2e/load/seed.sql
+        find: "INSERT INTO private.ballot_counts (post_id, option_index, n)"
+        replace: "-- INSERT INTO private.ballot_counts (post_id, option_index, n)"
+    proof: { file: e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts, test: "each seed laying a source with its triggers off makes every kept table of it again" }
+  - id: shape-the-lab-members-unlisted
+    class: TEST-a-row-a-recorded-car-laid-reaches-no-copy
+    source: shape
+    edits:
+      - file: e2e/db/lab-seed.mjs
+        find: "  WHILE private.member_grams_fill(5000) <> 'complete' LOOP"
+        replace: "  WHILE false LOOP"
+    proof: { file: e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts, test: "each seed laying a source with its triggers off makes every kept table of it again" }

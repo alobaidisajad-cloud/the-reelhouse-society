@@ -171,6 +171,14 @@ function dumpOutside(url) {
       JOIN pg_class c ON c.oid = pr.prrelid JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname IN ('public', 'private')`)),
 
+    // A schema-only dump carries no row, so a row a car lays as the house's state reaches a copy built from
+    // the snapshot only here: the members' pieces' fill (20261122_62), and whether it has listed every
+    // member. A copy is built with no member, so a fill production completed is complete there as laid.
+    // Every other row a car lays is judged in e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts.
+    ...section('rows the cars lay as the house\'s state', q(`
+      SELECT string_agg(format('INSERT INTO private.member_grams_filled (one, complete) VALUES (true, %s) ON CONFLICT (one) DO NOTHING;', CASE WHEN f.complete THEN 'true' ELSE 'false' END), E'\\n')
+      FROM private.member_grams_filled f`)),
+
     ...section('storage buckets', q(`
       SELECT string_agg(format('INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types, avif_autodetection) VALUES (%L, %L, %L, %s, %s, %L);',
           b.id, b.name, b.public, COALESCE(b.file_size_limit::text, 'NULL'),

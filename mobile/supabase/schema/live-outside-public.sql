@@ -17,6 +17,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.lounge_message_reactions;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.lounge_messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
 
+-- ── rows the cars lay as the house's state
+INSERT INTO private.member_grams_filled (one, complete) VALUES (true, true) ON CONFLICT (one) DO NOTHING;
+
 -- ── storage buckets
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types, avif_autodetection) VALUES ('avatars', 'avatars', 't', 2097152, '{image/jpeg,image/png,image/webp,image/gif}'::text[], 'f');
 
