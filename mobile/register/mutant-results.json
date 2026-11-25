@@ -8559,5 +8559,19 @@
     "proof": "m13",
     "commit": "3709faa912caa081cce528a068a60cb8e16a59c6",
     "verdict": "caught"
+  },
+  {
+    "class": "AUTH-sign-in-counted-together",
+    "mutant": "shape-sign-in-forwards-no-address",
+    "proof": "m1",
+    "commit": "64214dd25f1da1e8ef8c63df8a4c838f88cca8ae",
+    "verdict": "caught"
+  },
+  {
+    "class": "AUTH-sign-in-counted-together",
+    "mutant": "shape-sign-in-with-the-public-key",
+    "proof": "m1",
+    "commit": "64214dd25f1da1e8ef8c63df8a4c838f88cca8ae",
+    "verdict": "caught"
   }
 ]
