@@ -8487,7 +8487,7 @@
     "class": "TEXT-words-cut-where-they-are-read-whole",
     "mutant": "shape-a-reported-filing-ruled-on-three-lines",
     "proof": "m18",
-    "commit": "d9ad4944629a4a182bc25e33d13ba431ea9ea921",
+    "commit": "ad1799a73d85c974277dc20e3cd9614bdb435e43",
     "verdict": "caught"
   },
   {
