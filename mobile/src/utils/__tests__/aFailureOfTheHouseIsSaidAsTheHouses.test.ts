@@ -90,9 +90,14 @@ describe('the TMDB proxy', () => {
 describe('the store sync', () => {
   const sync = (auth: { error?: { status?: number; name: string; message: string }; user?: { id: string } | null }) => {
     const applied: string[] = [];
+    const paced: unknown[] = [];
     const call = run('mobile/supabase/functions/sync-entitlement/index.ts', [
       [/^https:\/\/esm\.sh\/@supabase\/supabase-js@2$/, {
-        createClient: () => ({ auth: { getUser: async () => ({ data: { user: auth.user ?? null }, error: auth.error ?? null }) } }),
+        createClient: () => ({
+          auth: { getUser: async () => ({ data: { user: auth.user ?? null }, error: auth.error ?? null }) },
+          // The member's pace, asked before the store: room left here.
+          rpc: async (name: string, args: unknown) => { paced.push([name, args]); return { error: null }; },
+        }),
       }],
       [/^\.\.\/_shared\/storeRecord\.ts$/, {
         applyStoreRecord: async (_admin: unknown, userId: string) => {
@@ -102,7 +107,7 @@ describe('the store sync', () => {
       }],
     ], { SUPABASE_URL: 'https://house.example', SUPABASE_ANON_KEY: 'anon', SUPABASE_SERVICE_ROLE_KEY: 'service', REVENUECAT_SECRET_KEY: 'store' }, null);
     const ask = () => call({ method: 'POST', headers: { get: (k: string) => (k === 'Authorization' ? 'Bearer member' : null) } });
-    return { ask, applied };
+    return { ask, applied, paced };
   };
 
   it('Auth unreachable, or failing on its side, is 503: the purchase is kept and asked again, never refused as the member\'s', async () => {
@@ -123,5 +128,6 @@ describe('the store sync', () => {
     const member = sync({ user: { id: 'member-1' } });
     const answer = await member.ask();
     expect([answer.status, answer.json.tier, member.applied]).toEqual([200, 'auteur', ['member-1']]);
+    expect([refused.paced, member.paced]).toEqual([[], [['a_members_call_is_paced', { p_member: 'member-1', p_kind: 'store_read' }]]]);
   });
 });

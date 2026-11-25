@@ -44,6 +44,7 @@ CREATE FUNCTION private.a_members_room_is_spent(p_member uuid, p_kind text, p_ro
     n           = (CASE WHEN b.day = (now() AT TIME ZONE 'UTC')::date THEN b.n ELSE 0 END) + 1
   RETURNING b.tokens, b.n;
 $$;
+-- add-only (1): no shipped client uses it: a function made here, named by neither TestFlight build 41 nor the website
 REVOKE ALL ON FUNCTION private.a_members_room_is_spent(uuid, text, real, real) FROM PUBLIC, anon, authenticated;
 
 -- add-only (3): it only fixes: one home for the room, the same rooms, refills, ceilings, refusals and waits for every write a member repeats (the rehearsal replays every kind's room, ceiling and refill, a row sent again, the house's own write, through check_write_pace as every_members_write_is_paced_rehearsal.sql replays it); TestFlight build 41 and the website write as before
@@ -182,5 +183,6 @@ BEGIN
       HINT = GREATEST(1, v_midnight)::text;
   END IF;
 END $$;
+-- add-only (1): no shipped client uses it: a function made here, asked by sync-entitlement alone; neither TestFlight build 41 nor the website names it
 REVOKE ALL ON FUNCTION public.a_members_call_is_paced(uuid, text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.a_members_call_is_paced(uuid, text) TO service_role;

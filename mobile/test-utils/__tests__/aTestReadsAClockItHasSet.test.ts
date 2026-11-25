@@ -120,6 +120,7 @@ const DAYS_TO_COME: Judged = {
   'src/stores/__tests__/anOpenBallotIsCountedForItsVoters.test.ts': { sites: 1, why: '2099 stands for a ballot still open, true until that year' },
   'src/utils/__tests__/aLeapDayIsADay.test.tsx': { sites: 11, why: 'the leap day of 2028 and the days beside it, each handed in as the moment, or set by a spy on Date.now (at)' },
   'src/utils/__tests__/anInstantIsReadOneWay.test.ts': { sites: 4, why: 'instants handed to the reader of instants, the leap day of 2028 and the far ends of its range: no clock is read' },
+  'src/utils/__tests__/theStoreIsReadToTheLetter.test.ts': { sites: 4, why: 'ends no calendar shows (a 31st of February, a 13th month, a 24th hour, a 60th minute), each weighed against NOW, a moment handed in: no clock is read' },
 };
 
 const HOOKS = new Set(['beforeEach', 'beforeAll']);
