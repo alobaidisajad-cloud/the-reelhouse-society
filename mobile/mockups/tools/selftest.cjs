@@ -15,6 +15,11 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
+// Every line this self-test prints, kept: what proves each kind both ways is read back from them (PROVES).
+const ANSWERS = [];
+const print = console.log.bind(console);
+console.log = (...said) => { ANSWERS.push(said.join(' ')); print(...said); };
+
 const DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'layout-selftest-'));
 const T = (style, text, cap = 0, extra = '') => `<span data-scale-cap="${cap}"${extra} style="position:relative;font-family:'Special Elite', monospace;${style}">${text}</span>`;
 const box = (style, inner) => `<div style="position:relative;display:flex;flex-direction:column;${style}">${inner}</div>`;
@@ -467,7 +472,7 @@ for (const [label, req, wantStatus, wantSites] of [
   const lost = (r.stdout.match(/^LOST {2}\S+/gm) || []).length;
   const ok = r.status === wantStatus && got === wantSites && lost === (wantStatus ? 2 : 0);
   if (!ok) bad++;
-  console.log(`${ok ? 'ok  ' : 'FAIL'}  ${label.padEnd(12)} sites         want exit ${wantStatus} [${wantSites}]  got exit ${r.status} [${got}], ${lost} lost`);
+  console.log(`${ok ? 'ok  ' : 'FAIL'}  ${label.padEnd(12)} sites         want exit ${wantStatus} [${wantSites}], ${wantStatus ? '2 LOST' : 'no LOST'}  got exit ${r.status} [${got}], ${lost} lost`);
 }
 fs.rmSync(SDIR, { recursive: true, force: true });
 
@@ -666,6 +671,108 @@ for (const [label, tool, args, want] of [
 }
 fs.rmSync(RDIR, { recursive: true, force: true });
 fs.rmSync(EDIR, { recursive: true, force: true });
+
+// ORDER, BENEATH and COLOUR, asked for by name: a stop read after one it is drawn above, a page read
+// under a sheet laid over it, a chosen option told from its sibling by colour alone; and beside each
+// the near miss the phone allows: built in the order drawn, the page hidden while the sheet is up,
+// the chosen one underlined.
+const RDDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-selftest-'));
+const placed = (top, words) => `<div style="position:absolute;left:40px;top:${top}px;width:240px">${T('font-size:14px;line-height:18px;display:block', words, 1.35)}</div>`;
+fs.writeFileSync(path.join(RDDIR, 'order-late.html'), box('height:600px', placed(300, 'THE PAGE BELOW') + placed(40, 'THE HEAD ABOVE')));
+fs.writeFileSync(path.join(RDDIR, 'order-kept.html'), box('height:600px', placed(40, 'THE HEAD ABOVE') + placed(300, 'THE PAGE BELOW')));
+const sheetOver = (pageAttr) => box('height:844px',
+  `<div${pageAttr} style="position:relative;display:flex;flex-direction:column;padding:40px">${T('font-size:14px;line-height:18px', 'THE PAGE BENEATH', 1.35)}</div>`
+  + `<div style="position:absolute;left:0;right:0;top:0;bottom:0;background:#111;display:flex;flex-direction:column;padding:40px;padding-top:400px">${T('font-size:14px;line-height:18px', 'THE SHEET OVER IT', 1.35)}</div>`);
+fs.writeFileSync(path.join(RDDIR, 'beneath-sheet.html'), sheetOver(''));
+fs.writeFileSync(path.join(RDDIR, 'beneath-hidden.html'), sheetOver(' aria-hidden="true"'));
+const option = (chosen, words, mark = '') => `<div data-press="0,0,0,0" aria-selected="${chosen}" aria-label="${words}" style="position:relative;display:flex;flex-direction:column;padding:12px;color:${chosen ? '#c9a227' : '#8a8a8a'}${mark}">${T('font-size:12px;line-height:16px', words, 1.35)}</div>`;
+const options = (mark) => box('padding:40px', `<div style="position:relative;display:flex;flex-direction:row;gap:16px">${option(true, 'ALL', mark)}${option(false, 'MINE')}</div>`);
+fs.writeFileSync(path.join(RDDIR, 'colour-alone.html'), options(''));
+fs.writeFileSync(path.join(RDDIR, 'colour-marked.html'), options(';text-decoration:underline'));
+const rdjson = path.join(RDDIR, 'report.json');
+const readerRun = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', RDDIR, '--passes', 'ios@1', '--kinds', 'ORDER,BENEATH,COLOUR', '--json', rdjson], { encoding: 'utf8' });
+const rdrep = fs.existsSync(rdjson) ? JSON.parse(fs.readFileSync(rdjson, 'utf8')) : {};
+if (!fs.existsSync(rdjson)) console.error(`layout.cjs wrote no ORDER report (exit ${readerRun.status}): ${`${readerRun.stderr}${readerRun.stdout}`.trim().split('\n').slice(-5).join('\n')}`);
+for (const [name, want] of [['order-late', ['ORDER']], ['order-kept', []], ['beneath-sheet', ['BENEATH']], ['beneath-hidden', []], ['colour-alone', ['COLOUR']], ['colour-marked', []]]) {
+  const got = [...new Set((rdrep[`${name}@1`] ?? { found: null }).found?.map((x) => x.kind) ?? ['NO REPORT'])].sort();
+  const ok = JSON.stringify(got) === JSON.stringify(want);
+  if (!ok) bad++;
+  console.log(`${ok ? 'ok  ' : 'FAIL'}  ${name.padEnd(16)} ios@1       want [${want}]  got [${got}]`);
+}
+fs.rmSync(RDDIR, { recursive: true, force: true });
+
+// SHORT, with --shorts: a one-line text the phone ends with an ellipsis is listed (read, not
+// counted); the same words with room for them are not.
+const HDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'shorts-selftest-'));
+const oneLine = (width) => box(`width:${width}px`, T(`font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block${width < 300 ? ';width:80px' : ''}`, 'THE LONG TAKE AT DAWN', 1.35));
+fs.writeFileSync(path.join(HDIR, 'short-cut.html'), oneLine(200));
+fs.writeFileSync(path.join(HDIR, 'short-fits.html'), oneLine(300));
+const hjson = path.join(HDIR, 'report.json');
+const shortsRun = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', HDIR, '--passes', 'ios@1', '--shorts', '--kinds', 'SHORT', '--json', hjson], { encoding: 'utf8' });
+const hrep = fs.existsSync(hjson) ? JSON.parse(fs.readFileSync(hjson, 'utf8')) : {};
+if (!fs.existsSync(hjson)) console.error(`layout.cjs wrote no SHORT report (exit ${shortsRun.status}): ${`${shortsRun.stderr}${shortsRun.stdout}`.trim().split('\n').slice(-5).join('\n')}`);
+for (const [name, want] of [['short-cut', ['SHORT']], ['short-fits', []]]) {
+  const got = [...new Set((hrep[`${name}@1`] ?? { found: null }).found?.map((x) => x.kind) ?? ['NO REPORT'])].sort();
+  const ok = JSON.stringify(got) === JSON.stringify(want);
+  if (!ok) bad++;
+  console.log(`${ok ? 'ok  ' : 'FAIL'}  ${name.padEnd(16)} ios@1       want [${want}]  got [${got}]`);
+}
+fs.rmSync(HDIR, { recursive: true, force: true });
+
+/**
+ * What proves each kind layout.cjs reports, both ways: the checks above that must say it (a fault
+ * the phone shows) and the near misses that must not (what the phone allows, drawn as close to the
+ * fault as it can be). A rule proven only one way is blind, or calls a fault what the phone does.
+ * Each is read back from what this run printed; theMeasuringRulesSayNo holds this list to the
+ * kinds layout.cjs reports and to the cases' own wants.
+ */
+const PROVES = {
+  RUN: { says: ['run'], allows: ['glowline', 'control'] },
+  CUT: { says: ['cut', 'uncapped', 'androidtrack', 'androidline', 'scrollcut', 'floorholds', 'floor', 'clip', 'nameclipped', 'fieldcramped', 'allow-short'],
+    allows: ['capped', 'shrinks', 'floorgives', 'scrollfold', 'fieldroomy', 'fieldpage'] },
+  SHORT: { says: ['short-cut'], allows: ['short-fits'] },
+  WHOLE: { says: ['wholecut', 'wholebroken'], allows: ['wholekept'] },
+  UNMEASURED: { says: ['whole-unmeasured'], allows: ['whole-measured'] },
+  WIDE: { says: ['wide-escaped'], allows: ['wide-held'] },
+  OFF: { says: ['off', 'colcapfixed', 'colownwidth', 'riseoff', 'cardfoot', 'underclock', 'modalfoot'],
+    allows: ['colcap', 'sheetpage', 'plateboard', 'tallplate', 'scrolllong'] },
+  CLASH: { says: ['scrollsheer', 'clashtrunc', 'clash'], allows: ['scrollsheerclear', 'glowroom'] },
+  INK: { says: ['inkpile', 'inkpilescaled'], allows: ['inkclamped', 'inkround', 'inkclean', 'inkcovered', 'inkscaled'] },
+  UNDER: { says: ['scrollstuck', 'scrollpainted'], allows: ['scrollunder', 'scrollhidden', 'scrolltall', 'scrollpast', 'scrollshade', 'scrollunshown'] },
+  NAME: { says: ['namecut', 'namehidden', 'nameclipped', 'name-shortname'], allows: ['namewhole', 'namefirst', 'nameturned', 'namelong', 'name-address', 'name-piece', 'name-hint'] },
+  NAMELESS: { says: ['nameless'], allows: ['named', 'namedbywords'] },
+  NESTED: { says: ['nested-lost', 'nested-lostdimmed'], allows: ['nested-offered', 'nested-adjustable', 'nested-container'] },
+  UNSAID: { says: ['nested-dimmedname'], allows: ['nested-dimmedbox'] },
+  ORDER: { says: ['order-late'], allows: ['order-kept'] },
+  BENEATH: { says: ['beneath-sheet'], allows: ['beneath-hidden'] },
+  COLOUR: { says: ['colour-alone'], allows: ['colour-marked'] },
+  SMALL: { says: ['small', 'fold'], allows: ['frame-below', 'small-quiet'] },
+  STEAL: { says: ['steal', 'columnsteal', 'scaledup', 'scaledbeside', 'tiltedsteal', 'borderacross', 'borderdown'], allows: ['halfgap', 'scaleddown', 'tilted', 'layered'] },
+  HANG: { says: ['hangicon', 'hangpast', 'hangcut', 'hangsub', 'hangfloor', 'hangopenicon'], allows: ['hangclean', 'hangopen'] },
+  SHADOW: { says: ['clipshadow'], allows: ['splitshadow'] },
+  LOST: { says: ['sites-lost'], allows: ['sites-kept'] },
+};
+/** One printed answer: its label, the column after it, and what it wanted. */
+const answered = ANSWERS.flatMap((line) => {
+  const m = /^(?<ok>ok {2}|FAIL) {2}(?<label>\S+)\s+(?<column>.*?)\s*want (?<want>.*?)(?: {2}got .*)?$/.exec(line);
+  return m?.groups ? [{ ok: m.groups.ok === 'ok  ', label: m.groups.label, column: m.groups.column, want: m.groups.want }] : [];
+});
+/** Whether words name a kind as found, not as "no KIND". */
+const names = (text, kind) => new RegExp(`(?<!no )\\b${kind}\\b`).test(text);
+for (const [kind, { says, allows }] of Object.entries(PROVES)) {
+  const wrong = [];
+  for (const label of [...says, ...allows]) {
+    const lines = answered.filter((a) => a.label === label);
+    if (!lines.length) wrong.push(`${label} never answered`);
+    else if (lines.some((a) => !a.ok)) wrong.push(`${label} answered FAIL`);
+    // Said by what it wants, or by the check it names when what it wants is the list of those flagged.
+    else if (says.includes(label) && !lines.some((a) => names(a.want, kind) || (names(a.column, kind) && /^\[.+\]/.test(a.want)))) wrong.push(`${label} does not want ${kind}`);
+    else if (allows.includes(label) && lines.some((a) => names(a.want, kind))) wrong.push(`${label} wants ${kind}`);
+  }
+  const ok = says.length > 0 && allows.length > 0 && !wrong.length;
+  if (!ok) bad++;
+  console.log(`${ok ? 'ok  ' : 'FAIL'}  proves-${kind.padEnd(10)} both ways   ${says.length} say it, ${allows.length} allow it${wrong.length ? `: ${wrong.join('; ')}` : ''}`);
+}
 
 console.log(bad ? `\n${bad} wrong — the tools cannot be trusted` : '\nthe tools say NO to every fault they exist to catch, and nothing to a clean page');
 process.exit(bad ? 1 : 0);
