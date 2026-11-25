@@ -45,8 +45,11 @@ const answer = () => ({
   similar: { results: Array.from({ length: 20 }, (_, i) => ({ id: 3000 + i, title: `Similar ${i}`, overview: 'x'.repeat(300) })) },
 });
 
+// Every test of the file on a phone in Britain: set in the first block's own hooks alone, a phone
+// that named no country, left by its test, reached the recorded films' sizes (nightly 2026-11-22, -23).
+beforeEach(() => { mockRegion.value = 'GB'; });
+
 describe("a film's read keeps what its page draws", () => {
-  beforeEach(() => { mockRegion.value = 'GB'; });
 
   it('keeps the first fifteen of the cast and the directors, and the page names the same people', () => {
     const whole = answer();

@@ -69,6 +69,9 @@ const ROW = {
 // film it has is the archive's own empty (aLinkToNowhereIsSaidSo.test holds one it does not have).
 beforeEach(() => {
   (jest.requireMock('@/src/lib/tmdb') as { tmdb: { detail: jest.Mock } }).tmdb.detail.mockResolvedValue({ id: 631, title: 'Sunrise' });
+  // The pages a block asked for, and the answers it queued, are its own.
+  mockFrom.length = 0;
+  mockAnswers = [];
 });
 
 async function mount() {

@@ -561,10 +561,13 @@ function splitFaults(wf: Workflow, zones: { ZONES: string[]; recordOf: (tz: stri
   const tz = String(covered?.env?.TZ ?? '');
   if (!zones.ZONES.includes(tz)) faults.push(`the coverage run's zone (${tz || 'none'}) is not one of test-timezones.js's`);
   if (!covered?.run?.includes(`--outputFile="$RUNNER_TEMP/jest-part/${zones.recordOf(tz)}"`)) faults.push(`the coverage run does not write ${zones.recordOf(tz)}`);
-  const others = steps.find((s) => /test-timezones\.js'\)/.test(s.run ?? '') && /TZ="\$tz"( JEST_OUTSIDE_UTC=1)? npx jest/.test(s.run ?? ''));
+  const others = steps.find((s) => /test-timezones\.js'\)/.test(s.run ?? '') && /TZ="\$tz"( JEST_OUTSIDE_UTC=1)?( JEST_BACKWARDS=1)? npx jest/.test(s.run ?? ''));
   if (!others?.run?.includes(`t.ZONES.filter((z) => z !== '${tz}')`)) faults.push(`no step runs every zone of test-timezones.js but the coverage run's (${tz})`);
   // Outside UTC, the tooling's tests are left out: its code runs on CI's UTC machines alone.
-  else if (!/TZ="\$tz" JEST_OUTSIDE_UTC=1 npx jest/.test(others.run)) faults.push('the other zones run the tooling\'s tests too: no JEST_OUTSIDE_UTC=1');
+  else if (!/TZ="\$tz" JEST_OUTSIDE_UTC=1( JEST_BACKWARDS=1)? npx jest/.test(others.run)) faults.push('the other zones run the tooling\'s tests too: no JEST_OUTSIDE_UTC=1');
+  // And each file's tests last to first: the coverage run goes forwards, so every two tests of a file
+  // run in both orders on every push (the nightly's random order found seven such files, 2026-11-24).
+  if (others && !/TZ="\$tz" JEST_OUTSIDE_UTC=1 JEST_BACKWARDS=1 npx jest/.test(others.run ?? '')) faults.push('the other zones run each file forwards, as the coverage run does: no JEST_BACKWARDS=1');
   const read = (jobs['jest-together']?.steps ?? []).some((s) => (s.run ?? '').includes('t.ZONES.map(t.recordOf)'));
   if (!read) faults.push('jest-together does not read a record for every zone of test-timezones.js');
   return faults;
@@ -589,7 +592,11 @@ it('runs jest and the captures in parts, each read together by a job that reads 
   expect(splitFaults(planted(JEST_PARTS, JEST_PARTS.replace('PARTS: 4', 'PARTS: 3')), zones)).toEqual(['jest-together reads 3 parts, but native-unit-tests runs 4']);
   expect(splitFaults(planted(CAPTURE_PARTS, CAPTURE_PARTS.replace('PARTS: 4', 'PARTS: 2')), zones)).toEqual(['captures-together reads 2 parts, but captures runs 4']);
   expect(splitFaults(planted("z !== 'UTC'", "z !== 'Asia/Tokyo'"), zones)).toEqual(["no step runs every zone of test-timezones.js but the coverage run's (UTC)"]);
-  expect(splitFaults(planted('TZ="$tz" JEST_OUTSIDE_UTC=1 npx jest', 'TZ="$tz" npx jest'), zones)).toEqual(['the other zones run the tooling\'s tests too: no JEST_OUTSIDE_UTC=1']);
+  expect(splitFaults(planted('TZ="$tz" JEST_OUTSIDE_UTC=1 JEST_BACKWARDS=1 npx jest', 'TZ="$tz" JEST_BACKWARDS=1 npx jest'), zones)).toEqual([
+    'the other zones run the tooling\'s tests too: no JEST_OUTSIDE_UTC=1',
+    'the other zones run each file forwards, as the coverage run does: no JEST_BACKWARDS=1',
+  ]);
+  expect(splitFaults(planted('JEST_OUTSIDE_UTC=1 JEST_BACKWARDS=1 npx jest', 'JEST_OUTSIDE_UTC=1 npx jest'), zones)).toEqual(['the other zones run each file forwards, as the coverage run does: no JEST_BACKWARDS=1']);
   expect(splitFaults(planted('          TZ: UTC\n', '          TZ: Europe/Paris\n'), zones)).toEqual([
     "the coverage run's zone (Europe/Paris) is not one of test-timezones.js's",
     'the coverage run does not write jest-Europe-Paris.json',

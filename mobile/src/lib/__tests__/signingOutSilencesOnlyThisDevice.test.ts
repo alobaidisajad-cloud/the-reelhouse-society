@@ -57,6 +57,7 @@ beforeEach(() => {
   mockAnswer = { data: [], error: null };
   mockForgets = [];
   mockForgetError = null;
+  mockRegisterError = null;
 });
 
 it('removes this device\'s own token, and nothing of the member\'s other devices', async () => {

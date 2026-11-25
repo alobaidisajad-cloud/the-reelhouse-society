@@ -155,6 +155,9 @@ beforeEach(() => {
   useFilmStore.setState({ _endorsedIndex: {}, interactions: [], logs: [], watchlist: [] });
   jest.clearAllMocks();
   mockFeeds = [];
+  // A share card one block drew, and what it was handed, are that block's.
+  mockCardReady = undefined;
+  mockCardData = undefined;
 });
 
 describe('a record prints facts, and nothing else', () => {

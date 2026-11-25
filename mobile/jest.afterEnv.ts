@@ -20,6 +20,9 @@ if (process.env.MOCKUPS) {
 }
 
 const G = globalThis as Record<string, unknown>;
+/** memberDrafts' DRAFT_PREFIX, written out: requiring that module here would load the phone's store
+ *  a second time (below). aTestRunsInEitherOrder.guard.test.ts holds the two the same. */
+const DRAFT_PREFIX = 'reelhouse_draft_';
 const gaps = () => G.__mockGaps as string[] | undefined;
 
 beforeEach(() => {
@@ -32,8 +35,10 @@ beforeEach(() => {
   // kept pages: what else a file puts on the phone is its own. A file that mocks the store itself
   // keeps its own, as it says. The store is reached as jest.setup.ts holds it: requiring the module
   // here gave a test that resets its modules a second store.
+  // And no words a member left unsent (memberDrafts): one test's appeal or critique, kept as it was
+  // typed, opened the next test's box holding it (nightly 2026-11-18 to -24).
   const phone = G.__mockPhoneStore as Record<string, string> | undefined;
-  for (const key of Object.keys(phone ?? {})) if (key.startsWith('kept_')) delete phone![key];
+  for (const key of Object.keys(phone ?? {})) if (key.startsWith('kept_') || key.startsWith(DRAFT_PREFIX)) delete phone![key];
 });
 
 /**

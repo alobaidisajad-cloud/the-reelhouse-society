@@ -97,7 +97,9 @@ beforeEach(() => {
   mockHouse = supabaseFake({ rows: { lounges: [ROOM] } });
   mockRoster = [{ user_id: HOST, status: 'approved', username: 'host' }, SEATED];
   useRouter.mockReturnValue({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() });
-  useLoungeStore.setState({ currentMessages: [], lounges: [], coversSet: {} });
+  // The roster read as the mock first answers it: a test that leaves it never answering (the next
+  // room's) left every later test with no roster (nightly 2026-11-22 to -24).
+  useLoungeStore.setState({ currentMessages: [], lounges: [], coversSet: {}, fetchMembers: async () => mockRoster });
   useNotificationStore.setState({ notifications: [ASKING], markRead: jest.fn(async () => {}) } as never);
 });
 

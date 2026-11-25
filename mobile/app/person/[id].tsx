@@ -52,37 +52,9 @@ import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { isTmdbBusy } from '@/src/lib/tmdbErrors';
 import Buster from '@/src/components/Buster';
 import reelToast from '@/src/utils/reelToast';
+import { creditAsDrawn, personAsDrawn, type PersonCredit, type PersonDetail } from '@/src/hooks/personAsDrawn';
 
 const PLACEHOLDER_VEIL: VeilStops = [[0, 0.1], [0.7, 0.6], [1, 1]];
-
-// ── Strict Interfaces ────────────────────────────────────────
-interface PersonDetail {
-  name: string;
-  profile_path: string | null;
-  birthday: string | null;
-  deathday: string | null;
-  place_of_birth: string | null;
-  known_for_department: string | null;
-  biography: string | null;
-}
-
-interface PersonCredit {
-  id: number;
-  title?: string;
-  name?: string;
-  poster_path: string | null;
-  backdrop_path?: string | null;
-  release_date?: string;
-  vote_average?: number;
-  vote_count?: number;
-  popularity?: number;
-  character?: string;
-  job?: string;
-  /** All crew jobs this person held on the film — the merge preserves every hat. */
-  jobs?: string[];
-  /** True when they appear on screen (cast credit). */
-  acted?: boolean;
-}
 
 // ── The department map — each craft's jobs ───────────────────
 const DEPT_JOBS: Record<string, string[]> = {
@@ -201,7 +173,6 @@ export default function PersonDetailScreen() {
           }
           const e = entry!;
           if (c.job) e._jobSet.add(c.job);
-          if (c.job === 'Director') e.job = 'Director';
           if (c.character !== undefined) {
             e.character = c.character;
             e.acted = true;
@@ -210,13 +181,14 @@ export default function PersonDetailScreen() {
             e.popularity = c.popularity;
           }
         }
-        credits = Array.from(seen.values()).map(({ _jobSet, ...rest }) => ({
+        // Kept as the page draws it (personAsDrawn): the whole answer filled the cache on the phone.
+        credits = Array.from(seen.values()).map(({ _jobSet, ...rest }) => creditAsDrawn({
           ...rest,
           jobs: Array.from(_jobSet),
         }));
       }
       return {
-        person: personData as unknown as PersonDetail,
+        person: personData ? personAsDrawn(personData as unknown as Record<string, unknown>) : null as PersonDetail | null,
         allCredits: credits,
       };
     },

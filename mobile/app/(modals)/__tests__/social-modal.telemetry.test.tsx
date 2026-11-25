@@ -79,6 +79,7 @@ const mockTmdb = jest.requireMock('@/src/lib/tmdb') as { tmdb: { detail: jest.Mo
 beforeEach(() => {
     jest.clearAllMocks();
     mockParams = {};
+    mockSpeaking = { held: true, standing: 'stranger' };
     mockTmdb.tmdb.detail.mockResolvedValue({ id: 550, title: 'Fight Club', release_date: '1999-10-15', poster_path: '/fc.jpg' });
     mockTmdb.tmdb.person.mockResolvedValue({ id: 287, name: 'Brad Pitt' });
 });

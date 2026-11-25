@@ -107,6 +107,9 @@ async function open(api: ReturnType<typeof render>) {
 const waitPastBackstop = () =>
   act(async () => { await new Promise((r) => setTimeout(r, 600)); });
 
+// The sheet's last props, the file's for every test: one block's open sheet is not another's.
+beforeEach(() => { mockModal.props = {}; });
+
 describe('ConciergeButton', () => {
   beforeEach(() => {
     mockPush.mockClear();

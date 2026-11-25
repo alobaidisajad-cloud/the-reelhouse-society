@@ -203,8 +203,28 @@ function flatText(n: Node): string {
   return (n.children ?? []).map(c => (typeof c === 'string' ? c : flatText(c))).join('');
 }
 
+// Every test from the page as this file first sets it: what one test swaps (the critiques, a read
+// that failed, who is signed in, an answer the house gives) broke the next in a backwards or random
+// order (nightly 2026-11-18 to -24). clearAllMocks keeps an answer a test gave a mock; reset here.
 beforeEach(() => {
   jest.clearAllMocks();
+  for (const fn of [mockAddComment, mockDeleteComment, mockRereadCritiques, mockRereadStack, mockAskIn, mockRope]) fn.mockReset();
+  mockEnqueue.mockReset().mockImplementation(() => true);
+  mockStackData = undefined;
+  mockStackFailed = false;
+  mockFeeds = [];
+  mockQueryState = {};
+  mockComments = [];
+  mockCommentsFailed = false;
+  mockCommentsReading = false;
+  mockRefresh = null;
+  mockEndReached = null;
+  mockStackOpts = null;
+  mockSalonsShown = false;
+  mockSpeaking = { held: true, standing: 'stranger' };
+  mockActionProps.length = 0;
+  mockReportProps.length = 0;
+  useOfflineQueueStore.setState({ queued: [] });
   mockCritiquesAsked = false;
   mockAuthUser = { id: 'u1', username: 'morpho' };
   mockBackHandlers.length = 0;

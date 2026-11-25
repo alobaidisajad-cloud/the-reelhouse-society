@@ -122,6 +122,18 @@ function nameOf(test) {
   return parts.join(' › ');
 }
 
+/**
+ * A block's tests and blocks, last to first, as jest-circus runs them once their block starts
+ * (it reads the list after run_describe_start). A test that leaves something behind (a mock's
+ * answer, a store's state, a kept draft) passed only because the test it broke ran first; the
+ * nightly's random order found seven such files, eleven nights after the first landed (2026-11-13
+ * to -24). The suite runs forwards in UTC and backwards in every other zone (god_tier_ci.yml), so
+ * every two tests of a file run in both orders on every push.
+ */
+function backwards(describeBlock) {
+  describeBlock.children.reverse();
+}
+
 class TimerCheckingEnvironment extends ReactNativeEnvironment {
   constructor(config, context) {
     super(config, context);
@@ -134,6 +146,8 @@ class TimerCheckingEnvironment extends ReactNativeEnvironment {
   }
 
   async handleTestEvent(event, state) {
+    // JEST_BACKWARDS=1: each block's tests and blocks run last to first (backwards below).
+    if (event.name === 'run_describe_start' && process.env.JEST_BACKWARDS === '1') backwards(event.describeBlock);
     // A timer started in a test's afterEach (cleanup's unmount) is that test's.
     if (event.name === 'test_start') shared.test = nameOf(event.test);
     if (event.name === 'test_done') shared.test = null;
@@ -170,3 +184,4 @@ class TimerCheckingEnvironment extends ReactNativeEnvironment {
 
 module.exports = TimerCheckingEnvironment;
 module.exports.startedByNode = startedByNode;
+module.exports.backwards = backwards;

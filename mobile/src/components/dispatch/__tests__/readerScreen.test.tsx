@@ -229,6 +229,9 @@ beforeEach(() => {
   mockWriteFails = false;
   mockWriteAnswers = [];
   mockWriteOffline = false;
+  // A block's held reads (its own afterEach lets them answer) and its rope are that block's.
+  mockHeldReads.length = 0;
+  mockSpeaking = { held: true, standing: 'stranger' };
   mockToastSuccess.mockClear();
   mockToastError.mockClear();
   mockPushed.length = 0;

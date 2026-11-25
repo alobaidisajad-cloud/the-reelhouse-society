@@ -96,6 +96,9 @@ const TABS: [string, () => React.ReactElement, () => void, (b: number) => number
   ['the Profile, the passport room', () => <ProfileTab />, () => { mockSignedIn = true; mockRoom = 'passport'; }, scrollEnd],
 ];
 
+// Every test on the file's own first room: a block's room is its own.
+beforeEach(() => { mockRoom = null; });
+
 describe.each(TABS)('%s', (_name, tab, arrange, want) => {
   beforeEach(arrange);
   afterEach(() => { mockRoom = null; });

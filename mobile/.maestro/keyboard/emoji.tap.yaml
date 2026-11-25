@@ -9,6 +9,12 @@ appId: com.reelhouse.society
 # language: on the right-to-left run's phone (Arabic) the letters keep no
 # emoji key, and the GIF key is "لوحة مفاتيح GIF", so it is found by the GIF
 # in its name (nightly 43848225969).
+#
+# A tablet's address field keeps its GIF key drawn off, and a press there opens
+# nothing (the recovery card, every tablet night from 2026-11-13): its symbols
+# page may keep the emoji key, so the symbols are opened and that key pressed,
+# as a member reaches it. Symbols with no emoji key are left for the letters
+# again, and the panel is judged as it stands (it fails: not the emoji panel).
 - runFlow:
     when:
       notVisible: "Emoji button"
@@ -19,5 +25,25 @@ appId: com.reelhouse.society
       visible: "Emoji button"
     commands:
       - tapOn: "Emoji button"
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow:
+    when:
+      visible: "Symbol keyboard"
+    commands:
+      - tapOn: "Symbol keyboard"
+      - waitForAnimationToEnd:
+          timeout: 3000
+      # Symbols with no emoji key: the letters again first, where no emoji key is either.
+      - runFlow:
+          when:
+            notVisible: "Emoji button"
+          commands:
+            - tapOn: "Letter keyboard"
+      - runFlow:
+          when:
+            visible: "Emoji button"
+          commands:
+            - tapOn: "Emoji button"
 - waitForAnimationToEnd:
     timeout: 3000

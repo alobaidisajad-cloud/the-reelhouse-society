@@ -100,6 +100,14 @@ jest.mock('@/src/utils/reelToast', () => {
 beforeEach(() => {
   mockFiled.length = 0;
   mockResults = [];
+  // Every test on a new filing that files: a block's amending, and its refusals, are its own.
+  mockEditId = undefined;
+  mockHeld = null;
+  mockAmended.length = 0;
+  mockFileFails = false;
+  mockFileOffline = false;
+  mockAmendFails = false;
+  mockAmendOffline = false;
   mockToast.error.mockClear(); mockToast.success.mockClear();
   jest.useFakeTimers({ doNotFake: ['nextTick'] });
 });

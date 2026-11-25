@@ -651,10 +651,18 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 // ── ORDINARY TYPE: jest-expo reports `fontScale: 2`; a test that wants a larger
-// scale sets it. (Required here: this file registers its mocks first.)
+// scale sets it. (Required here: this file registers its mocks first.) Set as the function itself,
+// never a spy: a file's jest.restoreAllMocks() took a spy away, and its later tests read jest-expo's
+// fontScale 2 (stack-detail's captions, 43.2 for 32, in the nightly's random order).
+// The forward clock (monotonicNow) the same way: React Native's preset makes performance.now a
+// jest.fn, and jest.spyOn on a jest.fn hands back that mock itself, so a test's clock stayed after
+// its jest.restoreAllMocks() for the rest of the file: stack-detail's curator test froze every later
+// press of the same button inside its 400 ms wait (the nightly's random order). A plain function is
+// spied on, and put back, as any other.
+globalThis.performance.now = () => Date.now();
 const { Dimensions: RNDimensions } = require('react-native');
 const realDimensionsGet = RNDimensions.get.bind(RNDimensions);
-jest.spyOn(RNDimensions, 'get').mockImplementation((...args: unknown[]) => ({
+RNDimensions.get = ((...args: unknown[]) => ({
   ...realDimensionsGet(args[0] as 'window' | 'screen'),
   // A capture run lays tests out on a phone (devices.json), not jest-expo's tablet.
   ...(process.env.MOCKUPS_CAPTURE ? require('./mockups/paths').PHONE : null),

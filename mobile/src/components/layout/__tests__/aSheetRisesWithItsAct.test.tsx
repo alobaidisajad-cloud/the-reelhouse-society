@@ -135,6 +135,9 @@ export function risesWithItsAct(tree: unknown, label: string): string {
   return pinned ? `"${label}" is in a box pinned to bottom ${String(styleOf(pinned).bottom)} inside the box that rose: it stays under the keys` : 'rises';
 }
 
+// Every test with the keys down, as the file sets them: a block's raised keys are its own.
+beforeEach(() => { mockKeyboard = 0; });
+
 describe.each(RISERS.map((r) => [r.name, r] as const))('%s', (_name, sheet) => {
   afterEach(() => { mockKeyboard = 0; });
 

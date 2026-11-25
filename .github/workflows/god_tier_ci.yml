@@ -414,7 +414,9 @@ jobs:
 
       # The app's files from every other zone of scripts/test-timezones.js, read
       # from it, each process started in its zone (JEST_OUTSIDE_UTC leaves out the
-      # tests of the tooling, which runs in UTC alone). Every zone runs even when one
+      # tests of the tooling, which runs in UTC alone), and each runs its files' tests last to
+      # first (JEST_BACKWARDS, test-utils/timerCheckingEnvironment.js): with UTC's run forwards,
+      # every two tests of a file run in both orders on every push. Every zone runs even when one
       # fails, the UTC run among them, and each that fails is its own annotation,
       # named by its zone.
       - name: Jest in every other time zone
@@ -431,7 +433,7 @@ jobs:
             record="$RUNNER_TEMP/jest-part/$name"
             log="$RUNNER_TEMP/${name%.json}-output.txt"
             echo "──────── TZ=$tz"
-            TZ="$tz" JEST_OUTSIDE_UTC=1 npx jest --ci --silent --maxWorkers=2 --shard=${{ matrix.part }}/${{ strategy.job-total }} \
+            TZ="$tz" JEST_OUTSIDE_UTC=1 JEST_BACKWARDS=1 npx jest --ci --silent --maxWorkers=2 --shard=${{ matrix.part }}/${{ strategy.job-total }} \
               --json --outputFile="$record" > "$log" 2>&1
             rc=$?
             tail -n 8 "$log"

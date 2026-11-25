@@ -184,6 +184,9 @@ const PRIORITY_REPORTS = [
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
+// Every test begins signed out, as the file sets it: a block's own sign-in stays in that block.
+beforeEach(() => { mockAuthStore.user = null; });
+
 describe('TribunalScreen Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();

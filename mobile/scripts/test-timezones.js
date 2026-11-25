@@ -55,7 +55,8 @@ function main() {
     const res = spawnSync(
       process.execPath,
       [jestBin, '--silent', ...passthrough],
-      { stdio: 'inherit', env: { ...process.env, TZ: tz, JEST_OUTSIDE_UTC: tz === 'UTC' ? '' : '1' } },
+      // Outside UTC, each file's tests last to first, as CI runs them (JEST_BACKWARDS).
+      { stdio: 'inherit', env: { ...process.env, TZ: tz, JEST_OUTSIDE_UTC: tz === 'UTC' ? '' : '1', JEST_BACKWARDS: tz === 'UTC' ? '' : '1' } },
     );
     if (res.status !== 0) failures.push(tz);
   }

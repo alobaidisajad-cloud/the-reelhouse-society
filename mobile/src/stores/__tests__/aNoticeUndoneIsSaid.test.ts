@@ -51,8 +51,15 @@ const notice = (id: string, at: string): AppNotification => ({
 const board = () => useNotificationStore.getState().notifications.map((n) => [n.id, n.read]);
 const bell = () => useNotificationStore.getState()._unreadCount;
 
+// The store's own memory of what this phone marked (readHere and the rest), put back as a sign-out
+// puts it: a notice one test opened while READ ALL was out stayed read through the next test's
+// refused READ ALL (nightly 2026-11-18, -23, -24).
+const RESETS = (jest.requireMock('../resetAllStores') as { registerStoreReset: jest.Mock }).registerStoreReset.mock.calls
+  .map(([handler]) => handler as (previous: string | null) => void);
+
 let clock = 1_000_000;
 beforeEach(() => {
+  for (const forget of RESETS) forget(null);
   clock += 1_000_000;
   jest.spyOn(performance, 'now').mockImplementation(() => clock);
   jest.clearAllMocks();

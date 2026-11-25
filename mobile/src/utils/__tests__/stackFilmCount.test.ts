@@ -28,6 +28,9 @@ jest.mock('../../lib/supabase', () => ({
   },
 }));
 
+// What a block's read sent, and the rows it was answered with, are that block's.
+beforeEach(() => { mockSent.select = undefined; mockRows = []; });
+
 describe('the OWNER path — uncapped, so the array is the truth', () => {
   it('counts every film in the stack', () => {
     const list = toProfileList({
