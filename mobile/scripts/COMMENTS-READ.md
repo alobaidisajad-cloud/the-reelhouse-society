@@ -2132,3 +2132,8 @@ files of the reading map this one does not.
 | test-utils/__tests__/aTestReadsAClockItHasSet.test.ts | — |  |
 | test-utils/onlyTheDate.ts | — |  |
 | e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts | — |  |
+| src/components/layout/__tests__/aCentredCardShowsItsFootAboveTheKeys.test.tsx | — |  |
+| src/hooks/__tests__/aPersonIsKeptAsTheirPageDrawsThem.test.ts | — |  |
+| src/hooks/personAsDrawn.ts | — |  |
+| test-utils/__tests__/aTestRunsInEitherOrder.guard.test.ts | — |  |
+| test-utils/__tests__/orderFixtures/leavesItsStateBehind.fixture.ts | — |  |
