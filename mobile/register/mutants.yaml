@@ -11204,3 +11204,57 @@ mutants:
         find: "numberOfLines={whole ? undefined : CASE_LINES}"
         replace: "numberOfLines={CASE_LINES}"
     proof: { file: src/components/dispatch/paper/__tests__/aReportedFilingIsReadWholeBeforeItIsRuledOn.test.tsx, test: "cut at three lines opens whole on READ IT WHOLE, and folds again" }
+
+  - id: shape-both-ways-taken-as-either-way
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts
+        find: "else if (!p.says.length || !p.allows.length)"
+        replace: "else if (!p.says.length && !p.allows.length)"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "can say NO: a kind with no proof, one proven one way, a near miss that wants it, a label that is nothing" }
+
+  - id: shape-both-ways-blind-to-a-printed-kind
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts
+        find: "if (led) kinds.add(led);"
+        replace: "if (led && !led) kinds.add(led);"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "can say NO: a kind with no proof, one proven one way, a near miss that wants it, a label that is nothing" }
+
+  - id: shape-order-never-read-out-of-turn
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "if (stacked && b.bottom <= a.top - 2) {"
+        replace: "if (stacked && b.bottom <= a.top - 2 && !stacked) {"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a stop built after one it is drawn above is read out of turn (order-late)" }
+
+  - id: shape-beneath-asks-a-hidden-page
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: 'const stopOf = (e) => !e.closest(''[aria-hidden="true"]'') && !e.parentElement?.closest(STOP);'
+        replace: 'const stopOf = (e) => !e.parentElement?.closest(STOP);'
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "the same page hidden while the sheet is up is not asked (beneath-hidden)" }
+
+  - id: shape-colour-blind-to-an-underline
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "return [n.tagName, cs.fontWeight, cs.fontStyle, cs.textDecorationLine, filled(cs.backgroundColor),"
+        replace: "return [n.tagName, cs.fontWeight, cs.fontStyle, filled(cs.backgroundColor),"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "the same option underlined as well is told apart in any colour (colour-marked)" }
+
+  - id: shape-short-never-listed
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "if ((SHORTS || mustBeWhole) && truncates(e)) {"
+        replace: "if (mustBeWhole && truncates(e)) {"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a one-line text the phone ends with an ellipsis is listed as shortened (short-cut)" }

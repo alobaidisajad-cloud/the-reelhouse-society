@@ -52,7 +52,6 @@ MOD:
   - MOD-the-evidence-changed-before-the-verdict
   - MOD-a-removal-that-cannot-be-undone
 EDGE:
-  - TOOL-a-measure-faults-what-the-phone-allows
 SPEED:
   - DB-lookup-without-index
   - SPEED-page-waits-for-the-members-marks
