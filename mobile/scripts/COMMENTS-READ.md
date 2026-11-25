@@ -2164,3 +2164,4 @@ files of the reading map this one does not.
 | src/hooks/__tests__/everyWordWrittenIsKept.guard.test.ts | — |  |
 | src/components/dispatch/paper/__tests__/aReportedFilingIsReadWholeBeforeItIsRuledOn.test.tsx | — |  |
 | src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts | — |  |
+| app/(admin)/__tests__/aVerdictRedrawsOnlyTheCasesItChanged.test.tsx | — |  |

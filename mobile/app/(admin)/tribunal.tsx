@@ -295,6 +295,299 @@ function ReportCountBadge({ count }: { count?: number }) {
   );
 }
 
+// ── One case on the docket ─────────────────────────────────────────────────
+
+/** A case whose member has no record read: one list for all of them, so it is never a change. */
+const NO_RECORD: ModActionRecord[] = [];
+
+/**
+ * The same case, read again: a docket read again after a verdict hands back a copy of every case
+ * that moved up a place (the read shares only what stands where it stood), the same words in it.
+ */
+const sameCase = (a: TribunalReport, b: TribunalReport) => a === b || JSON.stringify(a) === JSON.stringify(b);
+
+/**
+ * One case on the docket, drawn again only when something it shows changed: a verdict, a page more
+ * or a record read redraws the cases it touched, never every case on the docket. Every handler it
+ * is handed keeps its identity across the screen's renders.
+ */
+const DocketCase = React.memo(function DocketCase({
+  item, multiSelectMode, isSelected, ev, history, recordLoading, recordFailed, reread,
+  toggleReportSelection, summonEvidence, handleDismiss, openActionModal, handleBanOrExile,
+}: {
+  item: TribunalReport;
+  multiSelectMode: boolean;
+  isSelected: boolean;
+  ev: { loading: boolean; data?: ReportEvidence } | undefined;
+  history: ModActionRecord[];
+  recordLoading: boolean;
+  recordFailed: boolean;
+  /** Reads the member's record again; none for a case with no member. */
+  reread: (() => Promise<unknown>) | undefined;
+  toggleReportSelection: (reportId: string) => void;
+  summonEvidence: (reportId: string) => Promise<void>;
+  handleDismiss: (report: TribunalReport) => void;
+  openActionModal: (action: EnforcementAction, report: TribunalReport) => void;
+  handleBanOrExile: (action: 'ban' | 'permanent_exile', report: TribunalReport) => void;
+}) {
+  const reporterName = Array.isArray(item.reporter)
+    ? (item.reporter[0] as any)?.username
+    : item.reporter && typeof item.reporter === 'object' && 'username' in item.reporter
+      ? (item.reporter as any).username
+      : 'unknown';
+
+  const accused = Array.isArray(item.target_user) ? item.target_user[0] : item.target_user;
+  const warningCount = accused?.warning_count ?? 0;
+
+  return (
+    <PressableScale
+      style={[s.reportCard, isSelected && s.reportCardSelected]}
+      // A whole case card by its own box: the default 15pt halo laid each card 14pt
+      // over the next in the docket, and a tap meant to select one could select its
+      // neighbour (the touch sweep, review round 7's docket tests).
+      hitSlop={null}
+      onPress={multiSelectMode ? () => toggleReportSelection(item.id) : undefined}
+      disabled={!multiSelectMode}
+      pressedScale={multiSelectMode ? 0.98 : 1}
+      // Outside SELECT the card only holds its controls: an accessibility element there
+      // (Pressable's default) was ONE dimmed stop to VoiceOver, which never goes inside one,
+      // so no verdict could be reached (round 12). In SELECT it is the case's checkbox,
+      // named for the case; what is inside it then neither speaks nor takes a tap.
+      accessible={multiSelectMode}
+      accessibilityRole={multiSelectMode ? 'checkbox' : 'none'}
+      accessibilityLabel={multiSelectMode ? `Case filed ${formatDate(item.created_at)}: ${chargeLabel(item.reason).toLowerCase()}${accused?.username ? `, against @${accused.username}` : ''}` : undefined}
+      accessibilityState={multiSelectMode ? { checked: isSelected } : {}}
+    >
+      {/* Checkbox for multi-select mode */}
+      {multiSelectMode && (
+        <View style={s.checkboxRow}>
+          {isSelected ? (
+            <CheckSquare size={20} color={colors.sepia} />
+          ) : (
+            <Square size={20} color={colors.fog} />
+          )}
+        </View>
+      )}
+
+      {/* The case itself. In SELECT a tap anywhere on the card chooses it, and its
+          checkbox speaks for it, so nothing in here is a stop or takes the tap. */}
+      <View pointerEvents={multiSelectMode ? 'none' : 'auto'} importantForAccessibility={multiSelectMode ? 'no-hide-descendants' : 'auto'} accessibilityElementsHidden={multiSelectMode}>
+      <View style={s.cardHeader}>
+        <Text style={s.reportMeta}>
+          CASE FILED {formatDate(item.created_at)}
+        </Text>
+        <View style={s.badgeRow}>
+          <ReportCountBadge count={item.report_count} />
+          <View style={s.typeBadge}>
+            <Text style={s.typeBadgeText}>{item.content_type.replace('_', ' ').toUpperCase()}</Text>
+          </View>
+        </View>
+      </View>
+
+      <Text style={s.reasonTitle}>{chargeLabel(item.reason)}</Text>
+
+      {/* The Accused */}
+      {accused?.username ? (
+        <PressableScale
+          style={s.accusedRow}
+          onPress={() => nav.push(`/user/${accused.username}`)}
+          haptic="selection"
+          pressedScale={0.98}
+          accessibilityRole="button"
+          accessibilityLabel={`The accused: ${accused.username}${warningCount ? `, ${warningCount} ${warningCount === 1 ? 'warning' : 'warnings'}` : ''}. Open their file.`}
+        >
+          <View style={s.accusedAvatar}>
+            <RemoteImage uri={accused.avatar_url} style={s.accusedAvatarImg} contentFit="cover" fallback={<Text style={s.accusedAvatarLetter} {...UNSPOKEN}>{initialOf(accused.username)}</Text>} />
+          </View>
+          <View style={s.accusedInfo}>
+            <Text style={s.accusedLabel}>THE ACCUSED</Text>
+            <Text style={s.accusedName} numberOfLines={1}>@{accused.username}</Text>
+            {/* under the name, so the name has the row's whole width (beside it, a fifteen-letter one lost its end) */}
+            <WarningBadge count={warningCount} />
+          </View>
+        </PressableScale>
+      ) : (
+        <View style={s.accusedRow}>
+          <View style={s.accusedInfo}>
+            <Text style={s.accusedLabel}>THE ACCUSED</Text>
+            <Text style={s.accusedUnknown}>No member named — this case can only be dismissed.</Text>
+          </View>
+        </View>
+      )}
+
+      {/* The Evidence */}
+      <View style={s.detailsBox}>
+        <Text style={s.contextLabel}>THE EVIDENCE</Text>
+        {ev?.data ? (
+          ev.data.found ? (
+            <>
+              <Exhibit words={ev.data} said={ev.data.changed ? 'AS IT STANDS NOW' : undefined} />
+              {/* Edited since it was reported: the moderator judges the words reported,
+                  kept by the house when the report was filed (round 14). */}
+              {ev.data.changed && !!ev.data.reported && (
+                <View style={s.asReported}>
+                  <Exhibit words={ev.data.reported} said="AS REPORTED · EDITED SINCE" />
+                </View>
+              )}
+              {!!ev.data.route && (
+                <PressableScale room="vertical"
+                  onPress={() => nav.push(ev.data!.route!)}
+                  haptic="selection"
+                  pressedScale={0.97}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open the reported page"
+                >
+                  <Text style={s.evidenceOpen}>OPEN THE PAGE →</Text>
+                </PressableScale>
+              )}
+            </>
+          ) : (
+            <>
+              <Text style={s.evidenceDestroyed}>{evidenceGoneSays(ev.data)}</Text>
+              {/* Deleted since it was reported: its words, as reported, still judge the member. */}
+              {!!ev.data.reported && (
+                <View style={s.asReported}>
+                  <Exhibit words={ev.data.reported} said="THE WORDS AS REPORTED" />
+                </View>
+              )}
+            </>
+          )
+        ) : (
+          <PressableScale room
+            style={s.summonBtn}
+            onPress={() => summonEvidence(item.id)}
+            disabled={!!ev?.loading}
+            haptic="selection"
+            pressedScale={0.97}
+            accessibilityRole="button"
+            accessibilityLabel="Summon the evidence"
+          >
+            <FileSearch size={12} color={colors.sepia} />
+            <Text style={s.summonText}>{ev?.loading ? 'RETRIEVING…' : 'SUMMON THE EVIDENCE'}</Text>
+          </PressableScale>
+        )}
+
+        {item.details && (
+          <>
+            <Text style={[s.contextLabel, { marginTop: 12 }]}>THE COMPLAINT</Text>
+            <Text style={s.contextValue}>{item.details}</Text>
+          </>
+        )}
+
+        <Text style={[s.contextLabel, { marginTop: 12 }]}>REPORTED BY</Text>
+        <Text style={s.contextValue}>@{reporterName}</Text>
+      </View>
+
+      {/* Enforcement History — only a real member has a record */}
+      {!!item.target_user_id && <EnforcementHistory history={history} isLoading={recordLoading} failed={recordFailed} onRetry={reread && (() => { void reread(); })} />}
+
+      {/* Action Row — hidden in multi-select mode */}
+      {!multiSelectMode && (
+        <View style={s.actionGrid}>
+          <View style={s.actionRow}>
+            <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+              style={[s.actionBtn, { borderColor: colors.ash }, !item.target_user_id && { flex: 1 }]}
+              onPress={() => handleDismiss(item)}
+              haptic="selection"
+              pressedScale={0.95}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss report"
+            >
+              <Check size={14} color={colors.fog} />
+              <Text style={[s.actionText, { color: colors.fog }]}>DISMISS</Text>
+            </PressableScale>
+
+            {!!item.target_user_id && (
+              <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
+                onPress={() => openActionModal('warn', item)}
+                haptic="selection"
+                pressedScale={0.95}
+                accessibilityRole="button"
+                accessibilityLabel="Warn: issue a warning"
+              >
+                <AlertTriangle size={14} color={colors.sepia} />
+                <Text style={[s.actionText, { color: colors.sepia }]}>WARN</Text>
+              </PressableScale>
+            )}
+          </View>
+
+          {/* Removing the reported piece — a different axis from the
+              punishments below, so it stands on its own row. Still
+              shown when the member has left, because their content
+              can outlive them. On a page or a salon it takes what was
+              written on it (a page's words, name, picture and links; a
+              salon's name, description and cover), never the page or the
+              room: a ban freezes the member's own page and salon, so
+              without it a slur in a bio or a salon's name stood for as
+              long as the ban did (round 14). */}
+          {/* Not when the evidence is known destroyed: the piece is already gone, and
+              a removal would remove nothing (the house refuses it, round 11). The
+              case is then dismissed, or judged on its member. */}
+          {!(ev?.data && !ev.data.found) && (
+            <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+              style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
+              onPress={() => openActionModal('delete_content', item)}
+              haptic="medium"
+              pressedScale={0.95}
+              accessibilityRole="button"
+              accessibilityLabel={item.content_type === 'profile' ? 'Remove content: clear the words on the page'
+                : item.content_type === 'lounge' ? 'Remove content: clear the salon’s name and words'
+                : 'Remove the reported content'}
+            >
+              <Trash2 size={14} color={colors.sepia} />
+              <Text style={[s.actionText, { color: colors.sepia }]}>REMOVE CONTENT</Text>
+            </PressableScale>
+          )}
+
+          {!!item.target_user_id && (
+            <>
+              <View style={s.actionRow}>
+                <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                  style={[s.actionBtn, { borderColor: colors.crimson, backgroundColor: 'rgba(180,45,45,0.08)' }]}
+                  onPress={() => openActionModal('suspend', item)}
+                  haptic="medium"
+                  pressedScale={0.95}
+                  accessibilityRole="button"
+                  accessibilityLabel="Suspend member"
+                >
+                  <Clock size={14} color={colors.crimson} />
+                  <Text style={[s.actionText, { color: colors.crimsonInk }]}>SUSPEND</Text>
+                </PressableScale>
+
+                <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                  style={[s.actionBtn, { borderColor: colors.bloodReel, backgroundColor: 'rgba(107,26,10,0.12)' }]}
+                  onPress={() => handleBanOrExile('ban', item)}
+                  haptic="medium"
+                  pressedScale={0.95}
+                  accessibilityRole="button"
+                  accessibilityLabel="Ban member"
+                >
+                  <Ban size={14} color={colors.crimson} />
+                  <Text style={[s.actionText, { color: colors.crimsonInk }]}>BAN</Text>
+                </PressableScale>
+              </View>
+
+              <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                style={[s.actionBtn, s.exileBtn]}
+                onPress={() => handleBanOrExile('permanent_exile', item)}
+                haptic="heavy"
+                pressedScale={0.95}
+                accessibilityRole="button"
+                accessibilityLabel="Permanent exile: ban this member for good"
+              >
+                <Skull size={14} color={colors.crimson} />
+                <Text style={[s.actionText, { color: colors.crimsonInk }]}>PERMANENT EXILE</Text>
+              </PressableScale>
+            </>
+          )}
+        </View>
+      )}
+      </View>
+    </PressableScale>
+  );
+}, (was, now) => (Object.keys(now) as (keyof typeof now)[]).every((k) => (k === 'item' ? sameCase(was.item, now.item) : was[k] === now[k])));
+
 // ── Action Modal ───────────────────────────────────────────────────────────
 
 function ActionModal({
@@ -655,7 +948,6 @@ function TribunalScreen() {
     return !q || q.isLoading;
   };
   const recordFailed = (memberId: string) => !!readOf(memberId)?.isError;
-  const rereadRecord = (memberId: string) => { void readOf(memberId)?.refetch(); };
 
   // ── Load More for priority queue (compound keyset — matches RPC order) ──
   const loadMoreMutation = useMutation({
@@ -882,6 +1174,9 @@ function TribunalScreen() {
 
   // ── Handle dismiss via the admin-verified v2 resolver ───────────────────
 
+  // The resolver's own call, the same across renders (the mutation's result is a new object each
+  // render): a case's DISMISS keeps its identity, so the case is not drawn again for it.
+  const resolveCase = resolveV2Mutation.mutate;
   const handleDismiss = useCallback(
     (report: TribunalReport) => {
       TactileEngine.navigate();
@@ -890,7 +1185,7 @@ function TribunalScreen() {
         {
           text: 'Dismiss',
           onPress: () =>
-            resolveV2Mutation.mutate({
+            resolveCase({
               reportId: report.id,
               action: 'dismiss',
               reason: 'Dismissed by Tribunal admin',
@@ -898,7 +1193,7 @@ function TribunalScreen() {
         },
       ]);
     },
-    [resolveV2Mutation],
+    [resolveCase],
   );
 
   // ── Handle modal submission ────────────────────────────────────────────
@@ -1130,273 +1425,30 @@ function TribunalScreen() {
 
         {/* A closed case slides out over the docket closing up behind it. */}
         <Presence>
-            {!isLoadingData && !queueFailed && displayData.map((item, index) => {
-              const reporterName = Array.isArray(item.reporter)
-                ? (item.reporter[0] as any)?.username
-                : item.reporter && typeof item.reporter === 'object' && 'username' in item.reporter
-                  ? (item.reporter as any).username
-                  : 'unknown';
-
-              const accused = Array.isArray(item.target_user) ? item.target_user[0] : item.target_user;
-              const warningCount = accused?.warning_count ?? 0;
-              const isSelected = selectedReports.has(item.id);
-              const ev = evidence[item.id];
-
-              return (
-                <PresenceView
-                  key={item.id}
-                  name="tribunal.case"
-                  enter={{ kind: 'FadeInUp', duration: 400, delay: Math.min(index * 50, 400) }}
-                  exit={{ kind: 'SlideOutRight' }}
-                >
-                  <PressableScale
-                    style={[s.reportCard, isSelected && s.reportCardSelected]}
-                    // A whole case card by its own box: the default 15pt halo laid each card 14pt
-                    // over the next in the docket, and a tap meant to select one could select its
-                    // neighbour (the touch sweep, review round 7's docket tests).
-                    hitSlop={null}
-                    onPress={multiSelectMode ? () => toggleReportSelection(item.id) : undefined}
-                    disabled={!multiSelectMode}
-                    pressedScale={multiSelectMode ? 0.98 : 1}
-                    // Outside SELECT the card only holds its controls: an accessibility element there
-                    // (Pressable's default) was ONE dimmed stop to VoiceOver, which never goes inside one,
-                    // so no verdict could be reached (round 12). In SELECT it is the case's checkbox,
-                    // named for the case; what is inside it then neither speaks nor takes a tap.
-                    accessible={multiSelectMode}
-                    accessibilityRole={multiSelectMode ? 'checkbox' : 'none'}
-                    accessibilityLabel={multiSelectMode ? `Case filed ${formatDate(item.created_at)}: ${chargeLabel(item.reason).toLowerCase()}${accused?.username ? `, against @${accused.username}` : ''}` : undefined}
-                    accessibilityState={multiSelectMode ? { checked: isSelected } : {}}
-                  >
-                    {/* Checkbox for multi-select mode */}
-                    {multiSelectMode && (
-                      <View style={s.checkboxRow}>
-                        {isSelected ? (
-                          <CheckSquare size={20} color={colors.sepia} />
-                        ) : (
-                          <Square size={20} color={colors.fog} />
-                        )}
-                      </View>
-                    )}
-
-                    {/* The case itself. In SELECT a tap anywhere on the card chooses it, and its
-                        checkbox speaks for it, so nothing in here is a stop or takes the tap. */}
-                    <View pointerEvents={multiSelectMode ? 'none' : 'auto'} importantForAccessibility={multiSelectMode ? 'no-hide-descendants' : 'auto'} accessibilityElementsHidden={multiSelectMode}>
-                    <View style={s.cardHeader}>
-                      <Text style={s.reportMeta}>
-                        CASE FILED {formatDate(item.created_at)}
-                      </Text>
-                      <View style={s.badgeRow}>
-                        <ReportCountBadge count={item.report_count} />
-                        <View style={s.typeBadge}>
-                          <Text style={s.typeBadgeText}>{item.content_type.replace('_', ' ').toUpperCase()}</Text>
-                        </View>
-                      </View>
-                    </View>
-
-                    <Text style={s.reasonTitle}>{chargeLabel(item.reason)}</Text>
-
-                    {/* The Accused */}
-                    {accused?.username ? (
-                      <PressableScale
-                        style={s.accusedRow}
-                        onPress={() => nav.push(`/user/${accused.username}`)}
-                        haptic="selection"
-                        pressedScale={0.98}
-                        accessibilityRole="button"
-                        accessibilityLabel={`The accused: ${accused.username}${warningCount ? `, ${warningCount} ${warningCount === 1 ? 'warning' : 'warnings'}` : ''}. Open their file.`}
-                      >
-                        <View style={s.accusedAvatar}>
-                          <RemoteImage uri={accused.avatar_url} style={s.accusedAvatarImg} contentFit="cover" fallback={<Text style={s.accusedAvatarLetter} {...UNSPOKEN}>{initialOf(accused.username)}</Text>} />
-                        </View>
-                        <View style={s.accusedInfo}>
-                          <Text style={s.accusedLabel}>THE ACCUSED</Text>
-                          <Text style={s.accusedName} numberOfLines={1}>@{accused.username}</Text>
-                          {/* under the name, so the name has the row's whole width (beside it, a fifteen-letter one lost its end) */}
-                          <WarningBadge count={warningCount} />
-                        </View>
-                      </PressableScale>
-                    ) : (
-                      <View style={s.accusedRow}>
-                        <View style={s.accusedInfo}>
-                          <Text style={s.accusedLabel}>THE ACCUSED</Text>
-                          <Text style={s.accusedUnknown}>No member named — this case can only be dismissed.</Text>
-                        </View>
-                      </View>
-                    )}
-
-                    {/* The Evidence */}
-                    <View style={s.detailsBox}>
-                      <Text style={s.contextLabel}>THE EVIDENCE</Text>
-                      {ev?.data ? (
-                        ev.data.found ? (
-                          <>
-                            <Exhibit words={ev.data} said={ev.data.changed ? 'AS IT STANDS NOW' : undefined} />
-                            {/* Edited since it was reported: the moderator judges the words reported,
-                                kept by the house when the report was filed (round 14). */}
-                            {ev.data.changed && !!ev.data.reported && (
-                              <View style={s.asReported}>
-                                <Exhibit words={ev.data.reported} said="AS REPORTED · EDITED SINCE" />
-                              </View>
-                            )}
-                            {!!ev.data.route && (
-                              <PressableScale room="vertical"
-                                onPress={() => nav.push(ev.data!.route!)}
-                                haptic="selection"
-                                pressedScale={0.97}
-                                accessibilityRole="button"
-                                accessibilityLabel="Open the reported page"
-                              >
-                                <Text style={s.evidenceOpen}>OPEN THE PAGE →</Text>
-                              </PressableScale>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <Text style={s.evidenceDestroyed}>{evidenceGoneSays(ev.data)}</Text>
-                            {/* Deleted since it was reported: its words, as reported, still judge the member. */}
-                            {!!ev.data.reported && (
-                              <View style={s.asReported}>
-                                <Exhibit words={ev.data.reported} said="THE WORDS AS REPORTED" />
-                              </View>
-                            )}
-                          </>
-                        )
-                      ) : (
-                        <PressableScale room
-                          style={s.summonBtn}
-                          onPress={() => summonEvidence(item.id)}
-                          disabled={!!ev?.loading}
-                          haptic="selection"
-                          pressedScale={0.97}
-                          accessibilityRole="button"
-                          accessibilityLabel="Summon the evidence"
-                        >
-                          <FileSearch size={12} color={colors.sepia} />
-                          <Text style={s.summonText}>{ev?.loading ? 'RETRIEVING…' : 'SUMMON THE EVIDENCE'}</Text>
-                        </PressableScale>
-                      )}
-
-                      {item.details && (
-                        <>
-                          <Text style={[s.contextLabel, { marginTop: 12 }]}>THE COMPLAINT</Text>
-                          <Text style={s.contextValue}>{item.details}</Text>
-                        </>
-                      )}
-
-                      <Text style={[s.contextLabel, { marginTop: 12 }]}>REPORTED BY</Text>
-                      <Text style={s.contextValue}>@{reporterName}</Text>
-                    </View>
-
-                    {/* Enforcement History — only a real member has a record */}
-                    {!!item.target_user_id && <EnforcementHistory history={historyByUser[item.target_user_id] ?? []} isLoading={recordReading(item.target_user_id)} failed={recordFailed(item.target_user_id)} onRetry={() => rereadRecord(item.target_user_id!)} />}
-
-                    {/* Action Row — hidden in multi-select mode */}
-                    {!multiSelectMode && (
-                      <View style={s.actionGrid}>
-                        <View style={s.actionRow}>
-                          <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                            style={[s.actionBtn, { borderColor: colors.ash }, !item.target_user_id && { flex: 1 }]}
-                            onPress={() => handleDismiss(item)}
-                            haptic="selection"
-                            pressedScale={0.95}
-                            accessibilityRole="button"
-                            accessibilityLabel="Dismiss report"
-                          >
-                            <Check size={14} color={colors.fog} />
-                            <Text style={[s.actionText, { color: colors.fog }]}>DISMISS</Text>
-                          </PressableScale>
-
-                          {!!item.target_user_id && (
-                            <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                              style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
-                              onPress={() => openActionModal('warn', item)}
-                              haptic="selection"
-                              pressedScale={0.95}
-                              accessibilityRole="button"
-                              accessibilityLabel="Warn: issue a warning"
-                            >
-                              <AlertTriangle size={14} color={colors.sepia} />
-                              <Text style={[s.actionText, { color: colors.sepia }]}>WARN</Text>
-                            </PressableScale>
-                          )}
-                        </View>
-
-                        {/* Removing the reported piece — a different axis from the
-                            punishments below, so it stands on its own row. Still
-                            shown when the member has left, because their content
-                            can outlive them. On a page or a salon it takes what was
-                            written on it (a page's words, name, picture and links; a
-                            salon's name, description and cover), never the page or the
-                            room: a ban freezes the member's own page and salon, so
-                            without it a slur in a bio or a salon's name stood for as
-                            long as the ban did (round 14). */}
-                        {/* Not when the evidence is known destroyed: the piece is already gone, and
-                            a removal would remove nothing (the house refuses it, round 11). The
-                            case is then dismissed, or judged on its member. */}
-                        {!(ev?.data && !ev.data.found) && (
-                          <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                            style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
-                            onPress={() => openActionModal('delete_content', item)}
-                            haptic="medium"
-                            pressedScale={0.95}
-                            accessibilityRole="button"
-                            accessibilityLabel={item.content_type === 'profile' ? 'Remove content: clear the words on the page'
-                              : item.content_type === 'lounge' ? 'Remove content: clear the salon’s name and words'
-                              : 'Remove the reported content'}
-                          >
-                            <Trash2 size={14} color={colors.sepia} />
-                            <Text style={[s.actionText, { color: colors.sepia }]}>REMOVE CONTENT</Text>
-                          </PressableScale>
-                        )}
-
-                        {!!item.target_user_id && (
-                          <>
-                            <View style={s.actionRow}>
-                              <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                                style={[s.actionBtn, { borderColor: colors.crimson, backgroundColor: 'rgba(180,45,45,0.08)' }]}
-                                onPress={() => openActionModal('suspend', item)}
-                                haptic="medium"
-                                pressedScale={0.95}
-                                accessibilityRole="button"
-                                accessibilityLabel="Suspend member"
-                              >
-                                <Clock size={14} color={colors.crimson} />
-                                <Text style={[s.actionText, { color: colors.crimsonInk }]}>SUSPEND</Text>
-                              </PressableScale>
-
-                              <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                                style={[s.actionBtn, { borderColor: colors.bloodReel, backgroundColor: 'rgba(107,26,10,0.12)' }]}
-                                onPress={() => handleBanOrExile('ban', item)}
-                                haptic="medium"
-                                pressedScale={0.95}
-                                accessibilityRole="button"
-                                accessibilityLabel="Ban member"
-                              >
-                                <Ban size={14} color={colors.crimson} />
-                                <Text style={[s.actionText, { color: colors.crimsonInk }]}>BAN</Text>
-                              </PressableScale>
-                            </View>
-
-                            <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                              style={[s.actionBtn, s.exileBtn]}
-                              onPress={() => handleBanOrExile('permanent_exile', item)}
-                              haptic="heavy"
-                              pressedScale={0.95}
-                              accessibilityRole="button"
-                              accessibilityLabel="Permanent exile: ban this member for good"
-                            >
-                              <Skull size={14} color={colors.crimson} />
-                              <Text style={[s.actionText, { color: colors.crimsonInk }]}>PERMANENT EXILE</Text>
-                            </PressableScale>
-                          </>
-                        )}
-                      </View>
-                    )}
-                    </View>
-                  </PressableScale>
-                </PresenceView>
-              );
-            })}
+            {!isLoadingData && !queueFailed && displayData.map((item, index) => (
+              <PresenceView
+                key={item.id}
+                name="tribunal.case"
+                enter={{ kind: 'FadeInUp', duration: 400, delay: Math.min(index * 50, 400) }}
+                exit={{ kind: 'SlideOutRight' }}
+              >
+                <DocketCase
+                  item={item}
+                  multiSelectMode={multiSelectMode}
+                  isSelected={selectedReports.has(item.id)}
+                  ev={evidence[item.id]}
+                  history={(item.target_user_id && historyByUser[item.target_user_id]) || NO_RECORD}
+                  recordLoading={!!item.target_user_id && recordReading(item.target_user_id)}
+                  recordFailed={!!item.target_user_id && recordFailed(item.target_user_id)}
+                  reread={item.target_user_id ? readOf(item.target_user_id)?.refetch : undefined}
+                  toggleReportSelection={toggleReportSelection}
+                  summonEvidence={summonEvidence}
+                  handleDismiss={handleDismiss}
+                  openActionModal={openActionModal}
+                  handleBanOrExile={handleBanOrExile}
+                />
+              </PresenceView>
+            ))}
         </Presence>
 
         {!isLoadingData && !queueFailed && displayData.length > 0 && (

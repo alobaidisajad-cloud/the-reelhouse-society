@@ -17,7 +17,8 @@ const mockResolveReportV2 = jest.fn();
 const mockGetPendingReports = jest.fn();
 const mockGetPriorityQueue = jest.fn();
 jest.mock('@/src/services/ModerationService', () => ({
-  REPORTS_PAGE_SIZE: 30,
+  // THE DOCKET's page, as PENDING_PAGE below.
+  REPORTS_PAGE_SIZE: 10,
   ModerationService: {
     resolveReportV2: (...args: unknown[]) => mockResolveReportV2(...args),
     bulkDismiss: jest.fn().mockResolvedValue(0),
@@ -69,9 +70,12 @@ jest.mock('lucide-react-native', () => {
   });
 });
 
-const n45 = Array.from({ length: 45 }, (_, i) => i + 1);
-/** Forty-five cases, the first the newest, each a minute older than the one before. */
-const cases = (word: string) => n45.map((i) => ({
+/** THE DOCKET's page here: small, so a docket of two pages is a few cases to draw, not dozens. */
+const PENDING_PAGE = 10;
+/** URGENT's page, as the Tribunal reads it. */
+const PRIORITY_PAGE = 20;
+/** `count` cases, the first the newest, each a minute older than the one before. */
+const cases = (word: string, count: number) => Array.from({ length: count }, (_, i) => i + 1).map((i) => ({
   id: `${word}-${i}`,
   content_type: 'log',
   content_id: `content-${i}`,
@@ -86,10 +90,10 @@ const cases = (word: string) => n45.map((i) => ({
 }));
 type Case = ReturnType<typeof cases>[number];
 
-/** The pending docket as the house reads it: 30 at a time, from the boundary case on (not past it). */
+/** The pending docket as the house reads it: a page at a time, from the boundary case on (not past it). */
 const pendingHouse = (rows: () => Case[]) => async (cursor?: string) => {
   const from = cursor ? rows().filter((r) => r.created_at <= cursor) : rows();
-  return { rows: from.slice(0, 30), total: cursor ? null : rows().length };
+  return { rows: from.slice(0, PENDING_PAGE), total: cursor ? null : rows().length };
 };
 /** The priority queue as the house reads it: past the cursor's case, at most `limit`. */
 const priorityHouse = (rows: () => Case[]) => async (limit: number, cursor?: { id: string }) => {
@@ -122,48 +126,49 @@ afterEach(() => { jest.useRealTimers(); });
 
 it('THE DOCKET: a verdict reads the docket again as far as the moderator had read, not its first page alone', async () => {
   const alertSpy = jest.spyOn(Alert, 'alert');
-  let rows = cases('Pending');
+  // Two pages: the first, and five cases more.
+  let rows = cases('Pending', PENDING_PAGE + 5);
   mockGetPendingReports.mockImplementation(pendingHouse(() => rows));
   mockGetPriorityQueue.mockResolvedValue([]);
   const r = renderTribunal();
   await waitFor(() => expect(r.getByText('PENDING 1')).toBeTruthy());
-  await act(async () => { await fireEvent.press(r.getByLabelText('Load earlier: 15 more')); });
-  await waitFor(() => expect(r.getByText('PENDING 45')).toBeTruthy());
+  await act(async () => { await fireEvent.press(r.getByLabelText('Load earlier: 5 more')); });
+  await waitFor(() => expect(r.getByText('PENDING 15')).toBeTruthy());
   expect(r.queryByLabelText(/^Load earlier/)).toBeNull();
 
   rows = rows.filter((c) => c.id !== 'Pending-2');
   await dismissAt(r, 1, alertSpy);
   await waitFor(() => expect(mockGetPendingReports.mock.calls.filter(([cursor]) => cursor === undefined)).toHaveLength(2));
   await waitFor(() => expect(r.queryByText('PENDING 2')).toBeNull());
-  expect(r.getByText('PENDING 45')).toBeTruthy();
-  expect(r.getByText('PENDING 31')).toBeTruthy();
+  expect(r.getByText('PENDING 15')).toBeTruthy();
+  expect(r.getByText('PENDING 11')).toBeTruthy();
   expect(r.queryByLabelText(/^Load earlier/)).toBeNull();
   alertSpy.mockRestore();
 });
 
 it('URGENT: a verdict reads the queue again as far as the moderator had read, not its first page alone', async () => {
   const alertSpy = jest.spyOn(Alert, 'alert');
-  let rows = cases('Urgent');
+  // Two pages: the first, and five cases more.
+  let rows = cases('Urgent', PRIORITY_PAGE + 5);
   mockGetPendingReports.mockResolvedValue({ rows: [], total: 0 });
   mockGetPriorityQueue.mockImplementation(priorityHouse(() => rows));
   const r = renderTribunal();
   await waitFor(() => expect(r.getByLabelText('Urgent: the priority queue')).toBeTruthy());
   await act(async () => { await fireEvent.press(r.getByLabelText('Urgent: the priority queue')); });
   await waitFor(() => expect(r.getByText('URGENT 1')).toBeTruthy());
-  // Each page landed before the next is asked (twenty, forty, forty-five), past a double tap's window.
-  for (const held of [40, 45]) {
-    await act(async () => { jest.advanceTimersByTime(1000); });
-    await act(async () => { await fireEvent.press(r.getByLabelText('Load more priority reports')); });
-    await waitFor(() => expect(r.getAllByLabelText('Dismiss report')).toHaveLength(held));
-  }
-  await waitFor(() => expect(r.getByText('URGENT 45')).toBeTruthy());
+  // The first page landed before the next is asked, past a double tap's window.
+  await waitFor(() => expect(r.getAllByLabelText('Dismiss report')).toHaveLength(PRIORITY_PAGE));
+  await act(async () => { jest.advanceTimersByTime(1000); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Load more priority reports')); });
+  await waitFor(() => expect(r.getAllByLabelText('Dismiss report')).toHaveLength(PRIORITY_PAGE + 5));
+  expect(r.getByText('URGENT 25')).toBeTruthy();
   expect(r.queryByLabelText('Load more priority reports')).toBeNull();
 
   rows = rows.filter((c) => c.id !== 'Urgent-2');
   await dismissAt(r, 1, alertSpy);
   await waitFor(() => expect(mockGetPriorityQueue.mock.calls.filter(([, cursor]) => cursor === undefined)).toHaveLength(2));
   await waitFor(() => expect(r.queryByText('URGENT 2')).toBeNull());
-  expect(r.getByText('URGENT 45')).toBeTruthy();
+  expect(r.getByText('URGENT 25')).toBeTruthy();
   expect(r.getByText('URGENT 21')).toBeTruthy();
   expect(r.queryByLabelText('Load more priority reports')).toBeNull();
   alertSpy.mockRestore();
