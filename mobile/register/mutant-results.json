@@ -8447,5 +8447,89 @@
     "proof": "m1",
     "commit": "0e490dd02ea2f662b2b9619206c1882e7b0199b7",
     "verdict": "caught"
+  },
+  {
+    "class": "TEXT-words-cut-where-they-are-read-whole",
+    "mutant": "shape-cut-finder-reads-a-field-on-an-error-only",
+    "proof": "m14",
+    "commit": "d9ad4944629a4a182bc25e33d13ba431ea9ea921",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEXT-words-cut-where-they-are-read-whole",
+    "mutant": "shape-cut-finder-follows-no-local",
+    "proof": "m15",
+    "commit": "d9ad4944629a4a182bc25e33d13ba431ea9ea921",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEXT-words-cut-where-they-are-read-whole",
+    "mutant": "shape-cut-finder-passes-every-clamp-it-is-given",
+    "proof": "m14",
+    "commit": "d9ad4944629a4a182bc25e33d13ba431ea9ea921",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEXT-words-cut-where-they-are-read-whole",
+    "mutant": "shape-a-past-verdicts-reason-cut-to-a-line",
+    "proof": "m16",
+    "commit": "d9ad4944629a4a182bc25e33d13ba431ea9ea921",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEXT-words-cut-where-they-are-read-whole",
+    "mutant": "shape-a-reported-title-cut-at-two-lines",
+    "proof": "m17",
+    "commit": "d9ad4944629a4a182bc25e33d13ba431ea9ea921",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEXT-words-cut-where-they-are-read-whole",
+    "mutant": "shape-a-reported-filing-ruled-on-three-lines",
+    "proof": "m18",
+    "commit": "d9ad4944629a4a182bc25e33d13ba431ea9ea921",
+    "verdict": "caught"
+  },
+  {
+    "class": "TOOL-a-measure-faults-what-the-phone-allows",
+    "mutant": "shape-both-ways-taken-as-either-way",
+    "proof": "m5",
+    "commit": "3709faa912caa081cce528a068a60cb8e16a59c6",
+    "verdict": "caught"
+  },
+  {
+    "class": "TOOL-a-measure-faults-what-the-phone-allows",
+    "mutant": "shape-both-ways-blind-to-a-printed-kind",
+    "proof": "m5",
+    "commit": "3709faa912caa081cce528a068a60cb8e16a59c6",
+    "verdict": "caught"
+  },
+  {
+    "class": "TOOL-a-measure-faults-what-the-phone-allows",
+    "mutant": "shape-order-never-read-out-of-turn",
+    "proof": "m7",
+    "commit": "3709faa912caa081cce528a068a60cb8e16a59c6",
+    "verdict": "caught"
+  },
+  {
+    "class": "TOOL-a-measure-faults-what-the-phone-allows",
+    "mutant": "shape-beneath-asks-a-hidden-page",
+    "proof": "m10",
+    "commit": "3709faa912caa081cce528a068a60cb8e16a59c6",
+    "verdict": "caught"
+  },
+  {
+    "class": "TOOL-a-measure-faults-what-the-phone-allows",
+    "mutant": "shape-colour-blind-to-an-underline",
+    "proof": "m12",
+    "commit": "3709faa912caa081cce528a068a60cb8e16a59c6",
+    "verdict": "caught"
+  },
+  {
+    "class": "TOOL-a-measure-faults-what-the-phone-allows",
+    "mutant": "shape-short-never-listed",
+    "proof": "m13",
+    "commit": "3709faa912caa081cce528a068a60cb8e16a59c6",
+    "verdict": "caught"
   }
 ]

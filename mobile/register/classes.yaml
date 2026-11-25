@@ -5366,7 +5366,7 @@ classes:
       - { kind: static, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "each kind has a check that says it and a near miss the phone allows, each wanting what the list says" }
       - { kind: static, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "finds the kinds it was made for, put back: four with no check at all, and a rule proven only as a fault" }
       - { kind: static, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "can say NO: a kind with no proof, one proven one way, a near miss that wants it, a label that is nothing" }
-      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "proves every kind it reports both ways, by what this very run answered (proves-*)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "proves every kind the tools report both ways, by what this very run answered (proves-*)" }
       - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a stop built after one it is drawn above is read out of turn (order-late)" }
       - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "the same two built in the order drawn are read in turn (order-kept)" }
       - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a page under a sheet laid over it is still reached by a screen reader (beneath-sheet)" }
