@@ -10895,8 +10895,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/notificationStore.ts
-        find: "while (data && !error && lastRead === asked && data.length < want) {"
-        replace: "while (data && !error && lastRead === asked && data.length < 0) {"
+        find: "const past = data && !error && lastRead === asked && data.length < want ? cursorPast(data) : null;"
+        replace: "const past = data && !error && lastRead === asked && data.length < 0 ? cursorPast(data) : null;"
     proof: { file: src/stores/__tests__/theBoardReadAgainKeepsItsLaterPages.test.ts, test: "read past the most one read of the board asks, it is read on from the first read’s last row" }
 
   - id: shape-board-cut-short-on-a-failed-page
@@ -10904,8 +10904,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/notificationStore.ts
-        find: "if (older.error || !older.data) { error = older.error ?? { message: 'an older page answered nothing' }; data = null; break; }"
-        replace: "if (older.error || !older.data) break;"
+        find: "if (older.error || !older.data) { error = older.error ?? { message: 'an older page answered nothing' }; data = null; }"
+        replace: "if (older.error || !older.data) { /* the board kept as read so far */ }"
     proof: { file: src/stores/__tests__/theBoardReadAgainKeepsItsLaterPages.test.ts, test: "a page past the first that cannot be read leaves the board as it was, said as not read" }
 
   - id: shape-board-pull-reads-as-far
@@ -11141,3 +11141,12 @@ mutants:
         find: "        }).finally(() => setSending(false));"
         replace: "        });"
     proof: { file: src/utils/__tests__/aMarkInFlightEndsWithItsAnswer.guard.test.ts, test: "ends with its answer: lowered in a finally, or named with what ends it" }
+
+  - id: shape-the-board-walked-at-launch
+    class: SPEED-a-launch-read-walks-page-by-page
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "            if (data && past) {\n                asked = want - data.length;"
+        replace: "            while (data && past && data.length < want) {\n                asked = Math.min(BOARD_READ_MOST, want - data.length);"
+    proof: { file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "walks no read of the house page by page at launch, and every walk away from it is judged" }

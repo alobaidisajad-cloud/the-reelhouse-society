@@ -378,21 +378,23 @@ export const useNotificationStore = create<NotificationState>()(
         const want = how?.fromTop ? PAGE_SIZE : Math.min(LOCAL_NOTIFICATION_CAP, Math.max(PAGE_SIZE, state.notifications.length));
         try {
             // The badge is asked of the SERVER, never counted from one page of 30: with the first page,
-            // at one moment (readBoard). The pages past it are read on from its last row.
+            // at one moment (readBoard). The rest read past it is ONE more read on from its last row
+            // (as many as the board holds, 500 at most): two trips at most, never a walk page by page.
             let asked = Math.min(want, BOARD_READ_MOST);
             const first = await readBoard(user.id, asked);
             const unreadRes = first.unread;
             let { data, error } = first;
             let lastRead = data?.length ?? 0;
-            while (data && !error && lastRead === asked && data.length < want) {
-                const past = cursorPast(data);
-                if (!past) break;
-                asked = Math.min(BOARD_READ_MOST, want - data.length);
+            const past = data && !error && lastRead === asked && data.length < want ? cursorPast(data) : null;
+            if (data && past) {
+                asked = want - data.length;
                 const older = await readOlder(user.id, past, asked);
-                // A page past the first that could not be read: the board is not read, never cut short.
-                if (older.error || !older.data) { error = older.error ?? { message: 'an older page answered nothing' }; data = null; break; }
-                lastRead = older.data.length;
-                data = [...data, ...(older.data as unknown[])];
+                // The rest past the first that could not be read: the board is not read, never cut short.
+                if (older.error || !older.data) { error = older.error ?? { message: 'an older page answered nothing' }; data = null; }
+                else {
+                    lastRead = older.data.length;
+                    data = [...data, ...(older.data as unknown[])];
+                }
             }
 
         if (unreadRes.error) {
