@@ -3712,8 +3712,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "      if ((st.critiquesOrder[postId] ?? order) !== order) return {};"
-        replace: "      if (st.critiquesOrder[postId] === undefined && order !== order) return {};"
+        find: "    const readNo = (critiqueReads.get(postId) ?? 0) + 1;\n    critiqueReads.set(postId, readNo);"
+        replace: "    const readNo = critiqueReads.get(postId) ?? 1;\n    critiqueReads.set(postId, readNo);"
     proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "never draws an answer in an order the member has already left" }
 
   - id: shape-a-failed-batch-steps-back
@@ -3847,7 +3847,7 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "    set((st) => ((st.critiquesOrder[postId] ?? order) !== order ? {} : { critiquesFailed: { ...st.critiquesFailed, [postId]: true } }));"
+        find: "    set((st) => ({ critiquesFailed: { ...st.critiquesFailed, [postId]: true } }));"
         replace: "    set(() => ({}));"
     proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "is said as failed, the first page or the next, and a read that lands clears it" }
 

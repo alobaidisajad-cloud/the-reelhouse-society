@@ -1658,9 +1658,6 @@ async function readCritiquePage(
     const lastKey = lastKeyOf(data ?? []);
 
     set((st) => {
-      // An answer in an order no longer chosen is the other order's: the member switched while it
-      // was on its way, and its rows would stand under the wrong heading.
-      if ((st.critiquesOrder[postId] ?? order) !== order) return {};
       // What the member filed or took off that the queue still holds, laid over the house's page.
       const { filed, off } = queuedCritiques(postId);
       const existing = after ? (st.critiques[postId] ?? []) : filed;
@@ -1685,7 +1682,7 @@ async function readCritiquePage(
     // Said as failed, and asked again from the footer: the page that failed, first or next.
     if (!isNetworkError(e)) captureError(e, { where: 'dispatch.readCritiquePage' });
     if (!memberUnchanged(startedAs) || readNo !== critiqueReads.get(postId)) return;
-    set((st) => ((st.critiquesOrder[postId] ?? order) !== order ? {} : { critiquesFailed: { ...st.critiquesFailed, [postId]: true } }));
+    set((st) => ({ critiquesFailed: { ...st.critiquesFailed, [postId]: true } }));
   }
 }
 
