@@ -19,7 +19,7 @@
 import { houseNow } from '@/src/lib/houseClock';
 import { supabase } from '@/src/lib/supabase';
 import { onRefusal } from '@/src/lib/refusalEvents';
-import { useAuthStore } from '@/src/stores/auth';
+import { profileTurns, useAuthStore } from '@/src/stores/auth';
 import { logger } from '@/src/utils/logger';
 import { isStandingRefusal } from '@/src/utils/refusedForStanding';
 import { instantOf } from '@/src/utils/instant';
@@ -48,6 +48,8 @@ export function refreshStanding(): Promise<void> {
   reading = (async () => {
     const id = useAuthStore.getState().user?.id;
     if (!id) return;
+    // A part of the profile: laid only while no read of it whole was asked since, which holds it newer.
+    const mine = profileTurns.now(id);
     const { data, error } = await supabase
       .from('profiles').select('is_banned, suspended_until').eq('id', id).single();
     if (error || !data) {
@@ -55,7 +57,7 @@ export function refreshStanding(): Promise<void> {
       return;
     }
     const current = useAuthStore.getState().user;
-    if (!current || current.id !== id) return;
+    if (!current || current.id !== id || !profileTurns.isLast(id, mine)) return;
     useAuthStore.setState({ user: { ...current, is_banned: data.is_banned, suspended_until: data.suspended_until } });
   })().finally(() => { reading = null; });
   return reading;

@@ -7,7 +7,7 @@ import { VaultService } from '@/src/services/VaultService';
 import { captureError } from '@/src/lib/sentry';
 import { isNetworkError } from '@/src/utils/networkError';
 import { enqueueMutation, getOfflineQueue } from '@/src/utils/offlineQueue';
-import { keyOf, whenNotesAreSent, writeOnline } from '@/src/utils/oneWritePerThing';
+import { actsAsAsked, keyOf, whenNotesAreSent, writeOnline } from '@/src/utils/oneWritePerThing';
 import { houseIso } from '@/src/lib/houseClock';
 import { useAuthStore } from '@/src/stores/auth';
 import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
@@ -107,6 +107,7 @@ export const useVaultStore = create<VaultState>()(
         const askedBy = useAuthStore.getState().user?.id ?? null;
 
         set((s) => ({ loading: { ...s.loading, [logId]: true } }));
+        const untouched = actsAsAsked();
         try {
           const rows = await VaultService.fetchNotesForLog(logId);
           if (!stillSignedIn(askedBy)) { useVaultStore.getState().clear(); return; }
@@ -115,13 +116,17 @@ export const useVaultStore = create<VaultState>()(
             // device has no row to arrive, so merging would keep it for ever.
             const notes = { ...s.notes };
             const notesLog = { ...s.notesLog };
+            // A note the member wrote or took back since this read was asked is theirs, as it stands:
+            // the read may be older than the write.
+            const asRead = (viewingId: string) => untouched(`note:${viewingId}`);
             for (const viewingId of Object.keys(notesLog)) {
-              if (notesLog[viewingId] === logId) {
+              if (notesLog[viewingId] === logId && asRead(viewingId)) {
                 delete notes[viewingId];
                 delete notesLog[viewingId];
               }
             }
             for (const row of rows) {
+              if (!asRead(row.viewing_id)) continue;
               notes[row.viewing_id] = row.notes;
               notesLog[row.viewing_id] = row.log_id;
             }

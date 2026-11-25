@@ -9,11 +9,15 @@
  *
  * So the whole app is read, with TypeScript's parser (test-utils/afterAwait.js), for its two shapes:
  *   1. a read asked again by design (a function named for reading: fetch, load, refresh, read,
- *      search, more, next…, or work inside an effect that runs again when its inputs change) that
- *      writes what it heard (a store's set, a state setter, a query's data) stands each write behind
- *      a check, made after the wait, that it is still the read asked: a token taken before the wait
- *      compared with its live source after it (`mine !== gen.current`, `gen !== generation`,
- *      `marksWritten() !== before`), or the flag an effect's cleanup raises when it runs again;
+ *      search, more, next…, a pull's onRefresh or handleRefresh, or work inside an effect that runs
+ *      again when its inputs change) that writes what it heard (a store's set, a state setter, a
+ *      store's own setter called from outside it, a query's data) stands each write behind a check,
+ *      made after the wait, that it is still the read asked: a token taken before the wait compared
+ *      with its live source after it (`mine !== gen.current`, `gen !== generation`,
+ *      `marksWritten() !== before`), a thing's turn still its last (`turns.isLast(id, mine)`,
+ *      src/utils/turns.ts), the flag an effect's cleanup raises when it runs again, or, for a read
+ *      of the member's marks, each mark laid only where no act of theirs came since it was asked
+ *      (`untouched(key)` from actsAsAsked, src/utils/oneWritePerThing.ts);
  *   2. no page is asked by its count (`.range(from, …)`): a row taken away or added meanwhile shifts
  *      the next page, and a row is skipped or drawn twice. Each page begins after the last row read.
  * Each rule is shown failing on planted code first; each exception is named with why.
@@ -29,10 +33,11 @@ const rel = (f: string) => path.relative(MOBILE, f).split(path.sep).join('/');
 
 const APP = universe('appCode', { ext: ['.ts', '.tsx'] })
   .map((f) => ({ file: rel(f), text: readCode(f) }));
-const SCREENS_AND_STORES = APP.filter((f) => /^(app|src\/(stores|hooks|components|features|providers))\//.test(f.file));
+/** Every store, hook, screen, service and helper: anything that waits for the house can write state. */
+const SCREENS_AND_STORES = APP;
 
-/** A function named for reading: asked again whenever its page or its words change. */
-const READS = /^(fetch|load|refresh|read|search|reload|more|next|page|reread|refetch|hydrate|sync|pull)/i;
+/** A function named for reading: asked again whenever its page or its words change, or pulled. */
+const READS = /^(?:on|handle)?(?:Pull(?:To)?)?(fetch|load|refresh|read|search|reload|more|next|page|reread|refetch|hydrate|sync|pull|catchUp|retry|summon)/i;
 /** Calls named set… that write no state. */
 const NOT_STATE = /^(setTimeout|setInterval|setImmediate|setSensitive|setItem|setString|setParams|setOptions|setStringAsync)$/;
 
@@ -50,26 +55,18 @@ const CANNOT_BE_OVERTAKEN: Record<string, string> = {
  * only shrinks: a read fixed here is no longer found, and its entry then fails until it is taken out.
  */
 const STILL_TO_FIX = [
+  'app/(admin)/tribunal.tsx:summonEvidence',
+  'src/hooks/useFollowRequests.ts:refreshFollowRequestCount',
+  'src/hooks/useProfileData.ts:retryRoom',
+  'src/stores/lounge.ts:catchUpMessages',
+  'src/stores/lounge.ts:retryMessage',
   'app/(modals)/social-modal.tsx:loadMore',
   'src/hooks/useFollowRequests.ts:load',
   'src/hooks/useProfileData.ts:loadTabData',
   'src/hooks/useProfileData.ts:refreshTabWithFilters',
-  'src/stores/auth.ts:readRankHistory',
-  'src/stores/auth.ts:rereadProfile',
-  'src/stores/blockStore.ts:syncFromServer',
-  'src/stores/dispatch.ts:hydrate',
-  'src/stores/dispatch.ts:readTally',
-  'src/stores/dispatch.ts:fetchCritiques',
-  'src/stores/dispatch.ts:loadMoreCritiques',
-  'src/stores/dispatch.ts:loadViewerState',
-  'src/stores/dispatch.ts:readCritiquePage',
-  'src/stores/dispatch.ts:loadCritiqueCertifications',
-  'src/stores/domain/interactionSlice.ts:fetchEndorsements',
-  'src/stores/domain/interactionSlice.ts:fetchListEndorsements',
   'src/stores/lounge.ts:fetchLounges',
   'src/stores/lounge.ts:fetchMessages',
   'src/stores/lounge.ts:loadMoreMessages',
-  'src/stores/vaultStore.ts:loadForLog',
 ];
 
 /**
@@ -151,6 +148,8 @@ function oneAtATime(fn: ts.FunctionLikeDeclaration, sf: ts.SourceFile): boolean 
   for (const s of before) {
     const t = s.getText(sf);
     for (const m of t.matchAll(/(\w+):\s*true\b/g)) raised.add(m[1] ?? '');
+    // A mark kept per thing read (`loading: { ...s.loading, [logId]: true }`): one read of each thing at a time.
+    for (const m of t.matchAll(/(?<mark>\w+):\s*\{\s*\.\.\.\w+\.(?<again>\w+),\s*\[\w+\]:\s*true\s*\}/g)) if (m.groups?.mark === m.groups?.again) raised.add(m.groups?.mark ?? '');
     // An assignment to a mark already there, never a new const: a value read is no mark raised.
     for (const m of t.matchAll(/(?<!\b(?:const|let|var)\s+)(?<![.\w])(\w+)(?:\.current)?\s*=\s*(?!=)(?!null\b|false\b|undefined\b|0\b)/g)) raised.add(m[1] ?? '');
     for (const m of t.matchAll(/\b(\w+)\.set\(/g)) raised.add(m[1] ?? '');
@@ -179,6 +178,9 @@ export function answersDrawnOverNewer(file: string, text: string): string[] {
     ts.forEachChild(n, scan);
   };
   scan(sf);
+  // The setters of the flags a RefreshControl in this file is given as `refreshing`.
+  const pullFlags = new Set([...text.matchAll(/\brefreshing(?:=\{|:\s*)(?<flag>\w+)/g)]
+    .map((m) => m.groups?.flag ?? '').filter(Boolean).map((f) => `set${f.charAt(0).toUpperCase()}${f.slice(1)}`));
   const out: string[] = [];
   for (const body of AW.waitingBodies(sf)) {
     const keyed = inAKeyedEffect(body.fn);
@@ -186,9 +188,14 @@ export function answersDrawnOverNewer(file: string, text: string): string[] {
     if (!READS.test(name) && !keyed) continue;
     // Each value this function (or one around it) took before it waits: a token, if it is compared with where it came from.
     const taken = new Map<string, string>();
+    // Where each predicate actsAsAsked() gave was taken: it proves something only taken before the wait.
+    const askedAt = new Map<string, number>();
     for (let fn: ts.Node | null = body.fn; fn; fn = AW.ownerOf(fn)) {
       AW.ownNodes(fn as ts.FunctionLikeDeclaration, (m) => {
-        if (ts.isVariableDeclaration(m) && ts.isIdentifier(m.name) && m.initializer) taken.set(m.name.text, m.initializer.getText(sf));
+        if (ts.isVariableDeclaration(m) && ts.isIdentifier(m.name) && m.initializer) {
+          taken.set(m.name.text, m.initializer.getText(sf));
+          if (m.initializer.getText(sf) === 'actsAsAsked()') askedAt.set(m.name.text, m.getEnd());
+        }
         return null;
       });
     }
@@ -202,6 +209,13 @@ export function answersDrawnOverNewer(file: string, text: string): string[] {
     };
     const check = (e: ts.Expression): 'here' | 'gone' | null => {
       if (ts.isIdentifier(e) && flags.has(e.text)) return flags.get(e.text) ?? null;
+      // A thing's turn still its last: `x.isLast(key, mine)`, mine taken from `x.take(` or `x.now(` of the same turns.
+      if (ts.isCallExpression(e) && ts.isPropertyAccessExpression(e.expression) && e.expression.name.text === 'isLast' && e.arguments.length === 2) {
+        const family = e.expression.expression.getText(sf);
+        const turn = e.arguments[1];
+        const from = turn && ts.isIdentifier(turn) ? ` ${taken.get(turn.text) ?? ''} ${takenInFile.get(turn.text) ?? ''}` : '';
+        return from.includes(` ${family}.take(`) || from.includes(` ${family}.now(`) ? 'here' : null;
+      }
       if (ts.isCallExpression(e) && ts.isIdentifier(e.expression) && e.arguments.length === 0 && closures.has(e.expression.text)) {
         return AW.provesHere(closures.get(e.expression.text)!, check) ? 'here' : null;
       }
@@ -213,14 +227,29 @@ export function answersDrawnOverNewer(file: string, text: string): string[] {
       return null;
     };
     if (oneAtATime(body.fn, sf)) continue;
+    // A pull's own flag lowered (`setRefreshing(false)`), raised by the same function before it
+    // waits, and the flag the file's RefreshControl holds as `refreshing`: while it is up the
+    // control starts no second pull, so no newer one is out to be drawn over. It writes no answer.
+    const firstWait = body.tail ? -1 : Math.min(...AW.ownNodes(body.fn, (m) => (ts.isAwaitExpression(m) ? m.getStart() : null)));
+    const raisedBefore = new Set(AW.ownNodes(body.fn, (m) => (ts.isCallExpression(m) && m.getStart() < firstWait
+      && m.arguments[0]?.kind === ts.SyntaxKind.TrueKeyword ? m.expression.getText(sf) : null)));
+    const pullLowered = (w: ts.CallExpression) => w.arguments[0]?.kind === ts.SyntaxKind.FalseKeyword
+      && raisedBefore.has(w.expression.getText(sf)) && pullFlags.has(w.expression.getText(sf));
     const writes = AW.ownNodes(body.fn, (m) => {
       if (!ts.isCallExpression(m)) return null;
       const t = m.expression.getText(sf);
-      return (/^set[A-Z]\w*$/.test(t) && !NOT_STATE.test(t)) || t === 'set' || /\.(setQueryData|setQueriesData|setState)$/.test(t) ? m : null;
+      return (/^set[A-Z]\w*$/.test(t) && !NOT_STATE.test(t)) || t === 'set' || /\.(setQueryData|setQueriesData|setState)$/.test(t)
+        || /^(get\(\)|\w+\.getState\(\))\.set[A-Z]\w*$/.test(t) ? m : null;
+    });
+    // A read of the member's marks lays each mark only where no act of theirs came since it was
+    // asked: inside the write, a call of the predicate actsAsAsked() gave it before the wait.
+    const laidWhereUntouched = (w: ts.CallExpression, since: number) => w.arguments.some(function seek(n: ts.Node): boolean {
+      if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && (askedAt.get(n.expression.text) ?? Infinity) < since) return true;
+      return ts.forEachChild(n, (c) => (seek(c) ? true : undefined)) === true;
     });
     const unasked = writes.filter((w) => {
-      const since = AW.lastWaitBefore(body, w.getStart());
-      return since >= 0 && !AW.coveredAfter(body.fn, w, since, check);
+      const since = AW.lastWaitBefore(body, w.getStart(), w);
+      return since >= 0 && !AW.coveredAfter(body.fn, w, since, check) && !laidWhereUntouched(w, since) && !pullLowered(w);
     });
     if (unasked.length) out.push(`${file}:${name || 'an effect'} (${unasked.map((w) => AW.lineOf(sf, w)).join(', ')})`);
   }
@@ -262,6 +291,37 @@ describe('each rule says no to its planted shape', () => {
         readAll: async () => { const before = written(); const r = await ask(); if (written() !== before) return; set({ r }); },
       };
       useEffect(() => { let gone = false; ask(q).then((rows) => { if (!gone) setRows(rows); }); return () => { gone = true; }; }, [q]);`)).toEqual([]);
+  });
+
+  it('1: a pull, a store\'s setter called from outside it, and a turn of another family or taken after the wait are found', () => {
+    expect(answersDrawnOverNewer('src/services/planted.ts', `const filings = turns(); const critiques = turns();
+      export const onRefresh = async () => { const rows = await ask(); setRows(rows); };
+      export async function readTally(id) { const t = await ask(id); useDispatch.getState().setTally(id, t); };
+      export async function readOne(id) { const mine = critiques.take(id); const r = await ask(id); if (!filings.isLast(id, mine)) return; set({ r }); };
+      export async function readMarks(ids) { const r = await ask(ids); const untouched = actsAsAsked(); set((s) => r.filter((x) => untouched(x))); };`))
+      .toEqual(['src/services/planted.ts:onRefresh (2)', 'src/services/planted.ts:readTally (3)', 'src/services/planted.ts:readOne (4)', 'src/services/planted.ts:readMarks (5)']);
+  });
+
+  it('1: and passes a thing\'s turn still its last, marks laid where untouched since asked, and a wait in the other branch', () => {
+    expect(answersDrawnOverNewer('src/stores/planted.ts', `const filings = turns();
+      export async function readOne(id) { const mine = filings.take(id); const r = await ask(id); if (!filings.isLast(id, mine)) return; set({ r }); };
+      export async function readPart(id) { const mine = filings.now(id); const r = await ask(id); if (filings.isLast(id, mine)) set({ r }); };
+      export async function readMarks(ids) { const untouched = actsAsAsked(); const r = await ask(ids); set((s) => r.filter((x) => untouched(x))); };
+      export async function onRefresh(a) { if (a) { await ask(); } else { setFrom(undefined); } };
+      export const s = { loadForLog: async (id) => { if (get().loading[id]) { return; } set((s) => ({ loading: { ...s.loading, [id]: true } })); const r = await ask(id); set({ r }); } };`)).toEqual([]);
+    // One read per thing only when the mark it checks is the one it raises.
+    expect(answersDrawnOverNewer('src/stores/planted.ts', `export const s = { loadForLog: async (id) => { if (get().loading[id]) { return; }
+      set((s) => ({ busy: { ...s.loading, [id]: true } })); const r = await ask(id); set({ r }); } };`)).toEqual(['src/stores/planted.ts:loadForLog (2)']);
+  });
+
+  it('1: a pull lowers only the flag its RefreshControl holds, raised before it waited', () => {
+    const screen = (body: string) => `export function S() {
+      const onRefresh = async () => { ${body} };
+      return <List refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} />; }`;
+    expect(answersDrawnOverNewer('app/planted.tsx', screen('setRefreshing(true); await ask(); setRefreshing(false);'))).toEqual([]);
+    expect(answersDrawnOverNewer('app/planted.tsx', screen('await ask(); setRefreshing(false);'))).toEqual(['app/planted.tsx:onRefresh (2)']);
+    expect(answersDrawnOverNewer('app/planted.tsx', screen('setBusy(true); await ask(); setBusy(false);'))).toEqual(['app/planted.tsx:onRefresh (2)']);
+    expect(answersDrawnOverNewer('app/planted.tsx', screen('setRefreshing(true); const r = await ask(); setRows(r); setRefreshing(false);'))).toEqual(['app/planted.tsx:onRefresh (2)']);
   });
 
   it('2: a page asked by its count', () => {

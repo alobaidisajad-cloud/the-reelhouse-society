@@ -86,13 +86,24 @@ function ownNodes(fn, pick) {
   return out;
 }
 
+/** Whether a wait and a node stand in the two branches of one `if` or `?:`: the one never runs before the other. */
+function otherBranch(wait, node) {
+  const within = (n, branch) => !!branch && n.getStart() >= branch.getStart() && n.getEnd() <= branch.getEnd();
+  for (let p = wait.parent; p; p = p.parent) {
+    const [a, b] = ts.isIfStatement(p) ? [p.thenStatement, p.elseStatement] : ts.isConditionalExpression(p) ? [p.whenTrue, p.whenFalse] : [null, null];
+    if ((within(wait, a) && within(node, b)) || (within(wait, b) && within(node, a))) return true;
+  }
+  return false;
+}
+
 /**
  * Where the last wait before `pos` ends, in this function's own body: an await, or for a tail the
- * start of its body. -1 when nothing waits before it.
+ * start of its body. -1 when nothing waits before it. Given the node at `pos`, a wait in the other
+ * branch of an `if` or `?:` that holds it is not before it.
  */
-function lastWaitBefore(body, pos) {
-  if (!body.waits) body.waits = ownNodes(body.fn, (n) => (ts.isAwaitExpression(n) || (ts.isForOfStatement(n) && n.awaitModifier) ? n.getEnd() : null));
-  const before = body.waits.filter((w) => w <= pos);
+function lastWaitBefore(body, pos, node) {
+  if (!body.waitNodes) body.waitNodes = ownNodes(body.fn, (n) => (ts.isAwaitExpression(n) || (ts.isForOfStatement(n) && n.awaitModifier) ? n : null));
+  const before = body.waitNodes.filter((w) => w.getEnd() <= pos && !(node && otherBranch(w, node))).map((w) => w.getEnd());
   if (before.length) return Math.max(...before);
   return body.tail ? body.fn.body.getStart() : -1;
 }

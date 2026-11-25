@@ -29,6 +29,13 @@ export function heldClient<C extends { from: (table: string) => unknown }>(clien
     });
   };
 
+  /** A terminal answer (single, maybeSingle) still takes its abort signal, as supabase-js's does. */
+  const keepsItsSignal = <T>(answer: Promise<T>): Promise<T> => {
+    const out = answer as Promise<T> & { abortSignal: () => Promise<T> };
+    out.abortSignal = () => out;
+    return out;
+  };
+
   const wrap = (table: string, query: object): object => new Proxy(query, {
     get(target, key) {
       const own = (target as Record<PropertyKey, unknown>)[key];
@@ -43,7 +50,7 @@ export function heldClient<C extends { from: (table: string) => unknown }>(clien
           // A step of the query (the same builder), or a terminal answer (single, maybeSingle).
           return out === target || typeof (out as Record<string, unknown>).select === 'function'
             ? wrap(table, out as object)
-            : hold(table, out as PromiseLike<unknown>);
+            : keepsItsSignal(hold(table, out as PromiseLike<unknown>));
         }
         return out;
       };

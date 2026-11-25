@@ -1277,8 +1277,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/auth.ts
-        find: "    if (error || !data || !memberUnchanged(id)) return profileRead(get().user);\n"
-        replace: "    if (error || !data) return profileRead(get().user);\n"
+        find: "    if (error || !data || !memberUnchanged(id) || !profileTurns.isLast(id, mine)) return profileRead(get().user);\n"
+        replace: "    if (error || !data || !profileTurns.isLast(id, mine)) return profileRead(get().user);\n"
     proof: { file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "an answer for a member who has since gone lands nowhere" }
 
   - id: shape-sign-in-reads-no-blocks
@@ -1322,8 +1322,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "      void loadViewerState([one], set, startedAs).then(() => {"
-        replace: "      await loadViewerState([one], set, startedAs).then(() => {"
+        find: "    void loadViewerState([one], set, startedAs).then(() => {"
+        replace: "    await loadViewerState([one], set, startedAs).then(() => {"
     proof: { file: src/stores/__tests__/dispatchGuards.test.ts, test: "is not waited for: the filing comes at once, its marks unknown until their read answers" }
 
   - id: shape-stamp-unknown-pressable
@@ -5218,8 +5218,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "        if (!waiting) {"
-        replace: "        if (waiting) {"
+        find: "      if (!waiting) {"
+        replace: "      if (waiting) {"
     proof: { file: src/stores/__tests__/aFilingTheHouseNoLongerGivesLeavesThePaper.test.ts, test: "a filing the house no longer gives leaves the page and the opened filings, so the reader says it is no longer here" }
 
   - id: shape-amend-offers-a-film
@@ -9350,6 +9350,141 @@ mutants:
         find: "    if (after !== null) q = q.gt(key, after);\n"
         replace: ""
     proof: { file: src/features/settings/__tests__/anExportIsWhole.test.ts, test: "a row removed between two pages moves nothing: the next page still begins after the last row read" }
+
+  - id: shape-a-filing-read-laid-out-of-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    if (!filingTurns.isLast(id, mine)) {"
+        replace: "    if (filingTurns.isLast(id, mine) === null) {"
+    proof: { file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "lays the newer read when the older lands last, and answers the older call with it" }
+
+  - id: shape-a-tally-laid-out-of-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      if (!memberUnchanged(startedAs) || !tallyTurns.isLast(id, mine)) return;"
+        replace: "      if (!memberUnchanged(startedAs)) return;"
+    proof: { file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "a ballot's running count asked earlier never lands over one asked later" }
+
+  - id: shape-critiques-read-again-take-no-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    const mine = critiqueTurns.take(postId);"
+        replace: "    const mine = critiqueTurns.now(postId);"
+    proof: { file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "read again keep the newer list when the older lands last" }
+
+  - id: shape-a-next-page-of-critiques-takes-the-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    const mine = critiqueTurns.now(postId);"
+        replace: "    const mine = critiqueTurns.take(postId);"
+    proof: { file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "a next page asked of the list before it was read again is not laid on the new one" }
+
+  - id: shape-a-filing-mark-laid-over-the-act
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "if (r.post_id && untouched(`certify:filing:${r.post_id}`)) certified"
+        replace: "if (r.post_id) certified"
+    proof: { file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "a certification taken back while the member's marks were read stays taken back" }
+
+  - id: shape-a-record-certification-laid-over-the-act
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/domain/interactionSlice.ts
+        find: "if (i.type === 'endorse' && untouched(`certify:log:${i.targetId}`)) idx"
+        replace: "if (i.type === 'endorse') idx"
+    proof: { file: src/stores/__tests__/aCertificationTakenBackWhileReadStaysTakenBack.test.ts, test: "a record's certification taken back while they are read stays taken back" }
+
+  - id: shape-a-stack-certification-laid-over-the-act
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/domain/interactionSlice.ts
+        find: "if (untouched(`certify:list:${i.targetId}`)) idx[i.targetId] = i;"
+        replace: "idx[i.targetId] = i;"
+    proof: { file: src/stores/__tests__/aCertificationTakenBackWhileReadStaysTakenBack.test.ts, test: "a stack's certification taken back while they are read stays taken back" }
+
+  - id: shape-an-act-begun-after-the-read-unseen
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/oneWritePerThing.ts
+        find: "        if ((lastActOn.get(key) ?? 0) > asked || outThen.has(key) || queuedThen.has(key) || onlineKeys.has(key)) return false;"
+        replace: "        if (outThen.has(key)) return false;"
+    proof: { file: src/stores/__tests__/aCertificationTakenBackWhileReadStaysTakenBack.test.ts, test: "a record's certification taken back while they are read stays taken back" }
+
+  - id: shape-a-vault-note-laid-over-the-write
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/vaultStore.ts
+        find: "              if (!asRead(row.viewing_id)) continue;"
+        replace: "              if (row.viewing_id === null) continue;"
+    proof: { file: src/stores/__tests__/vaultStore.test.ts, test: "stands over the read asked before it, which may be older than the write" }
+
+  - id: shape-block-lists-read-without-a-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/blockStore.ts
+        find: "    const mine = blockTurns.take(LISTS);"
+        replace: "    const mine = blockTurns.now(LISTS);"
+    proof: { file: src/stores/__tests__/aBlockMadeWhileTheListsAreReadStays.test.ts, test: "of two reads, the later asked is laid, whichever lands last" }
+
+  - id: shape-a-profile-read-laid-out-of-turn
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "    if (error || !data || !memberUnchanged(id) || !profileTurns.isLast(id, mine)) return profileRead(get().user);"
+        replace: "    if (error || !data || !memberUnchanged(id)) return profileRead(get().user);"
+    proof: { file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "lays the later asked, whichever lands last" }
+
+  - id: shape-a-standing-laid-under-a-whole-read
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/standing.ts
+        find: "    if (!current || current.id !== id || !profileTurns.isLast(id, mine)) return;"
+        replace: "    if (!current || current.id !== id) return;"
+    proof: { file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "a read of the member's standing asked before a whole read lands nowhere after it" }
+
+  - id: shape-a-turn-of-any-family-taken-as-the-check
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "return from.includes(` ${family}.take(`) || from.includes(` ${family}.now(`) ? 'here' : null;"
+        replace: "return from.includes('.take(') || from.includes('.now(') ? 'here' : null;"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a pull, a store's setter called from outside it, and a turn of another family or taken after the wait are found" }
+
+  - id: shape-any-flag-lowered-taken-as-a-pull
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "      && raisedBefore.has(w.expression.getText(sf)) && pullFlags.has(w.expression.getText(sf));"
+        replace: "      && raisedBefore.has(w.expression.getText(sf));"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a pull lowers only the flag its RefreshControl holds, raised before it waited" }
+
+  - id: shape-a-wait-in-the-other-branch-counted
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: test-utils/afterAwait.js
+        find: "  const before = body.waitNodes.filter((w) => w.getEnd() <= pos && !(node && otherBranch(w, node))).map((w) => w.getEnd());"
+        replace: "  const before = body.waitNodes.filter((w) => w.getEnd() <= pos).map((w) => w.getEnd());"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: and passes a thing's turn still its last, marks laid where untouched since asked, and a wait in the other branch" }
 
   - id: shape-a-record-written-into-the-checkout
     class: CI-a-run-writes-into-the-checkout-it-sweeps

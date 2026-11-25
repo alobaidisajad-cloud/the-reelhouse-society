@@ -26,6 +26,7 @@ import { BAD_CREDENTIALS, isAddress, authLink, handleResting, doorFor, keepDoor 
 import { e2eTrace } from '../utils/e2eTrace';
 import { raceDeadline } from '../utils/raceDeadline';
 import { profileRead } from '../utils/profileRead';
+import { turns } from '../utils/turns';
 import { useBlockStore } from './blockStore';
 
 /**
@@ -244,7 +245,17 @@ async function signOutClosedAccount(): Promise<void> {
  * whose rank lapsed as one coming back, not a stranger. A failed read leaves
  * what was known.
  */
+/** Each member's rank history, read in turns. */
+const rankTurns = turns();
+/**
+ * Each member's profile, read in turns: a read of it whole (rereadProfile) takes one as it is asked;
+ * a read of a part (refreshStanding) reads it, and is laid only while no whole read was asked since.
+ */
+export const profileTurns = turns();
+
 async function readRankHistory(userId: string): Promise<void> {
+  // Asked at sign-in and at the session's restore: the later asked is laid, whichever lands last.
+  const mine = rankTurns.take(userId);
   let data: unknown;
   let error: { message: string } | null;
   try {
@@ -257,7 +268,7 @@ async function readRankHistory(userId: string): Promise<void> {
     logger.warn('[auth] could not read the member\'s rank history', error.message);
     return;
   }
-  if (!memberUnchanged(userId)) return;
+  if (!memberUnchanged(userId) || !rankTurns.isLast(userId, mine)) return;
   useAuthStore.setState((s) => {
     if (!s.user) return {};
     const user = { ...s.user, entitlement_source: typeof data === 'string' ? data : null };
@@ -614,6 +625,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   rereadProfile: async () => {
     const id = get().user?.id ?? null;
     if (!id) return false;
+    // Asked again while one is out (the membership page, the clearance, the boot): the later asked is laid.
+    const mine = profileTurns.take(id);
     // What waited for the house goes first, then the read; still unreached, it is laid over the read.
     await sendPendingPrefs(id);
     const { data, error } = await supabase.from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', id).single();
@@ -623,7 +636,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       return false;
     }
     // Only onto the member it was read for, as the login's read lands.
-    if (error || !data || !memberUnchanged(id)) return profileRead(get().user);
+    if (error || !data || !memberUnchanged(id) || !profileTurns.isLast(id, mine)) return profileRead(get().user);
     rankWasRead(id);
     set((s) => {
       const updatedUser = s.user ? ({ ...s.user, ...withPendingPrefs(id, data) } as User) : null;

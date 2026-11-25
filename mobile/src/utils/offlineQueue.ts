@@ -34,7 +34,7 @@ import { counted } from './counted';
 import { queryClient } from '../lib/queryClient';
 import { settleDelivered } from '../stores/markCounts';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
-import { isWritingOnline, keyOf, notesWereSent, sentUnder } from './oneWritePerThing';
+import { actedOn, isWritingOnline, keyOf, notesWereSent, sentUnder } from './oneWritePerThing';
 import {
     DEAD_LETTER_KEY, QUEUE_KEY, changesKept, changesMadeOffline, heldKey, heldOwnerOf, keepForOwners, kindOf,
     marksLetGo, marksRefused, NOT_KEPT, queueKeys, readList, readQueue, wordsGivenBack, writeList, writeQueue,
@@ -355,6 +355,8 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
     // older, sent after it, would undo it. Held ones too: sent again by the member's hand, an
     // older refused write would undo this one.
     const key = keyOf(newMutation);
+    // An act on the thing: a read of the member's marks asked before it lays nothing over it.
+    actedOn(key);
     const older = key ? queue.filter((m) => m.owner === owner && keyOf(m) === key) : [];
     if (older.length > 0) {
         queue = queue.filter((m) => !older.includes(m));

@@ -73,6 +73,46 @@ let sending: { key: string; done: Promise<unknown> } | null = null;
 /** Each key's online writes, one after another: an older one's answer is had before a newer goes. */
 const keyChains = new Map<string, Promise<void>>();
 
+/** Each keyed act counted, and the count at each thing's last act: begun online, settled, or queued. */
+let acts = 0;
+const lastActOn = new Map<string, number>();
+
+/** An act on this thing: begun online, settled (landed or refused), or queued. */
+export function actedOn(key: string | null): void {
+    if (!key) return;
+    acts += 1;
+    lastActOn.set(key, acts);
+}
+
+/**
+ * A read of the member's marks, as it is asked: what it may lay once answered. A thing the member
+ * acted on since (begun, settled or queued), or whose write was out or queued when the read was asked
+ * or is now, is the act's: the read's answer for it may be older than the act, so the store keeps what
+ * the act made. Every other thing is laid as read.
+ */
+export function actsAsAsked(): (key: string) => boolean {
+    const asked = acts;
+    const outThen = new Set(onlineKeys.keys());
+    const queuedThen = queuedKeys();
+    let queuedNow: Set<string> | null = null;
+    return (key) => {
+        if ((lastActOn.get(key) ?? 0) > asked || outThen.has(key) || queuedThen.has(key) || onlineKeys.has(key)) return false;
+        queuedNow ??= queuedKeys();
+        return !queuedNow.has(key);
+    };
+}
+
+/** The keys of the signed-in member's writes waiting in the queue. */
+function queuedKeys(): Set<string> {
+    const owner = signedInMember();
+    const out = new Set<string>();
+    for (const m of readQueue()) {
+        const key = m.owner === owner ? keyOf(m) : null;
+        if (key) out.add(key);
+    }
+    return out;
+}
+
 /** Is a write of this thing out online now? The queue's send leaves the thing's queued writes be. */
 export function isWritingOnline(key: string | null): boolean {
     return !!key && onlineKeys.has(key);
@@ -126,6 +166,7 @@ export async function writeOnline<T>(
     { landed, landedDespite }: { landed?: (answer: T) => boolean; landedDespite?: (e: unknown) => boolean } = {},
 ): Promise<T> {
     if (!key) return write();
+    actedOn(key);
     const before = keyChains.get(key) ?? Promise.resolve();
     let release: () => void = () => {};
     const mine = new Promise<void>((resolve) => { release = resolve; });
@@ -149,6 +190,7 @@ export async function writeOnline<T>(
         } finally {
             const left = (onlineKeys.get(key) ?? 1) - 1;
             if (left > 0) onlineKeys.set(key, left); else onlineKeys.delete(key);
+            actedOn(key);
         }
     } finally {
         release();

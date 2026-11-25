@@ -3,14 +3,14 @@ import type ts from 'typescript';
 
 /** 'here': true means still here (still the read asked); 'gone': true means left (overtaken). */
 export type Check = (e: ts.Expression) => 'here' | 'gone' | null;
-export interface WaitingBody { fn: ts.FunctionLikeDeclaration; tail: boolean; waits?: number[] }
+export interface WaitingBody { fn: ts.FunctionLikeDeclaration; tail: boolean; waitNodes?: ts.Node[] }
 
 export function parse(file: string, text: string): ts.SourceFile;
 export function isFn(n: ts.Node): n is ts.FunctionLikeDeclaration;
 export function isAsync(n: ts.Node): boolean;
 export function waitingBodies(sf: ts.SourceFile): WaitingBody[];
 export function ownNodes<T>(fn: ts.FunctionLikeDeclaration, pick: (n: ts.Node) => T | null | undefined | false): T[];
-export function lastWaitBefore(body: WaitingBody, pos: number): number;
+export function lastWaitBefore(body: WaitingBody, pos: number, node?: ts.Node): number;
 export function coveredAfter(fn: ts.Node, node: ts.Node, since: number, check: Check): boolean;
 export function provesHere(e: ts.Expression, check: Check): boolean;
 export function provesWhenFalse(e: ts.Expression, check: Check): boolean;

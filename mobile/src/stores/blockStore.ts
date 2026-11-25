@@ -31,6 +31,16 @@ import { registerStoreReset } from './resetAllStores';
 import { stillSignedIn } from './domain/helpers/sessionGuard';
 import { hydrateFollowing } from './domain/socialSlice';
 import { isRateLimited, writePaceSaid } from '../utils/housePace';
+import { turns } from '../utils/turns';
+
+/**
+ * The member's block and mute lists, in turns: a read of them takes one as it is asked, and each
+ * block, mute or undoing takes one as it begins and one as it settles. An older answer lands nowhere.
+ */
+const blockTurns = turns();
+const LISTS = 'lists';
+/** The turn of the newest read asked: overtaken by an act alone, that read is asked again. */
+let newestSync = 0;
 
 // ── MMKV Key ────────────────────────────────────────────────────────────────
 const MMKV_KEY = (userId: string) => `reelhouse_blocks_${userId}`;
@@ -119,6 +129,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
     const nextBlocked = [...state.blocked, targetId];
     const nextMuted = state.muted.filter((id) => id !== targetId);
 
+    // An act on the lists: a read of them asked before it, or while it is out, is older than it.
+    blockTurns.take(LISTS);
     set({
       blocked: nextBlocked,
       muted: nextMuted,
@@ -174,6 +186,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       // Past the house's pace for blocks (check_write_pace): an answer, said with its wait.
       if (!isRateLimited(err)) captureError(err, { action: 'blockUser' });
       reelToast.error(writePaceSaid(err, 'blocks') ?? saidOfAFailure(err, 'Failed to block user.'));
+    } finally {
+      blockTurns.take(LISTS);
     }
   },
 
@@ -193,6 +207,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
     nextBlockedIndex.delete(targetId);
     const nextBlocked = state.blocked.filter((id) => id !== targetId);
 
+    // An act on the lists: a read of them asked before it, or while it is out, is older than it.
+    blockTurns.take(LISTS);
     set({
       blocked: nextBlocked,
       _blockedIndex: nextBlockedIndex,
@@ -231,6 +247,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       logger.error('[BlockStore] unblockUser failed:', err);
       captureError(err, { action: 'unblockUser' });
       reelToast.error(saidOfAFailure(err, 'Failed to unblock user.'));
+    } finally {
+      blockTurns.take(LISTS);
     }
   },
 
@@ -257,6 +275,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
     nextMutedIndex.add(targetId);
     const nextMuted = [...state.muted, targetId];
 
+    // An act on the lists: a read of them asked before it, or while it is out, is older than it.
+    blockTurns.take(LISTS);
     set({
       muted: nextMuted,
       _mutedIndex: nextMutedIndex,
@@ -304,6 +324,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       // Past the house's pace for blocks and mutes (check_write_pace): an answer, said with its wait.
       if (!isRateLimited(err)) captureError(err, { action: 'muteUser' });
       reelToast.error(writePaceSaid(err, 'mutes') ?? saidOfAFailure(err, 'Failed to mute user.'));
+    } finally {
+      blockTurns.take(LISTS);
     }
   },
 
@@ -323,6 +345,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
     nextMutedIndex.delete(targetId);
     const nextMuted = state.muted.filter((id) => id !== targetId);
 
+    // An act on the lists: a read of them asked before it, or while it is out, is older than it.
+    blockTurns.take(LISTS);
     set({
       muted: nextMuted,
       _mutedIndex: nextMutedIndex,
@@ -361,6 +385,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       logger.error('[BlockStore] unmuteUser failed:', err);
       captureError(err, { action: 'unmuteUser' });
       reelToast.error(saidOfAFailure(err, 'Failed to unmute user.'));
+    } finally {
+      blockTurns.take(LISTS);
     }
   },
 
@@ -414,6 +440,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
     // BELOW its first write, so that variable cannot guard it — and `userId` is
     // who the sync is FOR, which is not necessarily the session.
     const startedAs = useAuthStore.getState().user?.id ?? null;
+    const mine = blockTurns.take(LISTS);
+    newestSync = mine;
     try {
       const { data, error } = await supabase.rpc('get_user_blocks', {
         p_user_id: userId,
@@ -422,6 +450,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       // Left mid-sync: writing would put the previous member's block list into a
       // cleared store, and persistToCache below would write it to disk.
       if (!stillSignedIn(startedAs)) return;
+      // Overtaken: a newer read lays its own answer; a block or mute made since, a read asked after it.
+      if (!blockTurns.isLast(LISTS, mine)) return newestSync === mine ? get().syncFromServer(userId) : undefined;
 
       if (error) throw error;
 

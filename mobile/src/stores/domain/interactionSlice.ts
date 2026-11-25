@@ -7,7 +7,7 @@ import { Interaction } from '../../types';
 import { isNetworkError } from '../../utils/networkError';
 import { isRateLimited } from '../../utils/housePace';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../../utils/offlineQueue';
-import { keyOf, writeOnline } from '../../utils/oneWritePerThing';
+import { actsAsAsked, keyOf, writeOnline } from '../../utils/oneWritePerThing';
 import reelToast from '../../utils/reelToast';
 import { isRefusedOnPurpose, saidOfARefusal } from '../../utils/saidOfARefusal';
 import { useAuthStore } from '../auth';
@@ -156,6 +156,7 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
     fetchEndorsements: async () => {
         const user = useAuthStore.getState().user;
         if (!user) return;
+        const untouched = actsAsAsked();
         const { data, error } = await supabase
             .from('interactions')
             .select('target_log_id, created_at')
@@ -177,7 +178,8 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 // discarded anything learned since, including a certification the
                 // member had just made optimistically.
                 const idx: Record<string, Interaction> = { ...state._endorsedIndex };
-                mapped.forEach(i => { if (i.type === 'endorse') idx[i.targetId] = i; });
+                // A certification the member made or took back since this read was asked is theirs, not the read's.
+                mapped.forEach(i => { if (i.type === 'endorse' && untouched(`certify:log:${i.targetId}`)) idx[i.targetId] = i; });
                 // The list is what the index is rebuilt from at the next launch
                 // (films.ts, on rehydrate), so it holds exactly what the index holds.
                 return {
@@ -330,6 +332,7 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
     fetchListEndorsements: async () => {
         const user = useAuthStore.getState().user;
         if (!user) return;
+        const untouched = actsAsAsked();
         const { data, error } = await supabase
             .from('interactions')
             .select('target_list_id, created_at')
@@ -349,7 +352,8 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
             // MERGE, never replace, and read inside the write — same reasons as the log index above.
             set((state) => {
                 const idx: Record<string, Interaction> = { ...state._listEndorsedIndex };
-                newListEndorsements.forEach(i => { idx[i.targetId] = i; });
+                // A certification the member made or took back since this read was asked is theirs, not the read's.
+                newListEndorsements.forEach(i => { if (untouched(`certify:list:${i.targetId}`)) idx[i.targetId] = i; });
                 return {
                     interactions: [
                         ...state.interactions.filter(i => i.type !== 'endorse_list'),

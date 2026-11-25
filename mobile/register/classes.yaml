@@ -5283,14 +5283,28 @@ classes:
     seriousness: serious
     area: [notices, lounge, dispatch, profile, stacks, settings]
     status: OPEN
-    count: 22
+    count: 14
     source: { kind: reviewer, ref: "the kinds of mistake of review rounds 8 to 14 (stage C): r8 A1, A3, A4; r9 B1, B2, B3, B4, B7; r10 B2, aside; r11 D3; r12 C2, C5, C6; r13 A1, A3; the fixes' reviews r13 A2, A3, A4, A5, B3, D2" }
     folds: [READ-a-reread-that-drops-waiting-writes, READ-an-answer-drawn-under-an-order-left, WRITE-a-rollback-that-undoes-another-write, WRITE-an-older-write-sent-over-a-newer, READ-an-answer-that-wipes-what-was-heard, READ-a-page-begun-past-its-row, STATE-pages-read-past-the-first-dropped]
     methods:
       - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: every re-asked read writes only what is still the read asked" }
       - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "2: no page is asked by its count" }
       - { kind: running, file: src/features/settings/__tests__/anExportIsWhole.test.ts, test: "a row removed between two pages moves nothing: the next page still begins after the last row read" }
-    sweep: { read: [appCode], found: 27, fixed: 4, judged: 1, commit: aeb2e85c, finder: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, result: "anAnswerIsStillTheOneAsked over app/, src/stores, src/hooks, src/components, src/features, src/providers, and every app file for pages (stage C): 23 re-asked reads with no token found, 2 fixed (the push permission's re-read, the essay's part), 1 judged, 20 still to fix (listed in the test); 4 pages asked by their count found, 2 fixed (the export, the import's stack read), 2 still to fix (a stack's films, a filing's critiques)" }
+      - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a pull, a store's setter called from outside it, and a turn of another family or taken after the wait are found" }
+      - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: and passes a thing's turn still its last, marks laid where untouched since asked, and a wait in the other branch" }
+      - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a pull lowers only the flag its RefreshControl holds, raised before it waited" }
+      - { kind: running, file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "lays the newer read when the older lands last, and answers the older call with it" }
+      - { kind: running, file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "a ballot's running count asked earlier never lands over one asked later" }
+      - { kind: running, file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "read again keep the newer list when the older lands last" }
+      - { kind: running, file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "a next page asked of the list before it was read again is not laid on the new one" }
+      - { kind: running, file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "a certification taken back while the member's marks were read stays taken back" }
+      - { kind: running, file: src/stores/__tests__/aCertificationTakenBackWhileReadStaysTakenBack.test.ts, test: "a record's certification taken back while they are read stays taken back" }
+      - { kind: running, file: src/stores/__tests__/aCertificationTakenBackWhileReadStaysTakenBack.test.ts, test: "a stack's certification taken back while they are read stays taken back" }
+      - { kind: running, file: src/stores/__tests__/vaultStore.test.ts, test: "stands over the read asked before it, which may be older than the write" }
+      - { kind: running, file: src/stores/__tests__/aBlockMadeWhileTheListsAreReadStays.test.ts, test: "of two reads, the later asked is laid, whichever lands last" }
+      - { kind: running, file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "lays the later asked, whichever lands last" }
+      - { kind: running, file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "a read of the member's standing asked before a whole read lands nowhere after it" }
+    sweep: { read: [appCode], found: 42, fixed: 18, judged: 10, commit: f4bbe2ac, finder: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, result: "anAnswerIsStillTheOneAsked widened (stage C, C22) to every app file (services and helpers too), a store's own setter called from outside it, a pull's onRefresh/handleRefresh, catchUp and retry reads, and a wait in the other branch of an if no longer counted: 26 re-asked reads with no token (6 newly seen), 8 pulls that only lower their RefreshControl's flag (judged by rule), 2 judged by name, 4 pages by count (2 fixed before). Fixed in C22 with src/utils/turns.ts (a thing's turn, taken by its reads and by acts on it as they begin and settle) and actsAsAsked (a marks read lays nothing the member acted on since it was asked): the filing, its ballot count, its critiques and their next page, the member's filing, critique, record and stack certifications, the Vault's notes, the block lists, the profile, the rank history and the standing (14; with the 4 fixed before, 18). Still to fix, listed in the test: 12 reads (the salons' list, messages and catch-up and retry, the profile rooms and their retry, the follow requests and their count, the social sheet's next page, the tribunal's evidence) and 2 pages (a stack's films, a filing's critiques)" }
     places: [none]
 
   - id: REHEARSE-a-borrowed-member-read-as-empty

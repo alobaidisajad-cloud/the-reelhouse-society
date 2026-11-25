@@ -38,7 +38,8 @@ import { keepPage, keptPage } from '../utils/keptPages';
 import { atTheHousesPace, isRateLimited } from '../utils/housePace';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
-import { keyOf, writeOnline } from '../utils/oneWritePerThing';
+import { actsAsAsked, keyOf, writeOnline } from '../utils/oneWritePerThing';
+import { turns } from '../utils/turns';
 import reelToast from '../utils/reelToast';
 import { saidOfAFailure } from '../utils/saidOfARefusal';
 import { sanitizeInput } from '../utils/sanitizeInput';
@@ -290,6 +291,18 @@ const invalidateInflight = () => {
   generation++;
   inflight = null;
 };
+
+/**
+ * Each filing's turns: a read of it (hydrate) takes one as it is asked; an act on it (an amend, an
+ * end, a mark) takes one as it begins and one as it settles. An older answer is never laid over them.
+ */
+const filingTurns = turns();
+/** The newest read of each filing out now, with its turn: an older one, overtaken, answers with it. */
+const filingReads = new Map<string, { turn: number; read: Promise<Filing | null | 'unreachable'> }>();
+/** Each ballot's running count: a count asked earlier never lands over one asked later. */
+const tallyTurns = turns();
+/** Each filing's critiques: a first page (or a new order) takes a turn; a next page reads it. */
+const critiqueTurns = turns();
 
 /** Twelve: the map only lets an act find the row being read, and an essay is 25,000 chars. */
 const OPENED_KEPT = 12;
@@ -561,60 +574,12 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
   keepOpened: (one) => set((st) => ({ opened: capOpened(st.opened, one.id, one) })),
 
-  hydrate: async (id) => {
-    const startedAs = useAuthStore.getState().user?.id ?? null;
-    try {
-      const { data, error } = await timed(
-        (signal) =>
-          withAbortSignal(
-            supabase.from('dispatch_posts').select(FILING_FULL_COLUMNS).eq('id', id).maybeSingle(),
-            signal,
-          ),
-        'dispatch.hydrate',
-      );
-      if (error) throw error;
-      if (!memberUnchanged(startedAs)) return null;
-      if (!data) {
-        // The house no longer gives it to this member (withheld, withdrawn, or its author has
-        // blocked them since the paper was read): the paper's copy goes too, or the reader drew
-        // it whole from there with every act on it refused (review round 6). One filed on this
-        // phone and still in the queue is not in the house yet, and stays.
-        const waiting = useOfflineQueueStore.getState().queued
-          .some((m) => m.type === 'add_filing' && m.payload._tempId === id);
-        if (!waiting) {
-          set((st) => {
-            if (!st.filings.some((f) => f.id === id) && !st.opened[id]) return st;
-            const opened = { ...st.opened };
-            delete opened[id];
-            return { filings: st.filings.filter((f) => f.id !== id), opened };
-          });
-        }
-        return null;
-      }
-      const { filings } = parseFilingRows([data]);
-      const one = filings[0] ?? null;
-      if (!one) return null;
-      // Kept on the row, where the reader reads it: in a component the essay would fall back
-      // to its 500-character opening on the next render. Re-opening is then instant.
-      set((st) => ({
-        filings: st.filings.some((f) => f.id === id)
-          ? st.filings.map((f) => (f.id === id ? one : f))
-          : st.filings,
-        // Recorded (bounded) whether or not the page holds it, so acts find it after a cold open.
-        opened: capOpened(st.opened, id, one),
-      }));
-      // Not waited for: the reader shows the filing, its marks unknown until read. A ballot this
-      // member has voted in, still open, has its running count read once the vote is known.
-      void loadViewerState([one], set, startedAs).then(() => {
-        if (one.kind === 'ballot' && !one.frozenTotals && !one.endedAt && get().myVotes[id] !== undefined) {
-          void get().readTally(id);
-        }
-      });
-      return one;
-    } catch (e) {
-      if (!isNetworkError(e)) captureError(e, { where: 'dispatch.hydrate' });
-      return 'unreachable';
-    }
+  hydrate: (id) => {
+    const read = readFiling(id);
+    const turn = filingTurns.now(id);
+    filingReads.set(id, { turn, read });
+    void read.finally(() => { if (filingReads.get(id)?.turn === turn) filingReads.delete(id); });
+    return read;
   },
 
   // Without these a member's own room draws every mark empty, and tapping one already true
@@ -735,6 +700,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       ...(opened ? { fullContent: opened.fullContent } : {}),
     }));
 
+    // An act on the filing: a read of it asked before, or while this is out, is older than it.
+    filingTurns.take(id);
     set((st) => patchActed(st, id, (f) => ({
       ...f,
       title: clean.title !== undefined ? clean.title : f.title,
@@ -768,6 +735,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       }
       set((st) => patchActed(st, id, () => before, before));
       throw e;
+    } finally {
+      filingTurns.take(id);
     }
   },
 
@@ -794,6 +763,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       film: before.film ? { ...before.film, posterPath: null, backdropPath: null } : null,
       endedAt: houseIso(), endedBy: 'author',
     };
+    filingTurns.take(id);
     set((st) => patchActed(st, id, () => ended, before));
 
     try {
@@ -811,6 +781,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       }
       set((st) => patchActed(st, id, () => before, before));
       throw e;
+    } finally {
+      filingTurns.take(id);
     }
   },
 
@@ -962,10 +934,12 @@ export const useDispatch = create<DispatchState>((set, get) => ({
   readTally: async (id) => {
     const startedAs = useAuthStore.getState().user?.id ?? null;
     if (!startedAs) return;
+    // A vote reads the count again while the opening's read may still be out: the later asked is laid.
+    const mine = tallyTurns.take(id);
     try {
       const { data, error } = await supabase.rpc('ballot_tally', { p_post: id });
       if (error) throw error;
-      if (!memberUnchanged(startedAs)) return;
+      if (!memberUnchanged(startedAs) || !tallyTurns.isLast(id, mine)) return;
       const tally = tallyOf(data);
       // Not given (no vote of theirs the house holds yet): the count stays unknown, never 0.
       if (tally) set((st) => ({ tallies: { ...st.tallies, [id]: tally } }));
@@ -1011,12 +985,16 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     // The write after the await is guarded too: a logout mid-read must not put this id
     // back into a store the reset just cleared (staleWriteGuard).
     const startedAs = useAuthStore.getState().user?.id ?? null;
+    // A first page (again, or in the other order) is the critiques' newest read: a page asked before
+    // it, first or next, lands nowhere, and a next page waiting on the old list is let go.
+    const mine = critiqueTurns.take(postId);
     set((st) => ({
       critiquesLoading: { ...st.critiquesLoading, [postId]: true },
+      critiquesLoadingMore: { ...st.critiquesLoadingMore, [postId]: false },
       critiquesOrder: { ...st.critiquesOrder, [postId]: order },
     }));
-    await readCritiquePage(postId, order, 0, set);
-    if (!memberUnchanged(startedAs)) return;
+    await readCritiquePage(postId, order, 0, set, mine);
+    if (!memberUnchanged(startedAs) || !critiqueTurns.isLast(postId, mine)) return;
     set((st) => ({ critiquesLoading: { ...st.critiquesLoading, [postId]: false } }));
   },
 
@@ -1030,9 +1008,11 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     const startedAs = useAuthStore.getState().user?.id ?? null;
     const order = st0.critiquesOrder[postId] ?? 'NEWEST';
     const from = st0.critiquesRead[postId] ?? (st0.critiques[postId] ?? []).length;
+    // The next page of the list held now: a first page asked meanwhile makes it another list's.
+    const mine = critiqueTurns.now(postId);
     set((s) => ({ critiquesLoadingMore: { ...s.critiquesLoadingMore, [postId]: true } }));
-    await readCritiquePage(postId, order, from, set);
-    if (!memberUnchanged(startedAs)) return;
+    await readCritiquePage(postId, order, from, set, mine);
+    if (!memberUnchanged(startedAs) || !critiqueTurns.isLast(postId, mine)) return;
     set((s) => ({ critiquesLoadingMore: { ...s.critiquesLoadingMore, [postId]: false } }));
   },
 
@@ -1229,6 +1209,73 @@ function tallyOf(data: unknown): FrozenTotals | null {
 }
 
 /**
+ * One filing read again, whole (the reader's essay with it), and laid where it is held. The read takes
+ * the filing's next turn: overtaken by a newer read, it answers with that read; by an act on the filing
+ * (an amend, an end, a mark), it reads once more, asked after the act. Never laid over either.
+ */
+async function readFiling(id: string): Promise<Filing | null | 'unreachable'> {
+  const { getState: get, setState: set } = useDispatch;
+  const mine = filingTurns.take(id);
+  const startedAs = useAuthStore.getState().user?.id ?? null;
+  try {
+    const { data, error } = await timed(
+      (signal) =>
+        withAbortSignal(
+          supabase.from('dispatch_posts').select(FILING_FULL_COLUMNS).eq('id', id).maybeSingle(),
+          signal,
+        ),
+      'dispatch.hydrate',
+    );
+    if (error) throw error;
+    if (!memberUnchanged(startedAs)) return null;
+    // Overtaken: a newer read answers for it; an act on the filing since, a read asked after the act.
+    if (!filingTurns.isLast(id, mine)) {
+      const newest = filingReads.get(id);
+      return newest && newest.turn !== mine ? newest.read : get().hydrate(id);
+    }
+    if (!data) {
+      // The house no longer gives it to this member (withheld, withdrawn, or its author has
+      // blocked them since the paper was read): the paper's copy goes too, or the reader drew
+      // it whole from there with every act on it refused (review round 6). One filed on this
+      // phone and still in the queue is not in the house yet, and stays.
+      const waiting = useOfflineQueueStore.getState().queued
+        .some((m) => m.type === 'add_filing' && m.payload._tempId === id);
+      if (!waiting) {
+        set((st) => {
+          if (!st.filings.some((f) => f.id === id) && !st.opened[id]) return st;
+          const opened = { ...st.opened };
+          delete opened[id];
+          return { filings: st.filings.filter((f) => f.id !== id), opened };
+        });
+      }
+      return null;
+    }
+    const { filings } = parseFilingRows([data]);
+    const one = filings[0] ?? null;
+    if (!one) return null;
+    // Kept on the row, where the reader reads it: in a component the essay would fall back
+    // to its 500-character opening on the next render. Re-opening is then instant.
+    set((st) => ({
+      filings: st.filings.some((f) => f.id === id)
+        ? st.filings.map((f) => (f.id === id ? one : f))
+        : st.filings,
+      // Recorded (bounded) whether or not the page holds it, so acts find it after a cold open.
+      opened: capOpened(st.opened, id, one),
+    }));
+    // Not waited for: the reader shows the filing, its marks unknown until read. A ballot this
+    // member has voted in, still open, has its running count read once the vote is known.
+    void loadViewerState([one], set, startedAs).then(() => {
+      if (one.kind === 'ballot' && !one.frozenTotals && !one.endedAt && get().myVotes[id] !== undefined) {
+        void get().readTally(id);
+      }
+    });
+    return one;
+  } catch (e) {
+    if (!isNetworkError(e)) captureError(e, { where: 'dispatch.hydrate' });
+    return 'unreachable';
+  }
+}
+/**
  * The filing an act needs when the page no longer holds it (`opened` keeps twelve): read
  * now, or the act is refused. Returning as though it went would tell the writing room the
  * amendment landed, and the room would let go of the member's words.
@@ -1270,6 +1317,9 @@ async function writeThrough(
   where: string,
   startedAs: string,
 ): Promise<void> {
+  // A mark on a filing is an act on it: a read of the filing asked before it is older than it.
+  const filingId = typeof queued.payload.post_id === 'string' ? queued.payload.post_id : null;
+  if (filingId) filingTurns.take(filingId);
   try {
     // Through the one door of the thing it sets (writeOnline, keyed by what the queue would carry):
     // a certification, save or answer of it still queued, older than this act, is let go once this
@@ -1291,6 +1341,8 @@ async function writeThrough(
     undo();
     captureError(e, { where });
     reelToast.error(saidOfAFailure(e, 'That could not be done.', 'The house did not accept that.'));
+  } finally {
+    if (filingId) filingTurns.take(filingId);
   }
 }
 
@@ -1365,6 +1417,7 @@ async function loadViewerState(
 ): Promise<void> {
   if (!startedAs || filings.length === 0) return;
   const ids = filings.map((f) => f.id);
+  const untouched = actsAsAsked();
 
   try {
     const [certs, saves, votes] = await Promise.all([
@@ -1376,9 +1429,10 @@ async function loadViewerState(
 
     set((st) => {
       const certified = new Set(st.certifiedIds);
-      for (const r of certs.data ?? []) if (r.post_id) certified.add(r.post_id as string);
+      // A mark the member made or took back since this read was asked is theirs, not the read's.
+      for (const r of certs.data ?? []) if (r.post_id && untouched(`certify:filing:${r.post_id}`)) certified.add(r.post_id as string);
       const saved = new Set(st.savedIds);
-      for (const r of saves.data ?? []) if (r.post_id) saved.add(r.post_id as string);
+      for (const r of saves.data ?? []) if (r.post_id && untouched(`save:filing:${r.post_id}`)) saved.add(r.post_id as string);
       const myVotes = { ...st.myVotes };
       for (const r of votes.data ?? []) myVotes[r.post_id as string] = r.option_index as number;
       // Known only where its read answered: a failed one leaves its kind unknown, not "off".
@@ -1425,6 +1479,7 @@ async function readCritiquePage(
   order: CritiqueOrder,
   from: number,
   set: (fn: (st: DispatchState) => Partial<DispatchState>) => void,
+  mine: number,
 ): Promise<void> {
   const startedAs = useAuthStore.getState().user?.id ?? null;
   try {
@@ -1443,7 +1498,7 @@ async function readCritiquePage(
       from === 0 ? 'dispatch.fetchCritiques' : 'dispatch.moreCritiques',
     );
     if (error) throw error;
-    if (!memberUnchanged(startedAs)) return;
+    if (!memberUnchanged(startedAs) || !critiqueTurns.isLast(postId, mine)) return;
 
     const { critiques } = parseCritiqueRows(data ?? []);
 
@@ -1475,7 +1530,7 @@ async function readCritiquePage(
   } catch (e) {
     // Said as failed, and asked again from the footer: the page that failed, first or next.
     if (!isNetworkError(e)) captureError(e, { where: 'dispatch.readCritiquePage' });
-    if (!memberUnchanged(startedAs)) return;
+    if (!memberUnchanged(startedAs) || !critiqueTurns.isLast(postId, mine)) return;
     set((st) => ((st.critiquesOrder[postId] ?? order) !== order ? {} : { critiquesFailed: { ...st.critiquesFailed, [postId]: true } }));
   }
 }
@@ -1486,6 +1541,7 @@ async function loadCritiqueCertifications(
   startedAs: string | null,
 ): Promise<void> {
   if (!startedAs || critiques.length === 0) return;
+  const untouched = actsAsAsked();
   try {
     const { data, error } = await supabase
       .from('dispatch_certifications')
@@ -1496,7 +1552,8 @@ async function loadCritiqueCertifications(
     if (!memberUnchanged(startedAs)) return;
     set((st) => {
       const ids = new Set(st.certifiedCritiqueIds);
-      for (const r of data ?? []) if (r.comment_id) ids.add(r.comment_id as string);
+      // A certification the member made or took back since this read was asked is theirs, not the read's.
+      for (const r of data ?? []) if (r.comment_id && untouched(`certify:critique:${r.comment_id}`)) ids.add(r.comment_id as string);
       // Answered for every critique asked about: those not in the answer are not certified.
       const known = new Set(st.critiqueMarksKnown);
       for (const c of critiques) known.add(c.id);
