@@ -8,6 +8,9 @@ import { promisify } from 'util';
 
 let kept: ReturnType<typeof setTimeout>;
 afterAll(() => clearTimeout(kept));
+// Work an unmount queues at the very end, a timer of no delay from that work (React Query's notices),
+// runs before the file is judged.
+afterAll(() => { setImmediate(() => { setTimeout(() => {}, 0); }); });
 
 it('ends every timer it starts', async () => {
   await new Promise((resolve) => setTimeout(resolve, 5));

@@ -9640,8 +9640,8 @@ mutants:
     source: shape
     edits:
       - file: e2e/db/attack/matrix.json
-        find: "\"expect\":\"refused\",\"refusedWith\":\"RH429\",\"why\":\"A member logs 50,000 films"
-        replace: "\"expect\":\"refused\",\"why\":\"A member logs 50,000 films"
+        find: "\"expect\":\"refused\",\"refusedWith\":\"RH429\",\"rules\":[\"trigger logs \\\"zz_a_write_is_paced\\\"\"],\"why\":\"A member logs 50,000 films"
+        replace: "\"expect\":\"refused\",\"rules\":[\"trigger logs \\\"zz_a_write_is_paced\\\"\"],\"why\":\"A member logs 50,000 films"
     proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "has every pace written past by an attack probe, as a member, and refused by the pace itself" }
 
   - id: shape-the-pace-probe-finder-takes-any-refusal

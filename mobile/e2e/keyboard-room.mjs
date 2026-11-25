@@ -64,7 +64,9 @@ export function panelOf(tree) {
  * (nightly 43848225969's hierarchy); a name not yet seen there is printed by --panel when it fails.
  */
 const LETTERS_KEY = ['Symbol keyboard', 'لوحة مفاتيح الرموز'];
-const EMOJI_PANEL_KEY = ['Letter keyboard'];
+// The panel's ABC key; in Arabic "لوحة مفاتيح حروف", which the right-to-left run's phone said on every
+// night from 2026-11-13, unnamed here until 2026-11-25.
+const EMOJI_PANEL_KEY = ['Letter keyboard', 'لوحة مفاتيح حروف'];
 
 /** Every name in the screen, the marks that only set a direction taken out (Gboard leads with them). */
 export function keyNames(tree) {

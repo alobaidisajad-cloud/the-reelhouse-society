@@ -388,7 +388,21 @@ keys_on() {
   timeout 20 adb shell settings put secure show_ime_with_hard_keyboard 1 > /dev/null 2>&1
   for pkg in $(echo "$imes_all" | sed 's#/.*##' | sort -u); do timeout 20 adb shell pm enable "$pkg" > /dev/null 2>&1; done
   for ime in $imes_all; do timeout 20 adb shell ime enable "$ime" > /dev/null 2>&1; done
-  timeout 20 adb shell ime set "$(echo "$imes_all" | grep -m 1 latin || echo "$imes_all" | head -n 1)" > /dev/null 2>&1
+  local want
+  want="$(echo "$imes_all" | grep -m 1 latin || echo "$imes_all" | head -n 1)"
+  timeout 20 adb shell ime set "$want" > /dev/null 2>&1
+  # The field is tapped only once Android has bound the keyboard and its process runs: a tap before
+  # it asked a keyboard that was still starting, the show failed at the server, and Android held it
+  # shown with no window, through a tap again and a probe run again (pages-16k, plant run
+  # 45638318347: "onFailed at PHASE_SERVER_UPDATE_CLIENT_VISIBILITY", Gboard's process up 300 ms on).
+  local _
+  for _ in $(seq 1 "${E2E_IME_TRIES:-30}"); do
+    timeout 20 adb shell dumpsys input_method < /dev/null 2>/dev/null | tr -d '\r' | grep -qF "mCurMethodId=$want" \
+      && timeout 20 adb shell pidof "${want%%/*}" < /dev/null > /dev/null 2>&1 && return 0
+    timeout 20 adb shell ime set "$want" < /dev/null > /dev/null 2>&1
+    sleep 1
+  done
+  echo "the keyboard ($want) was not bound ${E2E_IME_TRIES:-30} s after it was turned on: the field is tapped as it stands" >> "$OUT/keyboard-room.txt"
 }
 keys_off() {
   timeout 20 adb shell settings delete secure show_ime_with_hard_keyboard > /dev/null 2>&1

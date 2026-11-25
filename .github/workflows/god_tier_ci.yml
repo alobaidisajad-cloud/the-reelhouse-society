@@ -1109,7 +1109,7 @@ jobs:
           set +e
           {
             npx expo prebuild --platform all --no-install --clean \
-            && (cd android && ./gradlew :app:processReleaseManifest -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+            && (cd android && ./gradlew :app:processReleaseManifest -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
                   "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g") \
             && mkdir -p "$RUNNER_TEMP/embedded" \
             && node node_modules/expo-constants/scripts/getAppConfig.js . "$RUNNER_TEMP/embedded"

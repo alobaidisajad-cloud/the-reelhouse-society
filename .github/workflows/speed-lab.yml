@@ -164,7 +164,7 @@ jobs:
           build() {
             git checkout -- src app
             if [ "$1" != A ]; then node e2e/lab/arm.mjs "$1" >> "$B" 2>&1 || fail "arm $1 does not apply"; fi
-            (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+            (cd android && ./gradlew assembleRelease -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
                 "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 || fail "build $1"
             cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/$1.apk"
             echo "built $1: $(stat -c %s "$RUNNER_TEMP/apks/$1.apk") bytes"
@@ -385,7 +385,7 @@ jobs:
           build() {
             git checkout -- src app
             if [ "$1" != A ]; then node e2e/lab/arm.mjs "$1" >> "$B" 2>&1 || fail "arm $1 does not apply"; fi
-            (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+            (cd android && ./gradlew assembleRelease -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
                 "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 || fail "build $1"
             cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/$1.apk"
             echo "built $1: $(stat -c %s "$RUNNER_TEMP/apks/$1.apk") bytes"
@@ -398,14 +398,14 @@ jobs:
           # nor the app's config is taken from A's build.
           git checkout -- src app
           rm -rf android/app/build
-          (cd android && FEEL=1 ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+          (cd android && FEEL=1 ./gradlew assembleRelease -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
               "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 || fail "build F"
           cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/F.apk"
           echo "built F: $(stat -c %s "$RUNNER_TEMP/apks/F.apk") bytes"
           # The framework's floor: an empty app built as ours is (e2e/lab/floor-app.mjs).
           node e2e/lab/floor-app.mjs write "$RUNNER_TEMP/floor" >> "$B" 2>&1 || fail "the floor app could not be written"
           (cd "$RUNNER_TEMP/floor" && npm install --no-audit --no-fund && npx expo prebuild --platform android --no-install \
-              && cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --console=plain \
+              && cd android && ./gradlew assembleRelease -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 -PreactNativeArchitectures=x86_64 --no-daemon --console=plain \
               "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 || fail "build the floor app"
           cp "$RUNNER_TEMP/floor/android/app/build/outputs/apk/release/app-release.apk" "$RUNNER_TEMP/apks/floor.apk"
           echo "built the floor app: $(stat -c %s "$RUNNER_TEMP/apks/floor.apk") bytes"

@@ -10,11 +10,10 @@ appId: com.reelhouse.society
 # emoji key, and the GIF key is "لوحة مفاتيح GIF", so it is found by the GIF
 # in its name (nightly 43848225969).
 #
-# A tablet's address field keeps its GIF key drawn off, and a press there opens
-# nothing (the recovery card, every tablet night from 2026-11-13): its symbols
-# page may keep the emoji key, so the symbols are opened and that key pressed,
-# as a member reaches it. Symbols with no emoji key are left for the letters
-# again, and the panel is judged as it stands (it fails: not the emoji panel).
+# The GIF key opens the panel on the tab last used, and an address field
+# takes no GIF: where the GIF tab opened, the emoji tab is chosen, so the
+# next field's panel opens on its emoji (the Arabic phone's recovery card
+# kept its letters, every night from 2026-11-13).
 - runFlow:
     when:
       notVisible: "Emoji button"
@@ -29,12 +28,23 @@ appId: com.reelhouse.society
     timeout: 3000
 - runFlow:
     when:
+      visible: "Emoji keyboard|لوحة مفاتيح الرموز التعبيرية"
+    commands:
+      - tapOn: "Emoji keyboard|لوحة مفاتيح الرموز التعبيرية"
+      - waitForAnimationToEnd:
+          timeout: 3000
+# A tablet's address field keeps its GIF key drawn off, and a press there
+# opens nothing (the recovery card, every tablet night from 2026-11-13): its
+# symbols may keep the emoji key, so they are opened and that key pressed.
+# Symbols with no emoji key are left for the letters, and the panel is
+# judged as it stands (it fails: not the emoji panel).
+- runFlow:
+    when:
       visible: "Symbol keyboard"
     commands:
       - tapOn: "Symbol keyboard"
       - waitForAnimationToEnd:
           timeout: 3000
-      # Symbols with no emoji key: the letters again first, where no emoji key is either.
       - runFlow:
           when:
             notVisible: "Emoji button"

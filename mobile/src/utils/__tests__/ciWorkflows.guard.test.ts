@@ -313,6 +313,11 @@ const gradleFaults = (wf: Workflow) => Object.entries(wf.jobs).flatMap(([job, j]
     const at = `${job} › ${s.name ?? s.run}`;
     const faults: string[] = [];
     if (!/-Pandroid\.builder\.sdkDownload=false\b/.test(s.run)) faults.push(`${at}: Gradle may download a package itself`);
+    // Each build asks a package again with time between: Gradle's own three tries 125 ms apart
+    // spent themselves inside Maven Central's 429 (plant run 45638318347).
+    const builds = (s.run.match(/\bgradlew (?!--version)/g) ?? []).length;
+    const patient = (s.run.match(/-Dorg\.gradle\.internal\.repository\.max\.tentatives=\d+ -Dorg\.gradle\.internal\.repository\.initial\.backoff=\d{4,}/g) ?? []).length;
+    if (patient < builds) faults.push(`${at}: a build asks a package three times in a second, and no more`);
     if (!steps.slice(0, i).some((p) => !p.if && p.run && /\bsdkmanager\b[^\n]*--install \$\(node scripts\/android-packages\.cjs\)/.test(p.run))) {
       faults.push(`${at}: no step before it installs the packages it needs`);
     }
@@ -327,9 +332,11 @@ it('every Gradle run finds its Android packages installed by a step tried once m
   const wf = (steps: string) => parse(`name: x\non: push\njobs:\n  j:\n    steps:\n${steps}`) as Workflow;
   const install = '      - name: Packages\n        run: sdkmanager --install $(node scripts/android-packages.cjs)\n';
   const build = (flags: string) => `      - name: Build\n        run: cd android && ./gradlew assembleRelease ${flags}\n`;
-  expect(gradleFaults(wf(build('-Pandroid.builder.sdkDownload=false')))).toEqual(['j › Build: no step before it installs the packages it needs']);
-  expect(gradleFaults(wf(install + build('')))).toEqual(['j › Build: Gradle may download a package itself']);
-  expect(gradleFaults(wf(install + build('-Pandroid.builder.sdkDownload=false')))).toEqual([]);
+  const PATIENT = '-Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000';
+  expect(gradleFaults(wf(build(`-Pandroid.builder.sdkDownload=false ${PATIENT}`)))).toEqual(['j › Build: no step before it installs the packages it needs']);
+  expect(gradleFaults(wf(install + build(PATIENT)))).toEqual(['j › Build: Gradle may download a package itself']);
+  expect(gradleFaults(wf(install + build('-Pandroid.builder.sdkDownload=false')))).toEqual(['j › Build: a build asks a package three times in a second, and no more']);
+  expect(gradleFaults(wf(install + build(`-Pandroid.builder.sdkDownload=false ${PATIENT}`)))).toEqual([]);
 });
 
 /** Whether a command installs through apt, and whether it waits for the lock a try cut short leaves. */

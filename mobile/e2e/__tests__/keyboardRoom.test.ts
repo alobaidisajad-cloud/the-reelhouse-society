@@ -186,6 +186,12 @@ describe('the keyboard’s panel, and its height', () => {
     expect(panel('letters', arabic, SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its letters, 1005px tall' });
   });
 
+  it('reads the emoji panel of a keyboard speaking Arabic, by its ABC key — nightly 45406301103', () => {
+    // The names on the right-to-left run's panel: its search, its ABC key, its tabs.
+    const arabic = { attributes: {}, children: ['البحث عن wink', 'لوحة مفاتيح حروف', 'لوحة مفاتيح الرموز التعبيرية', 'حذف'].map((k) => ({ attributes: { accessibilityText: k } })) };
+    expect(panel('emoji', arabic, SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its emoji panel, 1005px tall' });
+  });
+
   it('a panel it cannot name says the names it saw, words only, so the next run can be taught them', () => {
     const unknown = { attributes: {}, children: ['ض', '\u200fمفتاح مجهول', 'Stack title'].map((k) => ({ attributes: { accessibilityText: k } })) };
     const r = panel('emoji', unknown, SHOWN);

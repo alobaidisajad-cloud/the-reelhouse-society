@@ -41,7 +41,14 @@ const recordCard = { film_id: 603, film_title: 'Vertigo', film_poster: '/vertigo
 const filingCard = { film_title: 'The sled was the point.', metadata: { dossier_id: FILING, author_username: 'ana', kind: 'take' } };
 const stackCard = { listId: STACK, title: 'Noir', filmCount: 2, curator: 'ana', topPosters: ['/a.jpg'] };
 
+// The salons' own memory put back as a sign-out puts it: the last card sent (a send of the same card
+// again at once is a double tap) held the stack's second card back when another test had sent it
+// (CI's backwards run, 2026-11-25).
+const RESETS = (jest.requireMock('../resetAllStores') as { registerStoreReset: jest.Mock }).registerStoreReset.mock.calls
+  .map(([handler]) => handler as (previous: string | null) => void);
+
 beforeEach(() => {
+  for (const forget of RESETS) forget(null);
   mockToast.error.mockClear();
   useLoungeStore.setState({ lounges: [CORRIDOR], currentLoungeId: SALON, currentMessages: [] });
 });

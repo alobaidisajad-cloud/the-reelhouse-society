@@ -14,8 +14,11 @@
  *
  * So every real timer a file starts is counted, and when the file has run —
  * after its last afterAll, while its modules are still loaded — one turn of the
- * event loop is let pass (work an unmount queued finishes in it) and whatever
- * is still waiting fails the file, by where it was started. Each is then
+ * event loop is let pass (work an unmount queued finishes in it), then one zero
+ * wait (a timer of no delay queued in that turn, as React Query's notices from
+ * an unmount are, runs in it: useFeeds ended on one when the nightly's random
+ * order made its last test the one that unmounts a feed), and whatever is still
+ * waiting fails the file, by where it was started. Each is then
  * cleared, so a failing run still ends.
  */
 const ReactNativeEnvironment = require('@react-native/jest-preset/jest/react-native-env');
@@ -25,7 +28,7 @@ const ReactNativeEnvironment = require('@react-native/jest-preset/jest/react-nat
  * files), kept on the worker's global: the wrappers below are made once per
  * worker, and must write where every load of this module reads.
  */
-const shared = (globalThis[Symbol.for('reelhouse.timerLedger')] ??= { running: null, test: null, realImmediate: globalThis.setImmediate });
+const shared = (globalThis[Symbol.for('reelhouse.timerLedger')] ??= { running: null, test: null, realImmediate: globalThis.setImmediate, realTimeout: globalThis.setTimeout });
 
 const KINDS = [
   ['setTimeout', 'clearTimeout'],
@@ -154,6 +157,7 @@ class TimerCheckingEnvironment extends ReactNativeEnvironment {
     if (event.name !== 'run_finish') return;
     // The real one: the wait is the environment's, not the file's.
     await new Promise((resolve) => shared.realImmediate(resolve));
+    await new Promise((resolve) => shared.realTimeout(resolve, 0));
 
     const left = [...this.timers].filter(([timer]) => waiting(timer));
     this.timers.clear();

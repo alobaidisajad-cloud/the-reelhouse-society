@@ -102,7 +102,9 @@ case "$1" in
       "settings put global "*_scale" "*) set -- $cmd; echo "$5" > "$T/state/$4" ;;
       "settings get secure autofill_service") echo null ;;
       date*) case "$cmd" in *S.%3N*) date +'%m-%d %H:%M:%S.%3N' ;; *S.000*) date +'%m-%d %H:%M:%S.000' ;; *) date +'%m-%d %H:%M:%S' ;; esac ;;
-      "dumpsys input_method") echo "mInputShown=true" ;;
+      # The keyboard, bound and its process up, unless a scenario keeps it from binding.
+      "dumpsys input_method") echo "mInputShown=true"; [ -f "$T/state/ime-unbound" ] || echo "mCurMethodId=com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME" ;;
+      "pidof com.google.android.inputmethod.latin") [ -f "$T/state/ime-unbound" ] || echo 9845 ;;
       # A mark the runner writes to the phone's log, as Android's log command writes it.
       "log -t "*) set -- $cmd; echo "$(date +'%m-%d %H:%M:%S.%3N')  4242  4242 I $3: $4" >> "$T/device.log" ;;
       "dumpsys window windows") cat "$T/fixtures/windows.txt" ;;
@@ -448,6 +450,14 @@ it('a crash fails a run whose every flow passed — and the flows are not blamed
   expect(titled(r, 'error', 'E2E flows failed')).toBe('');
   expect(titled(r, 'notice', 'Every flow passed — the run failed on what the other errors name')).toContain('[Passed] b_flow');
   always(r);
+});
+
+it('taps a probe\'s field only once the keyboard is bound and running, and says when it never was', async () => {
+  const bound = await rehearse(['a_flow'], {});
+  expect(file(bound, 'keyboard-room.txt')).not.toMatch(/was not bound/);
+  const r = await rehearse(['a_flow'], {}, { env: { E2E_IME_TRIES: '2' }, state: { 'ime-unbound': '1' } });
+  expect(file(r, 'keyboard-room.txt')).toContain(
+    'the keyboard (com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME) was not bound 2 s after it was turned on: the field is tapped as it stands');
 });
 
 describe('a shipped client\'s own crash (E2E_OLD_CLIENT, from the real old-clients.json)', () => {

@@ -275,6 +275,9 @@ jobs:
           EXPO_NO_TELEMETRY: '1'
         # Gradle's wrapper, when its own copy is not cached, fetches it with 10 s to answer, and a
         # runner's link can take longer: the build failed on the fetch, not on the app. Two minutes.
+        # And each package it fetches is asked for up to eight times, from five seconds apart and
+        # doubling: Maven Central answered 429 Too Many Requests, and Gradle's own three tries 125 ms
+        # apart spent themselves inside it (plant run 45638318347, three builds of eleven).
         run: |
           set +e
           {
@@ -284,7 +287,7 @@ jobs:
             && grep -A 2 -F 'super.onCreate(null)' android/app/src/main/java/com/reelhouse/society/MainActivity.kt \
                  | grep -q -F 'splashScreen.clearOnExitAnimationListener()' \
             && (cd android && for i in 1 2 3 4; do ./gradlew --version --no-daemon --console=plain > /dev/null && break; [ $i -eq 4 ] && exit 1; sleep $((i * 30)); done) \
-            && (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+            && (cd android && ./gradlew assembleRelease -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
                   "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError")
           } > "$RUNNER_TEMP/build.log" 2>&1
           rc=$?

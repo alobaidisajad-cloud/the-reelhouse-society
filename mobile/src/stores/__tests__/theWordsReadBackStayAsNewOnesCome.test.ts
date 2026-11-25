@@ -86,6 +86,10 @@ function openOnNewest400(room: string) {
 beforeEach(() => {
   for (const forget of RESETS) forget(null);
   mockWritten.length = 0;
+  // Each test's words counted from its own first: the first test's "new words 1" was a later
+  // test's fourth when it ran after them (CI's backwards run, 2026-11-25).
+  said = 0;
+  mockSent = 0;
   useLoungeStore.setState({ currentLoungeId: null, currentMessages: [] });
 });
 

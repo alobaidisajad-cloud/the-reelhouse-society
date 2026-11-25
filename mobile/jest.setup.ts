@@ -658,8 +658,10 @@ jest.mock('react-native-safe-area-context', () => {
 // jest.fn, and jest.spyOn on a jest.fn hands back that mock itself, so a test's clock stayed after
 // its jest.restoreAllMocks() for the rest of the file: stack-detail's curator test froze every later
 // press of the same button inside its 400 ms wait (the nightly's random order). A plain function is
-// spied on, and put back, as any other.
-globalThis.performance.now = () => Date.now();
+// spied on, and put back, as any other. Read from the clock as it stands now, as the preset's does:
+// a test that sets the phone's clock (Date.now) leaves the forward clock where it was.
+const forwardClock = Date.now;
+globalThis.performance.now = () => forwardClock.call(Date);
 const { Dimensions: RNDimensions } = require('react-native');
 const realDimensionsGet = RNDimensions.get.bind(RNDimensions);
 RNDimensions.get = ((...args: unknown[]) => ({
