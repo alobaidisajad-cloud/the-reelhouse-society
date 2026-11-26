@@ -238,6 +238,9 @@ beforeEach(() => {
   mockBack.mockClear();
   // Nobody hidden: a block or mute a test made leaves the next test's reader at once (review round 6).
   useBlockStore.setState({ blocked: [], muted: [], _blockedIndex: new Set(), _mutedIndex: new Set() });
+  // No tap a test left in the marks' ledger: one still in flight is the member's latest act to the
+  // next test's press (nightly 45829548435, seed -2139178644).
+  jest.requireActual('@/src/stores/markCounts').resetMarkCounts();
   at({ id: '00000017-0000-4000-8000-000000000017' });
   useDispatch.setState({
     ...AS_BUILT,

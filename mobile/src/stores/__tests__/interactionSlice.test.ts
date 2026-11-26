@@ -49,6 +49,11 @@ describe('interactionSlice', () => {
         const { InteractionService } = jest.requireMock('../../services/InteractionService');
         InteractionService.addEndorsement.mockReset().mockResolvedValue(undefined);
         InteractionService.removeEndorsement.mockReset().mockResolvedValue(undefined);
+        // A tap the count's tests left in the marks' ledger, or a certification the heart's tests left
+        // in the offline queue, is the member's latest act to a read: the read then keeps its log out
+        // of the index (nightly 45829548435, seed -2139178644). Every test starts with neither.
+        jest.requireActual('../markCounts').resetMarkCounts();
+        jest.requireActual('../../utils/offlineQueue').clearOfflineQueue('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
         useLogStore.setState({
             logs: [],
             watchlist: [],
