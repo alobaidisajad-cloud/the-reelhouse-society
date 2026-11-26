@@ -30,6 +30,7 @@ import { agedSince, monotonicNow } from '../lib/waits';
 import { keepPage, keptPage } from '../utils/keptPages';
 import { DEPARTED_HANDLE } from '../constants/departed';
 import { forgetShownTypists, shownByTheHouse } from './typistShown';
+import { turns } from '../utils/turns';
 
 // ── Types ──
 export interface LoungeRoom {
@@ -381,6 +382,32 @@ function heardLive(id: string): void {
  * moment and the channel's is in neither, so the room is caught up as soon as that read lands.
  */
 let _catchUpAfterRead: string | null = null;
+
+/**
+ * The corridor, in turns (src/utils/turns.ts): a read of it takes one as it is asked, and each act of
+ * the member's that redraws it (a leave, a dissolving, a cover, a request at a door) takes one as it
+ * begins and one as it settles. An older answer lands nowhere; one overtaken by an act alone is asked again.
+ */
+const corridorTurns = turns();
+const CORRIDOR = 'corridor';
+/** The turn of the newest read of the corridor asked. */
+let newestCorridorRead = 0;
+/**
+ * Each room's words, whole: a read of them whole (fetchMessages, a catch-up that read the room again
+ * from its newest) takes a turn; a page of older words reads the turn, and is laid only on the list
+ * it was asked of.
+ */
+const roomLists = turns();
+/**
+ * Each room's words as they stand: a catch-up takes a turn as it is asked, and each reaction or
+ * withdrawal of the member's takes one as it begins and one as it settles. A catch-up overtaken by
+ * an act alone is asked again.
+ */
+const roomMarks = turns();
+/** The turn of the newest catch-up asked, per room. */
+const newestCatchUp = new Map<string, number>();
+/** The messages being sent again: one try of each at a time. */
+const resending = new Set<string>();
 /**
  * A room's channel live for the first time: what was said between the room's read and this moment
  * is in neither, so it is read now, from the newest word held; with the read still out, as soon as
@@ -756,18 +783,6 @@ export const loungesAtStart = () => ({
  */
 const _readRoomsHere = new Map<string, number>();
 
-/**
- * The corridor's reads, numbered (it is read every thirty seconds while open, and again on each
- * return): an older read landing after a newer one is not laid over it. And each room's first read,
- * numbered by room: a room read again (left and entered, or asked again from its TRY AGAIN) answers
- * for itself, and an older page of it, first or next, is dropped. They only rise: a sign-out raises
- * them, so a read still out for the member who left never matches the next one's.
- */
-let _corridorReads = 0;
-const _roomReads = new Map<string, number>();
-/** A room's latest read's number: 0 before any. */
-const roomRead = (loungeId: string): number => _roomReads.get(loungeId) ?? 0;
-
 export const useLoungeStore = create<LoungeState>()((set, get) => ({
   ...loungesAtStart(),
 
@@ -781,7 +796,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (kept.length > 0) set({ lounges: kept });
     }
     set({ loungesLoading: true });
-    const mine = ++_corridorReads;
+    const mine = corridorTurns.take(CORRIDOR);
+    newestCorridorRead = mine;
     const askedAt = monotonicNow();
     try {
       // The corridor in one trip (get_lounge_list, 20261109_02): the member's seats, the newest
@@ -871,14 +887,17 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       }));
 
       // Left mid-flight — see sessionGuard. Writing here would repopulate a store
-      // the logout reset has already cleared. Read again since: the newer read answers.
-      if (!memberUnchanged(startedAs) || mine !== _corridorReads) return;
+      // the logout reset has already cleared.
+      if (!memberUnchanged(startedAs)) return;
+      // Overtaken: a newer read lays its own answer; an act of the member's since, a read asked after it.
+      if (!corridorTurns.isLast(CORRIDOR, mine)) return newestCorridorRead === mine ? get().fetchLounges() : undefined;
       set({ lounges: enriched, loungesFailed: false, loungesLoading: false, loungesRead: true });
       keepPage('lounges', user.id, enriched);
     } catch (err) {
       if (__DEV__) console.warn('[Lounge] fetchLounges failed:', err);
-      // Their failed read is not the next member's, nor an older read's failure the newer's.
-      if (!memberUnchanged(startedAs) || mine !== _corridorReads) return;
+      // Their failed read is not the next member's.
+      if (!memberUnchanged(startedAs)) return;
+      if (!corridorTurns.isLast(CORRIDOR, mine)) return newestCorridorRead === mine ? get().fetchLounges() : undefined;
       // Said by the screen that asked, not here: the Lounge polls every thirty
       // seconds while open, and a toast here would be a toast every thirty
       // seconds for as long as the signal is gone.
@@ -923,7 +942,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     _keptRooms.delete(loungeId);
     if (serverHeld(kept).length > 0) {
       // Drawn from what was kept and caught up from it: a whole read of the room still out is older.
-      _roomReads.set(loungeId, (_roomReads.get(loungeId) ?? 0) + 1);
+      roomLists.take(loungeId);
       set({ currentLoungeId: loungeId, currentMessages: kept, messagesLoading: false, messagesFailed: false });
       return get().catchUpMessages(loungeId);
     }
@@ -938,9 +957,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     }));
     // Words heard after this moment are kept over the answer, which was read before them.
     const heardFrom = _heardSeq;
-    // This room's read: one asked again since answers for itself.
-    const mine = (_roomReads.get(loungeId) ?? 0) + 1;
-    _roomReads.set(loungeId, mine);
+    // Read whole again while this read is out (a second open, a focus): the later asked is laid.
+    const mine = roomLists.take(loungeId);
     let failed = false;
     try {
       // The cursor's own order (loadMoreMessages): created_at alone leaves a burst's order to
@@ -991,9 +1009,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
                 created_at: houseIso(),
             } as unknown as LoungeMessage);
         }
-        // Only for the member who asked: the queued messages stitched in are theirs. And only the
-        // room's latest read: an older one, landing after, would lay words read before it.
-        if (!memberUnchanged(startedAs) || mine !== _roomReads.get(loungeId)) return;
+        // Only for the member who asked: the queued messages stitched in are theirs.
+        if (!memberUnchanged(startedAs) || !roomLists.isLast(loungeId, mine)) return;
         keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
         // Only if this room is still the open one: a slower fetch for a room left
         // behind would put its words under the new room's name.
@@ -1008,26 +1025,27 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           const words = heardSince.length === 0 ? finalMessages : capMessages([...finalMessages, ...heardSince].sort(before));
           return { currentMessages: words.filter(m => !hiddenHere(m)) };
         });
-        // The channel went live while this read was out: what was said between the read's moment
-        // and the channel's is read now, from the newest word held.
-        if (_catchUpAfterRead === loungeId && get().currentLoungeId === loungeId) {
-          _catchUpAfterRead = null;
-          // A room that held no word is read whole once more (a catch-up pages from a word held).
-          if (serverHeld(get().currentMessages).length > 0) void get().catchUpMessages(loungeId);
-          else void get().fetchMessages(loungeId);
-        }
       }
     } catch {
       failed = true;
     }
-    if (!memberUnchanged(startedAs)) return;
-    // A stale fetch must not lower the spinner of the room now open, nor say it failed: another
-    // room's, or this room's read asked again since, which lowers it itself.
-    if (get().currentLoungeId !== loungeId || mine !== _roomReads.get(loungeId)) return;
+    // A newer read of the room lowers the spinner and says how it went.
+    if (!memberUnchanged(startedAs) || !roomLists.isLast(loungeId, mine)) return;
+    // A stale fetch must not lower the spinner of the room now open, nor say it failed.
+    if (get().currentLoungeId !== loungeId) return;
     // A room with nothing to show says so itself (the salon's transcript, with TRY AGAIN);
     // over words it kept, the toast says the new ones could not come.
     if (failed && get().currentMessages.length > 0) reelToast.error('Could not load messages — check your connection.');
     set({ messagesLoading: false, messagesFailed: failed });
+    // The channel went live while this read was out: what was said between the read's moment
+    // and the channel's is read now, from the newest word held, the spinner down.
+    const answeredWhileLive = !failed && _catchUpAfterRead === loungeId;
+    if (answeredWhileLive) {
+      _catchUpAfterRead = null;
+      // A room that held no word is read whole once more (a catch-up pages from a word held).
+      if (serverHeld(get().currentMessages).length > 0) void get().catchUpMessages(loungeId);
+      else void get().fetchMessages(loungeId);
+    }
   },
 
   loadMoreMessages: async (loungeId: string) => {
@@ -1040,8 +1058,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     // The oldest message is at index 0 because fetchMessages reverses the chronological array
     const oldestMessage = current[0];
     if (oldestMessage.id.startsWith('optimistic')) return; // Safety
-    // Under the room's read it continues: the room read again meanwhile, this page is of the old one.
-    const mine = roomRead(loungeId);
+    // The list this page follows: read again whole meanwhile, the page is asked again of the new one.
+    const mine = roomLists.now(loungeId);
 
     try {
       // A (created_at, id) cursor, with the same two keys in the order: created_at alone
@@ -1064,7 +1082,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
         // Prepend older messages (filter blocked/muted)
         const filteredOlder = olderMessages.filter(m => !hiddenHere(m));
-        if (!memberUnchanged(startedAs) || mine !== roomRead(loungeId)) return;
+        if (!memberUnchanged(startedAs)) return;
+        if (!roomLists.isLast(loungeId, mine)) return get().loadMoreMessages(loungeId);
         keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
         // Into the LIVE list, not `current` (read before the await), which would erase what
         // arrived over realtime during the scroll; and only into this room.
@@ -1086,8 +1105,14 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     // Quiet: no spinner and no toast. A catch-up that fails leaves what is held, and the room's
     // own line (not live, offline) says the rest; offline, none is tried.
     if (!onlineManager.isOnline() || get().currentLoungeId !== loungeId) return;
+    // A whole read of the room is out: it is caught up on as soon as that read lands, never under it.
+    if (get().messagesLoading) { _catchUpAfterRead = loungeId; return; }
     const held = serverHeld(get().currentMessages);
     if (held.length === 0) return;
+    const mine = roomMarks.take(loungeId);
+    newestCatchUp.set(loungeId, mine);
+    /** Overtaken: a newer catch-up lays its own answer; a reaction or withdrawal since, one asked after it. */
+    const overtaken = () => (newestCatchUp.get(loungeId) === mine ? get().catchUpMessages(loungeId) : undefined);
     const startedAs = useAuthStore.getState().user?.id ?? null;
     const myId = useAuthStore.getState().user?.id;
     const newestHeld = held.reduce((a, b) => (before(a, b) >= 0 ? a : b));
@@ -1112,7 +1137,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       const heard = reactionRowsOf(rows);
       if (rows.length === MESSAGE_WINDOW) {
         // More was missed than the room holds: it is read again from its newest, and only this
-        // phone's own words (sending, failed, queued) are kept.
+        // phone's own words (sending, failed, queued) are kept. A page of older words asked of the
+        // list before is asked again of this one.
+        const whole = roomLists.take(loungeId);
         const { data, error } = await supabase
           .from('lounge_messages')
           .select(MESSAGE_COLUMNS)
@@ -1122,10 +1149,11 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           .limit(MESSAGE_PAGE);
         if (error || !data) return;
         const newest = messagesOf(data as unknown as LoungeMessageRow[], myId);
-        if (!memberUnchanged(startedAs)) return;
+        if (!memberUnchanged(startedAs) || !roomLists.isLast(loungeId, whole)) return;
+        if (!roomMarks.isLast(loungeId, mine)) return overtaken();
         keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
         // The room begins again from its newest: an older page still out would leave a hole above it.
-        _roomReads.set(loungeId, (_roomReads.get(loungeId) ?? 0) + 1);
+        roomLists.take(loungeId);
         set((s) => {
           if (s.currentLoungeId !== loungeId) return s;
           const fromHouse = new Set(serverHeld(s.currentMessages).map((m) => m.id));
@@ -1148,6 +1176,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         .lte('created_at', newestHeld.created_at)
         .limit(1000);
       if (!memberUnchanged(startedAs)) return;
+      if (!roomMarks.isLast(loungeId, mine)) return overtaken();
       type Mark = {
         id: string; deleted_at: string | null; content?: string | null; metadata?: Record<string, unknown> | null;
         film_title?: string | null; film_poster?: string | null; reply_to_content?: string | null; lounge_message_reactions?: ReactionRow[];
@@ -1472,7 +1501,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const prev = get().lounges.find(l => l.id === loungeId)?.cover_image ?? null;
     const prevSet = get().coversSet;
     // Optimistic: patch the lounges collection so the card updates instantly, and the room's
-    // own cover wherever it is drawn (coversSet).
+    // own cover wherever it is drawn (coversSet). A read of the corridor out now is older than it.
+    corridorTurns.take(CORRIDOR);
     set(s => ({
       lounges: s.lounges.map(l => l.id === loungeId ? { ...l, cover_image: cover } : l),
       coversSet: { ...s.coversSet, [loungeId]: cover },
@@ -1493,6 +1523,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       });
       reelToast.error(saidOfAFailure(e, 'Could not update the salon cover.'));
       return false;
+    } finally {
+      corridorTurns.take(CORRIDOR);
     }
   },
 
@@ -1531,6 +1563,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const user = useAuthStore.getState().user;
     const startedAs = user?.id ?? null;
     if (!user) return 'error';
+    // A read of the corridor out now, or asked while the request is out, is older than it.
+    corridorTurns.take(CORRIDOR);
     try {
       const { error } = await supabase.rpc('request_lounge_membership', { p_lounge_id: loungeId });
       if (error) throw error;
@@ -1552,6 +1586,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         reelToast.error(saidOfAFailure(e, 'Could not send your request.'));
       }
       return 'error';
+    } finally {
+      corridorTurns.take(CORRIDOR);
     }
   },
 
@@ -1647,6 +1683,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const existing = msg.reactions?.find(r => r.reaction === reaction);
     const wasMine = !!existing?.mine;
     const delta: 1 | -1 = wasMine ? -1 : 1;
+    // An act on the room's words: a catch-up asked before it, or while it is out, is older than it.
+    roomMarks.take(msg.lounge_id);
     set(s => ({
       currentMessages: s.currentMessages.map(m =>
         m.id === messageId ? { ...m, reactions: applyReactionDelta(m.reactions, reaction, delta, !wasMine) } : m
@@ -1692,6 +1730,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       const paced = writePaceSaid(e, 'reactions');
       if (paced) reelToast.error(paced);
       else showTierDoor(e, { returnTo: `/lounge/${msg.lounge_id}` });
+    } finally {
+      roomMarks.take(msg.lounge_id);
     }
   },
 
@@ -1705,6 +1745,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const quoted = new Map(get().currentMessages
       .filter((m) => m.reply_to_id === messageId && m.reply_to_content)
       .map((m) => [m.id, m.reply_to_content] as const));
+    // An act on the room's words: a catch-up asked before it, or while it is out, is older than it.
+    roomMarks.take(target.lounge_id);
     set(s => ({
       currentMessages: s.currentMessages.map(m =>
         m.id === messageId ? { ...m, content: '', deleted_at: houseIso(), reactions: [] }
@@ -1735,6 +1777,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           : quoted.has(m.id) && m.reply_to_content == null ? { ...m, reply_to_content: quoted.get(m.id) } : m),
       }));
       reelToast.error(saidOfAFailure(e, 'Could not withdraw this dispatch.'));
+    } finally {
+      roomMarks.take(target.lounge_id);
     }
   },
 
@@ -1745,6 +1789,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     // Held in the queue, refused for the rank while offline: drawn failed in its room, sent again here.
     const held = stillHeld('send_lounge_message', messageId);
     if (!user || !msg || (msg.status !== 'failed' && !held)) return false;
+    // Tapped again while it is out: the try out is the one answered, never a second over it.
+    if (resending.has(messageId)) return false;
+    resending.add(messageId);
     set(s => ({
       currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'sending' as const } : m),
     }));
@@ -1804,6 +1851,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (await saidWhyTheSalonRefused(msg.lounge_id, user.id)) return false;
       reelToast.error(saidOfAFailure(e, 'Still could not send.'));
       return false;
+    } finally {
+      resending.delete(messageId);
     }
   },
 
@@ -1821,6 +1870,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     // At once, as the next read will have it: out of "your salons", into the
     // rooms to browse (a private one too: it is still there to ask at).
     const seated = get().lounges.find((l) => l.id === loungeId);
+    // A read of the corridor out now, or asked while the leave is out, is older than it.
+    corridorTurns.take(CORRIDOR);
     set(s => ({ lounges: s.lounges.map(l => (l.id === loungeId && isMine(l) ? leftBehind(l) : l)) }));
 
     // A delete that row security refuses answers 200 with no error, so the rows are asked
@@ -1829,6 +1880,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       .eq('lounge_id', loungeId)
       .eq('user_id', user.id)
       .select('id');
+    corridorTurns.take(CORRIDOR);
 
     if (error || !removed || removed.length === 0) {
       if (!memberUnchanged(startedAs)) return false;
@@ -1851,6 +1903,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const standing = get().lounges;
     const at = standing.findIndex((l) => l.id === loungeId);
     const room = at >= 0 ? standing[at] : null;
+    // A read of the corridor out now, or asked while the dissolving is out, is older than it.
+    corridorTurns.take(CORRIDOR);
     set(s => ({ lounges: s.lounges.filter(l => l.id !== loungeId) }));
     
     // As in leaveLounge: a non-creator's delete touches no rows and still answers 200,
@@ -1859,6 +1913,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       .eq('id', loungeId)
       .eq('creator_id', user.id)
       .select('id');
+    corridorTurns.take(CORRIDOR);
 
     if (error || !destroyed || destroyed.length === 0) {
       // Their failed act is not the next member's to see.
@@ -2169,9 +2224,11 @@ registerStoreReset(() => {
     _lastSendAt.clear();
     _keptRooms.clear();
     _readRoomsHere.clear();
-    // Raised, never set back to 0: a read still out is the last member's.
-    _corridorReads += 1;
-    for (const [id, n] of _roomReads) _roomReads.set(id, n + 1);
+    // A read of the corridor still out is the last member's: never asked again for the next.
+    corridorTurns.take(CORRIDOR);
+    newestCorridorRead = 0;
+    newestCatchUp.clear();
+    resending.clear();
     _readBackIn = null;
     _heardSeq = 0;
     _heardLive.clear();

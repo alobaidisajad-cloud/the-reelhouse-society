@@ -18,6 +18,8 @@ jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHouse.clien
 let mockUser: Record<string, unknown> | null = null;
 jest.mock('@/src/stores/auth', () => ({
   useAuthStore: { getState: () => ({ user: mockUser }), setState: (s: { user: Record<string, unknown> }) => { mockUser = s.user; } },
+  // The profile's own turns, as the store keeps them: no whole read is asked here.
+  profileTurns: jest.requireActual('@/src/utils/turns').turns(),
 }));
 jest.mock('@/src/utils/logger', () => ({ logger: { warn: jest.fn(), debug: jest.fn(), error: jest.fn(), info: jest.fn() } }));
 const { logger } = jest.requireMock('@/src/utils/logger') as { logger: { warn: jest.Mock } };

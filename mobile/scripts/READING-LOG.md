@@ -504,3 +504,15 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/migrations-down/20261125_10_a_members_call_to_the_store_is_paced.sql | — |  |
 | supabase/migrations/20261125_10_a_members_call_to_the_store_is_paced.sql | — |  |
 | mobile/src/lib/cacheWriteBounds.json | — |  |
+| mobile/supabase/diagnostics/a_stacks_films_are_read_in_their_order_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261126_00_a_stacks_films_are_read_in_their_order.sql | — |  |
+| supabase/migrations/20261126_00_a_stacks_films_are_read_in_their_order.sql | — |  |
+| mobile/supabase/diagnostics/a_copy_of_the_house_calls_no_one_rehearsal.sql | — |  |
+| mobile/supabase/diagnostics/a_filings_marks_are_its_own_rehearsal.sql | — |  |
+| mobile/supabase/diagnostics/leaving_asks_a_fresh_proof_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261126_10_a_filings_marks_are_its_own.sql | — |  |
+| mobile/supabase/migrations-down/20261126_11_a_copy_of_the_house_calls_no_one.sql | — |  |
+| mobile/supabase/migrations-down/20261126_12_leaving_asks_a_fresh_proof.sql | — |  |
+| supabase/migrations/20261126_10_a_filings_marks_are_its_own.sql | — |  |
+| supabase/migrations/20261126_11_a_copy_of_the_house_calls_no_one.sql | — |  |
+| supabase/migrations/20261126_12_leaving_asks_a_fresh_proof.sql | — |  |

@@ -461,21 +461,17 @@ section('notify-push — the database\'s push sender, behind its own secret');
     'a critique taken as the answer is titled as one, in the critiques\' channel', JSON.stringify(answerMessages).slice(0, 300));
 
   // The database's own call: its trigger, through pg_net, to this function, to Expo.
-  const before = sql("SELECT pg_get_functiondef('public.tg_notify_push()'::regprocedure)");
-  sql(`DO $do$ DECLARE d text; BEGIN
-         d := pg_get_functiondef('public.tg_notify_push()'::regprocedure);
-         IF d !~ 'https://[a-z0-9]+[.]supabase[.]co/functions/v1/notify-push' THEN RAISE EXCEPTION 'tg_notify_push no longer names the push sender'; END IF;
-         EXECUTE regexp_replace(d, 'https://[a-z0-9]+[.]supabase[.]co', ${literal(GATEWAY_FROM_DB)});
-       END $do$;
-       DO $do$ BEGIN
-         IF EXISTS (SELECT 1 FROM vault.secrets WHERE name = 'notify_push_secret') THEN
-           PERFORM vault.update_secret((SELECT id FROM vault.secrets WHERE name = 'notify_push_secret'), ${literal(SECRET.shared)});
-         ELSE PERFORM vault.create_secret(${literal(SECRET.shared)}, 'notify_push_secret'); END IF;
-       END $do$;`);
-  const after = sql("SELECT pg_get_functiondef('public.tg_notify_push()'::regprocedure)");
-  const production = /https:\/\/[a-z0-9]+[.]supabase[.]co/.exec(before)?.[0] ?? '';
-  check(production !== '' && after !== before && after.split(GATEWAY_FROM_DB).join(production) === before,
-    'the push trigger is changed in its address alone, to the local push sender');
+  // The trigger names no address (20261126_11): it reads the Vault's notify_push_url, which production
+  // alone holds. The copy is given the local push sender's address there, as production holds its own.
+  const trigger = sql("SELECT pg_get_functiondef('public.tg_notify_push()'::regprocedure)");
+  check(!/https?:\/\/[a-z0-9.-]+[.](co|com|io|net|org)\b/.test(trigger) && trigger.includes("name = 'notify_push_url'"),
+    'the push trigger names no address of its own, and reads it from the Vault');
+  const hold = (name, value) => `DO $do$ BEGIN
+         IF EXISTS (SELECT 1 FROM vault.secrets WHERE name = ${literal(name)}) THEN
+           PERFORM vault.update_secret((SELECT id FROM vault.secrets WHERE name = ${literal(name)}), ${literal(value)});
+         ELSE PERFORM vault.create_secret(${literal(value)}, ${literal(name)}); END IF;
+       END $do$;`;
+  sql(`${hold('notify_push_secret', SECRET.shared)}\n${hold('notify_push_url', `${GATEWAY_FROM_DB}/functions/v1/notify-push`)}`);
   const notice = `A notice from the house, ${randomUUID().slice(0, 8)}.`;
   sql(`INSERT INTO public.notifications (user_id, type, message) VALUES (${literal(two.id)}, 'system', ${literal(notice)})`);
   let pushed = [];

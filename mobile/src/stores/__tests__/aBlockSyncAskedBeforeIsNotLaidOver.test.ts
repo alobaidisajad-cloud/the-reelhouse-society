@@ -46,6 +46,11 @@ it('a read asked before a block made here does not draw the member blocked again
   const sync = useBlockStore.getState().syncFromServer(ME);
   await useBlockStore.getState().blockUser(THEM);
   mockAnswers[0]!([]);
+  // The older answer lands nowhere: the lists are asked again, after the block.
+  await new Promise((r) => setImmediate(r));
+  expect(useBlockStore.getState().isBlocked(THEM)).toBe(true);
+  expect(mockAnswers).toHaveLength(2);
+  mockAnswers[1]!([block(THEM)]);
   await sync;
   expect(useBlockStore.getState().isBlocked(THEM)).toBe(true);
 });

@@ -463,7 +463,8 @@ describe('account', () => {
     const r = await settle(mount());
     const line = r.getByText(/Your phone's own lock/);
     const said = String(line.props.children);
-    expect(said).toMatch(/account can be deleted/);
+    // Deleting the account asks the emailed code, never the phone's lock (20261126_12).
+    expect(said).not.toMatch(/deleted/);
     expect(said).toMatch(/this setting changes/);
     expect(said).toMatch(/your own Archive shows: its room, the Ledger, the calendar, LATELY and your highest rated\./);
     expect(said).not.toMatch(/sign out/);
@@ -777,13 +778,15 @@ describe('the way out, and the way to leave for good', () => {
     expect(mockPrevent).toBeDefined();
   });
 
-  it('deletion erases the same amount whichever door you came through', async () => {
-    // The email-code route wiped the device; the biometric route did not, so
-    // drafts, the import receipt and local flags outlived the account.
+  it('deletion has one door, the emailed code, and one erasure', async () => {
+    // The email-code route wiped the device and a biometric route did not, so drafts, the import
+    // receipt and local flags outlived the account. Now the phone's lock is no door at all: the house
+    // deletes only for a sign-in made moments ago (20261126_12), so DELETE always asks the code.
     const codePath = SCREEN.slice(SCREEN.indexOf("otpAction === 'deleteAccount'"));
     expect(codePath.slice(0, 200)).toMatch(/completeAccountDeletion\(\)/);
-    const biometricPath = SCREEN.slice(SCREEN.indexOf('const handleDeleteAccount'));
-    expect(biometricPath.slice(0, 2200)).toMatch(/completeAccountDeletion\(\)/);
+    const deletePath = SCREEN.slice(SCREEN.indexOf('const handleDeleteAccount'), SCREEN.indexOf('const glowStyle'));
+    expect(deletePath).toMatch(/requestOtpAuth\('deleteAccount'\)/);
+    expect(deletePath).not.toMatch(/completeAccountDeletion|LocalAuthentication/);
     // and there is exactly one place that erases (what the phone keeps for another member stays: othersKeptHere)
     expect((CODE_SCREEN.match(/eraseAllButOthers\(/g) || [])).toHaveLength(1);
     expect(CODE_SCREEN).not.toMatch(/storage\.clearAll\(\)/);
@@ -1122,17 +1125,19 @@ describe('a door to the import panel', () => {
   });
 });
 
-describe("the phone's lock, put away, and the store's subscription", () => {
+describe("the emailed code at DELETE, and the store's subscription", () => {
   const pressDelete = async (r: ReturnType<typeof mount>) => {
     await act(async () => { await fireEvent.press(r.getByLabelText('DELETE ACCOUNT')); });
     return mockAlert.mock.calls[mockAlert.mock.calls.length - 1] as [string, string, { text: string; onPress?: () => Promise<void> }[]];
   };
 
   // P4.40: the code is verified with Enter (Android's pad has a Done key), as with VERIFY CODE.
-  it('a failed Face ID asks for the emailed code, and Enter in the code verifies it', async () => {
+  // 20261126_12: the house deletes only for a sign-in made moments ago, which the phone's lock is not,
+  // so DELETE asks the emailed code with Biometric Lock on as with it off, and never the lock.
+  it('DELETE asks the emailed code and never the phone\'s lock, and Enter in the code verifies it', async () => {
     mockUser = { ...BASE, preferences: { biometric_lock: true } };
     const local = jest.requireMock('expo-local-authentication') as { authenticateAsync: jest.Mock };
-    local.authenticateAsync.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
+    local.authenticateAsync.mockClear();
     const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
     const auth = supabase.auth as unknown as { signInWithOtp: jest.Mock; verifyOtp: jest.Mock };
     auth.signInWithOtp = jest.fn().mockResolvedValue({ data: null, error: null });
@@ -1140,6 +1145,8 @@ describe("the phone's lock, put away, and the store's subscription", () => {
     const r = await settle(mount());
     const [, , buttons] = await pressDelete(r);
     await act(async () => { await buttons.find((b) => b.text === 'DELETE')!.onPress!(); });
+    expect(local.authenticateAsync).not.toHaveBeenCalled();
+    expect(auth.signInWithOtp).toHaveBeenCalledTimes(1);
     expect(r.getByText(/6-digit cipher/)).toBeTruthy();
     await act(async () => { await fireEvent.changeText(r.getByLabelText('Six digit security code'), '12345'); });
     await act(async () => { await fireEvent(r.getByLabelText('Six digit security code'), 'submitEditing'); });
@@ -1150,21 +1157,15 @@ describe("the phone's lock, put away, and the store's subscription", () => {
     expect(mockRequestDeletion).not.toHaveBeenCalled();
   });
 
-  it('a Face ID prompt the system put away sends no code and deletes nothing', async () => {
-    // Put away by the system (a call, the app sent to the background) is not a
-    // failed check: it sent an email code nobody asked for.
+  it('CANCEL on the warning sends no code and deletes nothing', async () => {
     mockUser = { ...BASE, preferences: { biometric_lock: true } };
-    const local = jest.requireMock('expo-local-authentication') as { authenticateAsync: jest.Mock };
-    local.authenticateAsync.mockResolvedValueOnce({ success: false, error: 'system_cancel' });
     const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
     const otp = jest.fn().mockResolvedValue({ data: null, error: null });
     (supabase.auth as unknown as { signInWithOtp: jest.Mock }).signInWithOtp = otp;
     mockRequestDeletion.mockClear();
     const r = await settle(mount());
     const [, , buttons] = await pressDelete(r);
-    await act(async () => { await buttons.find((b) => b.text === 'DELETE')!.onPress!(); });
-    // The phone was asked, and the system put the prompt away.
-    expect(local.authenticateAsync).toHaveBeenCalled();
+    expect(buttons.find((b) => b.text === 'CANCEL')?.onPress).toBeUndefined();
     expect(otp).not.toHaveBeenCalled();
     expect(mockRequestDeletion).not.toHaveBeenCalled();
     expect(r.queryByText(/6-digit cipher/)).toBeNull();
@@ -1345,8 +1346,6 @@ describe('SAVE', () => {
 describe('a security code the house could not check', () => {
   it('is said as the house unreached, and the code typed is kept to try again', async () => {
     mockUser = { ...BASE, preferences: { biometric_lock: true } };
-    const local = jest.requireMock('expo-local-authentication') as { authenticateAsync: jest.Mock };
-    local.authenticateAsync.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
     const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
     const auth = supabase.auth as unknown as { signInWithOtp: jest.Mock; verifyOtp: jest.Mock };
     auth.signInWithOtp = jest.fn().mockResolvedValue({ data: null, error: null });
@@ -1370,8 +1369,6 @@ describe('a security code the house could not check', () => {
 
   it('a code the house refused is still called invalid', async () => {
     mockUser = { ...BASE, preferences: { biometric_lock: true } };
-    const local = jest.requireMock('expo-local-authentication') as { authenticateAsync: jest.Mock };
-    local.authenticateAsync.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
     const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
     const auth = supabase.auth as unknown as { signInWithOtp: jest.Mock; verifyOtp: jest.Mock };
     auth.signInWithOtp = jest.fn().mockResolvedValue({ data: null, error: null });
@@ -1391,8 +1388,6 @@ describe('a security code the house could not check', () => {
   it('a screen-reader member hears VERIFY busy while it checks, and then hears the refusal as it appears', async () => {
     const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
     mockUser = { ...BASE, preferences: { biometric_lock: true } };
-    const local = jest.requireMock('expo-local-authentication') as { authenticateAsync: jest.Mock };
-    local.authenticateAsync.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
     const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
     const auth = supabase.auth as unknown as { signInWithOtp: jest.Mock; verifyOtp: jest.Mock };
     auth.signInWithOtp = jest.fn().mockResolvedValue({ data: null, error: null });
@@ -1428,9 +1423,19 @@ describe('deleting the account says what goes and what stays', () => {
     expect(call).toBeDefined();
     return call;
   };
+  /** DELETE pressed: the emailed code entered and taken, so the house is asked. */
+  const deleteThroughTheCode = async (r: ReturnType<typeof mount>, del: Button) => {
+    await act(async () => { await del.onPress!(); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Six digit security code'), '123456'); });
+    await act(async () => { await fireEvent(r.getByLabelText('Six digit security code'), 'submitEditing'); });
+  };
   beforeEach(() => {
-    // The phone's lock passes, so DELETE goes straight to the house.
+    // The code is sent and taken, so DELETE reaches the house.
     mockUser = { ...BASE, preferences: { biometric_lock: true } };
+    const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
+    const auth = supabase.auth as unknown as { signInWithOtp: jest.Mock; verifyOtp: jest.Mock };
+    auth.signInWithOtp = jest.fn().mockResolvedValue({ data: null, error: null });
+    auth.verifyOtp = jest.fn().mockResolvedValue({ data: {}, error: null });
     mockRequestDeletion.mockClear();
   });
 
@@ -1445,7 +1450,7 @@ describe('deleting the account says what goes and what stays', () => {
     expect(words).not.toMatch(/destroy[^.]*critiques/i);
     const del = buttons.find((b) => b.text === 'DELETE');
     expect(del).toBeDefined();
-    await act(async () => { await del!.onPress!(); });
+    await deleteThroughTheCode(r, del!);
     expect(mockRequestDeletion).toHaveBeenCalledWith(false);
     r.unmount();
   });
@@ -1460,7 +1465,7 @@ describe('deleting the account says what goes and what stays', () => {
     expect(words).not.toMatch(/stays where you wrote it/);
     const del = buttons.find((b) => b.text === 'DELETE');
     expect(del).toBeDefined();
-    await act(async () => { await del!.onPress!(); });
+    await deleteThroughTheCode(r, del!);
     expect(mockRequestDeletion).toHaveBeenCalledWith(true);
     r.unmount();
   });
@@ -1472,7 +1477,7 @@ describe('deleting the account says what goes and what stays', () => {
     await act(async () => { await fireEvent.press(r.getByLabelText('Also erase what I wrote')); });
     const del = buttons.find((b) => b.text === 'DELETE');
     expect(del).toBeDefined();
-    await act(async () => { await del!.onPress!(); });
+    await deleteThroughTheCode(r, del!);
     expect(mockRequestDeletion).toHaveBeenCalledWith(false);
     r.unmount();
   });

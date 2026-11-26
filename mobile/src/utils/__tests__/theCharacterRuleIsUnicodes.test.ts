@@ -192,21 +192,22 @@ describe('a long word is offered breaks only between characters, in the time it 
   it('a page of flags costs its length, not its length squared', () => {
     // Asking at every place counted each run of flags back from the start of it.
     const flags = (n: number) => s(0x1f1ee, 0x1f1f6).repeat(n);
-    // Node's own clock, in nanoseconds: the test setup's performance.now is Date.now, whole
-    // milliseconds, and a run of about one of them read as a ratio of exactly 9 (CI 38875676248).
-    const best = (text: string) => {
-      let fastest = Infinity;
-      for (let i = 0; i < 5; i += 1) {
-        const t0 = process.hrtime.bigint();
+    // The work counted, not timed: each question may count flag halves back from its place to
+    // where it is told the count may stop, and no further. A clock read the same code as a ratio
+    // of 9.49 on a busy runner (CI 45876647548); the count is the same on every machine.
+    const span = (text: string) => {
+      const asked = jest.spyOn(textModule, 'isCharacterBoundary');
+      try {
         softBreak(text);
-        fastest = Math.min(fastest, Number(process.hrtime.bigint() - t0));
+        return asked.mock.calls.reduce((sum, [, at, from]) => sum + (at - (from ?? 0)), 0);
+      } finally {
+        asked.mockRestore();
       }
-      return fastest;
     };
-    const small = flags(2500);
-    const large = flags(10000); // four times as long: about four times the time, not sixteen
-    best(small); // first use unpacks the table
-    expect(best(large) / best(small)).toBeLessThan(9);
+    const small = span(flags(2500));
+    const large = span(flags(10000)); // four times as long: about four times the work, not sixteen
+    expect(small).toBeGreaterThan(0);
+    expect(large / small).toBeLessThan(9);
     expect(offered(softBreak(flags(40))).every((at) => at % 4 === 0)).toBe(true); // every break between two flags
   });
 });

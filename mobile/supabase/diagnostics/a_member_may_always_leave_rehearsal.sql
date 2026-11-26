@@ -80,7 +80,9 @@ DO $$
 DECLARE w record;
 BEGIN
   FOR w IN SELECT what, id FROM rh_who WHERE what <> 'seated' LOOP
-    PERFORM set_config('request.jwt.claims', json_build_object('sub', w.id, 'role', 'authenticated')::text, true);
+    -- Signed in a minute ago, as the app signs in to leave (the emailed code: 20261126_12).
+    PERFORM set_config('request.jwt.claims', json_build_object('sub', w.id, 'role', 'authenticated',
+      'amr', json_build_array(json_build_object('method', 'otp', 'timestamp', floor(extract(epoch FROM now())) - 60)))::text, true);
     PERFORM set_config('role', 'authenticated', true);
     INSERT INTO rh_got VALUES (w.what, pg_temp.rh_try('SELECT public.request_account_deletion()'));
     PERFORM set_config('role', 'none', true);

@@ -248,7 +248,8 @@ describe('a page after a row, on any number of axes, nulls where Postgres puts t
     { name: 'up then down', axes: [{ column: 'rank', direction: 'asc', nullable: true }, { column: 'id', direction: 'desc' }] },
   ];
 
-  it.each(SHAPES.flatMap((s) => [1, 2, 3, 5].map((size) => [s.name, size, s.axes] as const)))('%s, %i a page: every row once, in order', (_name, size, axes) => {
+  /** Every page read after the last row of the one before, as the house would answer it: the rows in order, and those read. */
+  function walk(axes: Axis[], size: number): { all: PgRow[]; ordered: PgRow[]; seen: PgRow[] } {
     const all = rows(23);
     const ordered = [...all].sort(postgresOrder(axes));
     const seen: PgRow[] = [];
@@ -262,6 +263,17 @@ describe('a page after a row, on any number of axes, nulls where Postgres puts t
       seen.push(...page);
       last = page[page.length - 1]!;
     }
+    return { all, ordered, seen };
+  }
+
+  it.each(SHAPES.flatMap((s) => [1, 2, 3, 5].map((size) => [s.name, size, s.axes] as const)))('%s, %i a page: every row once, in order', (_name, size, axes) => {
+    const { all, ordered, seen } = walk([...axes], size);
+    expect(all.some((r) => r.rank === null)).toBe(true);
+    expect(seen.map((r) => r.id)).toEqual(ordered.map((r) => r.id));
+  });
+
+  it('going up, past a row with a value, the rows with none come after it: every row once, in order', () => {
+    const { all, ordered, seen } = walk(SHAPES[0]!.axes, 2);
     expect(all.some((r) => r.rank === null)).toBe(true);
     expect(seen.map((r) => r.id)).toEqual(ordered.map((r) => r.id));
   });

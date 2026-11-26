@@ -439,14 +439,14 @@
       "why": "A vote is secret; cast once."
     },
     "dispatch_saves": {
-      "reach": { "set": {"post_id": "{ref:dispatch_posts}"}, "V": "all", "P": "all", "BK": "all", "BY": "all" },
+      "reach": { "set": {"post_id": "{ref:dispatch_posts}"}, "V": "unbanned", "P": "unbanned", "BK": "unbanned", "BY": "unbanned" },
       "owner": "user_id", "key": ["user_id", "post_id"],
       "specimen": { "user_id": "{owner}", "post_id": "{ref:dispatch_posts}" },
       "variant": { "post_id": "{ref:dispatch_posts@X1}" },
       "touch": { "created_at": "2026-01-02" },
       "read": "owner",
-      "self": { "insert": "all", "update": "all", "delete": "all" },
-      "why": "What a member saves is theirs alone."
+      "self": { "insert": "unbanned", "update": "all", "delete": "all" },
+      "why": "What a member saves is theirs alone; a member out of standing keeps no new filing (saves_ban), and lets go of any."
     },
     "dispatch_dossiers_legacy": {
       "hidesBlockers": true,
@@ -970,9 +970,12 @@
     ] },
     "request_account_deletion": { "why": "A member closes their own account, and no other.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "closed", "as": "all", "expect": { "ok": "all" }, "call": "public.request_account_deletion()",
+        "claims": { "amr": [{ "method": "otp", "timestamp": "@now" }] },
         "then": "NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '{owner}') AND EXISTS (SELECT 1 FROM auth.users WHERE id = '{uid@V}')" },
       { "name": "closed, their words erased with it", "as": "all", "expect": { "ok": "all" }, "call": "public.request_account_deletion(true)",
-        "then": "NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '{owner}') AND EXISTS (SELECT 1 FROM auth.users WHERE id = '{uid@V}')" }
+        "claims": { "amr": [{ "method": "otp", "timestamp": "@now" }] },
+        "then": "NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '{owner}') AND EXISTS (SELECT 1 FROM auth.users WHERE id = '{uid@V}')" },
+      { "name": "refused, with no sign-in made moments ago", "as": "all", "expect": "error", "call": "public.request_account_deletion()" }
     ] },
     "request_lounge_membership": { "why": "A member of the Lounge (an Archivist feature) in good standing asks to enter a salon for themselves.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "a private salon", "as": "all", "expect": { "ok": "rank1" }, "call": "public.request_lounge_membership('{ref:lounges@P}')",

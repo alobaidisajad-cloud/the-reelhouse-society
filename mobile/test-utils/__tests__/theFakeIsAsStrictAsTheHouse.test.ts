@@ -32,6 +32,17 @@ describe('it refuses what production refuses', () => {
     expect(() => (client.from('logs')).insert({ ...log(2), mood: 'blue' })).toThrow('logs has no column "mood" (insert[0])');
   });
 
+  it('a value not a whole number in its bounds where the column is an integer; a whole number, or its digits, taken', () => {
+    const { client } = supabaseFake({ rows: { list_items: [] } });
+    const item = (film_id: unknown) => ({ list_id: A, film_id, film_title: 'Vertigo' });
+    // The uuid of a list_items row in its film_id: what production refused for every stack an export brought back.
+    expect(() => client.from('list_items').upsert([item(B)])).toThrow(`list_items.film_id is an integer; "${B}" is not one (upsert[0])`);
+    expect(() => client.from('list_items').insert(item(4.5))).toThrow('list_items.film_id is an integer; 4.5 is not one');
+    expect(() => client.from('list_items').insert(item(2 ** 31))).toThrow(`list_items.film_id is an integer; ${2 ** 31} is not one`);
+    expect(() => client.from('list_items').insert(item(true))).toThrow('list_items.film_id is an integer; true is not one');
+    expect(() => client.from('list_items').insert([item(426), item('426'), item(2 ** 31 - 1)])).not.toThrow();
+  });
+
   it('an rpc production has not, or whose arguments no overload takes, or whose answer the test never wrote', async () => {
     const { client } = supabaseFake({ rpc: { get_email_by_username: 'a@b.test' } });
     expect(() => client.rpc('get_emial_by_username', {})).toThrow('production has no function "get_emial_by_username"');
@@ -47,9 +58,27 @@ describe('it refuses what production refuses', () => {
 
   it('a filter it cannot read, unless the test answers the table itself', async () => {
     const strict = supabaseFake({ rows: { logs: [] } });
-    expect(() => (strict.client.from('logs').select('id')).or('rating.eq.5,rating.eq.4')).toThrow('or() is not read here');
+    expect(() => (strict.client.from('logs').select('id')).contains('rating', [5])).toThrow('contains() is not read here');
+    expect(() => (strict.client.from('logs').select('id')).or('rating.cs.{5}')).toThrow('cannot read "rating.cs.{5}" in an or() of logs');
+    expect(() => (strict.client.from('logs').select('id')).or('ratting.eq.5')).toThrow('logs has no column "ratting" (or)');
     const answered = supabaseFake({ answer: { logs: () => [log(7)] } });
-    await expect(answered.client.from('logs').select('id').or('rating.eq.5,rating.eq.4')).resolves.toMatchObject({ data: [{ id: log(7).id }] });
+    await expect(answered.client.from('logs').select('id').or('rating.cs.{5}')).resolves.toMatchObject({ data: [{ id: log(7).id }] });
+    await expect(answered.client.from('logs').select('id').contains('rating', [5])).resolves.toMatchObject({ data: [{ id: log(7).id }] });
+  });
+
+  it('orders a null as PostgreSQL does: last going up, first going down', async () => {
+    const { client } = supabaseFake({ rows: { logs: [{ ...log(1), rating: null }, log(2), log(3)] } });
+    expect((await client.from('logs').select('id').order('rating')).data).toEqual([{ id: log(2).id }, { id: log(3).id }, { id: log(1).id }]);
+    expect((await client.from('logs').select('id').order('rating', { ascending: false })).data).toEqual([{ id: log(1).id }, { id: log(3).id }, { id: log(2).id }]);
+  });
+
+  it('reads an or() as PostgREST does: items joined by OR, and(…) nested, a number read as one', async () => {
+    const { client } = supabaseFake({ rows: { logs: [log(1), log(2), log(3), log(4), log(9)] } });
+    // A keyset cursor's shape: before a moment, or at it and before an id.
+    const after = (await client.from('logs').select('id').or(`created_at.lt.${log(3).created_at},and(created_at.eq.${log(3).created_at},id.lt.${log(4).id})`).order('id')).data;
+    expect(after).toEqual([{ id: log(1).id }, { id: log(2).id }, { id: log(3).id }]);
+    const rated = (await client.from('logs').select('id').or('rating.gte.4,rating.eq.1').order('id')).data;
+    expect(rated).toEqual([{ id: log(1).id }, { id: log(4).id }, { id: log(9).id }]);
   });
 });
 

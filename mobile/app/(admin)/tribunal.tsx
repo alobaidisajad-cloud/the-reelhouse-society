@@ -55,6 +55,10 @@ import { AppealsDocket } from '@/src/components/admin/AppealsDocket';
 import { SanctionsList } from '@/src/components/admin/SanctionsList';
 import { putBackWords, useKeptWords } from '@/src/hooks/useKeptWords';
 import type { PieceWords } from '@/src/services/ModerationService';
+import { turns } from '@/src/utils/turns';
+
+/** Each case's evidence, in turns: summoned again while out, the later summons is laid, whichever lands last. */
+const evidenceTurns = turns();
 
 interface TribunalTarget {
   id: string;
@@ -867,11 +871,14 @@ function TribunalScreen() {
   // ── Summon the evidence for one case ────────────────────────────────────
   const summonEvidence = useCallback(async (reportId: string) => {
     TactileEngine.selection();
+    const mine = evidenceTurns.take(reportId);
     setEvidence(prev => ({ ...prev, [reportId]: { loading: true, data: prev[reportId]?.data } }));
     try {
       const data = await ModerationService.getReportEvidence(reportId);
+      if (!evidenceTurns.isLast(reportId, mine)) return;
       setEvidence(prev => ({ ...prev, [reportId]: { loading: false, data } }));
     } catch (err: unknown) {
+      if (!evidenceTurns.isLast(reportId, mine)) return;
       setEvidence(prev => ({ ...prev, [reportId]: { loading: false } }));
       const msg = err instanceof Error ? err.message : 'The clerk could not retrieve the exhibit.';
       reelToast.error(msg);

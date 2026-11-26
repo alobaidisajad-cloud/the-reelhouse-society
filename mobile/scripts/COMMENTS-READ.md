@@ -2133,6 +2133,7 @@ files of the reading map this one does not.
 | test-utils/__tests__/aTestReadsAClockItHasSet.test.ts | — |  |
 | test-utils/onlyTheDate.ts | — |  |
 | e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts | — |  |
+| src/utils/__tests__/theServerChecksWhatThePhoneChecks.guard.test.ts | — |  |
 | ../.github/workflows/mutants-on-demand.yml | — |  |
 | scripts/__tests__/gateLock.test.ts | — |  |
 | scripts/__tests__/mutantVerdictsStand.test.ts | — |  |
@@ -2186,3 +2187,13 @@ files of the reading map this one does not.
 | test-utils/__tests__/orderFixtures/leavesItsStateBehind.fixture.ts | — |  |
 | e2e/__tests__/gradleKeptFirst.test.ts | — |  |
 | scripts/gradle-kept-first.sh | — |  |
+| src/stores/__tests__/aBlockMadeWhileTheListsAreReadStays.test.ts | — |  |
+| src/stores/__tests__/aCertificationTakenBackWhileReadStaysTakenBack.test.ts | — |  |
+| src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts | — |  |
+| src/utils/turns.ts | — |  |
+| src/services/__tests__/aStacksFilmsAreReadInTheOrderHeld.test.ts | — |  |
+| src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts | — |  |
+| src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx | — |  |
+| src/hooks/__tests__/theDoorsCountIsLaidInItsTurn.test.tsx | — |  |
+| src/features/archive/__tests__/anExportComesBackWhole.test.ts | — |  |
+| src/features/settings/houseArchive.ts | — |  |

@@ -902,3 +902,51 @@ describe('a judged case leaves the docket at once', () => {
     alertSpy.mockRestore();
   });
 });
+
+// ── The evidence summoned twice (two taps before the card redraws) ──────────────
+// The older summons landing last was laid over the newer: a failed one took the exhibit away again,
+// and said the clerk could not retrieve it, under an exhibit already drawn.
+
+describe('the evidence summoned twice', () => {
+  const evidence = () => jest.requireMock('@/src/services/ModerationService').ModerationService.getReportEvidence as jest.Mock;
+  const toast = () => jest.requireMock('@/src/utils/reelToast').default as { error: jest.Mock };
+  type Fiber = { memoizedProps?: { onPress?: unknown } | null; return?: Fiber | null };
+  /** The press the screen hands a control: the outermost onPress up its fibers (fireEvent finds the innermost). */
+  const pressOf = (el: { unstable_fiber?: unknown }): (() => unknown) => {
+    let found: unknown = null;
+    for (let f = el.unstable_fiber as Fiber | null | undefined; f; f = f.return) {
+      if (typeof f.memoizedProps?.onPress === 'function') found = f.memoizedProps.onPress;
+      if (found && typeof f.memoizedProps?.onPress !== 'function') break;
+    }
+    if (typeof found !== 'function') throw new Error('no press');
+    return found as () => unknown;
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAuthStore.user = ADMIN_USER;
+    mockGetPendingReports.mockResolvedValue({ rows: MOCK_REPORTS, total: MOCK_REPORTS.length });
+    mockGetPriorityQueue.mockResolvedValue([]);
+    mockGetModerationHistoryForUsers.mockResolvedValue({});
+  });
+
+  it('an older summons that fails late takes no exhibit away, and says nothing over it', async () => {
+    let fail: (e: unknown) => void = () => {};
+    evidence().mockReset()
+      .mockImplementationOnce(() => new Promise((_res, rej) => { fail = rej; }))
+      .mockResolvedValueOnce({ found: false });
+    const r = renderTribunal();
+    await waitFor(() => expect(r.getAllByLabelText('Summon the evidence').length).toBeGreaterThan(0));
+    const summon = r.getAllByLabelText('Summon the evidence')[0]!;
+    // The button's debounce and its RETRIEVING state keep a second tap out; the summons itself is still
+    // asked in turns. The screen's own press, called twice while the first is out.
+    const press = pressOf(summon);
+    await act(async () => { void press(); void press(); });
+    expect(evidence()).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(r.getByText('The evidence has been destroyed — the page no longer exists.')).toBeTruthy());
+
+    await act(async () => { fail(new Error('The clerk could not retrieve the exhibit.')); });
+    expect(r.getByText('The evidence has been destroyed — the page no longer exists.')).toBeTruthy();
+    expect(toast().error).not.toHaveBeenCalled();
+  });
+});

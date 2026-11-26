@@ -250,6 +250,25 @@ END $$;
 
 
 --
+-- Name: a_members_room_is_spent(uuid, text, real, real); Type: FUNCTION; Schema: private; Owner: -
+--
+
+CREATE FUNCTION private.a_members_room_is_spent(p_member uuid, p_kind text, p_room real, p_every real) RETURNS TABLE(tokens real, n integer)
+    LANGUAGE sql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  INSERT INTO public.write_budget AS b (user_id, kind, tokens, refilled_at, day, n)
+  VALUES (p_member, p_kind, p_room - 1, now(), (now() AT TIME ZONE 'UTC')::date, 1)
+  ON CONFLICT (user_id, kind) DO UPDATE SET
+    tokens      = LEAST(p_room, b.tokens + GREATEST(0, extract(epoch FROM now() - b.refilled_at))::real / p_every) - 1,
+    refilled_at = GREATEST(b.refilled_at, now()),
+    day         = (now() AT TIME ZONE 'UTC')::date,
+    n           = (CASE WHEN b.day = (now() AT TIME ZONE 'UTC')::date THEN b.n ELSE 0 END) + 1
+  RETURNING b.tokens, b.n;
+$$;
+
+
+--
 -- Name: a_picture_is_held(text, text); Type: FUNCTION; Schema: private; Owner: -
 --
 
@@ -1957,6 +1976,47 @@ END $$;
 
 
 --
+-- Name: a_members_call_is_paced(uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.a_members_call_is_paced(p_member uuid, p_kind text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_now      timestamptz := now();
+  v_day      date := (now() AT TIME ZONE 'UTC')::date;
+  v_room     real;
+  v_every    real;
+  v_ceiling  integer;
+  v_tokens   real;
+  v_count    integer;
+  v_midnight integer := ceil(extract(epoch FROM ((v_day + 1)::timestamp AT TIME ZONE 'UTC') - v_now))::integer;
+BEGIN
+  IF p_member IS NULL THEN
+    RAISE EXCEPTION 'a_members_call_is_paced: no member' USING ERRCODE = '22004';
+  END IF;
+  IF p_kind = 'store_read' THEN
+    v_room := 10; v_every := 30; v_ceiling := 200;
+  ELSE
+    RAISE EXCEPTION 'a_members_call_is_paced: no such kind' USING ERRCODE = '22023', DETAIL = coalesce(p_kind, '');
+  END IF;
+
+  SELECT s.tokens, s.n INTO v_tokens, v_count FROM private.a_members_room_is_spent(p_member, p_kind, v_room, v_every) AS s;
+
+  IF v_tokens < 0 THEN
+    -- The refill's seconds for each call short of one.
+    RAISE EXCEPTION 'RATE_LIMITED' USING ERRCODE = 'RH429', DETAIL = 'member',
+      HINT = GREATEST(1, ceil(-v_tokens * v_every))::integer::text;
+  END IF;
+  IF v_count > v_ceiling THEN
+    RAISE EXCEPTION 'RATE_LIMITED' USING ERRCODE = 'RH429', DETAIL = 'day',
+      HINT = GREATEST(1, v_midnight)::text;
+  END IF;
+END $$;
+
+
+--
 -- Name: a_new_row_is_dated(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2886,14 +2946,7 @@ BEGIN
 
   -- The room, refilled for the time since, less this write; and the day's count. One row, one
   -- statement: a member's writes of a kind at the same moment wait on each other here.
-  INSERT INTO public.write_budget AS b (user_id, kind, tokens, refilled_at, day, n)
-  VALUES (v_member, v_kind, v_room - 1, v_now, v_day, 1)
-  ON CONFLICT (user_id, kind) DO UPDATE SET
-    tokens      = LEAST(v_room, b.tokens + GREATEST(0, extract(epoch FROM v_now - b.refilled_at))::real / v_every) - 1,
-    refilled_at = GREATEST(b.refilled_at, v_now),
-    day         = v_day,
-    n           = (CASE WHEN b.day = v_day THEN b.n ELSE 0 END) + 1
-  RETURNING tokens, n INTO v_tokens, v_count;
+  SELECT s.tokens, s.n INTO v_tokens, v_count FROM private.a_members_room_is_spent(v_member, v_kind, v_room, v_every) AS s;
 
   IF v_tokens < 0 THEN
     -- The refill's seconds for each write short of one.
@@ -11609,7 +11662,7 @@ CREATE TABLE public.write_budget (
     refilled_at timestamp with time zone NOT NULL,
     day date NOT NULL,
     n integer DEFAULT 0 NOT NULL,
-    CONSTRAINT write_budget_kind CHECK ((kind = ANY (ARRAY['stack'::text, 'stack_entry'::text, 'filing'::text, 'salon'::text, 'reaction'::text, 'certification'::text, 'save'::text, 'vote'::text, 'block'::text, 'watchlist_entry'::text, 'shelf_entry'::text, 'draft'::text, 'push_address'::text, 'seat'::text, 'record'::text])))
+    CONSTRAINT write_budget_kind CHECK ((kind = ANY (ARRAY['stack'::text, 'stack_entry'::text, 'filing'::text, 'salon'::text, 'reaction'::text, 'certification'::text, 'save'::text, 'vote'::text, 'block'::text, 'watchlist_entry'::text, 'shelf_entry'::text, 'draft'::text, 'push_address'::text, 'seat'::text, 'record'::text, 'store_read'::text])))
 );
 
 
@@ -11617,7 +11670,7 @@ CREATE TABLE public.write_budget (
 -- Name: TABLE write_budget; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.write_budget IS 'Each member''s room, per kind, to write what they may repeat at will (records, stacks and their entries, filings, salons, reactions, certifications, saves, votes, blocks, watchlist and shelf entries, drafts, push addresses), refilled with time, and the count of the house''s day: written by check_write_pace alone; no client reads or writes it.';
+COMMENT ON TABLE public.write_budget IS 'Each member''s room, per kind, to write what they may repeat at will (records, stacks and their entries, filings, salons, reactions, certifications, saves, votes, blocks, watchlist and shelf entries, drafts, push addresses) and to ask the store for their rank (store_read), refilled with time, and the count of the house''s day: spent by private.a_members_room_is_spent alone, for check_write_pace and a_members_call_is_paced; no client reads or writes it.';
 
 
 --
@@ -16866,6 +16919,13 @@ REVOKE ALL ON FUNCTION private.a_members_pieces_are_queued() FROM PUBLIC;
 
 
 --
+-- Name: FUNCTION a_members_room_is_spent(p_member uuid, p_kind text, p_room real, p_every real); Type: ACL; Schema: private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION private.a_members_room_is_spent(p_member uuid, p_kind text, p_room real, p_every real) FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION a_picture_is_held(p_bucket text, p_name text); Type: ACL; Schema: private; Owner: -
 --
 
@@ -17204,6 +17264,14 @@ GRANT ALL ON FUNCTION public.a_follow_takes_its_notice() TO service_role;
 
 REVOKE ALL ON FUNCTION public.a_hidden_members_word_is_not_written() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.a_hidden_members_word_is_not_written() TO service_role;
+
+
+--
+-- Name: FUNCTION a_members_call_is_paced(p_member uuid, p_kind text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.a_members_call_is_paced(p_member uuid, p_kind text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.a_members_call_is_paced(p_member uuid, p_kind text) TO service_role;
 
 
 --

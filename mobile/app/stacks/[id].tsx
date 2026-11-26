@@ -28,7 +28,7 @@ import { deckLabelProps, scaledTextProps } from '@/src/constants/textScaling';
 import { formatCount, UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import { tmdb } from '@/src/lib/tmdb';
-import { STACK_COMMENT_PAGE, StackService } from '@/src/services/StackService';
+import { STACK_COMMENT_PAGE, StackService, type StackPlace } from '@/src/services/StackService';
 import { useAuthStore } from '@/src/stores/auth';
 import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 import { useBlockStore } from '@/src/stores/blockStore';
@@ -113,6 +113,8 @@ interface ListDetail {
   films: FilmItem[];
   /** The stack's TRUE size — films above is a bounded page. */
   filmCount?: number;
+  /** Where the films past that page continue: the order held as it was read (none held: read when asked). */
+  filmsNext?: StackPlace;
   /** How many critiques; null when the server could not be asked. */
   critiqueCount?: number | null;
   isPrivate: boolean;
@@ -412,7 +414,7 @@ function StackDetailScreen({ id }: { id: string }) {
   // drawn whole, in its rank order. Held beside the read they follow; a stack read again starts over.
   // Keyed by the first page's films, not the list: a critique filed rewrites the list's count (a new
   // object), and every film read past 500 was dropped with it.
-  const [later, setLater] = useState<{ after: FilmItem[] | null; films: FilmItem[] }>({ after: null, films: [] });
+  const [later, setLater] = useState<{ after: FilmItem[] | null; films: FilmItem[]; place: StackPlace | null; more: boolean }>({ after: null, films: [], place: null, more: true });
   const films = useMemo(
     () => (list ? [...list.films, ...(later.after === list.films ? later.films : [])] : []),
     [list, later],
@@ -423,13 +425,19 @@ function StackDetailScreen({ id }: { id: string }) {
   const [moreFailedFor, setMoreFailedFor] = useState<FilmItem[] | null>(null);
   const moreFailed = !!list && moreFailedFor === list.films;
   const readMoreFilms = useCallback(async () => {
-    if (!list || readingMore.current || films.length >= (list.filmCount ?? 0)) return;
+    const ours = later.after === list?.films;
+    if (!list || readingMore.current || films.length >= (list.filmCount ?? 0) || (ours && !later.more)) return;
     readingMore.current = true;
     try {
-      const page = await StackService.getStackItemsPage(id, films[films.length - 1]?.id ?? null);
+      // Where the last page left off: the order held as the first page was read, then past it.
+      const page = await StackService.getStackItemsPage(id, ours ? later.place : list.filmsNext ?? null, new Set(films.map((f) => f.id)));
       // A film taken off offline is still on the house's later pages until the queue sends it.
-      const held = new Set([...films.map((f) => f.id), ...filmsQueuedOff(id, getOfflineQueue(), useAuthStore.getState().user?.id)]);
-      setLater((was) => ({ after: list.films, films: [...(was.after === list.films ? was.films : []), ...page.filter((f) => !held.has(f.id))] }));
+      const off = filmsQueuedOff(id, getOfflineQueue(), useAuthStore.getState().user?.id);
+      setLater((was) => {
+        const kept = was.after === list.films ? was.films : [];
+        const held = new Set([...[...list.films, ...kept].map((f) => f.id), ...off]);
+        return { after: list.films, films: [...kept, ...page.films.filter((f) => !held.has(f.id))], place: page.place, more: page.more };
+      });
       setMoreFailedFor(null);
     } catch (e) {
       logger.warn('[stacks] reading more films failed', e);
@@ -437,7 +445,7 @@ function StackDetailScreen({ id }: { id: string }) {
     } finally {
       readingMore.current = false;
     }
-  }, [list, films, id]);
+  }, [list, films, id, later]);
   // The stack in, or said out of reach: its mark goes in every tree below.
   const readyMark = useScreenReady('stack', loading ? 'reading' : isError && !list ? 'failed' : 'ready');
 

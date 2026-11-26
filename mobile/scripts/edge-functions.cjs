@@ -42,10 +42,72 @@ const NOT_DEPLOYED = {
  * The command that deploys a function the way this file says it is deployed —
  * printed by functions:check, so no one types the flags from memory.
  */
-const deployCommand = (name) => {
+const deployCommand = (name, root) => {
   const f = DEPLOYED[name];
   const cwd = f.dir === MOBILE ? 'mobile' : '.';
+  // Never before the house holds what it calls (waitsFor): no command is given until the train has.
+  const waiting = waitsFor(name, root);
+  if (waiting.length) {
+    return `NOT YET: ${name} calls ${waiting.map((w) => `${w.object} (${w.car ? `made by ${w.car}: deploy after the train applies it, and its snapshot is recorded` : 'which no car makes'})`).join(', ')}`;
+  }
   return `cd ${cwd}; npx supabase functions deploy ${name} --use-api${f.verifyJwt ? '' : ' --no-verify-jwt'}`;
 };
 
-module.exports = { WEB, MOBILE, DEPLOYED, NOT_DEPLOYED, deployCommand };
+const fs = require('fs');
+const path = require('path');
+const universe = require('../test-utils/universe');
+
+/** A file's place under a checkout, with forward slashes. */
+const under = (root, file) => path.relative(root, file).split(path.sep).join('/');
+
+/**
+ * The database's functions and tables a function's code names (`.rpc('x'`, `.from('t'` but a storage
+ * bucket's), read from its own folder and the shared files it imports (the shared file list's functions).
+ */
+const namedObjects = (name, root) => {
+  const f = DEPLOYED[name] ?? NOT_DEPLOYED[name];
+  const code = universe.at(root).files('functions');
+  const texts = code.filter((file) => under(root, file).startsWith(`${f.dir}/${name}/`)).map((file) => fs.readFileSync(file, 'utf8'));
+  for (const t of [...texts]) {
+    for (const m of t.matchAll(/from ['"]\.\.\/_shared\/(?<file>[\w.-]+)['"]/g)) {
+      const shared = code.find((file) => under(root, file) === `${f.dir}/_shared/${m.groups.file}`);
+      if (shared) texts.push(fs.readFileSync(shared, 'utf8'));
+    }
+  }
+  const out = new Set();
+  for (const t of texts) {
+    for (const m of t.matchAll(/(?<bucket>storage\s*)?\.(?<kind>rpc|from)\(\s*['"](?<object>[a-z_][a-z0-9_]*)['"]/g)) {
+      if (!m.groups.bucket) out.add(m.groups.object);
+    }
+  }
+  return [...out].sort();
+};
+
+/** The migrations production has not had (not in mobile/supabase/APPLIED.txt), by name, with their text. */
+const pendingCars = (root) => {
+  const applied = new Set(fs.readFileSync(path.join(root, 'mobile', 'supabase', 'APPLIED.txt'), 'utf8')
+    .split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#')));
+  return universe.at(root).files('migrations').map((file) => ({ name: path.basename(file), file }))
+    .filter((c) => !applied.has(c.name))
+    .map((c) => ({ name: c.name, sql: fs.readFileSync(c.file, 'utf8') }))
+    .sort((x, y) => x.name.localeCompare(y.name));
+};
+
+const makes = (sql, object) => new RegExp(`CREATE\\s+(?:OR\\s+REPLACE\\s+)?(?:FUNCTION|TABLE|VIEW|MATERIALIZED\\s+VIEW)\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(?:"?public"?\\.)?"?${object}"?\\s*\\(`, 'i').test(sql)
+  || new RegExp(`CREATE\\s+(?:OR\\s+REPLACE\\s+)?(?:VIEW|MATERIALIZED\\s+VIEW)\\s+(?:"?public"?\\.)?"?${object}"?\\s`, 'i').test(sql);
+
+/**
+ * What a function's code names that production does not hold yet (mobile/supabase/schema/live-schema.sql,
+ * production's snapshot): each object with the pending car that makes it, or `car: null` when no car does.
+ * A function that names one is deployed only after the train applies its car (the deploy order): deployed
+ * first, its call finds nothing to ask and answers 502 (sync-entitlement and 20261125_10). One no car
+ * makes is never deployed: it names what the house has not got.
+ */
+const waitsFor = (name, root = path.join(__dirname, '..', '..')) => {
+  const snapshot = fs.readFileSync(path.join(root, 'mobile', 'supabase', 'schema', 'live-schema.sql'), 'utf8');
+  const cars = pendingCars(root);
+  return namedObjects(name, root).filter((o) => !makes(snapshot, o))
+    .map((object) => ({ object, car: cars.find((c) => makes(c.sql, object))?.name ?? null }));
+};
+
+module.exports = { WEB, MOBILE, DEPLOYED, NOT_DEPLOYED, deployCommand, namedObjects, waitsFor };

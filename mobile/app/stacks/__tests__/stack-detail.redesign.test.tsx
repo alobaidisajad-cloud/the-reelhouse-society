@@ -493,7 +493,7 @@ describe('the critiques action', () => {
     const { StackService } = jest.requireMock('@/src/services/StackService') as { StackService: { getStackItemsPage: jest.Mock } };
     const { getOfflineQueue } = jest.requireMock('@/src/utils/offlineQueue') as { getOfflineQueue: jest.Mock };
     StackService.getStackItemsPage.mockReset();
-    StackService.getStackItemsPage.mockResolvedValueOnce([{ id: 4, title: 'Film 4', poster_path: null }, { id: 5, title: 'Film 5', poster_path: null }]);
+    StackService.getStackItemsPage.mockResolvedValueOnce({ films: [{ id: 4, title: 'Film 4', poster_path: null }, { id: 5, title: 'Film 5', poster_path: null }], place: { held: [], past: null }, more: false });
     getOfflineQueue.mockReturnValue([{ type: 'remove_film_from_list', owner: 'u1', payload: { list_id: STACK_ID, film_id: 4 } }]);
     try {
       const r = mount({ films: [1, 2, 3].map((n) => ({ id: n, title: `Film ${n}`, poster_path: null })), filmCount: 4 });
@@ -1360,15 +1360,14 @@ describe('the critiques as they stand, sent or waiting', () => {
 describe('a stack past its first page (P4.9)', () => {
   it('is drawn whole as it is scrolled: the 501st film after the 500, in rank order, read once', async () => {
     const { StackService } = jest.requireMock('@/src/services/StackService') as { StackService: { getStackItemsPage: jest.Mock } };
-    StackService.getStackItemsPage.mockResolvedValueOnce([{ id: 501, title: 'Film 501', poster_path: null }]);
-    const first = Array.from({ length: 500 }, (_, i) => ({ id: 1001 + i, title: `Film ${i + 1}`, poster_path: null }));
+    StackService.getStackItemsPage.mockResolvedValueOnce({ films: [{ id: 501, title: 'Film 501', poster_path: null }], place: { held: [], past: null }, more: false });
+    const first = Array.from({ length: 500 }, (_, i) => ({ id: i + 1, title: `Film ${i + 1}`, poster_path: null }));
     const r = mount({ films: first, filmCount: 501 });
     await act(async () => {});
     expect(r.getByText(/FIRST 500/)).toBeTruthy();
 
     await act(async () => { await mockEndReached?.(); });
-    // Asked after the last film drawn, by that film: never by a count of films.
-    expect(StackService.getStackItemsPage.mock.calls).toEqual([[STACK_ID, first[first.length - 1]!.id]]);
+    expect(StackService.getStackItemsPage.mock.calls).toEqual([[STACK_ID, null, new Set(first.map((f) => f.id))]]);
     expect(r.queryByText(/FIRST/)).toBeNull();
     const drawn = JSON.stringify(r.toJSON());
     expect(drawn.indexOf('Film 500')).toBeLessThan(drawn.indexOf('Film 501'));
@@ -1386,7 +1385,7 @@ describe('a stack past its first page (P4.9)', () => {
     StackService.getStackItemsPage.mockReset();
     StackService.getStackItemsPage
       .mockRejectedValueOnce(new TypeError('Network request failed'))
-      .mockResolvedValueOnce([{ id: 4, title: 'Film 4', poster_path: null }]);
+      .mockResolvedValueOnce({ films: [{ id: 4, title: 'Film 4', poster_path: null }], place: { held: [], past: null }, more: false });
     const first = [1, 2, 3].map((n) => ({ id: n, title: `Film ${n}`, poster_path: null }));
     const r = mount({ films: first, filmCount: 4 });
     await act(async () => {});
@@ -1480,7 +1479,7 @@ describe('review round 5', () => {
 
   it('the films read past the first page stay when a critique rewrites the stack’s count', async () => {
     const { StackService } = jest.requireMock('@/src/services/StackService') as { StackService: { getStackItemsPage: jest.Mock } };
-    StackService.getStackItemsPage.mockResolvedValueOnce([{ id: 3, title: 'Film Three', poster_path: null }]);
+    StackService.getStackItemsPage.mockResolvedValueOnce({ films: [{ id: 3, title: 'Film Three', poster_path: null }], place: { held: [], past: null }, more: false });
     const films = [{ id: 1, title: 'Film One', poster_path: null }, { id: 2, title: 'Film Two', poster_path: null }];
     const r = mount({ films, filmCount: 3 });
     await act(async () => {});
