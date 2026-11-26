@@ -62,6 +62,8 @@ const idsOf = (spec, mutants) => {
   if (!ids.length) return { fault: 'no ids' };
   if (unknown.length) return { fault: `no such mutant: ${unknown.join(', ')}` };
   if (hidden.length) return { fault: `private mutants run on this machine, never on GitHub: ${hidden.length} of the ids` };
+  // Every public mutant, named one by one, is all: a list that long outgrows what the run is sent with.
+  if (mutants.every((m) => m.private || ids.includes(m.id))) return { ids: 'all' };
   return { ids: ids.join(',') };
 };
 
@@ -99,7 +101,7 @@ function start(argv, arg) {
   if (arg('--changed')) {
     const touched = mutants.touchedSince(arg('--changed'), all);
     const here = touched.filter((m) => m.private).map((m) => m.id);
-    console.log(`${touched.length} mutants touched since ${arg('--changed').slice(0, 8)} have no verdict that still stands (${touched.stood} stand)`);
+    console.log(`${touched.length} mutants touched since ${arg('--changed')} have no verdict that still stands (${touched.stood} stand)`);
     if (here.length) console.log(`private, to run on this machine: node mobile/scripts/mutants.cjs --ids ${here.join(',')} --results mobile/register/mutant-results.json`);
     spec = touched.filter((m) => !m.private).map((m) => m.id).join(',');
     if (!spec) { console.log('none to run on GitHub'); return 0; }
@@ -114,7 +116,14 @@ function start(argv, arg) {
   const branch = `plant/mutants-${commit.slice(0, 12)}-${stamp}`;
   const push = spawnSync('git', ['push', 'origin', `HEAD:refs/heads/${branch}`], { cwd: MOBILE, stdio: 'inherit' });
   if (push.status !== 0) refuse(`the push of ${branch} failed`, 1);
-  sh('gh', ['workflow', 'run', WORKFLOW, '--ref', branch, '-f', `commit=${commit}`, '-f', `ids=${chosen.ids}`, '-f', `parts=${parts}`, '-f', `token=${stamp}`], { stdio: ['ignore', 'pipe', 'inherit'] });
+  // The inputs on stdin, never the command line: a long list of ids outgrows Windows' 32,767 characters.
+  const inputs = JSON.stringify({ commit, ids: chosen.ids, parts, token: stamp });
+  const asked = spawnSync('gh', ['workflow', 'run', WORKFLOW, '--ref', branch, '--json'], { cwd: MOBILE, encoding: 'utf8', input: inputs });
+  if (asked.status !== 0) {
+    const gone = spawnSync('git', ['push', 'origin', '--delete', branch], { cwd: MOBILE, encoding: 'utf8' });
+    const left = gone.status === 0 ? `${branch} deleted` : `${branch} left: ${gone.stderr.trim()}`;
+    refuse(`the run was not started (${left}): ${(asked.error?.message ?? asked.stderr).trim()}`, 1);
+  }
   // GitHub lists the run a moment after it is asked for: its branch is this run's alone.
   for (let tries = 0; tries < 30; tries++) {
     const runs = JSON.parse(sh('gh', ['run', 'list', '--workflow', WORKFLOW, '--branch', branch, '--json', 'databaseId,url', '-L', '1']));

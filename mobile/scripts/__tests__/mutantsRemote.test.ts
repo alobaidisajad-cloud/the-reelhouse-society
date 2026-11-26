@@ -40,8 +40,10 @@ it('writes the results as a run here writes them: each mutant once, in the regis
 });
 
 it('sends no private mutant, and no id the registry does not hold; refuses a mistyped option', () => {
-  const all = [{ id: 'shape-a' }, { id: 'shape-hidden', private: true }];
+  const all = [{ id: 'shape-a' }, { id: 'shape-b' }, { id: 'shape-hidden', private: true }];
   expect([remote.idsOf('shape-a', all), remote.idsOf('all', all)]).toEqual([{ ids: 'shape-a' }, { ids: 'all' }]);
+  // Every public mutant named one by one is sent as all (1,240 ids outgrow the command line).
+  expect(remote.idsOf('shape-b,shape-a', all)).toEqual({ ids: 'all' });
   expect(remote.idsOf('shape-a,shape-hidden', all).fault).toBe('private mutants run on this machine, never on GitHub: 1 of the ids');
   expect(remote.idsOf('shape-x', all).fault).toBe('no such mutant: shape-x');
   expect([remote.argumentsFault('run', ['--ids', 'a']), remote.argumentsFault('record', ['--run', '1'])]).toEqual([null, null]);
