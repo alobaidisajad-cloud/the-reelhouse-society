@@ -22,14 +22,14 @@ beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'gate-lock-')); file = join(
 afterEach(() => { rmSync(dir, { recursive: true, force: true }); });
 
 const held = (token: string | null, pid = process.pid) => writeFileSync(file, token === null ? 'integrator I2, by hand\n'
-  : JSON.stringify({ who: 'push-head.ps1', since: '2026-11-26T00:20:00Z', pid, token }));
+  : JSON.stringify({ who: 'push-head.ps1', since: '2026-11-20T00:20:00Z', pid, token }));
 
 it('refuses a heavy run while a gate holds the machine, and lets the gate\'s own children and a free machine run', () => {
   const quiet = () => undefined;
   expect(lock.refusal('a mutants run', { file, env: {} })).toBeNull();
   held('t0ken');
   const why = lock.refusal('a mutants run', { file, env: {}, said: quiet });
-  expect(why).toMatch(/^a mutants run refused: a push gate holds this machine \(.*push-head\.ps1, since 2026-11-26T00:20:00Z\)/);
+  expect(why).toMatch(/^a mutants run refused: a push gate holds this machine \(.*push-head\.ps1, since 2026-11-20T00:20:00Z\)/);
   expect(why).toContain('until node mobile/scripts/gate-lock.cjs check; do sleep 60; done');
   // A child of another gate, or one that sets the variable by hand to anything else, is refused too.
   expect(lock.refusal('a mutants run', { file, env: { [lock.CHILD]: 'other' }, said: quiet })).not.toBeNull();

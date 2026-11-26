@@ -62,9 +62,11 @@ const alone = (file) => {
   const dir = mkdtempSync(join(tmpdir(), 'slow-tests-'));
   const into = join(dir, 'times.jsonl');
   try {
-    spawnSync(process.execPath, [join(MOBILE, 'node_modules', 'jest', 'bin', 'jest.js'), '--runTestsByPath', file, '--runInBand', '--silent'],
+    const run = spawnSync(process.execPath, [join(MOBILE, 'node_modules', 'jest', 'bin', 'jest.js'), '--runTestsByPath', file, '--runInBand', '--silent'],
       { cwd: MOBILE, encoding: 'utf8', maxBuffer: 1e9, env: { ...process.env, RH_TEST_TIMES: into } });
-    return existsSync(into) ? readTimes(readFileSync(into, 'utf8')) : [];
+    // A file that wrote no times never ran: never read as "not slow alone", it ends the run in jest's words.
+    if (!existsSync(into)) throw new Error(`${file} wrote no times run alone: ${run.error?.message ?? String(run.stderr).trim().split('\n').slice(-15).join('\n')}`);
+    return readTimes(readFileSync(into, 'utf8'));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

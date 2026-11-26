@@ -498,3 +498,5 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/e2e/db/fixtures/up-down-up/jobs-left-down.sql | — |  |
 | mobile/e2e/db/fixtures/up-down-up/jobs-left-up.sql | — |  |
 | mobile/e2e/db/fixtures/up-down-up/jobs-up.sql | — |  |
+| mobile/githooks/pre-merge-commit | — |  |
+| mobile/scripts/push-head.ps1 | — |  |
