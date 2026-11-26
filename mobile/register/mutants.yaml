@@ -4307,9 +4307,19 @@ mutants:
     source: shape
     edits:
       - file: ../.github/workflows/god_tier_ci.yml
-        find: "--part ${{ matrix.part }}/6"
-        replace: "--part ${{ matrix.part }}/5"
+        find: "--part ${{ matrix.part }}/${{ needs.mutants-plan.outputs.n }}"
+        replace: "--part ${{ matrix.part }}/6"
     proof: { file: src/utils/__tests__/theMutantsJobRunsEveryPart.guard.test.ts, test: "the matrix holds every part from 1 to n, and the step asks for its own part of that n" }
+
+  - id: shape-the-parts-floored
+    class: CI-gate-never-runs
+    source: shape
+    # 61 mutants in one part, 1,240 in 20: parts of more than 60, past the time a part is given.
+    edits:
+      - file: scripts/mutants-plan.cjs
+        find: "Math.max(1, Math.ceil(count / PER))"
+        replace: "Math.max(1, Math.floor(count / PER))"
+    proof: { file: src/utils/__tests__/theMutantsJobRunsEveryPart.guard.test.ts, test: "sizes the parts by the mutants the push stands on: one for every 60, at least one" }
 
   - id: shape-host-beneath-opens-its-sheet
     class: UI-a-sheet-opened-by-a-screen-beneath

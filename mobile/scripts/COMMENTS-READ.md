@@ -2177,3 +2177,4 @@ files of the reading map this one does not.
 | src/utils/__tests__/aFailureOfTheHouseIsSaidAsTheHouses.test.ts | — |  |
 | src/utils/__tests__/aSignInIsCountedAtItsMembersAddress.guard.test.ts | — |  |
 | src/utils/__tests__/theHousesFailureIsTheHouses.guard.test.ts | — |  |
+| scripts/mutants-plan.cjs | — |  |

@@ -1184,6 +1184,7 @@ classes:
       - { kind: static, file: src/utils/__tests__/everyCheckRuns.guard.test.ts, test: "runs the preflight before every store build asks EAS" }
       - { kind: static, file: src/utils/__tests__/theMutantsJobRunsEveryPart.guard.test.ts, test: "the matrix holds every part from 1 to n, and the step asks for its own part of that n" }
       - { kind: static, file: src/utils/__tests__/theMutantsJobRunsEveryPart.guard.test.ts, test: "a part that fails leaves the other parts running" }
+      - { kind: static, file: src/utils/__tests__/theMutantsJobRunsEveryPart.guard.test.ts, test: "sizes the parts by the mutants the push stands on: one for every 60, at least one" }
     fix: "every workflow runs on a push to main or on a schedule, or is named with why (the website's Lighthouse gate by hand, the alert after the others); God-Tier, the load test and the iPhone launch key their cancelling by the event too, so a late nightly never cancels a push's run nor a push the nightly's; every script file is run by a workflow, a hook, an npm script, another script or a test, or named as run by hand; the store builds run through npm (build:ios, build:android), so the preflight always runs first; the push's mutants run in six parts side by side, each asking its own part of the same six, so a push that changes the runner is judged inside the job's time (mutant shape-a-part-never-asked)"
     places: [none]
 
