@@ -52,6 +52,7 @@ describe('it refuses what production refuses', () => {
     expect(() => (strict.client.from('logs').select('id')).or('ratting.eq.5')).toThrow('logs has no column "ratting" (or)');
     const answered = supabaseFake({ answer: { logs: () => [log(7)] } });
     await expect(answered.client.from('logs').select('id').or('rating.cs.{5}')).resolves.toMatchObject({ data: [{ id: log(7).id }] });
+    await expect(answered.client.from('logs').select('id').contains('rating', [5])).resolves.toMatchObject({ data: [{ id: log(7).id }] });
   });
 
   it('orders a null as PostgreSQL does: last going up, first going down', async () => {

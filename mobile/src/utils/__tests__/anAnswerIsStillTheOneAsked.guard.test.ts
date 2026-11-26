@@ -376,8 +376,8 @@ describe('each rule says no to its planted shape', () => {
 
   it('1: a reducer\'s dispatch is a write; a busy flag let down without its own mark is not let off', () => {
     expect(answersDrawnOverNewer('src/hooks/planted.ts', `export function useP() {
-      const [state, dispatch] = useReducer(reduce, {});
-      const loadRoom = async () => { const r = await ask(); dispatch({ type: 'PAGE', r }); };
+      const [state, send] = useReducer(reduce, {});
+      const loadRoom = async () => { const r = await ask(); send({ type: 'PAGE', r }); };
       const loadMore = async () => { busy.current = true; try { await ask(); } finally { other.current = false; setLoadingMore(false); } };
       const fetchFile = async () => { const controller = new AbortController(); last.current = controller; const signal = controller.signal; const r = await ask(signal); if (signal.aborted) return; setRows(r); };
       return loadRoom; }`)).toEqual(['src/hooks/planted.ts:loadRoom (3)', 'src/hooks/planted.ts:loadMore (4)', 'src/hooks/planted.ts:fetchFile (5)']);
