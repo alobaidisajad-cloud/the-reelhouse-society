@@ -2187,3 +2187,5 @@ files of the reading map this one does not.
 | src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts | — |  |
 | src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx | — |  |
 | src/hooks/__tests__/theDoorsCountIsLaidInItsTurn.test.tsx | — |  |
+| src/features/archive/__tests__/anExportComesBackWhole.test.ts | — |  |
+| src/features/settings/houseArchive.ts | — |  |

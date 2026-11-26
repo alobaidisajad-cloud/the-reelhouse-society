@@ -12,7 +12,8 @@
  *     migration not yet applied makes, which a build ships beside), in a select,
  *     a filter, an order or a row written; an rpc whose arguments no overload
  *     takes; a fixture row with a column the table lacks, or an id that is not
- *     a uuid where the column is one (each throws, naming it);
+ *     a uuid where the column is one, or a value not a whole number in its bounds where the
+ *     column is an integer (each throws, naming it);
  *   · a read of a table the test never said what it holds (no silent `[]`);
  * and answers as PostgREST does:
  *   · `.single()` with no row or several is PGRST116; `.maybeSingle()` with
@@ -214,7 +215,28 @@ const mustHave = (table: string, column: string, where: string) => {
   if (!columnsOf(table).has(column)) throw new Error(`supabaseFake: ${table} has no column "${column}" (${where})`);
 };
 
-/** A row as the table could hold it: no column it lacks, a uuid where the column is one. */
+/** Each integer type's bounds, as PostgreSQL holds them. */
+const WHOLE: Record<string, [bigint, bigint]> = {
+  smallint: [BigInt('-32768'), BigInt('32767')],
+  integer: [BigInt('-2147483648'), BigInt('2147483647')],
+  bigint: [BigInt('-9223372036854775808'), BigInt('9223372036854775807')],
+};
+/**
+ * Whether PostgreSQL takes this into an integer column of these bounds: a whole number, or a
+ * string of digits (PostgREST hands JSON's "42" to the column as text, which it reads).
+ */
+const isWhole = (v: unknown, [lo, hi]: [bigint, bigint]): boolean => {
+  const digits = typeof v === 'number' ? (Number.isSafeInteger(v) ? String(v) : null)
+    : typeof v === 'string' && /^\s*[+-]?\d+\s*$/.test(v) ? v.trim() : null;
+  if (digits === null) return false;
+  const n = BigInt(digits);
+  return n >= lo && n <= hi;
+};
+
+/**
+ * A row as the table could hold it: no column it lacks, a uuid where the column is one, a whole
+ * number in its bounds where the column is an integer (production refuses a uuid in film_id).
+ */
 const checkRow = (table: string, row: Row, where: string) => {
   const cols = columnsOf(table);
   for (const [k, v] of Object.entries(row)) {
@@ -222,6 +244,10 @@ const checkRow = (table: string, row: Row, where: string) => {
     if (!col) throw new Error(`supabaseFake: ${table} has no column "${k}" (${where})`);
     if (col.type === 'uuid' && v !== null && v !== undefined && !(typeof v === 'string' && UUID.test(v))) {
       throw new Error(`supabaseFake: ${table}.${k} is a uuid; ${JSON.stringify(v)} is not one (${where})`);
+    }
+    const bounds = WHOLE[col.type];
+    if (bounds && v !== null && v !== undefined && !isWhole(v, bounds)) {
+      throw new Error(`supabaseFake: ${table}.${k} is ${col.type === 'integer' ? 'an' : 'a'} ${col.type}; ${JSON.stringify(v)} is not one (${where})`);
     }
   }
 };

@@ -32,6 +32,17 @@ describe('it refuses what production refuses', () => {
     expect(() => (client.from('logs')).insert({ ...log(2), mood: 'blue' })).toThrow('logs has no column "mood" (insert[0])');
   });
 
+  it('a value not a whole number in its bounds where the column is an integer; a whole number, or its digits, taken', () => {
+    const { client } = supabaseFake({ rows: { list_items: [] } });
+    const item = (film_id: unknown) => ({ list_id: A, film_id, film_title: 'Vertigo' });
+    // The uuid of a list_items row in its film_id: what production refused for every stack an export brought back.
+    expect(() => client.from('list_items').upsert([item(B)])).toThrow(`list_items.film_id is an integer; "${B}" is not one (upsert[0])`);
+    expect(() => client.from('list_items').insert(item(4.5))).toThrow('list_items.film_id is an integer; 4.5 is not one');
+    expect(() => client.from('list_items').insert(item(2 ** 31))).toThrow(`list_items.film_id is an integer; ${2 ** 31} is not one`);
+    expect(() => client.from('list_items').insert(item(true))).toThrow('list_items.film_id is an integer; true is not one');
+    expect(() => client.from('list_items').insert([item(426), item('426'), item(2 ** 31 - 1)])).not.toThrow();
+  });
+
   it('an rpc production has not, or whose arguments no overload takes, or whose answer the test never wrote', async () => {
     const { client } = supabaseFake({ rpc: { get_email_by_username: 'a@b.test' } });
     expect(() => client.rpc('get_emial_by_username', {})).toThrow('production has no function "get_emial_by_username"');
