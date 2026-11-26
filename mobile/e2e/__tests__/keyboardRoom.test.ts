@@ -137,6 +137,8 @@ describe('the keyboard room', () => {
 });
 
 describe('the keyboard’s panel, and its height', () => {
+  /** The emoji panel's emoji tab, by its id in every language. */
+  const EMOJI_TAB = 'com.google.android.inputmethod.latin:id/key_pos_non_prime_category_1';
   /** A hierarchy with the keyboard up: Gboard's letter keys among the app's, or its emoji panel. */
   const keys = (letters: boolean) => ({
     attributes: { bounds: '[0,0][1080,2400]' },
@@ -145,7 +147,11 @@ describe('the keyboard’s panel, and its height', () => {
       // The names Gboard gave its keys in run 43242130602's hierarchies.
       ...(letters
         ? ['Q', 'W', 'Symbol keyboard', 'Emoji button'].map((k, i) => ({ attributes: { accessibilityText: k, bounds: `[${i * 100},1700][${i * 100 + 90},1800]` } }))
-        : ['Letter keyboard', 'Smileys and Emotions', 'Search for emoji'].map((k, i) => ({ attributes: { accessibilityText: k, bounds: `[${i * 100},1700][${i * 100 + 90},1800]` } }))),
+        : [
+          ...['Letter keyboard', 'Smileys and Emotions', 'Search for emoji'].map((k, i) => ({ attributes: { accessibilityText: k, bounds: `[${i * 100},1700][${i * 100 + 90},1800]` } })),
+          // The panel's own tab, as Gboard named it in nightly 45676715897's hierarchies.
+          { attributes: { accessibilityText: 'Emoji keyboard', 'resource-id': EMOJI_TAB, bounds: '[0,1600][90,1690]' } },
+        ]),
     ],
   });
   function panel(want: string, tree: object | null, ime: string | null) {
@@ -186,9 +192,12 @@ describe('the keyboard’s panel, and its height', () => {
     expect(panel('letters', arabic, SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its letters, 1005px tall' });
   });
 
-  it('reads the emoji panel of a keyboard speaking Arabic, by its ABC key — nightly 45406301103', () => {
+  it('reads the emoji panel of a keyboard speaking Arabic, by its tabs — nightly 45406301103', () => {
     // The names on the right-to-left run's panel: its search, its ABC key, its tabs.
-    const arabic = { attributes: {}, children: ['البحث عن wink', 'لوحة مفاتيح حروف', 'لوحة مفاتيح الرموز التعبيرية', 'حذف'].map((k) => ({ attributes: { accessibilityText: k } })) };
+    const arabic = { attributes: {}, children: [
+      ...['البحث عن wink', 'لوحة مفاتيح حروف', 'حذف'].map((k) => ({ attributes: { accessibilityText: k } })),
+      { attributes: { accessibilityText: 'لوحة مفاتيح الرموز التعبيرية', 'resource-id': EMOJI_TAB } },
+    ] };
     expect(panel('emoji', arabic, SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its emoji panel, 1005px tall' });
   });
 
@@ -196,7 +205,7 @@ describe('the keyboard’s panel, and its height', () => {
     const unknown = { attributes: {}, children: ['ض', '\u200fمفتاح مجهول', 'Stack title'].map((k) => ({ attributes: { accessibilityText: k } })) };
     const r = panel('emoji', unknown, SHOWN);
     expect(r.status).toBe(1);
-    expect(r.out).toBe('the keyboard shows neither its letters nor its emoji panel, 1005px tall (it should show its emoji panel); the names on the screen: مفتاح مجهول | Stack title');
+    expect(r.out).toBe('the keyboard shows neither its letters, its symbols nor its emoji panel, 1005px tall (it should show its emoji panel); the names on the screen: مفتاح مجهول | Stack title');
   });
 
   it('fails a keyboard whose panel it cannot name: no key of either in the screen', () => {
@@ -204,8 +213,58 @@ describe('the keyboard’s panel, and its height', () => {
     for (const want of ['letters', 'emoji']) {
       const r = panel(want, bare, SHOWN);
       expect(r.status).toBe(1);
-      expect(r.out).toMatch(/^the keyboard shows neither its letters nor its emoji panel, 1005px tall \(it should show its/);
+      expect(r.out).toMatch(/^the keyboard shows neither its letters, its symbols nor its emoji panel, 1005px tall \(it should show its/);
     }
+  });
+
+  // The symbols page keeps the ABC key too, and is not the emoji panel: judged in its place only after
+  // letters whose emoji key's place is the address key's (the tablet's recovery card, nightly 45676715897,
+  // where the GIF and sticker keys are drawn off and no page keeps an emoji key).
+  describe('the symbols page', () => {
+    const SMILEY = 'com.google.android.inputmethod.latin:id/key_pos_switch_to_smiley';
+    const symbols = { attributes: {}, children: ['Letter keyboard', '@', '#', 'Delete'].map((k) => ({ attributes: { accessibilityText: k } })) };
+    const letters = (slot: string) => ({ attributes: {}, children: [
+      { attributes: { accessibilityText: 'Symbol keyboard' } }, { attributes: { accessibilityText: slot, 'resource-id': SMILEY } },
+    ] });
+    function panelAfter(lettersTree: object | null, shown: object = symbols) {
+      writeFileSync(join(dir, 'h.json'), JSON.stringify(shown));
+      writeFileSync(join(dir, 'w.txt'), windows(SHOWN));
+      if (lettersTree) writeFileSync(join(dir, 'letters.json'), JSON.stringify(lettersTree));
+      const r = spawnSync(process.execPath, [SCRIPT, '--panel', 'emoji', join(dir, 'h.json'), join(dir, 'w.txt'), join(dir, lettersTree ? 'letters.json' : 'none.json')], { encoding: 'utf8' });
+      return { status: r.status, out: r.stdout.trim() };
+    }
+
+    it('is never taken for the emoji panel', () => {
+      expect(panel('emoji', symbols, SHOWN)).toEqual({ status: 1, out: 'the keyboard shows its symbols, 1005px tall (it should show its emoji panel)' });
+      expect(panelAfter(null).status).toBe(1);
+    });
+
+    // The judge's rule, per field: the tallest panel a member can open on it (tallestReachablePanel).
+    it('fails in its place after letters that keep an emoji key', () => {
+      expect(panelAfter(letters('Emoji button'))).toEqual({ status: 1, out: 'the keyboard shows its symbols, 1005px tall (it should show its emoji panel)' });
+    });
+
+    it('a field whose emoji key is reachable still demands the emoji panel, and passes on it alone', () => {
+      expect(panelAfter(letters('Emoji button')).status).toBe(1);
+      expect(panelAfter(letters('Emoji button'), keys(false))).toEqual({ status: 0, out: 'the keyboard shows its emoji panel, 1005px tall' });
+    });
+
+    it('is the tallest panel a member can open after letters whose emoji key is the address key', () => {
+      expect(panelAfter(letters('Dot com'))).toEqual({ status: 0,
+        out: "the keyboard shows its symbols, 1005px tall (this field's letters keep no emoji key, its place the address key: its symbols are the tallest panel a member can open on it)" });
+    });
+
+    it('passes an emoji panel that opened there all the same: taller than the symbols', () => {
+      expect(panelAfter(letters('Dot com'), keys(false))).toEqual({ status: 0, out: 'the keyboard shows its emoji panel, 1005px tall' });
+    });
+
+    it('still fails letters left standing there', () => {
+      writeFileSync(join(dir, 'h.json'), JSON.stringify(letters('Dot com')));
+      writeFileSync(join(dir, 'w.txt'), windows(SHOWN));
+      writeFileSync(join(dir, 'letters.json'), JSON.stringify(letters('Dot com')));
+      const r = spawnSync(process.execPath, [SCRIPT, '--panel', 'emoji', join(dir, 'h.json'), join(dir, 'w.txt'), join(dir, 'letters.json')], { encoding: 'utf8' });
+      expect([r.status, r.stdout.trim()]).toEqual([1, "the keyboard shows its letters, 1005px tall (it should show its emoji panel or, this field's letters keeping no emoji key, its symbols)"]);
+    });
   });
 
   it('fails when no keyboard window stands, or the screen could not be read', () => {

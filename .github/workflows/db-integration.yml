@@ -218,6 +218,9 @@ jobs:
     name: Every edge function, served as deployed, the outside world stood in for
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    env:
+      # The stand-ins' port (below), kept with the stack's from the job's first step (mobile/e2e/start-stack.sh).
+      STACK_EXTRA_PORTS: 54990
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       # The stack's ports kept before the job makes any connection that could be lent one: lent

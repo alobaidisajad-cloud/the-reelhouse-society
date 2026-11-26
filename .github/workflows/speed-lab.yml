@@ -67,8 +67,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
-          cache-dependency-path: mobile/package-lock.json
 
       - name: Supabase CLI
         id: supabase-cli
@@ -132,6 +130,19 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
           node scripts/android-packages.cjs --installed
 
+      # Gradle's packages, kept by the last build that had to fetch any: the build reads them offline
+      # first (scripts/gradle-kept-first.sh). Seeded from the copy setup-java kept before (its paths).
+      - name: Gradle's packages, kept
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
+          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}
+          restore-keys: |
+            gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-
+            setup-java-Linux-x64-gradle-${{ hashFiles('mobile/package-lock.json') }}
+            gradle-packages-
       # Release APKs as the Sealed E2E builds them; src/ and app/ are reset before each arm.
       # Gradle's own copy, kept by the last build that succeeded: it is fetched from a GitHub release,
       # and on 2026-11-08 those timed out for hours (504) and failed every build that fetched one.
@@ -144,6 +155,7 @@ jobs:
           key: gradle-dists-${{ hashFiles('mobile/package-lock.json') }}
           restore-keys: gradle-dists-
       - name: Build every arm
+        id: build
         working-directory: mobile
         env:
           E2E: '1'
@@ -164,7 +176,7 @@ jobs:
           build() {
             git checkout -- src app
             if [ "$1" != A ]; then node e2e/lab/arm.mjs "$1" >> "$B" 2>&1 || fail "arm $1 does not apply"; fi
-            (cd android && ./gradlew assembleRelease -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+            (cd android && bash "$GITHUB_WORKSPACE/mobile/scripts/gradle-kept-first.sh" assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
                 "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 || fail "build $1"
             cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/$1.apk"
             echo "built $1: $(stat -c %s "$RUNNER_TEMP/apks/$1.apk") bytes"
@@ -178,6 +190,16 @@ jobs:
           cp "$RUNNER_TEMP/apks/A.apk" "$RUNNER_TEMP/apks/Z.apk"
           git checkout -- src app
           pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
+
+      # Only after a build that had to fetch packages, and succeeded: a failed fetch is never kept.
+      - name: Gradle's packages, kept for the next build
+        if: steps.build.outputs.fetched == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
+          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}
 
       - name: The functions, warmed
         run: |
@@ -314,8 +336,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
-          cache-dependency-path: mobile/package-lock.json
 
       # The CLI makes the key from its config alone (e2e/anon-key.mjs); the stack's is checked below.
       - name: The local stack's anon key
@@ -354,6 +374,19 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
           node scripts/android-packages.cjs --installed
 
+      # Gradle's packages, kept by the last build that had to fetch any: the build reads them offline
+      # first (scripts/gradle-kept-first.sh). Seeded from the copy setup-java kept before (its paths).
+      - name: Gradle's packages, kept
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
+          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}
+          restore-keys: |
+            gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-
+            setup-java-Linux-x64-gradle-${{ hashFiles('mobile/package-lock.json') }}
+            gradle-packages-
       # Gradle's own copy, kept by the last build that succeeded: it is fetched from a GitHub release,
       # and on 2026-11-08 those timed out for hours (504) and failed every build that fetched one.
       # Saved only after a build succeeds, so a failed fetch is never what is kept.
@@ -365,6 +398,7 @@ jobs:
           key: gradle-dists-${{ hashFiles('mobile/package-lock.json') }}
           restore-keys: gradle-dists-
       - name: Build the app as it is
+        id: build
         working-directory: mobile
         env:
           E2E: '1'
@@ -385,7 +419,7 @@ jobs:
           build() {
             git checkout -- src app
             if [ "$1" != A ]; then node e2e/lab/arm.mjs "$1" >> "$B" 2>&1 || fail "arm $1 does not apply"; fi
-            (cd android && ./gradlew assembleRelease -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+            (cd android && bash "$GITHUB_WORKSPACE/mobile/scripts/gradle-kept-first.sh" assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
                 "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 || fail "build $1"
             cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/$1.apk"
             echo "built $1: $(stat -c %s "$RUNNER_TEMP/apks/$1.apk") bytes"
@@ -398,19 +432,29 @@ jobs:
           # nor the app's config is taken from A's build.
           git checkout -- src app
           rm -rf android/app/build
-          (cd android && FEEL=1 ./gradlew assembleRelease -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+          (cd android && FEEL=1 bash "$GITHUB_WORKSPACE/mobile/scripts/gradle-kept-first.sh" assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
               "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 || fail "build F"
           cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/F.apk"
           echo "built F: $(stat -c %s "$RUNNER_TEMP/apks/F.apk") bytes"
           # The framework's floor: an empty app built as ours is (e2e/lab/floor-app.mjs).
           node e2e/lab/floor-app.mjs write "$RUNNER_TEMP/floor" >> "$B" 2>&1 || fail "the floor app could not be written"
           (cd "$RUNNER_TEMP/floor" && npm install --no-audit --no-fund && npx expo prebuild --platform android --no-install \
-              && cd android && ./gradlew assembleRelease -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 -PreactNativeArchitectures=x86_64 --no-daemon --console=plain \
+              && cd android && bash "$GITHUB_WORKSPACE/mobile/scripts/gradle-kept-first.sh" assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --console=plain \
               "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 || fail "build the floor app"
           cp "$RUNNER_TEMP/floor/android/app/build/outputs/apk/release/app-release.apk" "$RUNNER_TEMP/apks/floor.apk"
           echo "built the floor app: $(stat -c %s "$RUNNER_TEMP/apks/floor.apk") bytes"
           git checkout -- src app
           pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
+
+      # Only after a build that had to fetch packages, and succeeded: a failed fetch is never kept.
+      - name: Gradle's packages, kept for the next build
+        if: steps.build.outputs.fetched == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
+          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}
 
       - name: Supabase CLI
         id: supabase-cli

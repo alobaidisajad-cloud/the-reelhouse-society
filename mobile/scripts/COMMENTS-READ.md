@@ -2137,3 +2137,5 @@ files of the reading map this one does not.
 | src/hooks/personAsDrawn.ts | — |  |
 | test-utils/__tests__/aTestRunsInEitherOrder.guard.test.ts | — |  |
 | test-utils/__tests__/orderFixtures/leavesItsStateBehind.fixture.ts | — |  |
+| e2e/__tests__/gradleKeptFirst.test.ts | — |  |
+| scripts/gradle-kept-first.sh | — |  |

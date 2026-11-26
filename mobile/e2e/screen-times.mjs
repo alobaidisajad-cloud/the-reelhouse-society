@@ -41,9 +41,10 @@
  * --complete was given.
  *
  * It also reads every write of the query cache to the phone (`[e2e] cache.persist
- * {"chars":…,"ms":…}`, queryClient.ts): how many, the largest and the slowest. One that held the JS
+ * {"chars":…,"ms":…,"beat":…,"write":…,"take":…}`, queryClient.ts): how many, the largest and the slowest. One that held the JS
  * thread longer than CACHE_WRITE_MS fails the run, whatever the ceilings: the write is meant to wait
- * for the thread to be idle, and a long one there is still a frame lost (round 13).
+ * for the thread to be idle, and a long one there is still a frame lost (round 13). A slow sample
+ * whose heartbeat says the phone itself was starved is void and read again (judgeCacheWrites).
  *
  * The emulator draws in software and is slower than any phone a member holds.
  * The ceilings are derived from its own measured runs, to catch a screen that
@@ -110,7 +111,20 @@ export function readScreens(log, flowTimes) {
  */
 export const CACHE_WRITE_MS = 100;
 
-/** Every write of the query cache in the log: its size in characters and the ms it held the thread. */
+/**
+ * The heartbeat's bound: the ms its fixed tiny task (src/lib/queryClient.ts's heartbeat, timed just
+ * before and just after each write) may take before the moment is taken as the phone itself starved.
+ * The app retakes a sample at the same number (its HEARTBEAT_MS; the queryClient tests hold them equal).
+ */
+export const HEARTBEAT_MS = 20;
+/** The samples a write is taken in at most: three starved in a row, and the lab could not measure it. */
+export const MEASURE_TAKES = 3;
+
+/**
+ * Every sample of a write of the query cache in the log: its size in characters, the ms it held the
+ * thread, its heartbeat's ms, and which write and which take it is (a line without them is a write
+ * of its own, taken once).
+ */
 export function readCacheWrites(log) {
   const out = [];
   for (const line of log.split(/\r?\n/)) {
@@ -119,9 +133,56 @@ export function readCacheWrites(log) {
     let event;
     try { event = JSON.parse(m[1]); } catch { continue; }
     if (typeof event.ms !== 'number') continue;
-    out.push({ chars: typeof event.chars === 'number' ? event.chars : 0, ms: event.ms });
+    out.push({
+      chars: typeof event.chars === 'number' ? event.chars : 0, ms: event.ms,
+      beat: typeof event.beat === 'number' ? event.beat : null,
+      write: typeof event.write === 'number' ? event.write : null,
+      take: typeof event.take === 'number' ? event.take : 1,
+    });
   }
   return out;
+}
+
+/**
+ * The writes judged, each by its samples (the rule, nightly 45676715897's dark walk): a wall-clock
+ * sample taken while the phone itself is starved is no measure of the write. A sample is VOID when
+ * it is over CACHE_WRITE_MS and its heartbeat ALSO blew past HEARTBEAT_MS; a write is measured by its
+ * first sample that is not void (a slow write beside a normal heartbeat fails, as ever). Every sample
+ * void after MEASURE_TAKES takes fails as unmeasured, never passes; fewer, the run ending before the
+ * app took it again, and the write is judged on its slowest sample, as a write never retaken is.
+ * Returns how many writes, the largest, the slowest measured, and the problems found.
+ */
+export function judgeCacheWrites(samples) {
+  const writes = new Map();
+  samples.forEach((s, i) => {
+    const key = s.write === null ? `line ${i}` : `write ${s.write}`;
+    if (!writes.has(key)) writes.set(key, []);
+    writes.get(key).push(s);
+  });
+  const voided = (s) => s.ms > CACHE_WRITE_MS && s.beat !== null && s.beat > HEARTBEAT_MS;
+  const problems = [];
+  let slowest = 0;
+  let largest = 0;
+  for (const takes of writes.values()) {
+    takes.sort((a, b) => a.take - b.take);
+    largest = Math.max(largest, ...takes.map((s) => s.chars));
+    const measured = takes.find((s) => !voided(s));
+    if (measured) {
+      slowest = Math.max(slowest, measured.ms);
+      if (measured.ms > CACHE_WRITE_MS) problems.push(`a write of the query cache held the JS thread ${measured.ms} ms, over ${CACHE_WRITE_MS} ms`);
+      continue;
+    }
+    const ms = Math.max(...takes.map((s) => s.ms));
+    slowest = Math.max(slowest, ms);
+    if (takes.length >= MEASURE_TAKES) {
+      problems.push(`the lab could not measure a write of the query cache (${takes[0].chars} characters): its ${takes.length} samples took ${takes.map((s) => s.ms).join(', ')} ms`
+        + ` while the phone itself was starved, their heartbeats ${takes.map((s) => s.beat).join(', ')} ms, over ${HEARTBEAT_MS} ms`);
+    } else {
+      problems.push(`a write of the query cache held the JS thread ${ms} ms, over ${CACHE_WRITE_MS} ms`
+        + ` (its heartbeat over ${HEARTBEAT_MS} ms too, and the run ended before it was taken again)`);
+    }
+  }
+  return { count: writes.size, largest, slowest, problems };
 }
 
 /** A failed read outside a flow that plants one. */
@@ -198,12 +259,10 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const planted = screens.filter((s) => s.kind === 'failed' && !counts(s));
   if (planted.length) console.log(`(${planted.length} failed read${planted.length === 1 ? '' : 's'} in flows that take the network away on purpose: ${[...new Set(planted.map((s) => s.flow))].join(', ')})`);
 
-  const writes = readCacheWrites(log);
-  if (writes.length) {
-    const largest = Math.max(...writes.map((w) => w.chars));
-    const slowest = Math.max(...writes.map((w) => w.ms));
-    console.log(`(the query cache written ${writes.length} time${writes.length === 1 ? '' : 's'}: the largest ${largest} characters, the slowest ${slowest} ms)`);
-    if (slowest > CACHE_WRITE_MS) problems.push(`a write of the query cache held the JS thread ${slowest} ms, over ${CACHE_WRITE_MS} ms`);
+  const writes = judgeCacheWrites(readCacheWrites(log));
+  if (writes.count) {
+    console.log(`(the query cache written ${writes.count} time${writes.count === 1 ? '' : 's'}: the largest ${writes.largest} characters, the slowest ${writes.slowest} ms)`);
+    problems.push(...writes.problems);
   }
   if (times.size === 0) console.log('(no screen reported a time: the build may not be the E2E build, or no flow ran)');
   else console.log(rows.join('\n'));

@@ -61,6 +61,48 @@ describe('screen-times.mjs', () => {
     expect(stall.out).toMatch(/a write of the query cache held the JS thread 140 ms, over 100 ms/);
   });
 
+  // The rule for a sample taken while the phone itself is starved (the dark walk, nightly 45676715897):
+  // each sample carries its heartbeat, a fixed tiny task timed beside it (queryClient.ts).
+  describe('a write timed beside its heartbeat', () => {
+    const sample = (write: number, take: number, ms: number, beat: number) =>
+      `10-02 18:01:0${take}.000  4321  4377 W ReactNativeJS: [e2e] cache.persist {"chars":63944,"ms":${ms},"beat":${beat},"write":${write},"take":${take}}`;
+
+    it('fails a slow write whose heartbeat was normal: the write itself was slow', () => {
+      const r = run([LOG, sample(1, 1, 235, 1)].join('\n'));
+      expect(r.code).toBe(1);
+      expect(r.out).toMatch(/✗ a write of the query cache held the JS thread 235 ms, over 100 ms$/m);
+    });
+
+    it('voids a slow sample whose heartbeat was starved too, and passes on the retake that was normal', () => {
+      const r = run([LOG, sample(1, 1, 235, 180), sample(1, 2, 2, 0), sample(2, 1, 1, 0)].join('\n'));
+      expect(r.code).toBe(0);
+      expect(r.out).toMatch(/the query cache written 2 times: the largest 63944 characters, the slowest 2 ms/);
+    });
+
+    it('still fails a retake that was slow beside a normal heartbeat', () => {
+      const r = run([LOG, sample(1, 1, 235, 180), sample(1, 2, 150, 1)].join('\n'));
+      expect(r.code).toBe(1);
+      expect(r.out).toMatch(/held the JS thread 150 ms, over 100 ms$/m);
+    });
+
+    it('fails a write starved three times in a row: the lab could not measure it, which is never a pass', () => {
+      const r = run([LOG, sample(1, 1, 235, 180), sample(1, 2, 190, 150), sample(1, 3, 160, 90)].join('\n'));
+      expect(r.code).toBe(1);
+      expect(r.out).toMatch(/✗ the lab could not measure a write of the query cache \(63944 characters\): its 3 samples took 235, 190, 160 ms while the phone itself was starved, their heartbeats 180, 150, 90 ms, over 20 ms/);
+    });
+
+    it('judges a starved write the run ended before retaking on its slowest sample, as ever', () => {
+      const r = run([LOG, sample(1, 1, 235, 180)].join('\n'));
+      expect(r.code).toBe(1);
+      expect(r.out).toMatch(/held the JS thread 235 ms, over 100 ms \(its heartbeat over 20 ms too, and the run ended before it was taken again\)/);
+    });
+
+    it('never voids a quick sample: under its bound, a starved moment only made it slower', () => {
+      const r = run([LOG, sample(1, 1, 40, 180)].join('\n'));
+      expect(r.code).toBe(0);
+    });
+  });
+
   it('reports each screen: how often, the median and the slowest; other trace lines are not screens', () => {
     const { code, out } = run(LOG);
     expect(code).toBe(0);

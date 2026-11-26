@@ -10,6 +10,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { MOBILE } from '../../test-utils/readCode';
+import { files, rel } from '@/test-utils/universe';
 
 const BASH = process.platform === 'win32' ? 'C:\\Program Files\\Git\\bin\\bash.exe' : 'bash';
 const SCRIPT = join(MOBILE, 'e2e', 'start-stack.sh');
@@ -41,9 +42,11 @@ case "$1" in
   -qw) echo "\${2#*=}" > __T__/reserved ;;
 esac
 `;
-// Another connection holds port 54324 for the next (__T__/holds) looks.
+// Another connection holds port 54324 for the next (__T__/holds) looks; a listener on the extra
+// port 54990 when __T__/listens is there (the stand-ins, started before the stack).
 const SS = `#!/usr/bin/env bash
 echo "ESTAB 0 0 10.1.0.4:41234 140.82.112.4:443"
+[ -f __T__/listens ] && echo "LISTEN 0 511 0.0.0.0:54990 0.0.0.0:*"
 n=$(cat __T__/holds 2>/dev/null || echo 0)
 if [ "$n" -gt 0 ]; then
   echo "ESTAB 0 0 10.1.0.4:54324 140.82.112.4:443"
@@ -51,7 +54,7 @@ if [ "$n" -gt 0 ]; then
 fi
 `;
 
-type Machine = { holds?: number; reserved?: string; sudoRefuses?: boolean; wait?: number; extra?: string; args?: string[] };
+type Machine = { holds?: number; reserved?: string; sudoRefuses?: boolean; wait?: number; extra?: string; args?: string[]; listens?: boolean };
 
 function start(starts: string[], o: Machine = {}) {
   const T = posix(mkdtempSync(join(tmpdir(), 'start-stack-')));
@@ -61,6 +64,7 @@ function start(starts: string[], o: Machine = {}) {
   }
   writeFileSync(join(T, 'starts'), `${starts.join('\n')}\n`);
   if (o.holds) writeFileSync(join(T, 'holds'), String(o.holds));
+  if (o.listens) writeFileSync(join(T, 'listens'), '');
   if (o.reserved) writeFileSync(join(T, 'reserved'), o.reserved);
   if (o.sudoRefuses) writeFileSync(join(T, 'sudo-refuses'), '');
   const r = spawnSync(BASH, [posix(SCRIPT), ...(o.args ?? ['studio,imgproxy', 'The rehearsal stack'])], {
@@ -99,6 +103,12 @@ describe('the stack’s ports are kept from the machine’s own connections', ()
     const r = start(['ok'], { holds: 2 });
     expect([r.status, r.calls, r.holds]).toEqual([0, ['start -x studio,imgproxy'], '0']);
     expect(r.stdout).not.toMatch(/^::/m);
+  });
+
+  it('never waits for a listener on a port it keeps: the stand-ins listen on theirs before the stack starts', () => {
+    const r = start(['ok'], { extra: '54990', listens: true, wait: 1 });
+    expect([r.status, r.calls]).toEqual([0, ['start -x studio,imgproxy']]);
+    expect(r.stdout).not.toMatch(/still held/);
   });
 
   it('a port still held when the wait ends is said, with the connection that holds it, and the start is tried', () => {
@@ -179,11 +189,35 @@ describe('the stack starts once, or once more only when the runner was at fault'
     expect(late).toEqual([]);
   });
 
-  it('keeps for the E2E stack the very ports e2e.yml starts the fault proxy on', () => {
-    const text = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'e2e.yml'), 'utf8');
-    const extra = /STACK_EXTRA_PORTS: ([\d,]+)/.exec(text)?.[1]?.split(',').sort();
-    const proxy = /fault-proxy\.mjs --listen (\d+) --to \S+ --control (\d+)/.exec(text)?.slice(1).sort();
-    expect(proxy).toHaveLength(2);
-    expect(extra).toEqual(proxy);
+  // Every port a sealed job listens on is kept with its stack's from its first step: the fault proxy's
+  // (run 39016138220) and the stand-ins' (nightly 45676715897: 54990 lent to another connection, and
+  // the stand-ins never answered). Each job's servers, read from its steps, against its own
+  // STACK_EXTRA_PORTS; and every script under e2e/ that listens is one this reads.
+  it('keeps, in every job that starts a server, the ports it listens on', () => {
+    const standIns = readFileSync(join(MOBILE, 'e2e', 'functions', 'stand-ins.mjs'), 'utf8');
+    const standInsPort = /process\.env\.STAND_INS_PORT \?\? (?<port>\d+)\)/.exec(standIns)?.groups?.port;
+    expect(standInsPort).toBe('54990');
+    const listens = (run: string) => [
+      ...[...run.matchAll(/fault-proxy\.mjs --listen (?<a>\d+) --to \S+ --control (?<b>\d+)/g)].flatMap((m) => [m.groups?.a, m.groups?.b]),
+      ...[...run.matchAll(/stand-ins\.mjs(?: (?<port>\d+))?/g)].map((m) => m.groups?.port ?? standInsPort),
+    ];
+    const unkept: string[] = [];
+    let servers = 0;
+    for (const wf of ['db-integration.yml', 'e2e.yml', 'load.yml', 'speed-lab.yml']) {
+      const text = readFileSync(join(MOBILE, '..', '.github', 'workflows', wf), 'utf8').replace(/\r\n/g, '\n');
+      // Each job: its lines, from its key to the next.
+      for (const job of text.split(/\n(?=  [a-z][\w-]*:\n)/).slice(1)) {
+        const kept = /\n {6}STACK_EXTRA_PORTS: (?<ports>[\d,]+)/.exec(job)?.groups?.ports?.split(',') ?? [];
+        // Its commands alone: a comment above the next job names its servers too.
+        for (const port of listens(job.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n'))) {
+          servers++;
+          if (!kept.includes(String(port))) unkept.push(`${wf} › ${job.split('\n')[0]?.trim()} listens on ${port}`);
+        }
+      }
+    }
+    expect(servers).toBeGreaterThanOrEqual(4);
+    expect(unkept).toEqual([]);
+    const listeners = files('scripts', { under: ['e2e'] }).filter((f) => !/__tests__/.test(f) && /\.listen\(/.test(readFileSync(f, 'utf8')));
+    expect(listeners.map((f) => rel(f)).sort()).toEqual(['e2e/fault-proxy.mjs', 'e2e/functions/stand-ins.mjs']);
   });
 });

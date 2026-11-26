@@ -395,9 +395,13 @@ keys_on() {
   # it asked a keyboard that was still starting, the show failed at the server, and Android held it
   # shown with no window, through a tap again and a probe run again (pages-16k, plant run
   # 45638318347: "onFailed at PHASE_SERVER_UPDATE_CLIENT_VISIBILITY", Gboard's process up 300 ms on).
-  local _
+  # Bound is Android's own word for it: the keyboard it connects to (mCurId) is that one, and its
+  # connection made (mHasMainConnection; Android 14 and on, where the run's phones are, has no
+  # mCurMethodId, which every probe of nightly 45676715897 waited 30 s for in vain).
+  local _ ime
   for _ in $(seq 1 "${E2E_IME_TRIES:-30}"); do
-    timeout 20 adb shell dumpsys input_method < /dev/null 2>/dev/null | tr -d '\r' | grep -qF "mCurMethodId=$want" \
+    ime="$(timeout 20 adb shell dumpsys input_method < /dev/null 2>/dev/null | tr -d '\r')"
+    grep -qF "mCurId=$want" <<< "$ime" && grep -qF 'mHasMainConnection=true' <<< "$ime" \
       && timeout 20 adb shell pidof "${want%%/*}" < /dev/null > /dev/null 2>&1 && return 0
     timeout 20 adb shell ime set "$want" < /dev/null > /dev/null 2>&1
     sleep 1
@@ -427,7 +431,8 @@ measure() {
   # And the screen as the member sees it, the keyboard with it (screencap draws every window; a
   # Maestro screenshot leaves the keyboard's out): what was measured, to be looked at.
   timeout 20 adb exec-out screencap -p > "$at.png" 2>/dev/null
-  said="$(node mobile/e2e/keyboard-room.mjs --panel "$panel" "$at.json" "$at.windows.txt")" || bad=1
+  # The emoji look reads the probe's letters too: letters that keep no emoji key have their symbols judged.
+  said="$(node mobile/e2e/keyboard-room.mjs --panel "$panel" "$at.json" "$at.windows.txt" "$OUT/keyboard-room/$name.letters.json")" || bad=1
   echo "$name, $panel: $said" >> "$OUT/keyboard-room.txt"
   IFS='|' read -r -a needs <<< "$targets"
   for t in "${needs[@]}"; do
@@ -441,7 +446,7 @@ measure() {
     node mobile/e2e/screen.mjs "$at.json" | head -n 14 | sed "s/^/  $name screen · /" >> "$OUT/keyboard-room.txt"
     # And what the keyboard's own service said, so a keyboard that never showed says why.
     timeout 20 adb shell dumpsys input_method 2>/dev/null | tr -d '\r' \
-      | grep -E 'mInputShown|mShowRequested|mCurMethodId|HardKeyboard|hardKeyboard' | head -n 6 | sed "s/^ */  $name ime · /" >> "$OUT/keyboard-room.txt"
+      | grep -E 'mInputShown|mShowRequested|mSelectedMethodId|mCurId=|HardKeyboard|hardKeyboard' | head -n 6 | sed "s/^ */  $name ime · /" >> "$OUT/keyboard-room.txt"
   fi
   # The keyboard window's own lines, so the measure can be checked by eye.
   awk '/Window #[0-9]+ Window\{[0-9a-f]+ u[0-9]+ InputMethod\}/ {p=1; print; next} /Window #[0-9]+/ {p=0} p' \

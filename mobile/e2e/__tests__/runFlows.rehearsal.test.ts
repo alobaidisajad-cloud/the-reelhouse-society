@@ -102,8 +102,13 @@ case "$1" in
       "settings put global "*_scale" "*) set -- $cmd; echo "$5" > "$T/state/$4" ;;
       "settings get secure autofill_service") echo null ;;
       date*) case "$cmd" in *S.%3N*) date +'%m-%d %H:%M:%S.%3N' ;; *S.000*) date +'%m-%d %H:%M:%S.000' ;; *) date +'%m-%d %H:%M:%S' ;; esac ;;
-      # The keyboard, bound and its process up, unless a scenario keeps it from binding.
-      "dumpsys input_method") echo "mInputShown=true"; [ -f "$T/state/ime-unbound" ] || echo "mCurMethodId=com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME" ;;
+      # The keyboard, bound and its process up, in Android 16's words (an emulator's dump, 2026-11-26),
+      # unless a scenario keeps it chosen and still connecting.
+      "dumpsys input_method")
+        echo "      mSelectedMethodId=com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
+        echo "      mCurId=com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
+        if [ -f "$T/state/ime-unbound" ]; then echo "      mHasMainConnection=false"; else echo "      mHasMainConnection=true"; fi
+        echo "      mInputShown=true" ;;
       "pidof com.google.android.inputmethod.latin") [ -f "$T/state/ime-unbound" ] || echo 9845 ;;
       # A mark the runner writes to the phone's log, as Android's log command writes it.
       "log -t "*) set -- $cmd; echo "$(date +'%m-%d %H:%M:%S.%3N')  4242  4242 I $3: $4" >> "$T/device.log" ;;
@@ -145,12 +150,12 @@ mkdir -p "$HOME/.maestro"; echo "MAESTRO_SESSION=1" > "$HOME/.maestro/sessions"
 stamp=$(date +'%m-%d %H:%M:%S.%3N')
 say() { echo "$stamp  $1  $(( $1 + 20 )) $2 $3: $4" >> "$T/device.log"; }
 # The keyboard's letters while a field's tap left them up, its emoji panel after the emoji key, each
-# with the key Gboard names on it (?123, ABC); no keyboard at all otherwise.
+# with the key Gboard names on it (?123; ABC beside the panel's own emoji tab); no keyboard at all otherwise.
 if [ "$1" = hierarchy ]; then
   [ -f "$T/state/no-keys" ] && { echo '{"attributes":{},"children":[]}'; exit 0; }
   case "$(cat "$T/state/panel" 2>/dev/null)" in
     letters) echo '{"attributes":{},"children":[{"attributes":{"accessibilityText":"Symbol keyboard","bounds":"[0,2200][120,2300]"}}]}' ;;
-    emoji) echo '{"attributes":{},"children":[{"attributes":{"accessibilityText":"Letter keyboard","bounds":"[0,2200][120,2300]"}}]}' ;;
+    emoji) echo '{"attributes":{},"children":[{"attributes":{"accessibilityText":"Letter keyboard","bounds":"[0,2200][120,2300]"}},{"attributes":{"accessibilityText":"Emoji keyboard","resource-id":"com.google.android.inputmethod.latin:id/key_pos_non_prime_category_1","bounds":"[0,2100][120,2190]"}}]}' ;;
     *) echo '{"attributes":{},"children":[]}' ;;
   esac
   exit 0
@@ -512,7 +517,7 @@ describe('a shipped client\'s own crash (E2E_OLD_CLIENT, from the real old-clien
     const old = await rehearse(['a_flow'], {}, { env: OLD, state: { 'no-keys': '1' } });
     expect({ status: old.status, errors: annotations(old, 'error') }).toEqual({ status: 0, errors: [] });
     expect(titled(old, 'warning', "The keyboard's room in TestFlight build 41 is reported (its layout is that build's)"))
-      .toMatch(/stack, letters: the keyboard shows neither its letters nor its emoji panel/);
+      .toMatch(/stack, letters: the keyboard shows neither its letters, its symbols nor its emoji panel/);
     const mine = await rehearse(['a_flow'], {}, { env: { E2E_OLD_CLIENT: '' }, state: { 'no-keys': '1' } });
     expect(mine.status).toBe(1);
     expect(titled(mine, 'error', 'The keyboard covers what a member needs')).toMatch(/stack, letters: the keyboard shows neither/);

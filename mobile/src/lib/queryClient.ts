@@ -14,7 +14,7 @@ import { AppState } from 'react-native';
 import { defaultShouldDehydrateQuery, focusManager, onlineManager, QueryClient, type Query } from '@tanstack/react-query';
 // Not from auth.ts, which imports this file: that would be a cycle.
 import { storage, setSensitive } from '../stores/mmkv-storage';
-import { e2eTrace } from '../utils/e2eTrace';
+import { E2E_BUILD, e2eTrace } from '../utils/e2eTrace';
 import { QUERY_POLICY } from './queryPolicy';
 import { keepsEachPagesWord } from './feedPages';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
@@ -110,20 +110,80 @@ export function pastTheCeiling(serialized: string): boolean {
   return utf8Bytes(serialized) > MAX_CACHE_SIZE_BYTES;
 }
 
+/** The cache serialised once, and cut to the ceiling only when it passes it: null when not one read fits. */
+function serialise(client: PersistedClient): string | null {
+  const serialized = JSON.stringify(client);
+  if (!pastTheCeiling(serialized)) return serialized;
+  const cut = cutToCeiling(client);
+  return cut ? JSON.stringify(cut) : null;
+}
+
 /**
- * The write itself: the cache serialised once, cut to the ceiling only when it passes it, and
- * stored. Each write's length and the ms it held the thread go to the speed lab (the E2E build
- * alone): a screen's answer is taken in only once the thread is free.
+ * The heartbeat's bound, the judge's own (e2e/screen-times.mjs HEARTBEAT_MS, one number: the
+ * queryClient tests hold them equal). A wall-clock sample taken while the phone itself is starved
+ * measures the phone, not the write (the dark walk, nightly 45676715897: one write 235 ms in a
+ * second the whole phone stalled, its neighbours 1 ms). So beside each write a fixed tiny task, the
+ * heartbeat, is timed just before and just after it; one over this bound says the moment was
+ * starved, and the judge voids a slow write then and reads its next sample.
+ */
+export const HEARTBEAT_MS = 20;
+/** The samples a write is taken in at most, the judge's MEASURE_TAKES: three starved in a row fail it. */
+export const MEASURE_TAKES = 3;
+/** How long after a starved sample the same work is timed again: a phone-wide stall lasts about a second. */
+const RETAKE_AFTER_MS = 1000;
+/** The heartbeat's task: always the same small serialisation, well under a millisecond on a phone at rest. */
+const BEAT = Array.from({ length: 200 }, (_, i) => ({ id: i, title: 'La Passion de Jeanne d’Arc', year: 1928 }));
+
+/** The heartbeat: the ms its fixed task took now. */
+export function heartbeat(): number {
+  const started = Date.now();
+  JSON.stringify(BEAT);
+  return Date.now() - started;
+}
+
+/** One sample of a write's work: the ms it held the thread, and the slower of its two heartbeats. */
+function sample(client: PersistedClient): { serialized: string | null; ms: number; beat: number } {
+  const before = heartbeat();
+  const started = Date.now();
+  const serialized = serialise(client);
+  const ms = Date.now() - started;
+  return { serialized, ms, beat: Math.max(before, heartbeat()) };
+}
+
+let writesTimed = 0;
+
+/**
+ * A starved sample's work timed again for the speed lab (the E2E build alone), when the thread is
+ * idle past RETAKE_AFTER_MS, up to MEASURE_TAKES samples in all. It only measures: nothing is
+ * stored, so a sign-out between takes leaves nothing behind.
+ */
+function retake(client: PersistedClient, write: number, take: number): void {
+  setTimeout(() => requestIdleCallback(() => {
+    try {
+      const s = sample(client);
+      e2eTrace('cache.persist', { chars: s.serialized?.length ?? 0, ms: s.ms, beat: s.beat, write, take });
+      if (s.beat > HEARTBEAT_MS && take < MEASURE_TAKES) retake(client, write, take + 1);
+    } catch { /* a measure only: the write itself was stored */ }
+  }, { timeout: IDLE_WAIT_MS }), RETAKE_AFTER_MS);
+}
+
+/**
+ * The write itself: the cache serialised and stored. In the E2E build each write's length, the ms
+ * it held the thread and its heartbeat go to the speed lab (a screen's answer is taken in only once
+ * the thread is free), and a starved sample is taken again (retake); other builds time nothing.
  */
 function writeCache(client: PersistedClient): void {
   try {
-    const started = Date.now();
-    let serialized: string | null = JSON.stringify(client);
-    if (pastTheCeiling(serialized)) {
-      const cut = cutToCeiling(client);
-      serialized = cut ? JSON.stringify(cut) : null;
+    let serialized: string | null;
+    if (E2E_BUILD) {
+      const write = ++writesTimed;
+      const s = sample(client);
+      serialized = s.serialized;
+      e2eTrace('cache.persist', { chars: serialized?.length ?? 0, ms: s.ms, beat: s.beat, write, take: 1 });
+      if (s.beat > HEARTBEAT_MS) retake(client, write, 2);
+    } else {
+      serialized = serialise(client);
     }
-    e2eTrace('cache.persist', { chars: serialized?.length ?? 0, ms: Date.now() - started });
     // Not one read fits: the cache on disk is never left in its place, and the next start reads afresh.
     if (serialized === null) { storage.delete(CACHE_KEY); return; }
     setSensitive(CACHE_KEY, serialized);

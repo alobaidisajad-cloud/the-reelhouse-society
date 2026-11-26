@@ -6,7 +6,10 @@
  */
 import { AppState } from 'react-native';
 import { focusManager, onlineManager, QueryObserver } from '@tanstack/react-query';
-import { CACHE_KEEPS, keepsQuery, mmkvPersister, queryClient, writeHeldCache } from '@/src/lib/queryClient';
+import { spawnSync } from 'child_process';
+import { join } from 'path';
+import { pathToFileURL } from 'url';
+import { CACHE_KEEPS, HEARTBEAT_MS, keepsQuery, MEASURE_TAKES, mmkvPersister, queryClient, writeHeldCache } from '@/src/lib/queryClient';
 import { QUERY_POLICY, shouldRetry } from '@/src/lib/queryPolicy';
 import { TmdbUnreachable } from '@/src/lib/tmdbErrors';
 import { storage, setSensitive } from '@/src/stores/mmkv-storage';
@@ -202,15 +205,89 @@ describe('mmkvPersister — restore', () => {
   it('writes for the speed lab each write\'s and each read\'s characters, and the ms each held the thread', async () => {
     const e2e = jest.requireActual('@/src/utils/e2eTrace');
     const traced = jest.spyOn(e2e, 'e2eTrace').mockImplementation(() => {});
+    const build = jest.replaceProperty(e2e, 'E2E_BUILD', true);
     const c = client({ clientState: { mutations: [], queries: [{ queryKey: ['film', 1], state: { data: 'Ozu' } }] } });
     await persisted(c);
     await mmkvPersister.restoreClient();
     const length = JSON.stringify(c).length;
     expect(traced.mock.calls.filter(([e]) => String(e).startsWith('cache.'))).toEqual([
-      ['cache.persist', { chars: length, ms: expect.any(Number) }],
+      ['cache.persist', { chars: length, ms: expect.any(Number), beat: expect.any(Number), write: expect.any(Number), take: 1 }],
       ['cache.restore', { chars: length, ms: expect.any(Number) }],
     ]);
+    build.restore();
     traced.mockRestore();
+  });
+});
+
+// The rule (nightly 45676715897's dark walk): a wall-clock sample taken while the phone itself is
+// starved measures the phone. Each write is timed between two heartbeats; one over HEARTBEAT_MS
+// has the same work timed again, up to MEASURE_TAKES samples, for e2e/screen-times.mjs to judge.
+describe('a write timed beside its heartbeat, for the speed lab', () => {
+  const e2e = jest.requireActual('@/src/utils/e2eTrace');
+  let traced: jest.SpyInstance;
+  let build: { restore: () => void };
+  beforeEach(() => {
+    jest.useFakeTimers();
+    traced = jest.spyOn(e2e, 'e2eTrace').mockImplementation(() => {});
+    build = jest.replaceProperty(e2e, 'E2E_BUILD', true);
+  });
+  afterEach(() => {
+    build.restore();
+    traced.mockRestore();
+    jest.restoreAllMocks();
+    jest.useRealTimers();
+  });
+
+  /** The clock as each sample reads it: the heartbeat before, the write, the heartbeat after, each a start and an end. */
+  function clock(samples: [number, number, number][]) {
+    const steps = samples.flatMap(([before, ms, after]) => [0, before, 0, ms, 0, after]);
+    let now = 1_700_000_000_000;
+    jest.spyOn(Date, 'now').mockImplementation(() => { now += steps.shift() ?? 0; return now; });
+  }
+  const takes = () => traced.mock.calls.filter(([e]) => e === 'cache.persist').map(([, d]) => d as Record<string, number>);
+  const c = client({ clientState: { mutations: [], queries: [{ queryKey: ['film', 2], state: { data: 'Dreyer' } }] } });
+  /** A write made, and every retake it asks for given its time. */
+  async function written() {
+    await mmkvPersister.persistClient(c);
+    writeHeldCache();
+    for (let i = 0; i < MEASURE_TAKES + 1; i++) jest.advanceTimersByTime(10_000);
+  }
+
+  it('times a write once beside a normal heartbeat, and stores it', async () => {
+    clock([[1, 235, 0]]);
+    await written();
+    expect(takes()).toEqual([{ chars: JSON.stringify(c).length, ms: 235, beat: 1, write: expect.any(Number), take: 1 }]);
+    expect(setSensitive).toHaveBeenCalledTimes(1);
+  });
+
+  it('times the same work again after a starved heartbeat, and stops at the first normal one', async () => {
+    clock([[180, 235, 0], [0, 2, 1]]);
+    await written();
+    expect(takes().map((t) => [t.take, t.ms, t.beat])).toEqual([[1, 235, 180], [2, 2, 1]]);
+    // Both samples are the one write's.
+    expect(new Set(takes().map((t) => t.write)).size).toBe(1);
+    // A retake only measures: the cache was stored once.
+    expect(setSensitive).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes a write starved each time in MEASURE_TAKES samples, never more', async () => {
+    clock([[0, 235, 180], [150, 190, 0], [90, 160, 0], [90, 160, 0]]);
+    await written();
+    expect(takes().map((t) => [t.take, t.ms, t.beat])).toEqual([[1, 235, 180], [2, 190, 150], [3, 160, 90]]);
+  });
+
+  it('times nothing outside the E2E build', async () => {
+    build.restore();
+    await written();
+    expect(takes()).toEqual([]);
+    expect(setSensitive).toHaveBeenCalledTimes(1);
+  });
+
+  it('retakes at the judge\'s own bounds: one heartbeat bound and one count of takes', () => {
+    const judge = pathToFileURL(join(__dirname, '..', '..', '..', 'e2e', 'screen-times.mjs')).href;
+    const r = spawnSync(process.execPath, ['--input-type=module', '-e',
+      `const m = await import(${JSON.stringify(judge)}); console.log(JSON.stringify([m.HEARTBEAT_MS, m.MEASURE_TAKES]));`], { encoding: 'utf8' });
+    expect(JSON.parse(r.stdout)).toEqual([HEARTBEAT_MS, MEASURE_TAKES]);
   });
 });
 

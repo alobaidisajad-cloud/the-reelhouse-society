@@ -134,8 +134,14 @@ classes:
       - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "on Android, while the member writes, the list ends at the bar’s top" }
       - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "reads the letters of a keyboard speaking Arabic, its names led by a direction mark — nightly 43848225969" }
       - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "a panel it cannot name says the names it saw, words only, so the next run can be taught them" }
+      - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "is never taken for the emoji panel" }
+      - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "fails in its place after letters that keep an emoji key" }
+      - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "a field whose emoji key is reachable still demands the emoji panel, and passes on it alone" }
+      - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "is the tallest panel a member can open after letters whose emoji key is the address key" }
+      - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "passes an emoji panel that opened there all the same: taller than the symbols" }
+      - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "taps a probe's field only once the keyboard is bound and running, and says when it never was" }
       - { kind: static, file: src/components/__tests__/aListBesideAFieldKeepsTheTap.guard.test.ts, test: "names no list as pressless that keeps the tap after all, or is gone" }
-    fix: "keyboard-room.mjs measures the target against the input method's own window, Android's answer (mutant judge-keyboard-covers); the reading page takes no inset of its own for the keyboard, where the critique composer docked under it already rides the keys and the OS's inset left blank ink to scroll past (mutant shape-reader-inset-for-the-keyboard); on Android the stack sheet's list ends at its measured bar while the member writes, as the log sheet's scroll ends at its seal (mutant shape-stack-list-under-the-bar); the panel is named in the phone's language, the right-to-left run's Arabic (mutant shape-keyboard-named-in-english-only); round 14: the Dispatch's kind picker, now a scroll in a file with fields, keeps the first tap (keyboardShouldPersistTaps; mutant shape-picker-lets-the-first-tap-go), and aSheetRisesWithItsAct's stand-in for useModalKeyboardPadding gives useSheetFootWhileTyping as the real hook does, so the share and report sheets are drawn rising there, each with its act in the box that rose (mutant shape-report-sheet-pinned-in-its-frame)"
+    fix: "keyboard-room.mjs measures the target against the input method's own window, Android's answer (mutant judge-keyboard-covers); the reading page takes no inset of its own for the keyboard, where the critique composer docked under it already rides the keys and the OS's inset left blank ink to scroll past (mutant shape-reader-inset-for-the-keyboard); on Android the stack sheet's list ends at its measured bar while the member writes, as the log sheet's scroll ends at its seal (mutant shape-stack-list-under-the-bar); the panel is named in the phone's language, the right-to-left run's Arabic (mutant shape-keyboard-named-in-english-only); the emoji panel is read by its own tabs, never the symbols page's ABC key, and the judge's rule is per field the tallest panel a member can open there (tallestReachablePanel): the emoji panel wherever the letters keep their emoji key or were not read, the symbols only after letters whose emoji key is the address key (the tablet's address field, nightly 45676715897), an emoji panel opened there passing as taller still (mutants shape-symbols-taken-for-emoji, shape-symbols-after-any-letters, shape-a-taller-panel-refused); a probe's field is tapped once Android says the keyboard bound in the words its phones use (mutant shape-keyboard-bound-by-a-word-no-phone-says); round 14: the Dispatch's kind picker, now a scroll in a file with fields, keeps the first tap (keyboardShouldPersistTaps; mutant shape-picker-lets-the-first-tap-go), and aSheetRisesWithItsAct's stand-in for useModalKeyboardPadding gives useSheetFootWhileTyping as the real hook does, so the share and report sheets are drawn rising there, each with its act in the box that rose (mutant shape-report-sheet-pinned-in-its-frame)"
     places: [emulator]
 
   - id: E2E-phone-runtime-changed-unseen
@@ -1038,6 +1044,23 @@ classes:
     methods:
       - { kind: static, file: e2e/__tests__/speedLab.test.ts, test: "both prepare it with the same pieces: error dialogs hidden, no keyboard" }
     fix: "the flows' phone preparations are shared pieces both source: e2e/no-error-dialogs.sh (out of run-flows.sh) beside e2e/no-keyboard.sh; a test holds that run-flows.sh and the lab's scrolls.sh source both (mutant shape-lab-shows-error-dialogs)"
+    places: [emulator]
+
+  - id: E2E-lab-sample-taken-while-the-phone-starved
+    title: "A wall-clock sample taken while the phone itself was starved was judged as a measure of the work: one query-cache write of 63,944 characters read 235 ms in the second the whole phone stalled (frames late 888 and 1,115 ms), its neighbours 1 ms, and failed the dark walk"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "nightly 45676715897: the dark route walk, a write of the query cache held the JS thread 235 ms" }
+    methods:
+      - { kind: running, file: e2e/__tests__/screenTimes.test.ts, test: "fails a slow write whose heartbeat was normal: the write itself was slow" }
+      - { kind: running, file: e2e/__tests__/screenTimes.test.ts, test: "voids a slow sample whose heartbeat was starved too, and passes on the retake that was normal" }
+      - { kind: running, file: e2e/__tests__/screenTimes.test.ts, test: "fails a write starved three times in a row: the lab could not measure it, which is never a pass" }
+      - { kind: running, file: src/utils/__tests__/queryClient.test.ts, test: "times the same work again after a starved heartbeat, and stops at the first normal one" }
+      - { kind: running, file: src/utils/__tests__/queryClient.test.ts, test: "takes a write starved each time in MEASURE_TAKES samples, never more" }
+      - { kind: running, file: src/utils/__tests__/queryClient.test.ts, test: "retakes at the judge's own bounds: one heartbeat bound and one count of takes" }
+    fix: "the rule: a sample is measured beside a heartbeat, a fixed tiny task timed just before and just after it in the same moment (queryClient.ts, the E2E build alone). A slow sample whose heartbeat also blew past its own bound (HEARTBEAT_MS) is VOID and the same work is timed again, up to MEASURE_TAKES (3) samples; the write is judged on its first sample that is not void, so a slow write beside a normal heartbeat fails as ever; three void samples in a row fail as 'the lab could not measure this write', never a pass (screen-times.mjs judgeCacheWrites, which films.mjs shares) (mutants shape-a-slow-write-voided-by-itself, shape-three-starved-samples-pass, shape-a-starved-sample-never-retaken, shape-retaken-without-end, shape-heartbeat-after-only)"
     places: [emulator]
 
   - id: TEST-mock-written-from-scratch
@@ -5004,16 +5027,32 @@ classes:
     places: [none]
 
   - id: CI-build-reads-a-version-list
-    title: "expo-updates' bcutil asks for bcprov by a range, so any Android build whose cached listing was a day old asked Maven Central for its version list, and one blip there failed a whole E2E build"
+    title: "expo-updates' bcutil asks for bcprov by a range, so any Android build whose cached listing was a day old asked Maven Central for its version list, and one blip there failed a whole E2E build; and every build asked Maven Central again for what the cache held (setup-java's copy is never saved again once its key is hit, and Gradle's answers expire), so a night's eleven builds met its 429 and Gradle turned the repository off"
+    seriousness: behaviour
+    area: ci
+    status: OPEN
+    count: 2
+    source: { kind: ci, ref: "Sealed E2E 44541753500: the build failed reading the version list of bcprov-jdk15to18; nightly 45676715897: two builds, eleven minutes of 429 on a plugin marker's jar that does not exist" }
+    methods:
+      - { kind: static, file: plugins/__tests__/withPinnedDependencies.test.ts, test: "pins each range for every configuration of every project, and refuses any other range" }
+      - { kind: static, file: plugins/__tests__/withPinnedDependencies.test.ts, test: "pins bcprov to the version of the bcutil expo-updates names, which asks for that version's range" }
+      - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every Gradle run finds its Android packages installed by a step tried once more, downloads none itself, and builds from the kept packages first" }
+      - { kind: running, file: e2e/__tests__/gradleKeptFirst.test.ts, test: "asks the network, patiently, only for what the kept packages lack, and says it fetched" }
+      - { kind: running, file: e2e/__tests__/gradleKeptFirst.test.ts, test: "builds offline, once, when the kept packages hold everything, and fetches nothing" }
+    fix: "plugins/withPinnedDependencies.js pins each range in every configuration of every project to the version it resolves to, and Gradle's failOnDynamicVersions refuses any other range in the graph (mutants shape-a-range-left-unpinned, shape-pin-behind-expo-updates); every build runs through scripts/gradle-kept-first.sh, offline from the packages the cache keeps, online only for what they lack, and the job keeps the fuller packages after a build that fetched (mutants shape-a-build-asks-what-is-kept, shape-the-fetched-packages-unkept, shape-the-kept-build-asks-the-network)"
+    places: [none]
+
+  - id: CI-a-listener-port-lent-before-it-is-kept
+    title: "A sealed job's server listened on a port inside Linux's range for outgoing connections that the job's first step did not keep, so a download was lent it and the server could not bind (the stand-ins' 54990: Expo's stand-in never answered)"
     seriousness: behaviour
     area: ci
     status: OPEN
     count: 1
-    source: { kind: ci, ref: "Sealed E2E 44541753500: the build failed reading the version list of bcprov-jdk15to18" }
+    source: { kind: ci, ref: "nightly 45676715897: the narrowest route walk's shard 1, EADDRINUSE on 0.0.0.0:54990" }
     methods:
-      - { kind: static, file: plugins/__tests__/withPinnedDependencies.test.ts, test: "pins each range for every configuration of every project, and refuses any other range" }
-      - { kind: static, file: plugins/__tests__/withPinnedDependencies.test.ts, test: "pins bcprov to the version of the bcutil expo-updates names, which asks for that version's range" }
-    fix: "plugins/withPinnedDependencies.js pins each range in every configuration of every project to the version it resolves to, and Gradle's failOnDynamicVersions refuses any other range in the graph (mutants shape-a-range-left-unpinned, shape-pin-behind-expo-updates)"
+      - { kind: static, file: e2e/__tests__/startStack.test.ts, test: "keeps, in every job that starts a server, the ports it listens on" }
+      - { kind: running, file: e2e/__tests__/startStack.test.ts, test: "never waits for a listener on a port it keeps: the stand-ins listen on theirs before the stack starts" }
+    fix: "every job that starts a server keeps its ports in STACK_EXTRA_PORTS beside the stack's from its first step (e2e.yml's flows: the fault proxy's and the stand-ins'; db-integration.yml's functions: the stand-ins'), and the stack's start waits only for connections, never for a listener (mutants shape-the-stand-ins-port-unkept, shape-a-listener-waited-for)"
     places: [none]
 
   - id: CI-push-check-one-stage-at-a-time

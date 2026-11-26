@@ -60,6 +60,15 @@ describe("the judge of the cache's writes", () => {
     expect(out).toMatch(/a write of the query cache held the JS thread 140 ms, over 100 ms/);
   });
 
+  it('judges each write by its samples beside their heartbeats, as screen-times.mjs does', () => {
+    const take = (n: number, ms: number, beat: number) =>
+      `11-18 20:02:0${n}.000  4321  4377 W ReactNativeJS: [e2e] cache.persist {"chars":380000,"ms":${ms},"beat":${beat},"write":1,"take":${n}}`;
+    expect(judged([...thirty, take(1, 235, 180), take(2, 40, 1)]).code).toBe(0);
+    const starved = judged([...thirty, take(1, 235, 180), take(2, 190, 150), take(3, 160, 90)]);
+    expect(starved.code).toBe(1);
+    expect(starved.out).toMatch(/the lab could not measure a write of the query cache \(380000 characters\)/);
+  });
+
   it('fails a run whose cache never reached a member\'s size: its times say nothing of it', () => {
     const { code, out } = judged([...thirty, writeLine(20_000, 3)]);
     expect(code).toBe(1);

@@ -188,10 +188,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
-          # android/ is made by prebuild, so there is no Gradle file to key on yet.
-          # The lock file changes whenever a native dependency does.
-          cache-dependency-path: mobile/package-lock.json
 
       # The Supabase CLI makes the key from its config alone, the same on every
       # run (e2e/anon-key.mjs), so no stack is started here. Each shard checks
@@ -245,6 +241,20 @@ jobs:
             /usr/local/share/powershell /usr/share/swift
           df -h / | tail -n 1
 
+      # Gradle's packages, kept by the last build that had to fetch any (scripts/gradle-kept-first.sh
+      # builds from them offline first, and asks the network only for what they lack). Seeded from the
+      # copy setup-java kept before (its paths, so its key restores here).
+      - name: Gradle's packages, kept
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
+          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}
+          restore-keys: |
+            gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-
+            setup-java-Linux-x64-gradle-${{ hashFiles('mobile/package-lock.json') }}
+            gradle-packages-
       # A release build, as a store build is made — only its backend differs:
       # the runner, seen from the emulator as 10.0.2.2. app.config.js allows
       # plain http and turns updates off for E2E=1, and the manifest is checked.
@@ -264,6 +274,7 @@ jobs:
           key: gradle-dists-${{ hashFiles('mobile/package-lock.json') }}
           restore-keys: gradle-dists-
       - name: Build the E2E app (release APK)
+        id: build
         working-directory: mobile
         env:
           E2E: '1'
@@ -275,9 +286,8 @@ jobs:
           EXPO_NO_TELEMETRY: '1'
         # Gradle's wrapper, when its own copy is not cached, fetches it with 10 s to answer, and a
         # runner's link can take longer: the build failed on the fetch, not on the app. Two minutes.
-        # And each package it fetches is asked for up to eight times, from five seconds apart and
-        # doubling: Maven Central answered 429 Too Many Requests, and Gradle's own three tries 125 ms
-        # apart spent themselves inside it (plant run 45638318347, three builds of eleven).
+        # The build reads the kept packages first and asks Maven Central only for what they lack
+        # (scripts/gradle-kept-first.sh): eleven builds a night asking it again met 429 Too Many Requests.
         run: |
           set +e
           {
@@ -287,7 +297,7 @@ jobs:
             && grep -A 2 -F 'super.onCreate(null)' android/app/src/main/java/com/reelhouse/society/MainActivity.kt \
                  | grep -q -F 'splashScreen.clearOnExitAnimationListener()' \
             && (cd android && for i in 1 2 3 4; do ./gradlew --version --no-daemon --console=plain > /dev/null && break; [ $i -eq 4 ] && exit 1; sleep $((i * 30)); done) \
-            && (cd android && ./gradlew assembleRelease -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+            && (cd android && bash "$GITHUB_WORKSPACE/mobile/scripts/gradle-kept-first.sh" assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
                   "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError")
           } > "$RUNNER_TEMP/build.log" 2>&1
           rc=$?
@@ -315,6 +325,16 @@ jobs:
         with:
           path: ~/.gradle/wrapper/dists
           key: gradle-dists-${{ hashFiles('mobile/package-lock.json') }}
+      # Only after a build that had to fetch packages, and succeeded: a failed fetch is never kept. One
+      # key a run, so a night's builds keep one copy between them.
+      - name: Gradle's packages, kept for the next build
+        if: steps.build.outputs.fetched == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
+          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}
 
       # Expo SDK 54's ready-made expo-image was built with Glide's logging on, so
       # every image the app loaded was logged; package.json has it compiled from
@@ -407,8 +427,9 @@ jobs:
         # flows' three of a variant that runs them.
         shard: ${{ fromJSON((inputs.faults || inputs.lifecycle || inputs.clock || needs.build.outputs.runs == 'walk') && '[1]' || needs.build.outputs.runs == 'flows' && '[1, 2, 3, 4]' || '[1, 2, 3]') }}
     env:
-      # The fault proxy's ports (below), kept with the stack's from the job's first step.
-      STACK_EXTRA_PORTS: 54330,54331
+      # The fault proxy's ports and the stand-ins' (below), kept with the stack's from the job's first step:
+      # the stand-ins' 54990 was lent to another connection and they could not listen (nightly 45676715897).
+      STACK_EXTRA_PORTS: 54330,54331,54990
       # The walk's machine: no flows, the walk, and the writer the seed makes for it, so every
       # flow's world is as every other run has it.
       E2E_FLOWS: ${{ inputs.faults && 'mobile/.maestro/faults' || inputs.lifecycle && 'mobile/.maestro/lifecycle' || inputs.clock && format('mobile/.maestro/clock/{0}', inputs.clock) || (inputs.variant && (needs.build.outputs.runs == 'walk' || matrix.shard == 4)) && 'none' || 'mobile/.maestro' }}

@@ -6,7 +6,7 @@
  *   node e2e/keyboard-room.mjs --top <windows>     exit 0 once the keyboard's window is there and drawn
  *   node e2e/keyboard-room.mjs --apart <name> <field> <press> <hierarchy> [dump.xml]
  *                                                  exit 0 when neither is drawn over the other
- *   node e2e/keyboard-room.mjs --panel <letters|emoji> <hierarchy> <windows>
+ *   node e2e/keyboard-room.mjs --panel <letters|emoji> <hierarchy> <windows> [letters hierarchy]
  *                                                  exit 0 when the keyboard shows that panel (its height said)
  *
  * <target> is `#id` or `"text"`. The hierarchy is `maestro hierarchy`; the
@@ -48,15 +48,62 @@ export function keyboardHeight(windows) {
 /**
  * Which panel the keyboard shows, by the key Gboard names on each (a `maestro hierarchy` with the
  * keyboard up holds its keys): the letters carry "Symbol keyboard" (the ?123 key), the emoji panel
- * "Letter keyboard" (the ABC key back). An address field's letters name no "Q", so the letters are
- * never read from a letter (run 43242130602). Null when neither key is there: the panel not known.
+ * its tabs, and the symbols page "Letter keyboard" (the ABC key back) without them. An address
+ * field's letters name no "Q", so the letters are never read from a letter (run 43242130602). Null
+ * when none is there: the panel not known.
  */
 export function panelOf(tree) {
   const names = keyNames(tree);
   if (LETTERS_KEY.some((k) => names.has(k))) return 'letters';
-  if (EMOJI_PANEL_KEY.some((k) => names.has(k))) return 'emoji';
+  // The emoji panel by its own tabs (emoji, GIFs, stickers: Gboard's key_pos_non_prime_category_N, in
+  // every language alike); the ABC key alone is the symbols page's too, which is not the emoji panel.
+  if (keyIds(tree).some((id) => EMOJI_PANEL_TAB.test(id))) return 'emoji';
+  if (EMOJI_PANEL_KEY.some((k) => names.has(k))) return 'symbols';
   return null;
 }
+
+/**
+ * Whether the letters keep no emoji key, their emoji key's place given to the address key (".com",
+ * Gboard's key_pos_switch_to_smiley named "Dot com"): an address field's. The tablet's Gboard draws
+ * its GIF and sticker keys off there too, so its emoji panel cannot be reached (nightly 45676715897's
+ * screen: the recovery card's letters, ?123 and the header's GIF tapped, the letters stayed).
+ */
+export function lettersKeepNoEmoji(tree) {
+  let slot = null;
+  const walk = (node) => {
+    if (slot !== null || !node || typeof node !== 'object') return;
+    const a = node.attributes ?? {};
+    if (/:id\/key_pos_switch_to_smiley$/.test(a['resource-id'] ?? '')) { slot = (a.accessibilityText ?? '').trim(); return; }
+    for (const c of node.children ?? []) walk(c);
+  };
+  walk(tree);
+  return slot !== null && ADDRESS_KEY.includes(slot);
+}
+
+/**
+ * The judge's rule, per field: the tallest panel a member can open on it is the one measured. The
+ * emoji panel stands tallest, so it is demanded on every field whose letters keep their emoji key,
+ * and on every field whose letters were not read. Only letters seen to give that key's place to the
+ * address key (lettersKeepNoEmoji) reach no emoji panel: there the tallest panel left is the symbols
+ * page, and judging it measures what the member can open, never less.
+ */
+export function tallestReachablePanel(letters) {
+  return letters !== null && lettersKeepNoEmoji(letters) ? 'symbols' : 'emoji';
+}
+
+/** Every resource id on the screen. */
+function keyIds(tree) {
+  const ids = [];
+  const walk = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (node.attributes?.['resource-id']) ids.push(node.attributes['resource-id']);
+    for (const c of node.children ?? []) walk(c);
+  };
+  walk(tree);
+  return ids;
+}
+const EMOJI_PANEL_TAB = /:id\/key_pos_non_prime_category_\d+$/;
+const ADDRESS_KEY = ['Dot com'];
 
 /**
  * The key each panel names, in each language a run sets the phone to: Gboard speaks the phone's.
@@ -166,22 +213,32 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.arg
   // Which of its panels the keyboard shows, and how tall it stands: run-flows.sh asks after each
   // change, so a press that did not open the emoji panel fails, by name, before anything is judged.
   // A keyboard whose panel cannot be named fails too: a check that cannot say which has said nothing.
-  const [want, hierarchyFile, windowsFile] = process.argv.slice(3);
+  // The emoji panel asked for is the tallest panel the field reaches (tallestReachablePanel, read from
+  // the same probe's letters): the symbols page only where those letters keep no emoji key. An emoji
+  // panel that did open there is taller still, and passes.
+  const [want, hierarchyFile, windowsFile, lettersFile] = process.argv.slice(3);
   let tree = null;
   try { tree = JSON.parse(readFileSync(hierarchyFile ?? '', 'utf8')); } catch { /* said below */ }
+  let letters = null;
+  try { letters = lettersFile ? JSON.parse(readFileSync(lettersFile, 'utf8')) : null; } catch { /* none: the emoji panel, then */ }
   let windows = '';
   try { windows = readFileSync(windowsFile ?? '', 'utf8'); } catch { /* said below as no window */ }
   const height = keyboardHeight(windows);
   if (!tree) { console.log('the keyboard: the screen could not be read, so its panel is not known'); process.exit(1); }
   const shows = panelOf(tree);
-  const said = (p) => (p === 'letters' ? 'its letters' : p === 'emoji' ? 'its emoji panel' : 'neither its letters nor its emoji panel');
+  const demanded = want === 'emoji' ? tallestReachablePanel(letters) : want;
+  const noEmoji = demanded !== want;
+  const ok = shows === want || shows === demanded;
+  const said = (p) => (p === 'letters' ? 'its letters' : p === 'emoji' ? 'its emoji panel' : p === 'symbols' ? 'its symbols'
+    : 'neither its letters, its symbols nor its emoji panel');
   // A panel it cannot name says the names it saw (words, never single letters), so the next run
   // can be taught them.
   const seen = shows == null ? [...keyNames(tree)].filter((n) => [...n].length > 1).slice(-16) : [];
   console.log(`the keyboard shows ${said(shows)}${height == null ? ', and no window of its own' : `, ${height}px tall`}`
-    + (shows === want ? '' : ` (it should show ${said(want)})`)
+    + (ok ? (shows === want ? '' : ' (this field\'s letters keep no emoji key, its place the address key: its symbols are the tallest panel a member can open on it)')
+      : ` (it should show ${said(want)}${noEmoji ? ' or, this field\'s letters keeping no emoji key, its symbols' : ''})`)
     + (seen.length ? `; the names on the screen: ${seen.join(' | ')}` : ''));
-  process.exit(shows === want && height != null ? 0 : 1);
+  process.exit(ok && height != null ? 0 : 1);
 } else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const [name, target, hierarchyFile, windowsFile, dumpFile] = process.argv.slice(2);
   if (!name || !target || !hierarchyFile || !windowsFile) {

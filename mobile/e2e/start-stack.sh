@@ -47,8 +47,9 @@ reserve() {
   fi
 }
 
-# The stack's ports another connection holds now, one per line.
-held() { ss -Htan 2>/dev/null | awk '{ n = split($4, a, ":"); print a[n] }' | grep -xE "${PORTS//,/|}" | sort -u; }
+# The stack's ports another connection holds now, one per line. A listener is not a connection lent
+# one: the stand-ins listen on theirs before the stack starts (e2e.yml), and are never waited for.
+held() { ss -Htan 2>/dev/null | awk '$1 != "LISTEN" { n = split($4, a, ":"); print a[n] }' | grep -xE "${PORTS//,/|}" | sort -u; }
 
 wait_free() {
   local waited=0

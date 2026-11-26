@@ -1058,9 +1058,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
-          # android/ is made by prebuild, so there is no Gradle file to key on yet.
-          cache-dependency-path: mobile/package-lock.json
 
       - name: Install Mobile Dependencies
         id: install-15
@@ -1094,12 +1091,26 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
           node scripts/android-packages.cjs --installed
 
+      # Gradle's packages, kept by the last build that had to fetch any: the build reads them offline
+      # first (scripts/gradle-kept-first.sh). Seeded from the copy setup-java kept before (its paths).
+      - name: Gradle's packages, kept
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
+          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}
+          restore-keys: |
+            gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-
+            setup-java-Linux-x64-gradle-${{ hashFiles('mobile/package-lock.json') }}
+            gradle-packages-
       # The native projects as a store build starts from them: prebuild with no
       # E2E set (the E2E app is never this guard's input), iOS too, which needs
       # no Mac when no pods are installed. Then Gradle merges every library's
       # manifest into the release one, and expo-constants' own script writes the
       # config the build embeds, as the build runs it.
       - name: The release manifest, the Info.plist and the embedded config
+        id: release
         working-directory: ./mobile
         env:
           NODE_ENV: production
@@ -1109,7 +1120,7 @@ jobs:
           set +e
           {
             npx expo prebuild --platform all --no-install --clean \
-            && (cd android && ./gradlew :app:processReleaseManifest -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+            && (cd android && bash "$GITHUB_WORKSPACE/mobile/scripts/gradle-kept-first.sh" :app:processReleaseManifest -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
                   "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g") \
             && mkdir -p "$RUNNER_TEMP/embedded" \
             && node node_modules/expo-constants/scripts/getAppConfig.js . "$RUNNER_TEMP/embedded"
@@ -1124,6 +1135,16 @@ jobs:
           # The Kotlin compiler's daemon outlives a --no-daemon build; it ends with it.
           pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
           exit $rc
+
+      # Only after a build that had to fetch packages, and succeeded: a failed fetch is never kept.
+      - name: Gradle's packages, kept for the next build
+        if: steps.release.outputs.fetched == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
+          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}
 
       - name: The release manifest, the Info.plist and the embedded config hold the release rules
         working-directory: ./mobile

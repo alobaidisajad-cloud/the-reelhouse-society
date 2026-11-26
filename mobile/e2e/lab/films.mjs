@@ -8,15 +8,15 @@
  *   node e2e/lab/films.mjs judge <dir>    <dir>/films.log, the device log of the run: judged
  *
  * The cache is written to the phone at most once a second, when the JS thread is idle
- * (src/lib/queryClient.ts), each write traced as `[e2e] cache.persist {"chars":…,"ms":…}`. A gate
+ * (src/lib/queryClient.ts), each sample of a write traced as `[e2e] cache.persist {"chars":…,"ms":…,"beat":…}`. A gate
  * that reads only what the E2E flows happen to write never meets a cache of a member who has opened
  * film after film; this run makes one. The judge fails the run when:
  *   - fewer than FILMS films answered their read (`[e2e] film.data`): the run did not fill the cache;
  *   - the largest write is under MEMBER_SIZE characters: the cache never reached a member's size,
  *     so the times say nothing of it (a film the sealed world holds no recording of answers "not in
  *     the archive", and is no film read: record it, `paths` above);
- *   - any write held the JS thread over CACHE_WRITE_MS (screen-times.mjs's bound, the same for
- *     every run that reads the trace).
+ *   - any write held the JS thread over CACHE_WRITE_MS, or could not be measured with the phone
+ *     itself unstarved (screen-times.mjs's judgeCacheWrites, the same for every run that reads the trace).
  * The films are the sealed world's recorded films (e2e/db/lab-seed.mjs's), those whose whole page
  * is recorded first, then the rest by id.
  */
@@ -25,7 +25,7 @@ import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { recordedFilms } from '../db/lab-seed.mjs';
 import { normalizeTmdbPath } from '../supabase/functions/tmdb-proxy/normalize.mjs';
-import { CACHE_WRITE_MS, readCacheWrites } from '../screen-times.mjs';
+import { CACHE_WRITE_MS, judgeCacheWrites, readCacheWrites } from '../screen-times.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const INDEX = join(HERE, '..', 'supabase', 'functions', 'tmdb-proxy', 'fixtures', 'index.json');
@@ -63,18 +63,17 @@ export function judge(log, missing = []) {
     if (!m) continue;
     try { read.add(JSON.parse(m[1]).id); } catch { /* not a trace */ }
   }
-  const writes = readCacheWrites(log);
-  const largest = writes.length ? Math.max(...writes.map((w) => w.chars)) : 0;
-  const slowest = writes.length ? Math.max(...writes.map((w) => w.ms)) : 0;
+  const writes = judgeCacheWrites(readCacheWrites(log));
+  const { largest, slowest } = writes;
   const lines = [`films read: ${read.size} of ${FILMS}`,
-    `the query cache written ${writes.length} times: the largest ${largest} characters, the slowest ${slowest} ms (bound ${CACHE_WRITE_MS} ms)`];
+    `the query cache written ${writes.count} times: the largest ${largest} characters, the slowest ${slowest} ms (bound ${CACHE_WRITE_MS} ms)`];
   const failed = [];
   if (read.size < FILMS) failed.push(`only ${read.size} of ${FILMS} films answered their read: the run did not fill the cache`);
   if (largest < MEMBER_SIZE) {
     failed.push(`the largest write held ${largest} characters, under a member's ${MEMBER_SIZE}: the cache never reached the size the bound is for`
       + (missing.length ? `; ${missing.length} of the films have no recording: node e2e/tmdb/record.mjs --from <(node e2e/lab/films.mjs paths)` : ''));
   }
-  if (slowest > CACHE_WRITE_MS) failed.push(`a write of the query cache held the JS thread ${slowest} ms, over ${CACHE_WRITE_MS} ms`);
+  failed.push(...writes.problems);
   return { lines, failed };
 }
 

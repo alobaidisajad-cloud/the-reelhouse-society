@@ -300,24 +300,33 @@ it("the emulator has no keyboard of keys and no dock's lid, as a member's phone 
   expect(script).toMatch(/hw\.keyboard\.lid=no\\n/);
 });
 
+/** Gradle's packages as GitHub's cache keeps them: setup-java's own paths, so its old copy seeds them. */
+const GRADLE_PACKAGES = '/home/runner/.gradle/caches\n/home/runner/.gradle/wrapper';
 /**
  * Each Gradle run that downloads nothing itself, as `job › step` faults: it
  * passes android.builder.sdkDownload=false, after a step of its job that
  * installs scripts/android-packages.cjs's list (that step is an install, so the
- * rule above gives it its retry).
+ * rule above gives it its retry). And each build reads the packages the cache
+ * keeps first (scripts/gradle-kept-first.sh): restored before it, saved after it
+ * only when it had to fetch some, and never by setup-java, whose copy is never
+ * saved again once its key is hit, so every build asked Maven Central again and
+ * met its 429 (nightly 45676715897).
  */
 const gradleFaults = (wf: Workflow) => Object.entries(wf.jobs).flatMap(([job, j]) => {
   const steps = (j.steps ?? []) as RunStep[];
   return steps.flatMap((s, i) => {
-    if (!s.run || !/\bgradlew\b/.test(s.run)) return [];
+    if (!s.run || !/\bgradlew\b|gradle-kept-first\.sh/.test(s.run)) return [];
     const at = `${job} › ${s.name ?? s.run}`;
     const faults: string[] = [];
     if (!/-Pandroid\.builder\.sdkDownload=false\b/.test(s.run)) faults.push(`${at}: Gradle may download a package itself`);
-    // Each build asks a package again with time between: Gradle's own three tries 125 ms apart
-    // spent themselves inside Maven Central's 429 (plant run 45638318347).
-    const builds = (s.run.match(/\bgradlew (?!--version)/g) ?? []).length;
-    const patient = (s.run.match(/-Dorg\.gradle\.internal\.repository\.max\.tentatives=\d+ -Dorg\.gradle\.internal\.repository\.initial\.backoff=\d{4,}/g) ?? []).length;
-    if (patient < builds) faults.push(`${at}: a build asks a package three times in a second, and no more`);
+    if (/\bgradlew (?!--version)/.test(s.run)) faults.push(`${at}: a build asks the network for what the cache keeps (scripts/gradle-kept-first.sh)`);
+    const packages = (p: RunStep, action: string) => p.uses?.startsWith(`actions/cache/${action}@`) && String(p.with?.path ?? '').trim() === GRADLE_PACKAGES;
+    const kept = steps.slice(0, i).find((p) => packages(p, 'restore'));
+    const saved = steps.slice(i + 1).find((p) => packages(p, 'save'));
+    if (!kept) faults.push(`${at}: no step before it restores Gradle's packages`);
+    if (!s.id || !saved || saved.if !== `steps.${s.id}.outputs.fetched == 'true'`) faults.push(`${at}: the packages it fetched are not kept after it, and only then`);
+    else if (kept && String(saved.with?.key) !== String(kept.with?.key)) faults.push(`${at}: the packages are saved under another key than they are restored by`);
+    if (steps.some((p) => p.uses?.startsWith('actions/setup-java@') && p.with?.cache)) faults.push(`${at}: setup-java keeps a copy it never saves again`);
     if (!steps.slice(0, i).some((p) => !p.if && p.run && /\bsdkmanager\b[^\n]*--install \$\(node scripts\/android-packages\.cjs\)/.test(p.run))) {
       faults.push(`${at}: no step before it installs the packages it needs`);
     }
@@ -325,18 +334,29 @@ const gradleFaults = (wf: Workflow) => Object.entries(wf.jobs).flatMap(([job, j]
   });
 });
 
-it('every Gradle run finds its Android packages installed by a step tried once more, and downloads none itself', () => {
-  const builds = workflows.filter((w) => /\bgradlew\b/.test(w.text));
-  expect(builds.map((w) => w.file).sort()).toEqual(expect.arrayContaining(['e2e.yml', 'god_tier_ci.yml']));
+it('every Gradle run finds its Android packages installed by a step tried once more, downloads none itself, and builds from the kept packages first', () => {
+  const builds = workflows.filter((w) => /\bgradlew\b|gradle-kept-first\.sh/.test(w.text));
+  expect(builds.map((w) => w.file).sort()).toEqual(expect.arrayContaining(['e2e.yml', 'god_tier_ci.yml', 'speed-lab.yml']));
   expect(builds.flatMap((w) => gradleFaults(w.wf).map((f) => `${w.file} › ${f}`))).toEqual([]);
   const wf = (steps: string) => parse(`name: x\non: push\njobs:\n  j:\n    steps:\n${steps}`) as Workflow;
   const install = '      - name: Packages\n        run: sdkmanager --install $(node scripts/android-packages.cjs)\n';
-  const build = (flags: string) => `      - name: Build\n        run: cd android && ./gradlew assembleRelease ${flags}\n`;
-  const PATIENT = '-Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000';
-  expect(gradleFaults(wf(build(`-Pandroid.builder.sdkDownload=false ${PATIENT}`)))).toEqual(['j › Build: no step before it installs the packages it needs']);
-  expect(gradleFaults(wf(install + build(PATIENT)))).toEqual(['j › Build: Gradle may download a package itself']);
-  expect(gradleFaults(wf(install + build('-Pandroid.builder.sdkDownload=false')))).toEqual(['j › Build: a build asks a package three times in a second, and no more']);
-  expect(gradleFaults(wf(install + build(`-Pandroid.builder.sdkDownload=false ${PATIENT}`)))).toEqual([]);
+  const paths = '          path: |\n            /home/runner/.gradle/caches\n            /home/runner/.gradle/wrapper\n';
+  const restore = `      - uses: actions/cache/restore@x\n        with:\n${paths}          key: k\n`;
+  const save = (when: string, key = 'k') => `      - uses: actions/cache/save@x\n        if: ${when}\n        with:\n${paths}          key: ${key}\n`;
+  const FETCHED = "steps.b.outputs.fetched == 'true'";
+  const build = (run: string) => `      - name: Build\n        id: b\n        run: cd android && ${run}\n`;
+  const KEPT = 'bash "$GITHUB_WORKSPACE/mobile/scripts/gradle-kept-first.sh" assembleRelease -Pandroid.builder.sdkDownload=false';
+  const kept = (steps: string) => install + restore + steps + save(FETCHED);
+  expect(gradleFaults(wf(kept(build(KEPT))))).toEqual([]);
+  expect(gradleFaults(wf(restore + build(KEPT) + save(FETCHED)))).toEqual(['j › Build: no step before it installs the packages it needs']);
+  expect(gradleFaults(wf(kept(build('bash x/gradle-kept-first.sh assembleRelease'))))).toEqual(['j › Build: Gradle may download a package itself']);
+  expect(gradleFaults(wf(kept(build('./gradlew assembleRelease -Pandroid.builder.sdkDownload=false')))))
+    .toEqual(['j › Build: a build asks the network for what the cache keeps (scripts/gradle-kept-first.sh)']);
+  expect(gradleFaults(wf(install + build(KEPT) + save(FETCHED)))).toEqual(["j › Build: no step before it restores Gradle's packages"]);
+  expect(gradleFaults(wf(install + restore + build(KEPT) + save('success()')))).toEqual(['j › Build: the packages it fetched are not kept after it, and only then']);
+  expect(gradleFaults(wf(install + restore + build(KEPT) + save(FETCHED, 'other')))).toEqual(['j › Build: the packages are saved under another key than they are restored by']);
+  const java = "      - uses: actions/setup-java@x\n        with:\n          cache: 'gradle'\n";
+  expect(gradleFaults(wf(java + kept(build(KEPT))))).toEqual(['j › Build: setup-java keeps a copy it never saves again']);
 });
 
 /** Whether a command installs through apt, and whether it waits for the lock a try cut short leaves. */

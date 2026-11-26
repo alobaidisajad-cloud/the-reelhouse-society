@@ -3107,7 +3107,7 @@ mutants:
     source: shape
     edits:
       - file: e2e/keyboard-room.mjs
-        find: 'process.exit(shows === want && height != null ? 0 : 1);'
+        find: 'process.exit(ok && height != null ? 0 : 1);'
         replace: 'process.exit(height != null ? 0 : 1);'
     proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: 'fails a press that opened nothing: the letters still there' }
 
@@ -7608,8 +7608,8 @@ mutants:
     source: shape
     edits:
       - file: e2e/screen-times.mjs
-        find: "    if (slowest > CACHE_WRITE_MS) problems.push("
-        replace: "    if (slowest > CACHE_WRITE_MS * 10) problems.push("
+        find: "      if (measured.ms > CACHE_WRITE_MS) problems.push("
+        replace: "      if (measured.ms > CACHE_WRITE_MS * 10) problems.push("
     proof: { file: e2e/__tests__/screenTimes.test.ts, test: "reads the query cache's writes, and fails one that held the JS thread too long" }
 
   - id: shape-lab-cache-write-unbounded
@@ -7617,8 +7617,8 @@ mutants:
     source: shape
     edits:
       - file: e2e/lab/films.mjs
-        find: "  if (slowest > CACHE_WRITE_MS) failed.push("
-        replace: "  if (slowest > CACHE_WRITE_MS * 10) failed.push("
+        find: "  failed.push(...writes.problems);"
+        replace: "  failed.push(...writes.problems.filter((p) => !p.startsWith('a write')));"
     proof: { file: e2e/__tests__/theLabFillsTheCache.test.ts, test: "fails a write that held the JS thread over its bound, naming it" }
 
   - id: shape-lab-cache-never-filled
@@ -9996,3 +9996,115 @@ mutants:
         find: "  WHILE private.member_grams_fill(5000) <> 'complete' LOOP"
         replace: "  WHILE false LOOP"
     proof: { file: e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts, test: "each seed laying a source with its triggers off makes every kept table of it again" }
+  - id: shape-a-build-asks-what-is-kept
+    class: CI-build-reads-a-version-list
+    source: shape
+    edits:
+      - file: ../.github/workflows/god_tier_ci.yml
+        find: '(cd android && bash "$GITHUB_WORKSPACE/mobile/scripts/gradle-kept-first.sh" :app:processReleaseManifest'
+        replace: '(cd android && ./gradlew :app:processReleaseManifest'
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every Gradle run finds its Android packages installed by a step tried once more, downloads none itself, and builds from the kept packages first" }
+  - id: shape-the-fetched-packages-unkept
+    class: CI-build-reads-a-version-list
+    source: shape
+    edits:
+      - file: ../.github/workflows/e2e.yml
+        find: "        if: steps.build.outputs.fetched == 'true'"
+        replace: "        if: success()"
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every Gradle run finds its Android packages installed by a step tried once more, downloads none itself, and builds from the kept packages first" }
+  - id: shape-the-kept-build-asks-the-network
+    class: CI-build-reads-a-version-list
+    source: shape
+    edits:
+      - file: scripts/gradle-kept-first.sh
+        find: './gradlew --offline "$@" 2>&1 | tee "$LOG"'
+        replace: './gradlew "$@" 2>&1 | tee "$LOG"'
+    proof: { file: e2e/__tests__/gradleKeptFirst.test.ts, test: "builds offline, once, when the kept packages hold everything, and fetches nothing" }
+  - id: shape-the-stand-ins-port-unkept
+    class: CI-a-listener-port-lent-before-it-is-kept
+    source: shape
+    edits:
+      - file: ../.github/workflows/e2e.yml
+        find: '      STACK_EXTRA_PORTS: 54330,54331,54990'
+        replace: '      STACK_EXTRA_PORTS: 54330,54331'
+    proof: { file: e2e/__tests__/startStack.test.ts, test: "keeps, in every job that starts a server, the ports it listens on" }
+  - id: shape-a-listener-waited-for
+    class: CI-a-listener-port-lent-before-it-is-kept
+    source: shape
+    edits:
+      - file: e2e/start-stack.sh
+        find: "awk '$1 != \"LISTEN\" { n = split($4, a, \":\"); print a[n] }'"
+        replace: "awk '{ n = split($4, a, \":\"); print a[n] }'"
+    proof: { file: e2e/__tests__/startStack.test.ts, test: "never waits for a listener on a port it keeps: the stand-ins listen on theirs before the stack starts" }
+  - id: shape-symbols-taken-for-emoji
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/keyboard-room.mjs
+        find: "  if (EMOJI_PANEL_KEY.some((k) => names.has(k))) return 'symbols';"
+        replace: "  if (EMOJI_PANEL_KEY.some((k) => names.has(k))) return 'emoji';"
+    proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: "is never taken for the emoji panel" }
+  - id: shape-symbols-after-any-letters
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/keyboard-room.mjs
+        find: "  return letters !== null && lettersKeepNoEmoji(letters) ? 'symbols' : 'emoji';"
+        replace: "  return letters !== null ? 'symbols' : 'emoji';"
+    proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: "fails in its place after letters that keep an emoji key" }
+  - id: shape-a-taller-panel-refused
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/keyboard-room.mjs
+        find: "  const ok = shows === want || shows === demanded;"
+        replace: "  const ok = shows === demanded;"
+    proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: "passes an emoji panel that opened there all the same: taller than the symbols" }
+  - id: shape-keyboard-bound-by-a-word-no-phone-says
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/run-flows.sh
+        find: "grep -qF \"mCurId=$want\" <<< \"$ime\" && grep -qF 'mHasMainConnection=true' <<< \"$ime\""
+        replace: "grep -qF \"mCurMethodId=$want\" <<< \"$ime\""
+    proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "taps a probe's field only once the keyboard is bound and running, and says when it never was" }
+  - id: shape-a-slow-write-voided-by-itself
+    class: E2E-lab-sample-taken-while-the-phone-starved
+    source: shape
+    edits:
+      - file: e2e/screen-times.mjs
+        find: "  const voided = (s) => s.ms > CACHE_WRITE_MS && s.beat !== null && s.beat > HEARTBEAT_MS;"
+        replace: "  const voided = (s) => s.ms > CACHE_WRITE_MS;"
+    proof: { file: e2e/__tests__/screenTimes.test.ts, test: "fails a slow write whose heartbeat was normal: the write itself was slow" }
+  - id: shape-three-starved-samples-pass
+    class: E2E-lab-sample-taken-while-the-phone-starved
+    source: shape
+    edits:
+      - file: e2e/screen-times.mjs
+        find: "    if (takes.length >= MEASURE_TAKES) {"
+        replace: "    if (takes.length >= MEASURE_TAKES) { if (takes.length) continue;"
+    proof: { file: e2e/__tests__/screenTimes.test.ts, test: "fails a write starved three times in a row: the lab could not measure it, which is never a pass" }
+  - id: shape-a-starved-sample-never-retaken
+    class: E2E-lab-sample-taken-while-the-phone-starved
+    source: shape
+    edits:
+      - file: src/lib/queryClient.ts
+        find: "      if (s.beat > HEARTBEAT_MS) retake(client, write, 2);"
+        replace: "      if (s.beat > HEARTBEAT_MS * 1000) retake(client, write, 2);"
+    proof: { file: src/utils/__tests__/queryClient.test.ts, test: "times the same work again after a starved heartbeat, and stops at the first normal one" }
+  - id: shape-retaken-without-end
+    class: E2E-lab-sample-taken-while-the-phone-starved
+    source: shape
+    edits:
+      - file: src/lib/queryClient.ts
+        find: "      if (s.beat > HEARTBEAT_MS && take < MEASURE_TAKES) retake(client, write, take + 1);"
+        replace: "      if (s.beat > HEARTBEAT_MS) retake(client, write, take + 1);"
+    proof: { file: src/utils/__tests__/queryClient.test.ts, test: "takes a write starved each time in MEASURE_TAKES samples, never more" }
+  - id: shape-heartbeat-after-only
+    class: E2E-lab-sample-taken-while-the-phone-starved
+    source: shape
+    edits:
+      - file: src/lib/queryClient.ts
+        find: "  return { serialized, ms, beat: Math.max(before, heartbeat()) };"
+        replace: "  return { serialized, ms, beat: before * 0 + heartbeat() };"
+    proof: { file: src/utils/__tests__/queryClient.test.ts, test: "times the same work again after a starved heartbeat, and stops at the first normal one" }

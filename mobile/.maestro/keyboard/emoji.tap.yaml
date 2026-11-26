@@ -33,11 +33,12 @@ appId: com.reelhouse.society
       - tapOn: "Emoji keyboard|لوحة مفاتيح الرموز التعبيرية"
       - waitForAnimationToEnd:
           timeout: 3000
-# A tablet's address field keeps its GIF key drawn off, and a press there
-# opens nothing (the recovery card, every tablet night from 2026-11-13): its
-# symbols may keep the emoji key, so they are opened and that key pressed.
-# Symbols with no emoji key are left for the letters, and the panel is
-# judged as it stands (it fails: not the emoji panel).
+# A tablet's address field keeps its GIF and sticker keys drawn off, and a
+# press there opens nothing (the recovery card, every tablet night from
+# 2026-11-13): its symbols may keep the emoji key, so they are opened and
+# that key pressed. Symbols with no emoji key stay open: they are the tallest
+# panel a member can open only where the letters keep no emoji key
+# (keyboard-room.mjs, tallestReachablePanel); anywhere else they fail.
 - runFlow:
     when:
       visible: "Symbol keyboard"
@@ -45,11 +46,6 @@ appId: com.reelhouse.society
       - tapOn: "Symbol keyboard"
       - waitForAnimationToEnd:
           timeout: 3000
-      - runFlow:
-          when:
-            notVisible: "Emoji button"
-          commands:
-            - tapOn: "Letter keyboard"
       - runFlow:
           when:
             visible: "Emoji button"
