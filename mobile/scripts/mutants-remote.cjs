@@ -4,6 +4,10 @@
  * and the push gate share, and recorded here exactly as a run here records them.
  *
  *   node mobile/scripts/mutants-remote.cjs run --ids <a,b | @file | all> [--parts <n>]
+ *   node mobile/scripts/mutants-remote.cjs run --changed <base> [--parts <n>]
+ *       --changed: the mutants mutants.cjs --changed <base> would run (touched since base, no verdict
+ *       that still stands): after an integrator's merges, only those whose files the merges changed.
+ *       Its private ones are named, to run on this machine.
  *       HEAD, committed and clean, pushed to a plant branch of its own (plant/mutants-<commit>-<stamp>:
  *       a plant push runs only what keeps it safe to publish), and .github/workflows/mutants-on-demand.yml
  *       started there on those ids at that commit, in n parts side by side (4 unless said). Prints the run.
@@ -33,7 +37,7 @@ const sh = (cmd, args, opts = {}) => execFileSync(cmd, args, { cwd: MOBILE, enco
 const refuse = (why, code = 2) => { console.error(why); process.exit(code); };
 
 /** The options and whether each takes a value. */
-const OPTIONS = { '--ids': true, '--parts': true, '--run': true, '--results': true };
+const OPTIONS = { '--ids': true, '--changed': true, '--parts': true, '--run': true, '--results': true };
 
 /** What is wrong with these arguments (after the command), or null. */
 const argumentsFault = (command, argv) => {
@@ -44,7 +48,7 @@ const argumentsFault = (command, argv) => {
     k++;
   }
   const has = (o) => argv.includes(o);
-  if (command === 'run' && !has('--ids')) return 'run wants --ids';
+  if (command === 'run' && has('--ids') === has('--changed')) return 'run wants --ids or --changed, one of them';
   if (command !== 'run' && !has('--run')) return `${command} wants --run <id>`;
   return null;
 };
@@ -90,7 +94,17 @@ const runOf = (id) => JSON.parse(sh('gh', ['run', 'view', id, '--json', 'status,
 
 function start(argv, arg) {
   const mutants = require('./mutants.cjs');
-  const chosen = idsOf(arg('--ids'), mutants.readMutants());
+  const all = mutants.readMutants();
+  let spec = arg('--ids');
+  if (arg('--changed')) {
+    const touched = mutants.touchedSince(arg('--changed'), all);
+    const here = touched.filter((m) => m.private).map((m) => m.id);
+    console.log(`${touched.length} mutants touched since ${arg('--changed').slice(0, 8)} have no verdict that still stands (${touched.stood} stand)`);
+    if (here.length) console.log(`private, to run on this machine: node mobile/scripts/mutants.cjs --ids ${here.join(',')} --results register/mutant-results.json`);
+    spec = touched.filter((m) => !m.private).map((m) => m.id).join(',');
+    if (!spec) { console.log('none to run on GitHub'); return 0; }
+  }
+  const chosen = idsOf(spec, all);
   if (chosen.fault) refuse(chosen.fault);
   const parts = arg('--parts') ?? '4';
   if (!/^([1-9]|1[0-9]|20)$/.test(parts)) refuse(`--parts takes 1 to 20 (has ${parts})`);

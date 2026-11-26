@@ -46,5 +46,7 @@ it('sends no private mutant, and no id the registry does not hold; refuses a mis
   expect(remote.idsOf('shape-x', all).fault).toBe('no such mutant: shape-x');
   expect([remote.argumentsFault('run', ['--ids', 'a']), remote.argumentsFault('record', ['--run', '1'])]).toEqual([null, null]);
   expect([remote.argumentsFault('run', ['--help']), remote.argumentsFault('run', ['--parts', '2']), remote.argumentsFault('start', [])])
-    .toEqual([expect.stringMatching(/^unknown argument --help/), 'run wants --ids', 'unknown command start: run, status or record']);
+    .toEqual([expect.stringMatching(/^unknown argument --help/), 'run wants --ids or --changed, one of them', 'unknown command start: run, status or record']);
+  expect([remote.argumentsFault('run', ['--changed', 'origin/main']), remote.argumentsFault('run', ['--changed', 'b', '--ids', 'a'])])
+    .toEqual([null, 'run wants --ids or --changed, one of them']);
 });
