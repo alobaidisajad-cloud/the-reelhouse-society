@@ -69,7 +69,7 @@ function marks(house: House): string[] {
 
 /** Each function that calls out through pg_net with an address written into it. */
 const addressed = (house: House) => [...house.functions.values()]
-  .filter((f) => /\bnet\.http_(post|get|delete)\s*\(/.test(f.body) && [...f.body.matchAll(/https?:\/\/(?<host>[A-Za-z0-9.-]+\.[a-z]{2,})/g)].some((m) => !m.groups?.host.endsWith('.invalid')))
+  .filter((f) => /\bnet\.http_(post|get|delete)\s*\(/.test(f.body) && [...f.body.matchAll(/https?:\/\/(?<host>[A-Za-z0-9.-]+\.[a-z]{2,})/g)].some((m) => !(m.groups?.host ?? '').endsWith('.invalid')))
   .map((f) => f.name).sort();
 
 const now = read();
