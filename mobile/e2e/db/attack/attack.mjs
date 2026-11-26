@@ -36,7 +36,11 @@ const SNAPSHOT = join(MOBILE, 'supabase', 'schema', 'live-schema.sql');
 // The local stack's fixed development password — this database exists only on the runner.
 const SEALED = 'postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres';
 
-/** The kinds of member who try, with the standing each holds. P and V may also try, as probes ask. */
+/**
+ * The kinds of member who try, with the standing each holds. P and V may also try, as probes ask.
+ * claims: what the actor's token holds beside who they are (the admin signed in with the Tribunal's
+ * second key, aal2, as the Tribunal opens only to them).
+ */
 export const ACTORS = {
   visitor: null,
   free: { tier: 'free', role: 'free' },
@@ -45,7 +49,7 @@ export const ACTORS = {
   auteur: { tier: 'auteur', role: 'free' },
   founding: { tier: 'founding', role: 'free', is_founding: true },
   banned: { tier: 'auteur', role: 'free', is_banned: true },
-  admin: { tier: 'free', role: 'admin' },
+  admin: { tier: 'free', role: 'admin', claims: { aal: 'aal2' } },
 };
 /**
  * Every member who holds rows: the actors, an open member (V), a private one (P), one every
@@ -331,6 +335,8 @@ export const plan = (matrix, columns = {}) => {
         if (k.lay) c.lay = Object.entries(k.lay).map(([t, row]) => `${insertSql(t, dated(t, fill(row, ctx), columns))};`).join(' ');
         if (k.result) c.result = fill(k.result, ctx);
         if (k.then) c.then = `SELECT (${fill(k.then, ctx)})`;
+        // What the caller's token holds for this call besides (a sign-in made moments ago: "@now").
+        if (k.claims) c.claims = k.claims;
         cases.push(c);
       }
     });
@@ -426,7 +432,7 @@ ${setting(matrix, columns)}
 SET LOCAL session_replication_role = origin;
 ${plant}
 CREATE TEMP TABLE at_cases (n int PRIMARY KEY, before text, lay text, stmt text, is_read boolean, then_sql text, actor uuid,
-  call text, result_sql text, settings jsonb) ON COMMIT DROP;
+  call text, result_sql text, settings jsonb, claims jsonb) ON COMMIT DROP;
 CREATE TEMP TABLE at_got (n int PRIMARY KEY, got text) ON COMMIT DROP;
 -- One try as one member (or a visitor, with no member), undone at once: the rows it touched or saw,
 -- or the SQLSTATE and words it was refused with; with then, the house's reading of what it left.
@@ -444,7 +450,8 @@ BEGIN
     -- What the service sets before it asks the rules: a channel's topic, the Storage API's own flag.
     IF c.settings IS NOT NULL THEN PERFORM set_config(s.key, s.value, true) FROM jsonb_each_text(c.settings) s; END IF;
     PERFORM set_config('request.jwt.claims', CASE WHEN c.actor IS NULL THEN '{"role":"anon"}'
-      ELSE json_build_object('sub', c.actor, 'role', 'authenticated')::text END, true);
+      ELSE (jsonb_build_object('sub', c.actor, 'role', 'authenticated')
+            || replace(coalesce(c.claims, '{}')::text, '"@now"', floor(extract(epoch FROM now()))::text)::jsonb)::text END, true);
     PERFORM set_config('role', CASE WHEN c.actor IS NULL THEN 'anon' ELSE 'authenticated' END, true);
     IF c.call IS NOT NULL THEN
       EXECUTE 'SELECT coalesce(jsonb_agg(to_jsonb(x)), ''[]'') FROM ' || c.call || ' AS x' INTO r;
@@ -470,7 +477,7 @@ BEGIN
   END;
 END $at$;
 INSERT INTO at_cases VALUES
-${cases.map((c, i) => `  (${i}, ${literal(c.before ?? null)}, ${literal(c.lay ?? null)}, ${literal(c.sql ?? null)}, ${c.action === 'select' || c.action === 'read'}, ${literal(c.then ?? null)}, ${c.actor === 'visitor' ? 'NULL' : literal(uid(c.actor))}, ${literal(c.call ?? null)}, ${literal(c.result ?? null)}, ${literal(c.settings ?? null)})`).join(',\n')};
+${cases.map((c, i) => `  (${i}, ${literal(c.before ?? null)}, ${literal(c.lay ?? null)}, ${literal(c.sql ?? null)}, ${c.action === 'select' || c.action === 'read'}, ${literal(c.then ?? null)}, ${c.actor === 'visitor' ? 'NULL' : literal(uid(c.actor))}, ${literal(c.call ?? null)}, ${literal(c.result ?? null)}, ${literal(c.settings ?? null)}, ${literal(c.actor === 'visitor' ? null : { ...ACTORS[c.actor]?.claims, ...c.claims })})`).join(',\n')};
 INSERT INTO at_got SELECT n, pg_temp.at_try(c) FROM at_cases c ORDER BY n;
 SELECT 'AT-RESULT ' || json_object_agg(n, got ORDER BY n) FROM at_got;
 ${mutants ? MUTANTS_SQL : ''}

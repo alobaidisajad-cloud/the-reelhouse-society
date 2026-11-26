@@ -20,7 +20,7 @@
     "mobile/src/components/film/FilmDetailLayout.tsx": 2,
     "mobile/src/components/lounge/ActionSheet.tsx": 1,
     "mobile/src/components/lounge/LoungeSettingsPanel.tsx": 1,
-    "mobile/src/features/settings/SettingsScreen.tsx": 8,
+    "mobile/src/features/settings/SettingsScreen.tsx": 4,
     "mobile/src/hooks/__tests__/aNewMemberStartsUnfiltered.test.tsx": 1,
     "mobile/src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx": 1,
     "mobile/src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx": 1,
