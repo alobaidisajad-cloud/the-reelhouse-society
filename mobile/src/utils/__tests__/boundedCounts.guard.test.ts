@@ -95,12 +95,15 @@ describe('#52 · one malformed row cannot end a member\'s history', () => {
 
   it('the cursor advances from the RAW row', () => {
     // Otherwise a page that fails validation entirely leaves the cursor put, and
-    // with _hasMore driven by the server count that re-fetches forever.
-    expect(store).toMatch(/const lastRaw = data\[data\.length - 1\]/);
+    // with _hasMore driven by the server count that re-fetches forever. Both reads take it so.
+    expect(store).toMatch(/const lastRaw = rows\[rows\.length - 1\]/);
+    expect(store).toMatch(/const cursor = cursorPast\(data\);/);
+    expect(store).toMatch(/const advanced = cursorPast\(data\);/);
   });
 
   it('paging stops if the cursor cannot advance', () => {
-    expect(store).toMatch(/_hasMore: !!cursor && data\.length >= PAGE_SIZE/);
+    // The board read again asks whether its LAST read came back full, as the server sent it.
+    expect(store).toMatch(/_hasMore: !!cursor && lastRead >= asked/);
     expect(store).toMatch(/_hasMore: !!advanced && data\.length >= PAGE_SIZE/);
   });
 });

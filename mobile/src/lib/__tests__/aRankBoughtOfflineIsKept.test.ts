@@ -35,6 +35,8 @@ it('with no signal and no session, the new rank is queued for the account the st
   jest.resetModules();
   const { initRevenueCat: init, syncEntitlementToSupabase: sync } = require('@/src/lib/revenueCat');
   const { supabase: sb } = require('@/src/lib/supabase');
+  // The member the store sold it to is the one signed in on the phone (its store, not its session).
+  require('@/src/stores/auth').useAuthStore.setState({ user: { id: ACCOUNT } });
   await init(ACCOUNT);
   const getUser = jest.spyOn(sb.auth, 'getUser').mockRejectedValue(new TypeError('Network request failed'));
   const getSession = jest.spyOn(sb.auth, 'getSession').mockResolvedValue({ data: { session: null }, error: null } as never);
@@ -43,6 +45,19 @@ it('with no signal and no session, the new rank is queued for the account the st
   expect(mockEnqueue).toHaveBeenCalledWith({ type: 'sync_entitlement', payload: { tier: 'archivist', user_id: ACCOUNT } });
   expect(getUser).not.toHaveBeenCalled();
   expect(getSession).not.toHaveBeenCalled();
+});
+
+it('signed out while the store answered, or another member signed in: nothing is queued as whoever is here', async () => {
+  jest.resetModules();
+  const { initRevenueCat: init, syncEntitlementToSupabase: sync } = require('@/src/lib/revenueCat');
+  const { useAuthStore } = require('@/src/stores/auth');
+  await init(ACCOUNT);
+  mockAppUserID.mockResolvedValue(ACCOUNT);
+  useAuthStore.setState({ user: { id: '22222222-2222-4222-8222-222222222222' } });
+  await sync('archivist');
+  useAuthStore.setState({ user: null });
+  await sync('archivist');
+  expect(mockEnqueue).not.toHaveBeenCalled();
 });
 
 it('an anonymous store buyer is no member: nothing is queued', async () => {

@@ -43,7 +43,7 @@ jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHouse.clien
 
 const mockAuthStore: { user: any } = { user: null };
 jest.mock('@/src/stores/auth', () => ({
-  useAuthStore: (sel?: (s: unknown) => unknown) => (sel ? sel(mockAuthStore) : mockAuthStore),
+  useAuthStore: Object.assign((sel?: (s: unknown) => unknown) => (sel ? sel(mockAuthStore) : mockAuthStore), { getState: () => mockAuthStore }),
 }));
 
 // Mock expo-linear-gradient (native)
@@ -555,7 +555,7 @@ describe('TribunalScreen Integration', () => {
       });
 
       await waitFor(() => {
-        expect(mockGetPriorityQueue).toHaveBeenCalledWith(20);
+        expect(mockGetPriorityQueue).toHaveBeenCalledWith(20, undefined);
       });
 
       // Report count badge should appear for items with count > 1
@@ -873,8 +873,10 @@ describe('a judged case leaves the docket at once', () => {
 
   it('a case judged on a page LOAD MORE CASES brought leaves the docket, though page one reads back unchanged', async () => {
     const pageOne = Array.from({ length: 20 }, (_, i) => caseNo(i));
-    // Each read of page one hands back the same twenty cases, as the house would.
-    mockGetPriorityQueue.mockImplementation(async (_n: number, cursor?: unknown) => (cursor ? [caseNo(20)] : pageOne.map((c) => ({ ...c }))));
+    // Each read of page one hands back the same twenty cases, as the house would; the case on the
+    // page after it is gone from the house once judged.
+    const judged = () => mockResolveReportV2.mock.calls.some(([id]) => id === 'priority-020');
+    mockGetPriorityQueue.mockImplementation(async (_n: number, cursor?: unknown) => (cursor ? (judged() ? [] : [caseNo(20)]) : pageOne.map((c) => ({ ...c }))));
     const alertSpy = jest.spyOn(Alert, 'alert');
     const r = renderTribunal();
 

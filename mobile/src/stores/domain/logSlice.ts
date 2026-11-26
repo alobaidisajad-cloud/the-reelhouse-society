@@ -7,7 +7,6 @@ import {
     fetchLogsOp,
     getCinephileStatsOp,
     removeLogOp,
-    unmarkWatchedOp,
     updateLogOp
 } from './logSlice/helpers/logOperations';
 
@@ -68,7 +67,6 @@ export interface LogSlice extends LogSliceData {
     updateLog: (id: string, updates: Partial<DomainLog>, held?: DomainLog) => Promise<void>;
     /** Throws when the record is not in hand: whether it goes or a viewing does turns on it. */
     removeLog: (id: string, forceDeleteAll?: boolean, held?: DomainLog) => Promise<void>;
-    unmarkWatched: (filmId: number) => Promise<void>;
     getCinephileStats: (overrideCount?: number) => { count: number, level: string, color: string, progress: number };
 }
 
@@ -82,6 +80,5 @@ export const createLogSlice: StateCreator<FilmState, [], [], LogSlice> = (set, g
     // helper directly. The public action stays Promise<void>.
     updateLog: async (id, updates, held) => { await updateLogOp(set, get, id, updates, held ? { held } : undefined); },
     removeLog: async (id, forceDeleteAll = false, held) => removeLogOp(set, get, id, forceDeleteAll, held),
-    unmarkWatched: async (filmId) => unmarkWatchedOp(set, get, filmId),
     getCinephileStats: (overrideCount) => getCinephileStatsOp(set, get, overrideCount),
 });

@@ -12,6 +12,7 @@ import { isNetworkError } from '../../utils/networkError';
 import { isGoneFromTheHouse } from '../../utils/goneFromTheHouse';
 import { prefetchPictures } from '../../utils/prefetchPictures';
 import { enqueueMutation } from '../../utils/offlineQueue';
+import { overlayQueuedStack } from './queuedStack';
 import reelToast from '../../utils/reelToast';
 import { sanitizeInput } from '../../utils/sanitizeInput';
 import { useAuthStore } from '../auth';
@@ -136,7 +137,9 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         const pendingDeletes = new Set(
             queue.filter((q: { type: string; payload: Record<string, any> }) => q.type === 'delete_list').map((q: { payload: Record<string, any> }) => q.payload.list_id as string)
         );
-        const pendingUpdates = queue.filter((q: { type: string }) => q.type === 'update_list');
+        // Each stack with its queued edits, films added and films taken off laid over it, in order.
+        const laid = (list: CustomList): CustomList =>
+            overlayQueuedStack(list.id, list, queue, user.id, (id, title, poster) => ({ id, title, poster })).stack;
         const pendingCreates = queue
             .filter((q: { type: string; payload: Record<string, any> }) => q.type === 'create_list' && q.payload.user_id === user.id && !pendingDeletes.has(q.payload.id as string))
             .map((q: { payload: Record<string, any>; timestamp: number }) => {
@@ -156,23 +159,13 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                     userId: user.id,
                     films,
                 } as CustomList;
-            });
+            })
+            .map(laid);
 
-        // Filter out deleted lists and apply pending item updates
+        // Filter out deleted lists and lay each one's queued changes over it
         const reconciledLists = newLists
             .filter(l => !pendingDeletes.has(l.id))
-            .map(list => {
-                const upd = pendingUpdates.find((q: { payload: Record<string, any> }) => q.payload.list_id === list.id);
-                if (upd?.payload.films && Array.isArray(upd.payload.films)) {
-                    const films = (upd.payload.films as any[]).map((f: any) => ({
-                        id: f.film_id ?? f.id,
-                        title: f.film_title ?? f.title ?? 'Unknown',
-                        poster: f.poster_path ?? f.poster ?? null,
-                    }));
-                    return { ...list, films };
-                }
-                return list;
-            });
+            .map(laid);
 
         // Deduplicate: pending creates that already exist on server (flushed between enqueue and fetch)
         const serverIds = new Set(reconciledLists.map(l => l.id));

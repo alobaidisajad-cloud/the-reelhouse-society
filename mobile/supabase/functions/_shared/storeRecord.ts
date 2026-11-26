@@ -23,6 +23,37 @@ export const STORE_LIMIT_MS = 10_000;
 /** Highest first. 'cinephile' is the rank of a member the store holds nothing for. */
 const TIERS = ['founding', 'auteur', 'archivist'] as const;
 
+/** The store's stamp: `2026-11-25T10:00:00Z`, a fraction of a second or an offset allowed. */
+const STAMP = /^(?<y>\d{4})-(?<mo>\d{2})-(?<d>\d{2})T(?<h>\d{2}):(?<mi>\d{2}):(?<s>\d{2})(?:\.(?<f>\d+))?(?<z>Z|[+-]\d{2}:?\d{2})$/;
+
+/**
+ * The milliseconds a stamp of the store's names, read field by field and each field held to its
+ * range, or NaN when it names none. Never the engine's own reading, which takes a 31st of February
+ * for the 3rd of March: a stamp no calendar shows is no end ahead.
+ */
+export function stampOf(text: string): number {
+  const g = STAMP.exec(text)?.groups;
+  if (!g) return NaN;
+  const y = Number(g.y);
+  const mo = Number(g.mo) - 1;
+  const d = Number(g.d);
+  const h = Number(g.h);
+  const mi = Number(g.mi);
+  const s = Number(g.s);
+  const at = Date.UTC(y, mo, d, h, mi, s, Number((g.f ?? '').slice(0, 3).padEnd(3, '0')));
+  const back = new Date(at);
+  // Date.UTC rolls a field past its range into the next (a 31st of February into March): read back, it differs.
+  const whole = back.getUTCFullYear() === y && back.getUTCMonth() === mo && back.getUTCDate() === d
+    && back.getUTCHours() === h && back.getUTCMinutes() === mi && back.getUTCSeconds() === s;
+  const zone = g.z ?? 'Z';
+  if (!whole) return NaN;
+  if (zone === 'Z') return at;
+  const zh = Number(zone.slice(1, 3));
+  const zm = Number(zone.slice(-2));
+  if (zh > 23 || zm > 59) return NaN;
+  return at - (zone.startsWith('-') ? -1 : 1) * (zh * 60 + zm) * 60_000;
+}
+
 /**
  * Is one entitlement in force now? No end at all is a lifetime seat. Otherwise
  * its end, or the billing grace the store gives after a failed renewal (the
@@ -33,7 +64,7 @@ export function inForce(entitlement: unknown, now: number): boolean {
   const e = entitlement as { expires_date?: unknown; grace_period_expires_date?: unknown };
   if (e.expires_date === null) return true;
   return [e.expires_date, e.grace_period_expires_date]
-    .map((d) => (typeof d === 'string' ? Date.parse(d) : NaN))
+    .map((d) => (typeof d === 'string' ? stampOf(d) : NaN))
     .some((t) => Number.isFinite(t) && t > now);
 }
 

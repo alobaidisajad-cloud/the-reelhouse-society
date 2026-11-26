@@ -15,6 +15,7 @@ import { ensureNoticeChannels } from './noticeChannels';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { houseNow } from './houseClock';
+import { stillSignedIn } from '../stores/domain/helpers/sessionGuard';
 
 /**
  * This device's own token, as last registered. Sign-out removes exactly this
@@ -165,7 +166,7 @@ export async function registerForPushNotifications(userId: string): Promise<stri
  * a device that changes accounts can never keep delivering the old owner's
  * notifications.
  */
-async function storePushToken(_userId: string, token: string): Promise<void> {
+async function storePushToken(userId: string, token: string): Promise<void> {
   try {
     const { error } = await supabase.rpc('register_push_token', {
       p_token: token,
@@ -173,6 +174,18 @@ async function storePushToken(_userId: string, token: string): Promise<void> {
     });
     if (error) {
       if (__DEV__) console.warn('[Push] register_push_token failed:', error.message);
+      return;
+    }
+    // Signed out while the house registered it, or another member signed in: the sign-out's forget
+    // may have run before this registration landed. It is forgotten again, by the token and the member
+    // it was registered to (a phone claimed since by someone else keeps theirs), and the phone keeps no
+    // record of it, nor lets go of a forget still owed. Unreached, the house still never sends to it:
+    // its session has ended (push_tokens_of).
+    if (!stillSignedIn(userId)) {
+      try {
+        const { error: unforgotten } = await supabase.rpc('forget_push_token', { p_token: token, p_user: userId });
+        if (unforgotten) logger.warn('[Push] a registration made for a member gone is not forgotten:', unforgotten.message);
+      } catch { /* as above */ }
       return;
     }
     try {

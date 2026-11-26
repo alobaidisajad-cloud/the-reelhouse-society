@@ -129,8 +129,7 @@ export default function LoungeScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchLounges();
-    setRefreshing(false);
+    try { await fetchLounges(); } finally { setRefreshing(false); }
     // The salons on screen stay; the member is told the pull reached nothing.
     const after = useLoungeStore.getState();
     if (after.loungesFailed && after.lounges.length > 0) reelToast.error(REFRESH_FAILED);

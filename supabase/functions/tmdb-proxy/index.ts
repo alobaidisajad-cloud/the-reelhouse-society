@@ -123,6 +123,12 @@ async function answer(req: Request, door: string | null): Promise<Response> {
             // TMDB's own front door answers an outage with a page, not JSON: it is TMDB that failed.
             return json({ error: 'TMDB answered something unreadable' }, 502);
         }
+        // TMDB refusing the house's own key: the house's failure, said as the house's (503, naming
+        // the secret), never handed on as the caller's own refusal, and never kept.
+        if (response.status === 401 || response.status === 403) {
+            console.error('tmdb-proxy: TMDB refused the key:', response.status);
+            return json({ error: 'TMDB refused the key', need: 'TMDB_API_KEY' }, 503);
+        }
         if (response.ok) setCache(cacheKey, data, response.status);
         // TMDB pacing the house itself: its own word on how long to wait is passed on.
         const tmdbWait = response.status === 429 ? response.headers.get('retry-after') : null;

@@ -33,11 +33,22 @@ export const MAX_READS = 3;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * The midnight (UTC, ms) of a day written 'YYYY-MM-DD', read field by field, or NaN when no calendar
+ * shows it: never the engine's own reading, which takes a 31st of February for the 3rd of March.
+ */
+export function dayOf(raw) {
+  const g = typeof raw === 'string' ? /^(?<y>\d{4})-(?<m>\d{2})-(?<d>\d{2})$/.exec(raw)?.groups : undefined;
+  if (!g) return NaN;
+  const [y, m, d] = [Number(g.y), Number(g.m) - 1, Number(g.d)];
+  const at = Date.UTC(y, m, d);
+  const back = new Date(at);
+  return back.getUTCFullYear() === y && back.getUTCMonth() === m && back.getUTCDate() === d ? at : NaN;
+}
+
 /** TMDB's release date when it is a real one ('YYYY-MM-DD'), else null. */
 export function releaseDateOf(raw) {
-  if (typeof raw !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
-  const at = Date.parse(`${raw}T00:00:00Z`);
-  if (!Number.isFinite(at) || new Date(at).toISOString().slice(0, 10) !== raw) return null;
+  if (!Number.isFinite(dayOf(raw))) return null;
   const year = Number(raw.slice(0, 4));
   return year >= 1870 && year <= 2100 ? raw : null;
 }
@@ -60,7 +71,7 @@ export function nextRead({ film, release, status, reads, now }) {
   const before = typeof reads === 'number' && reads > 0 ? reads : 0;
   const canceled = status === 'Canceled';
   const out = !canceled && typeof status === 'string' && status !== '' && status !== 'Released';
-  const settlesAt = release_date ? Date.parse(`${release_date}T00:00:00Z`) + SETTLE_DAYS * DAY_MS : null;
+  const settlesAt = release_date ? dayOf(release_date) + SETTLE_DAYS * DAY_MS : null;
   const unsettled = !canceled && (out || settlesAt === null || now < settlesAt);
   if (unsettled) {
     const slow = now + UNSETTLED_DAYS * DAY_MS;

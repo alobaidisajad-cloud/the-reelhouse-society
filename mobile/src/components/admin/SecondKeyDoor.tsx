@@ -163,8 +163,8 @@ function Register({ stale, enrol, give }: {
   const make = async () => {
     setMaking(true);
     setRefused(false);
-    const made = await enrol(stale);
-    setMaking(false);
+    let made: NewKey | null = null;
+    try { made = await enrol(stale); } finally { setMaking(false); }
     if (made) setKey(made); else setRefused(true);
   };
   if (!key) {

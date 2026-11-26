@@ -21,6 +21,7 @@ import { isStorageEncrypted, setSensitive, storage } from '@/src/stores/mmkv-sto
 import { raceDeadline } from '@/src/utils/raceDeadline';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 import { logger } from '@/src/utils/logger';
+import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 
 /** How long the server is given to end a session before it ends on the phone alone. */
 export const SIGN_OUT_DEADLINE_MS = 5000;
@@ -186,6 +187,9 @@ export function settleOwedSignOut(): Promise<void> {
  * session is never sent to (push_tokens_of), and goes at the next notice.
  */
 export async function endOtherSessions(): Promise<boolean> {
+  // The member who asked, before anything waits: a forget left owed is owed in their name alone.
+  let asked: string | null = null;
+  try { asked = (await supabase.auth.getSession()).data.session?.user?.id ?? null; } catch { asked = null; }
   try {
     const { error } = await raceDeadline(supabase.auth.signOut({ scope: 'others' }), SIGN_OUT_DEADLINE_MS);
     if (error) return false;
@@ -194,11 +198,10 @@ export async function endOtherSessions(): Promise<boolean> {
   }
   if (!(await forgetOtherDevices())) {
     // Owed, and asked again when the network returns or at the next launch (settleOwedSignOut): left,
-    // a token from before round 13 on the phone signed out could be sent to for up to a month.
-    let member: string | null = null;
-    try { member = (await supabase.auth.getSession()).data.session?.user?.id ?? null; } catch { member = null; }
-    if (member) {
-      try { setSensitive(OTHERS_OWED_KEY, member); } catch { /* asked again at the next "sign out every other device" */ }
+    // a token from before round 13 on the phone signed out could be sent to for up to a month. Signed
+    // out meanwhile, or another member signed in: nothing is owed, never in the next member's name.
+    if (asked && stillSignedIn(asked)) {
+      try { setSensitive(OTHERS_OWED_KEY, asked); } catch { /* asked again at the next "sign out every other device" */ }
     }
   }
   return true;

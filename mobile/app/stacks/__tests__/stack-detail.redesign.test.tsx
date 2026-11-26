@@ -144,8 +144,8 @@ jest.mock('@/src/components/layout/CinematicFlashList', () => {
   // page's foot run past the screen with nothing to scroll it.
   const { ScrollView } = require('react-native');
   const render = (c: React.ReactNode) => (typeof c === 'function' ? React.createElement(c as never) : c);
-  return { CinematicFlashList: ({ ListHeaderComponent, ListEmptyComponent, data, renderItem, refreshControl, onEndReached }: {
-    ListHeaderComponent?: React.ReactNode; ListEmptyComponent?: React.ReactNode;
+  return { CinematicFlashList: ({ ListHeaderComponent, ListFooterComponent, ListEmptyComponent, data, renderItem, refreshControl, onEndReached }: {
+    ListHeaderComponent?: React.ReactNode; ListFooterComponent?: React.ReactNode; ListEmptyComponent?: React.ReactNode;
     data?: unknown[]; renderItem?: (a: { item: unknown; index: number }) => React.ReactNode;
     refreshControl?: unknown; onEndReached?: () => Promise<void>;
   }) => (mockRefresh = refreshControl as never, mockEndReached = onEndReached ?? null, React.createElement(ScrollView, null,
@@ -153,6 +153,7 @@ jest.mock('@/src/components/layout/CinematicFlashList', () => {
     // Every row rendered, so the index is tested as drawn.
     ...(data ?? []).map((item, index) =>
       React.createElement(React.Fragment, { key: index }, renderItem ? renderItem({ item, index }) : null)),
+    render(ListFooterComponent),
     (data ?? []).length === 0 ? render(ListEmptyComponent) : null)) };
 });
 /** Whether the salon list was opened: sharing a stack into a salon is speaking there. */
@@ -443,6 +444,46 @@ describe('the critiques action', () => {
     mount();
     const answer = await mockStackOpts!.queryFn();
     expect(answer.list.critiqueCount).toBe(7);
+  });
+
+  it('read again, keeps the member’s queued changes to it: a film added and one taken off offline, and an edit', async () => {
+    const { StackService } = require('@/src/services/StackService');
+    const { getOfflineQueue } = jest.requireMock('@/src/utils/offlineQueue') as { getOfflineQueue: jest.Mock };
+    StackService.getStackFullPayload.mockResolvedValueOnce({
+      ...baseStack, endorseCount: 0, certified: false, filmCount: 2,
+      films: [{ id: 1, title: 'Film 1', poster_path: null }, { id: 2, title: 'Film 2', poster_path: null }],
+    });
+    getOfflineQueue.mockReturnValueOnce([
+      { type: 'add_film_to_list', owner: 'u1', payload: { list_id: STACK_ID, film_id: 9, film_title: 'Late Spring', poster_path: '/l.jpg' } },
+      { type: 'remove_film_from_list', owner: 'u1', payload: { list_id: STACK_ID, film_id: 1 } },
+      { type: 'update_list', owner: 'u1', payload: { list_id: STACK_ID, user_id: 'u1', updates: { title: 'Noir, Amended' } } },
+      // Another stack's, and another member's: neither laid on.
+      { type: 'add_film_to_list', owner: 'u1', payload: { list_id: 'other', film_id: 5, film_title: 'Elsewhere' } },
+      { type: 'add_film_to_list', owner: 'u2', payload: { list_id: STACK_ID, film_id: 6, film_title: 'Not mine' } },
+    ]);
+    mount();
+    const answer = await mockStackOpts!.queryFn();
+    expect(answer.list).toMatchObject({
+      title: 'Noir, Amended', filmCount: 2,
+      films: [{ id: 2, title: 'Film 2', poster_path: null }, { id: 9, title: 'Late Spring', poster_path: '/l.jpg' }],
+    });
+  });
+
+  it('a later page leaves out a film taken off offline, which the house still holds', async () => {
+    const { StackService } = jest.requireMock('@/src/services/StackService') as { StackService: { getStackItemsPage: jest.Mock } };
+    const { getOfflineQueue } = jest.requireMock('@/src/utils/offlineQueue') as { getOfflineQueue: jest.Mock };
+    StackService.getStackItemsPage.mockReset();
+    StackService.getStackItemsPage.mockResolvedValueOnce([{ id: 4, title: 'Film 4', poster_path: null }, { id: 5, title: 'Film 5', poster_path: null }]);
+    getOfflineQueue.mockReturnValue([{ type: 'remove_film_from_list', owner: 'u1', payload: { list_id: STACK_ID, film_id: 4 } }]);
+    try {
+      const r = mount({ films: [1, 2, 3].map((n) => ({ id: n, title: `Film ${n}`, poster_path: null })), filmCount: 4 });
+      await act(async () => {});
+      await act(async () => { await mockEndReached?.(); });
+      expect(r.queryByText('Film 4')).toBeNull();
+      expect(r.getByText('Film 5')).toBeTruthy();
+    } finally {
+      getOfflineQueue.mockReturnValue([]);
+    }
   });
 
   it('is one source of truth, so a refetch cannot double-count', () => {
@@ -1300,13 +1341,14 @@ describe('a stack past its first page (P4.9)', () => {
   it('is drawn whole as it is scrolled: the 501st film after the 500, in rank order, read once', async () => {
     const { StackService } = jest.requireMock('@/src/services/StackService') as { StackService: { getStackItemsPage: jest.Mock } };
     StackService.getStackItemsPage.mockResolvedValueOnce([{ id: 501, title: 'Film 501', poster_path: null }]);
-    const first = Array.from({ length: 500 }, (_, i) => ({ id: i + 1, title: `Film ${i + 1}`, poster_path: null }));
+    const first = Array.from({ length: 500 }, (_, i) => ({ id: 1001 + i, title: `Film ${i + 1}`, poster_path: null }));
     const r = mount({ films: first, filmCount: 501 });
     await act(async () => {});
     expect(r.getByText(/FIRST 500/)).toBeTruthy();
 
     await act(async () => { await mockEndReached?.(); });
-    expect(StackService.getStackItemsPage.mock.calls).toEqual([[STACK_ID, 500]]);
+    // Asked after the last film drawn, by that film: never by a count of films.
+    expect(StackService.getStackItemsPage.mock.calls).toEqual([[STACK_ID, first[first.length - 1]!.id]]);
     expect(r.queryByText(/FIRST/)).toBeNull();
     const drawn = JSON.stringify(r.toJSON());
     expect(drawn.indexOf('Film 500')).toBeLessThan(drawn.indexOf('Film 501'));
@@ -1318,6 +1360,31 @@ describe('a stack past its first page (P4.9)', () => {
   // It draws all 501 rows (the list stand-in renders every one): 1.4 s alone, past 5 s under the
   // whole suite's eight workers.
   }, 20_000);
+
+  it('a later page that could not be read is said at the foot, the grid asks no more as it is scrolled, and TRY AGAIN asks again', async () => {
+    const { StackService } = jest.requireMock('@/src/services/StackService') as { StackService: { getStackItemsPage: jest.Mock } };
+    StackService.getStackItemsPage.mockReset();
+    StackService.getStackItemsPage
+      .mockRejectedValueOnce(new TypeError('Network request failed'))
+      .mockResolvedValueOnce([{ id: 4, title: 'Film 4', poster_path: null }]);
+    const first = [1, 2, 3].map((n) => ({ id: n, title: `Film ${n}`, poster_path: null }));
+    const r = mount({ films: first, filmCount: 4 });
+    await act(async () => {});
+
+    await act(async () => { await mockEndReached?.(); });
+    expect(StackService.getStackItemsPage).toHaveBeenCalledTimes(1);
+    // Said, and never a grid that ends as though whole: its size still says FIRST 3.
+    expect(r.getByText('The rest could not be reached.')).toBeTruthy();
+    expect(r.getByText(/FIRST 3/)).toBeTruthy();
+    // Scrolling to the end asks nothing more.
+    expect(mockEndReached).toBeNull();
+
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again: ask for the rest')); });
+    expect(StackService.getStackItemsPage).toHaveBeenCalledTimes(2);
+    expect(r.getByText('Film 4')).toBeTruthy();
+    expect(r.queryByText('The rest could not be reached.')).toBeNull();
+    expect(r.queryByText(/FIRST/)).toBeNull();
+  });
 });
 
 describe('a stack opened from the Reel’s card draws what the card held, at once (P4.53)', () => {

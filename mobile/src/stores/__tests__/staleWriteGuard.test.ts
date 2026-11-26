@@ -1,288 +1,240 @@
 /**
- * staleWriteGuard.test.ts — batch 23
+ * staleWriteGuard.test.ts — a sign-out is never undone by a late answer.
  * ──────────────────────────────────
- * Every async store operation reads the member at its start, awaits the network,
- * then writes. None re-checked in between, so a logout during that await let the
- * previous member's data land in a store the reset had already cleared — and a
- * store change triggers a disk write, so it also re-created the persisted copy
- * that #64 deletes.
+ * Work begun for one member waits on the house, then writes. A member who signed out during
+ * that wait (or out and in again as another) had the last one's data laid back into a store the
+ * reset had already cleared, saved again to the phone, or queued to be sent in their name.
  *
- * This is an ENUMERATION, not a list of the sites I happened to notice. It walks
- * the slices, finds every operation that writes after awaiting, and demands a
- * guard. A new operation of that shape fails this the day it is written.
+ * This is an ENUMERATION over the whole app, read with TypeScript's parser
+ * (test-utils/afterAwait.js): every function that waits (an async one, or a promise's tail),
+ * each judged on its own, nested handlers included, and every write it makes after its wait (a
+ * store's own `set(`, an act called on a store, a save to the phone, a write queued as the member)
+ * must stand behind `stillSignedIn(id)` or `memberUnchanged(id)` made after its own last wait,
+ * with the id taken before it. A new function of that shape fails this the day it is written.
  */
 import * as path from 'path';
+import ts from 'typescript';
 import { readCode } from '@/test-utils/readCode';
 import { files as universe } from '@/test-utils/universe';
 
+const AW = require('@/test-utils/afterAwait') as typeof import('@/test-utils/afterAwait');
 const ROOT = path.join(__dirname, '..', '..', '..');
+const rel = (f: string) => path.relative(ROOT, f).split(path.sep).join('/');
 
-const SLICES = [
-  'src/stores/domain/logSlice/helpers/logOperations.ts',
-  'src/stores/domain/watchlistSlice.ts',
-  'src/stores/domain/listSlice.ts',
-  'src/stores/domain/archiveSlice.ts',
-  'src/stores/domain/interactionSlice.ts',
-  'src/stores/domain/socialSlice.ts',
-  // The film store was where #64 was filed, but the defect belongs to any store
-  // a logout clears. notificationStore is the sharpest case outside it: it
-  // PERSISTS, and its reset deletes that file to stop a documented "cross-user
-  // notification leak" — so a late write rewrites the very key the defence
-  // removes. The defence and the defect were in the same file.
-  'src/stores/notificationStore.ts',
-  // All eight stores that register a logout reset are now covered. These three
-  // were pinned as a known gap for one round and then closed; the pin fired when
-  // they were fixed, which is what promoted them here.
-  'src/stores/blockStore.ts',
-  'src/stores/lounge.ts',
-  // The report store, which arrived here by the guard below firing. It had
-  // never registered a logout reset AT ALL — the only store with member state
-  // that did not — so it sat outside this rule entirely. `recentReports` is
-  // what stops a second report on the same content, and left standing it told
-  // the next member on the phone that they had already reported a filing they
-  // had never seen: turned away from the moderation tools by somebody else's
-  // history. Registering the reset put it in scope here, and its three writes
-  // after an await needed the guard.
-  'src/stores/reportStore.ts',
-  // The Dispatch. It registers a logout reset like the rest, and it is the
-  // sharpest case since content.ts: a feed, a per-viewer set of certified and
-  // saved ids, and six acts that each await a write. This test found it the day
-  // the file was written, which is the whole point of enumerating rather than
-  // listing what somebody noticed.
-  'src/stores/dispatch.ts',
-  // The auth store itself, which was never listed — it owns the logout, so it
-  // read as the one file that could not have this defect. It can. `updateUser`
-  // awaits a profile write and, on failure, puts the PREVIOUS member's whole
-  // user object back into the store and writes it to encrypted storage under
-  // their id. A logout landing inside that window resurrected the member who
-  // had just left, identity and cache together.
-  //
-  // Its sign-in paths are a different matter and are listed below: they
-  // legitimately establish a member where there was none, and a
-  // captured-member guard is meaningless for them.
-  'src/stores/auth.ts',
-];
+const APP = universe('appCode', { ext: ['.ts', '.tsx'] }).map((f) => ({ file: rel(f), text: readCode(f) }));
 
 /**
- * Operations that write after an await and MUST NOT carry the guard.
+ * Functions that write after a wait and MUST NOT carry the check, by file and name.
  *
- * Signing in is the whole exception: `memberUnchanged(null)` asks "nobody then,
- * nobody now", and a successful sign-in makes that false by design. Guarding
- * these would throw away the session the member just created. Named one at a
- * time so the exemption cannot quietly widen.
+ * Signing in is the whole exception: `memberUnchanged(null)` asks "nobody then, nobody now", and a
+ * successful sign-in makes that false by design. Checking these would throw away the session the
+ * member just created. Named one at a time so the exemption cannot quietly widen.
  */
 const ESTABLISHES_A_MEMBER = new Set([
-  'login', 'signup', 'restoreSession', 'logout', 'deleteAccount',
+  'src/stores/auth.ts:login', 'src/stores/auth.ts:signup', 'src/stores/auth.ts:restoreSession',
+  'src/stores/auth.ts:logout', 'src/stores/auth.ts:deleteAccount', 'src/stores/auth.ts:adoptSession',
 ]);
 
-type Write = { at: number; text: string };
-type Op = {
-  file: string;
-  name: string;
-  line: number;
-  /** Writes that come after an await, guarded or not. */
-  writes: { line: number; text: string }[];
-  unguarded: { line: number; text: string }[];
-};
-
-/** The helpers that save to the phone, or queue an act to be sent as the member. */
-const PERSISTS = /\b(?:enqueueMutation|persistFollowingToCache|setSensitive)\(|\bstorage\.set\(/g;
-/** A store method that only reads, or starts its own operation for whoever is signed in now. */
-const READS = /^(?:is|has|get|can|fetch|load|hydrate)(?:[A-Z]|$)/;
-
 /**
- * Every write in a body: the store's own `set(`; a method that is not a read,
- * called on `getState()`, on `get()`, or on a variable holding
- * `useXStore.getState()`; and the persist helpers above. Seeing only bare
- * `set(` left followUser's shape unseen: `store.addFollowing(` after an await,
- * then `persistFollowingToCache(` under the id it began with.
+ * A store method that only reads, or starts its own operation for whoever is signed in now: the
+ * session read again (`restoreSession`), a count read (`readTally`), a channel opened for the
+ * member here now (`setupRealtime`).
  */
-function writesIn(body: string): Write[] {
-  const out: Write[] = [];
-  for (const m of body.matchAll(/(^|[^.\w])set\(/g)) out.push({ at: m.index! + m[1].length, text: 'set(' });
-  for (const m of body.matchAll(/\b(?:getState|get)\(\)\.(\w+)\(/g)) {
-    if (!READS.test(m[1])) out.push({ at: m.index!, text: m[0] });
-  }
-  for (const held of body.matchAll(/\b(?:const|let)\s+(\w+)\s*=\s*use\w+Store\.getState\(\)\s*;/g)) {
-    for (const m of body.matchAll(new RegExp(`\\b${held[1]}\\.(\\w+)\\(`, 'g'))) {
-      if (!READS.test(m[1])) out.push({ at: m.index!, text: m[0] });
-    }
-  }
-  for (const m of body.matchAll(PERSISTS)) out.push({ at: m.index!, text: m[0] });
-  return out;
+const READS = /^(?:is|has|get|can|fetch|load|hydrate|read|restore|setup)(?:[A-Z]|$)/;
+/** The helpers that save to the phone, or queue an act to be sent as the member. */
+const PERSISTS = /^(?:enqueueMutation|persistFollowingToCache|setSensitive)$/;
+
+type Write = { line: number; text: string };
+type Op = { file: string; name: string; line: number; writes: Write[]; unguarded: Write[] };
+
+/** The name a function is known by: its own, or "<owner> (a handler)" for one passed along. */
+function nameOf(fn: ts.Node): string {
+  if (ts.isFunctionDeclaration(fn) && fn.name) return fn.name.text;
+  const p = fn.parent;
+  if (p && ts.isVariableDeclaration(p) && ts.isIdentifier(p.name)) return p.name.text;
+  if (p && ts.isPropertyAssignment(p) && (ts.isIdentifier(p.name) || ts.isStringLiteral(p.name))) return p.name.text;
+  if (ts.isMethodDeclaration(fn) && ts.isIdentifier(fn.name)) return fn.name.text;
+  if (p && ts.isCallExpression(p) && /^(React\.)?useCallback$/.test(p.expression.getText()) && ts.isVariableDeclaration(p.parent) && ts.isIdentifier(p.parent.name)) return p.parent.name.text;
+  return `${AW.namedOwner(fn)?.name ?? 'the file'} (a handler)`;
 }
 
-/** `set({ loading: false })`: in-flight flags lowered to the reset's own value, nobody's data. */
-const LOWERS_FLAGS = /^set\(\{(?:\s*\w+:\s*false\s*,?)+\s*\}\)/;
-
-/** `name: (…) => Type,` is a type (an interface member, a parameter), never a definition. */
-const TYPE_ONLY = /^\s*\w+\??:\s*\(.*=>\s*[^\s(={][^(={]*$/;
-
-/** The `{…}` block that closes just before `pos`, as [open, close]; null if none does. */
-function blockBefore(body: string, pos: number): [number, number] | null {
-  let close = pos - 1;
-  while (close >= 0 && /\s/.test(body[close])) close--;
-  if (body[close] !== '}') return null;
-  let depth = 0;
-  for (let i = close; i >= 0; i--) {
-    if (body[i] === '}') depth++;
-    else if (body[i] === '{' && --depth === 0) return [i, close];
+/**
+ * Each write a call makes, as its text, or null: a store's own `set(`; an act that is not a read,
+ * called on `getState()`, on `get()`, or on a name holding `useXStore.getState()`; and the
+ * persist helpers above. Seeing only bare `set(` left followUser's shape unseen:
+ * `store.addFollowing(` after an await, then `persistFollowingToCache(` under the id it began with.
+ */
+function writeOf(call: ts.CallExpression, held: Set<string>, sf: ts.SourceFile): string | null {
+  const callee = call.expression;
+  if (ts.isIdentifier(callee)) {
+    if (callee.text === 'set') return 'set(';
+    return PERSISTS.test(callee.text) ? `${callee.text}(` : null;
   }
+  if (!ts.isPropertyAccessExpression(callee)) return null;
+  const act = callee.name.text;
+  const on = callee.expression;
+  if (ts.isIdentifier(on) && on.text === 'storage' && act === 'set') return 'storage.set(';
+  if (READS.test(act)) return null;
+  if (ts.isCallExpression(on) && on.arguments.length === 0) {
+    const from = on.expression.getText(sf);
+    if (from === 'get' || /(^|\.)getState$/.test(from)) return `${from === 'get' ? 'get' : 'getState'}().${act}(`;
+  }
+  if (ts.isIdentifier(on) && held.has(on.text)) return `${on.text}.${act}(`;
   return null;
 }
 
-/**
- * The code a `catch` or `finally` at `pos` can be reached from: its `try`
- * block, and for a `finally` the `catch` before it too. A write in it follows
- * an await only if one of those holds an await.
- */
-function reachedFrom(body: string, pos: number): string {
-  const last = blockBefore(body, pos);
-  if (!last) return '';
-  const head = body.slice(0, last[0]);
-  const isCatch = /(?<![.\w])catch\s*(?:\([^)]*\))?\s*$/.exec(head);
-  const tryBlock = isCatch ? blockBefore(body, isCatch.index) : null;
-  return body.slice(tryBlock ? tryBlock[0] : last[0], last[1] + 1);
-}
+/** `set({ loading: false })`: in-flight flags lowered to the reset's own value, nobody's data. */
+const LOWERS_FLAGS = /^set\(\{(?:\s*\w+:\s*false\s*,?)+\s*\}\)$/;
 
-/** The first `}` after `from` that closes a block opened before it. */
-function blockEnd(body: string, from: number): number {
-  let depth = 0;
-  for (let i = from; i < body.length; i++) {
-    if (body[i] === '{') depth++;
-    else if (body[i] === '}' && depth-- === 0) return i;
-  }
-  return body.length;
-}
+/** The check: `stillSignedIn(id)` or `memberUnchanged(id)`, true when it is still the member. */
+const check = (e: ts.Expression): 'here' | null =>
+  ts.isCallExpression(e) && ts.isIdentifier(e.expression) && /^(?:stillSignedIn|memberUnchanged)$/.test(e.expression.text) ? 'here' : null;
 
-/**
- * The code a check at `g` protects. `if (!stillSignedIn(id)) return;` protects
- * the rest of its block; `if (stillSignedIn(id)) set(…)`, its own line, or the
- * block its line opens. A check in any other shape protects nothing.
- */
-function coverOf(body: string, g: number): [number, number] {
-  const lineStart = body.lastIndexOf('\n', g) + 1;
-  const lineEnd = body.indexOf('\n', g) < 0 ? body.length : body.indexOf('\n', g);
-  const line = body.slice(lineStart, lineEnd);
-  if (/!\s*$/.test(body.slice(lineStart, g))) {
-    return /^\s*if\s*\(.*\)\s*(?:\{[^}]*)?\b(?:return|throw)\b/.test(line) ? [g, blockEnd(body, g)] : [g, g];
-  }
-  return /\{\s*$/.test(line) ? [g, blockEnd(body, lineEnd)] : [g, lineEnd];
-}
-
-const at = (body: string, re: RegExp) => [...body.matchAll(re)].map((m) => m.index!);
-
-function opsIn(file: string): Op[] {
-  const src = readCode(path.join(ROOT, file));
-  const lines = src.split(/\r?\n/);
-
-  // A boundary is a DEFINITION, never a bare call: a store member (`name: (`,
-  // `name: async (`, `name = (`), a top-level `const name = (`, or a `function`
-  // declaration. Read as a boundary, `set(` or `if (` would cut an operation in
-  // two, and a check in one piece would be counted for writes in another.
-  const starts: number[] = [];
-  lines.forEach((l, i) => {
-    if (TYPE_ONLY.test(l)) return;
-    if (/^\s{0,6}(export const )?\w+\s*(?::|=)\s*(?:async\s*)?\(/.test(l)
-      || /^(?:export\s+)?(?:const|let)\s+\w+\s*=\s*(?:async\s*)?\(/.test(l)
-      || /^\s{0,4}(?:export\s+)?(?:async\s+)?function\s+\w+/.test(l)) starts.push(i);
-  });
-
+/** Each function that waits in a file, with its writes after the wait and those no check covers. */
+export function opsIn(file: string, text: string): Op[] {
+  const sf = AW.parse(file, text);
+  // Every name holding a store's live state (`const store = useSocialStore.getState();`).
+  const held = new Set<string>();
+  const findHeld = (n: ts.Node) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer
+      && /^use\w+Store\.getState\(\)$/.test(n.initializer.getText(sf))) held.add(n.name.text);
+    ts.forEachChild(n, findHeld);
+  };
+  findHeld(sf);
   const out: Op[] = [];
-  for (let s = 0; s < starts.length; s++) {
-    const start = starts[s];
-    const end = s + 1 < starts.length ? starts[s + 1] : lines.length;
-    const body = lines.slice(start, end).join('\n');
-    const lineOf = (offset: number) => start + 1 + (body.slice(0, offset).match(/\n/g) ?? []).length;
-
-    const name = (/^\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)/.exec(lines[start])
-      ?? /^\s*(?:export\s+)?(?:const\s+|let\s+)?(\w+)\s*[:=]/.exec(lines[start]) ?? [])[1] ?? '';
-    // Exempt: a subscription (no caller; logout unsubscribes it, tested below), and sign-in/out.
-    if (/^subscribeTo\w+$/.test(name) || ESTABLISHES_A_MEMBER.has(name)) continue;
-
-    const awaits = at(body, /\bawait\b/g);
-    // `await get().removeLog(` — the call is made before its own await waits.
-    const before = (w: Write) => awaits.filter((a) => a < w.at && !/^await[\s\w.$]*$/.test(body.slice(a, w.at)));
-    const barriers = at(body, /(?<![.\w])(?:catch\s*[({]|finally\s*\{)/g)
-      .filter((c) => /\bawait\b/.test(reachedFrom(body, c)));
-    // Either primitive: `stillSignedIn` needs a member, `memberUnchanged` also
-    // accepts nobody-then-nobody-now, for stores anonymous browsing reaches.
-    const guards = at(body, /\b(?:stillSignedIn|memberUnchanged)\(/g);
-    const after = writesIn(body).filter((w) => before(w).length > 0);
-    if (after.length === 0) continue;
-
-    // Guarded only by a check after the write's OWN last wait — or after the
-    // `catch` it sits in, which any wait in the `try` can reach — and one that
-    // covers it. A check anywhere in the body passed followUser, whose writes
-    // after its first await were checked by nothing.
-    const unguarded = after.filter((w) => {
-      if (LOWERS_FLAGS.test(body.slice(w.at))) return false;
-      const barrier = Math.max(...before(w), ...barriers.filter((b) => b < w.at));
-      return !guards.some((g) => g > barrier && g < w.at && coverOf(body, g)[1] > w.at);
-    });
-    const where = (w: Write) => ({ line: lineOf(w.at), text: w.text });
-    out.push({ file, name, line: start + 1, writes: after.map(where), unguarded: unguarded.map(where) });
+  for (const body of AW.waitingBodies(sf)) {
+    const name = nameOf(body.fn);
+    // Exempt: a subscription (no caller; logout unsubscribes it, tested below), and signing in or out,
+    // with every handler inside them.
+    let exempt = false;
+    for (let fn: ts.Node | null = body.fn; fn; fn = AW.ownerOf(fn)) {
+      const own = nameOf(fn);
+      if (/^subscribeTo\w+$/.test(own) || ESTABLISHES_A_MEMBER.has(`${file}:${own}`)) exempt = true;
+    }
+    if (exempt) continue;
+    const writes = AW.ownNodes(body.fn, (m) => {
+      if (!ts.isCallExpression(m)) return null;
+      const t = writeOf(m, held, sf);
+      return t ? { call: m, text: t } : null;
+    }).filter((w) => AW.lastWaitBefore(body, w.call.getStart(), w.call) >= 0);
+    if (writes.length === 0) continue;
+    // Checked only by a check made after the write's OWN last wait, that covers it. A check
+    // anywhere in the body passed followUser, whose writes after its first await were checked by nothing.
+    const unguarded = writes.filter((w) => !LOWERS_FLAGS.test(w.call.getText(sf))
+      && !AW.coveredAfter(body.fn, w.call, AW.lastWaitBefore(body, w.call.getStart(), w.call), check));
+    const where = (w: { call: ts.CallExpression; text: string }) => ({ line: AW.lineOf(sf, w.call), text: w.text });
+    out.push({ file, name, line: AW.lineOf(sf, body.fn), writes: writes.map(where), unguarded: unguarded.map(where) });
   }
   return out;
 }
 
-describe('a write that lands after logout must not repopulate the store', () => {
-  it('EVERY write after an await is checked after its own last await — enumerated', () => {
-    const unguarded = SLICES.flatMap(opsIn)
-      .flatMap((o) => o.unguarded.map((w) => `${o.file}:${w.line}  ${o.name}  ${w.text}`));
-    expect(unguarded).toEqual([]);
+const opsOf = (file: string) => opsIn(file, readCode(path.join(ROOT, file)));
+const listed = (ops: Op[]) => ops.flatMap((o) => o.unguarded.map((w) => `${o.file}:${w.line}  ${o.name}  ${w.text}`));
+
+/**
+ * A write after a wait judged to need no check, by file, name and write, with why. Each is still
+ * found: an entry no longer found fails, so the list never outlives its code.
+ */
+const JUDGED: Record<string, string> = {
+  'app/(tabs)/darkroom.tsx  fetchContent  storage.set(': 'the archive\'s sheet kept for these words or settings: the house\'s public films, no member\'s, kept the same for whoever is signed in',
+  'src/lib/pushPrimer.ts  offerWord  storage.set(': 'when the phone last asked to send word: the phone\'s own question, asked once per phone, no member\'s data',
+  'src/utils/requestReview.ts  maybeRequestReview  storage.set(': 'when the phone last asked for a store review, and how often: the phone\'s, as the store\'s own sheet is',
+  'src/lib/authSessionStorage.ts  readItem  storage.set(': 'the session store supabase-js writes under its own lock: it is the sign-out\'s own record, moved from the keychain as read',
+  'src/lib/authSessionStorage.ts  setItem  storage.set(': 'the session store supabase-js writes under its own lock: the session it hands over is the one signed in',
+  'app/_layout.tsx  prepare (a handler)  getState().syncFromServer(': 'the member is read after the wait, from the session now held: the read is for whoever is signed in, and checks its own answer',
+  'app/dispatch/series/[id].tsx  SeriesScreen (a handler)  getState().givenAgain(': 'takes away gone marks learned before the moment it asked at; a sign-out\'s reset raises that count, so after one it takes nothing',
+  'src/hooks/useDispatchArchive.ts  page  getState().givenAgain(': 'takes away gone marks learned before the moment it asked at; a sign-out\'s reset raises that count, so after one it takes nothing',
+  'src/hooks/useMemberRoom.ts  page  getState().givenAgain(': 'takes away gone marks learned before the moment it asked at; a sign-out\'s reset raises that count, so after one it takes nothing',
+  'src/hooks/useEditProfile.ts  save  getState().syncGlobalAvatar(': 'lays the face the house now holds for this member on their own words wherever drawn: true for any reader, and after a reset there are none to lay it on',
+  'src/stores/vaultStore.ts  loadForLog  getState().clear(': 'the cure itself: an answer for a member who has left empties the Vault, never fills it',
+};
+
+/** Stores known to write after a wait (the sweep's first twelve): each must still be seen to. */
+const KNOWN_WRITERS = [
+  'src/stores/domain/logSlice/helpers/logOperations.ts', 'src/stores/domain/watchlistSlice.ts',
+  'src/stores/domain/listSlice.ts', 'src/stores/domain/archiveSlice.ts', 'src/stores/domain/interactionSlice.ts',
+  'src/stores/domain/socialSlice.ts', 'src/stores/notificationStore.ts', 'src/stores/blockStore.ts',
+  'src/stores/lounge.ts', 'src/stores/reportStore.ts', 'src/stores/dispatch.ts', 'src/stores/auth.ts',
+];
+
+describe('each shape says no on planted code', () => {
+  it('a write after a wait with no check, a check before the wait, or a check in another handler', () => {
+    expect(listed(opsIn('src/stores/planted.ts', `export const s = {
+      plain: async () => { const id = me(); const r = await ask(); set({ r }); },
+      early: async () => { const id = me(); if (!stillSignedIn(id)) return; const r = await ask(); set({ r }); },
+    };
+    export function Screen() {
+      const one = async () => { const id = me(); await ask(); if (!stillSignedIn(id)) return; useX.getState().keep(1); };
+      const two = async () => { await ask(); useX.getState().keep(2); storage.set('k', 'v'); };
+      return null; }`))).toEqual([
+      'src/stores/planted.ts:2  plain  set(',
+      'src/stores/planted.ts:3  early  set(',
+      'src/stores/planted.ts:7  two  getState().keep(',
+      'src/stores/planted.ts:7  two  storage.set(',
+    ]);
   });
 
-  it('EVERY swept file yields a write after an await — none is read as empty', () => {
+  it('a handler passed along, a promise tail, a held store and the persist helpers are each judged on their own', () => {
+    expect(listed(opsIn('src/hooks/planted.ts', `export function useP() {
+      const store = useSocialStore.getState();
+      useEffect(() => { ask().then((r) => { store.addFollowing(r); }); }, []);
+      return { onPress: async () => { const id = me(); await ask(); if (memberUnchanged(id)) enqueueMutation('a'); setSensitive('k', 'v'); } };
+    }`))).toEqual([
+      'src/hooks/planted.ts:3  useP (a handler)  store.addFollowing(',
+      'src/hooks/planted.ts:4  onPress  setSensitive(',
+    ]);
+  });
+
+  it('a wait in an arm that leaves does not reach past it; one in a try whose finally holds the write does', () => {
+    expect(listed(opsIn('src/components/planted.tsx', `export function Desk() {
+      const onFile = async () => {
+        if (editing) { try { await amend(); } finally { setSending(false); } return; }
+        useD.getState().file(1);
+      };
+      const onSave = async () => {
+        try { if (editing) { await amend(); return; } } finally { useD.getState().keep(2); }
+      };
+      return null; }`))).toEqual(['src/components/planted.tsx:7  onSave  getState().keep(']);
+  });
+
+  it('passes a check after the wait, a read, a write before any wait, flags let down, and signing in', () => {
+    expect(listed(opsIn('src/stores/auth.ts', `export const s = {
+      a: async () => { const id = me(); set({ busy: true }); const r = await ask(); if (!stillSignedIn(id)) return; set({ r }); },
+      b: async () => { await ask(); get().fetchMore(); set({ loading: false, saving: false }); },
+      c: async () => { const id = me(); await get().removeLog(1); },
+      login: async () => { const r = await ask(); set({ user: r }); },
+    };`))).toEqual([]);
+  });
+});
+
+describe('a write that lands after a sign-out must not put the member back', () => {
+  it('EVERY write after a wait, in the whole app, is checked after its own last wait — enumerated', () => {
+    const hits = APP.flatMap((f) => listed(opsIn(f.file, f.text)));
+    const keyOf = (h: string) => h.replace(/:\d+ {2}/, '  ');
+    expect(hits.filter((h) => !(keyOf(h) in JUDGED))).toEqual([]);
+    for (const k of Object.keys(JUDGED)) expect([k, hits.some((h) => keyOf(h) === k)]).toEqual([k, true]);
+  });
+
+  it('reads the app, not an empty sweep: each store known to write after a wait is seen to', () => {
     // A file whose writes the walker cannot see would read as clean, and pass.
-    const empty = SLICES.filter((f) => opsIn(f).every((o) => o.writes.length === 0));
-    expect(empty).toEqual([]);
+    expect(APP.length).toBeGreaterThan(400);
+    const blind = KNOWN_WRITERS.filter((f) => opsOf(f).every((o) => o.writes.length === 0));
+    expect(blind).toEqual([]);
   });
 
   it("sees followUser's writes: through a held store, and through the persist helpers", () => {
-    const follow = opsIn('src/stores/domain/socialSlice.ts').find((o) => o.name === 'followUser');
+    const follow = opsOf('src/stores/domain/socialSlice.ts').find((o) => o.name === 'followUser');
     const seen = new Set(follow?.writes.map((w) => w.text));
     expect([...seen]).toEqual(expect.arrayContaining([
       'store.addRequested(', 'persistFollowingToCache(', 'enqueueMutation(', 'getState().removeFollowing(',
     ]));
   });
 
-  it('EVERY store that registers a logout reset is covered — no store is exempt', () => {
-    // The film store was where #64 was filed, and sweeping only its slices left
-    // the identical defect in four other stores. This pins the LIST itself, so
-    // adding a store with a reset handler and forgetting to sweep it fails here.
-    // Wherever it lives: a store outside src/stores can register a reset too.
-    // Read as code: a comment that names the call is not one.
-    const resetting = new Set<string>();
-    for (const full of universe('appCode')) {
-      const src = readCode(full);
-      if (/registerStoreReset\(/.test(src) && !/export function registerStoreReset/.test(src)) {
-        resetting.add(path.relative(ROOT, full).replace(/\\/g, '/'));
-      }
-    }
-
-    // A store with a reset must either be swept, or hold no unchecked write
-    // after an await. Anything else is an unswept store.
-    const unswept = [...resetting].filter(
-      (f) => !SLICES.includes(f) && opsIn(f).some((o) => o.unguarded.length > 0)
-    );
-    expect(resetting.size).toBeGreaterThan(SLICES.length / 2);
-    expect(unswept).toEqual([]);
-  });
-
   it('the exempted subscription is actually torn down on logout', () => {
-    // The exemption above is only honest if this holds. The lounge reset used to
-    // set `_activeChannel = null` — forgetting the reference while leaving the
-    // subscription LIVE — so a message arriving after logout still reached the
-    // handler and wrote into the store the reset had just cleared. Nulling a
-    // variable is not unsubscribing. notificationStore tears its channel down;
-    // this one did not.
+    // The exemption above is only honest if this holds. Nulling a variable is not unsubscribing:
+    // the reset leaves every open room through its close, which calls removeChannel.
     const lounge = readCode(path.join(ROOT, 'src/stores/lounge.ts'));
     const reset = lounge.slice(lounge.lastIndexOf('registerStoreReset('));
-    // Since review round 9 the salon opens through openChannel, and the reset leaves it through that
-    // close: the close calls removeChannel, and keeps a channel still waiting on its last leave from
-    // opening for the next member. Since round 12 every open room's close (two copies of one room
-    // hold one channel, left with the last).
     expect(reset).toMatch(/for \(const leave of \[\.\.\._roomLeaves\]\)/);
     expect(reset).toMatch(/_salons\.clear\(\)/);
     expect(lounge).toMatch(/const close = openChannel\(`lounge-\$\{loungeId\}`/);
@@ -292,14 +244,10 @@ describe('a write that lands after logout must not repopulate the store', () => 
     expect(readCode(path.join(ROOT, 'src/lib/openChannel.ts'))).toMatch(/supabase\.removeChannel\(channel\)/);
   });
 
-  it('the guard compares against a CAPTURED id, never the current one', () => {
-    // `stillSignedIn(useAuthStore.getState().user?.id)` compares the current
-    // member to themselves and is always true — a guard that cannot fail. I
-    // wrote exactly that once while building this; the id must be captured
-    // before the await.
-    for (const file of SLICES) {
-      const src = readCode(path.join(ROOT, file));
-      expect(src).not.toMatch(/stillSignedIn\(\s*useAuthStore\.getState\(\)/);
-    }
+  it('the check compares against a CAPTURED id, never the current one', () => {
+    // `stillSignedIn(useAuthStore.getState().user?.id)` compares the current member to themselves
+    // and is always true: a check that cannot fail. The id must be taken before the wait.
+    const live = APP.filter((f) => /(?:stillSignedIn|memberUnchanged)\(\s*use\w+Store\.getState\(\)/.test(f.text)).map((f) => f.file);
+    expect(live).toEqual([]);
   });
 });

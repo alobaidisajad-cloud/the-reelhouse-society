@@ -106,6 +106,14 @@
    "area": "AREA-6"
   },
   {
+   "key": "mobile/src/lib/pushNotifications.ts › storePushToken › rpc forget_push_token",
+   "file": "mobile/src/lib/pushNotifications.ts",
+   "name": "storePushToken",
+   "does": "rpc",
+   "target": "forget_push_token",
+   "area": "AREA-6"
+  },
+  {
    "key": "mobile/src/lib/pushNotifications.ts › removePushToken › rpc forget_push_token",
    "file": "mobile/src/lib/pushNotifications.ts",
    "name": "removePushToken",

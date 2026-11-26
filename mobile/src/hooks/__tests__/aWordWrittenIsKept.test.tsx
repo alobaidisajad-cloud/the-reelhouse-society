@@ -3,8 +3,9 @@
  * log or a stack, a salon message) is kept once the box rests, taken up when they come back to the
  * same place and never in another, and let go once the house or the queue has it (P4.14, P4.32).
  */
+import { useState } from 'react';
 import { act, renderHook } from '@testing-library/react-native';
-import { KEPT_WORDS_REST_MS, useKeptWords } from '../useKeptWords';
+import { KEPT_WORDS_REST_MS, putBackWords, useKeptWords } from '../useKeptWords';
 import { useAuthStore } from '@/src/stores/auth';
 
 const mockDrafts = new Map<string, string>();
@@ -77,4 +78,42 @@ it('keeps the last place\'s words at once when the box moves to another place be
   await rerender({ room: 'R2' });
   expect(mockDrafts.get('me|salon|R1')).toBe('For room one');
   expect(result.current[0]).toBe('');
+});
+
+/** A sheet closed and opened again on the same place (stage C, every word written is kept). */
+it('a box closed (no place) and opened again on the same place opens on the words kept for it', async () => {
+  const { result, rerender } = await renderHook(({ at }: { at: string | null }) => useKeptWords('me', 'report', at), { initialProps: { at: 'log:L' as string | null } });
+  await act(async () => { result.current[1]('What was seen'); });
+  await rerender({ at: null });
+  // Kept once the box closed; written again elsewhere meanwhile (another phone's put-back), the box
+  // opens on the words as the phone holds them.
+  expect(mockDrafts.get('me|report|log:L')).toBe('What was seen');
+  mockDrafts.set('me|report|log:L', 'What was seen, and more');
+  await rerender({ at: 'log:L' });
+  expect(result.current[0]).toBe('What was seen, and more');
+});
+
+it('words let go as the box goes in the same moment are not kept again by its going', async () => {
+  // The docket holds the place, as AppealsDocket holds its hearing: let go and closed in one act.
+  const { result } = await renderHook(() => {
+    const [at, setAt] = useState<string | null>('A');
+    return { kept: useKeptWords('me', 'hearing', at), setAt };
+  });
+  jest.useFakeTimers();
+  await act(async () => { result.current.kept[1]('The word for the member'); });
+  // Heard: let go, and the sheet closes in the same moment, before the words rested.
+  await act(async () => { result.current.kept[2](); result.current.setAt(null); });
+  expect(mockDrafts.has('me|hearing|A')).toBe(false);
+});
+
+it('words refused after their box went are put back, after any written there since, for the member signed in alone', () => {
+  putBackWords('me', 'share', 'F', 'A word with the film');
+  expect(mockDrafts.get('me|share|F')).toBe('A word with the film');
+  mockDrafts.set('me|share|G', 'Newer words');
+  putBackWords('me', 'share', 'G', 'The refused words');
+  expect(mockDrafts.get('me|share|G')).toBe('Newer words\n\nThe refused words');
+  putBackWords('me', 'share', 'H', '   ');
+  useAuthStore.setState({ user: { id: 'someone-else' } } as never);
+  putBackWords('me', 'share', 'I', 'Not theirs to keep');
+  expect([mockDrafts.has('me|share|H'), mockDrafts.has('me|share|I')]).toEqual([false, false]);
 });

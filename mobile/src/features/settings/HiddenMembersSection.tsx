@@ -53,7 +53,7 @@ export function HiddenMembersSection() {
   }
   const readBlocks = useCallback(() => {
     if (!me) return;
-    void useBlockStore.getState().syncFromServer(me).then(() => setAsking(false));
+    void useBlockStore.getState().syncFromServer(me).finally(() => setAsking(false));
   }, [me]);
   useEffect(() => { if (wantsBlocks) readBlocks(); }, [wantsBlocks, readBlocks]);
   const askBlocks = useCallback(() => { setAsking(true); readBlocks(); }, [readBlocks]);

@@ -25,12 +25,17 @@ import { MAX_LENGTHS, sanitizeInput } from '@/src/utils/sanitizeInput';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { overlayTop, useSheetBottom } from '@/src/components/layout/navMetrics';
 import { useStillHere } from '@/src/hooks/useStillHere';
+import { useKeptWords } from '@/src/hooks/useKeptWords';
+import { useAuthStore } from '@/src/stores/auth';
 
 export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
 
   const sheetFoot = useSheetBottom();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  // The name and what the salon is for are kept as they are written (useKeptWords, 'founding'): a
+  // sheet closed, the app gone, the corridor left, and they open on them again until a room is made.
+  const me = useAuthStore((s) => s.user?.id);
+  const [name, setName, letGoName] = useKeptWords(me, 'founding', 'name');
+  const [description, setDescription, letGoDescription] = useKeptWords(me, 'founding', 'description');
   const [isPrivate, setIsPrivate] = useState(false);
   const [creating, setCreating] = useState(false);
   const createLounge = useLoungeStore(s => s.createLounge);
@@ -89,7 +94,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
     onGone: () => {
       if (!wasSuccessRef.current) return;
       wasSuccessRef.current = false;
-      setName(''); setDescription(''); setIsPrivate(false);
+      letGoName(); letGoDescription(); setIsPrivate(false);
       roomId.current = Crypto.randomUUID();
     },
   });

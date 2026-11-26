@@ -7,7 +7,8 @@
  * and each rule's cases are a test of their own, named for what the case proves, so a rule broken
  * in layout.cjs fails its own named test. Every case the self-test's own list holds (its CASES,
  * read from its syntax tree) must be answered in every pass, and every other check it makes must
- * say ok.
+ * say ok. Every kind a measuring tool reports is proven both ways, a check that says it and a near
+ * miss the phone allows (its PROVES list), held here with no browser and read back from the run.
  *
  * The check measures in a real browser (Playwright's Chromium, installed beside the repo's root
  * packages). Where none is installed (the jest parts in CI install none; CI runs the self-test in
@@ -17,6 +18,7 @@ import { spawnSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import ts from 'typescript';
+import { files, rel } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const SELFTEST = join(MOBILE, 'mockups', 'tools', 'selftest.cjs');
@@ -47,6 +49,155 @@ export function casesOf(text: string): string[] {
   visit(sf);
   return names;
 }
+
+/** The kinds a measuring tool reports: each `kind:` it writes into a finding (in capitals), and each line it prints led by one. */
+export function kindsOf(text: string): string[] {
+  const sf = ts.createSourceFile('tool.cjs', text, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const kinds = new Set<string>();
+  const literals = (e: ts.Expression): string[] => (ts.isStringLiteral(e) ? [e.text]
+    : ts.isConditionalExpression(e) ? [...literals(e.whenTrue), ...literals(e.whenFalse)] : []);
+  const visit = (n: ts.Node) => {
+    if (ts.isPropertyAssignment(n) && n.name.getText(sf) === 'kind') literals(n.initializer).filter((k) => /^[A-Z]{3,}$/.test(k)).forEach((k) => kinds.add(k));
+    if (ts.isCallExpression(n) && n.expression.getText(sf) === 'console.log' && n.arguments[0] && ts.isTemplateExpression(n.arguments[0])) {
+      const led = /^(?<kind>[A-Z]{3,}) {2}/.exec(n.arguments[0].head.text)?.groups?.kind;
+      if (led) kinds.add(led);
+    }
+    ts.forEachChild(n, visit);
+  };
+  visit(sf);
+  return [...kinds].sort();
+}
+
+/** Every kind the measuring tools report: each tool of mockups/tools/ the scripts universe holds, the self-test aside. */
+function toolKinds(): string[] {
+  const tools = files('scripts').filter((f) => /^mockups\/tools\/[^/]+\.c?js$/.test(rel(f)) && !rel(f).endsWith('/selftest.cjs'));
+  return [...new Set(tools.flatMap((f) => kindsOf(readFileSync(f, 'utf8'))))].sort();
+}
+
+type Proof = { says: string[]; allows: string[] };
+
+/** A top-level object the self-test declares, by name. */
+function declared(sf: ts.SourceFile, name: string): ts.ObjectLiteralExpression | null {
+  let found: ts.ObjectLiteralExpression | null = null;
+  const visit = (n: ts.Node) => {
+    if (ts.isVariableDeclaration(n) && n.name.getText(sf) === name && n.initializer && ts.isObjectLiteralExpression(n.initializer)) found = n.initializer;
+    ts.forEachChild(n, visit);
+  };
+  visit(sf);
+  return found;
+}
+
+/** The self-test's PROVES: for each kind, the checks that say it and the near misses that must not. */
+export function provesOf(text: string): Record<string, Proof> {
+  const sf = ts.createSourceFile('selftest.cjs', text, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const out: Record<string, Proof> = {};
+  const strings = (o: ts.ObjectLiteralExpression, key: string) => {
+    const p = o.properties.find((x): x is ts.PropertyAssignment => ts.isPropertyAssignment(x) && x.name.getText(sf) === key);
+    return p && ts.isArrayLiteralExpression(p.initializer) ? p.initializer.elements.filter(ts.isStringLiteral).map((s) => s.text) : [];
+  };
+  for (const p of declared(sf, 'PROVES')?.properties ?? []) {
+    if (ts.isPropertyAssignment(p) && ts.isObjectLiteralExpression(p.initializer)) out[p.name.getText(sf)] = { says: strings(p.initializer, 'says'), allows: strings(p.initializer, 'allows') };
+  }
+  return out;
+}
+
+/** The kinds each of the self-test's CASES wants, in any pass: the kind names its expectation holds, through the constants it names. */
+export function wantsOf(text: string): Record<string, string[]> {
+  const sf = ts.createSourceFile('selftest.cjs', text, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const consts = new Map<string, ts.Expression>();
+  const collect = (n: ts.Node) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) consts.set(n.name.text, n.initializer);
+    ts.forEachChild(n, collect);
+  };
+  collect(sf);
+  const kinds = (e: ts.Node, depth = 0): string[] => {
+    if (ts.isStringLiteral(e)) return /^[A-Z]{3,}$/.test(e.text) ? [e.text] : [];
+    if (ts.isIdentifier(e)) { const made = consts.get(e.text); return made && depth < 2 && ts.isObjectLiteralExpression(made) ? kinds(made, depth + 1) : []; }
+    const out: string[] = [];
+    ts.forEachChild(e, (c) => { out.push(...kinds(c, depth)); });
+    return out;
+  };
+  const out: Record<string, string[]> = {};
+  for (const p of declared(sf, 'CASES')?.properties ?? []) {
+    if (ts.isPropertyAssignment(p) && ts.isArrayLiteralExpression(p.initializer) && p.initializer.elements[1]) {
+      out[p.name.getText(sf)] = [...new Set(kinds(p.initializer.elements[1]))].sort();
+    }
+  }
+  return out;
+}
+
+/** What is wrong with the proofs: a kind proven one way or none, a proof of a kind not reported, a case that wants other than the list says. */
+export function unproven(kinds: string[], proves: Record<string, Proof>, wants: Record<string, string[]>, text: string): string[] {
+  const wrong: string[] = [];
+  for (const k of kinds) {
+    const p = proves[k];
+    if (!p) wrong.push(`${k}: no proof`);
+    else if (!p.says.length || !p.allows.length) wrong.push(`${k}: proven ${p.says.length ? 'only as a fault' : 'only as allowed'}`);
+  }
+  for (const k of Object.keys(proves)) if (!kinds.includes(k)) wrong.push(`${k}: proven, and not a kind it reports`);
+  for (const [k, p] of Object.entries(proves)) {
+    for (const label of new Set([...p.says, ...p.allows])) {
+      const w = wants[label];
+      if (w) {
+        if (p.says.includes(label) && !w.includes(k)) wrong.push(`${k}: the case ${label} does not want it`);
+        if (p.allows.includes(label) && w.includes(k)) wrong.push(`${k}: the near miss ${label} wants it`);
+      } else {
+        // A check of its own: its label printed whole, or its name beside the prefix it is printed under.
+        const dash = label.indexOf('-');
+        const there = text.includes(label) || (dash > 0 && text.includes(`${label.slice(0, dash + 1)}\${`) && text.includes(`'${label.slice(dash + 1)}'`));
+        if (!there) wrong.push(`${k}: ${label} is no case and no check of the self-test`);
+      }
+    }
+  }
+  return wrong;
+}
+
+describe('every kind the measuring tools report is proven both ways', () => {
+  const KINDS = toolKinds();
+  const TEST = readFileSync(SELFTEST, 'utf8');
+
+  it('reads the kinds, the proofs and the cases, not empty lists', () => {
+    expect(KINDS.length).toBeGreaterThan(20);
+    expect(KINDS).toEqual(expect.arrayContaining(['EDGE', 'BASELINE', 'LOST', 'UNMEASURED']));
+    expect(Object.keys(provesOf(TEST)).length).toBeGreaterThan(20);
+    expect(wantsOf(TEST).hangicon).toEqual(['HANG']);
+    expect(wantsOf(TEST).nameclipped).toEqual(['CUT', 'NAME']);
+    expect(wantsOf(TEST).control).toEqual([]);
+  });
+
+  it('each kind has a check that says it and a near miss the phone allows, each wanting what the list says', () => {
+    expect(unproven(KINDS, provesOf(TEST), wantsOf(TEST), TEST)).toEqual([]);
+  });
+
+  it('finds the kinds it was made for, put back: four with no check at all, and a rule proven only as a fault', () => {
+    const proves = provesOf(TEST);
+    const without = Object.fromEntries(Object.entries(proves).filter(([k]) => !['ORDER', 'BENEATH', 'COLOUR', 'SHORT'].includes(k)));
+    expect(unproven(KINDS, without, wantsOf(TEST), TEST).sort()).toEqual([
+      'BENEATH: no proof', 'COLOUR: no proof', 'ORDER: no proof', 'SHORT: no proof',
+    ]);
+    const oneWay = { ...proves, SMALL: { says: proves.SMALL?.says ?? [], allows: [] } };
+    expect(unproven(KINDS, oneWay, wantsOf(TEST), TEST)).toEqual(['SMALL: proven only as a fault']);
+  });
+
+  it('can say NO: a kind with no proof, one proven one way, a near miss that wants it, a label that is nothing', () => {
+    const planted = `found.push({ kind: 'RUN' }); found.push({ kind: x ? 'FAINT' : 'RUN' }); console.log(\`GONE  \${f}\`);`;
+    expect(kindsOf(planted)).toEqual(['FAINT', 'GONE', 'RUN']);
+    const wants = { run: ['RUN'], control: [] };
+    expect(unproven(['RUN', 'FAINT', 'GONE'], {
+      RUN: { says: ['run'], allows: ['run'] },
+      FAINT: { says: ['control'], allows: [] },
+      OLD: { says: ['run'], allows: ['nowhere'] },
+    }, wants, '')).toEqual([
+      'FAINT: proven only as a fault',
+      'GONE: no proof',
+      'OLD: proven, and not a kind it reports',
+      'RUN: the near miss run wants it',
+      'FAINT: the case control does not want it',
+      'OLD: the case run does not want it',
+      'OLD: nowhere is no case and no check of the self-test',
+    ]);
+  });
+});
 
 type Row = { label: string; ok: boolean; line: string };
 let rows: Row[] = [];
@@ -83,6 +234,12 @@ withTheBrowser('the layout check’s own self-test', () => {
     expect([exit, rows.length > 0]).toEqual([0, true]);
   });
 
+  it('proves every kind the tools report both ways, by what this very run answered (proves-*)', () => {
+    const kinds = toolKinds();
+    for (const k of kinds) holds(`proves-${k}`);
+    expect(rows.filter((r) => r.label.startsWith('proves-')).length).toBe(kinds.length);
+  });
+
   describe('OFF: words no scroll brings onto the screen (round 14)', () => {
     it('a sheet at the foot taller than the screen, nothing in it scrolling, has its title above the top (riseoff)', () => holds('riseoff'));
     it('a card laid from its top on a screen-sized page runs past the home indicator’s edge (cardfoot)', () => holds('cardfoot'));
@@ -112,6 +269,17 @@ withTheBrowser('the layout check’s own self-test', () => {
     it('a line under a docked bar at every scroll position is covered (scrollstuck)', () => holds('scrollstuck'));
     it('the same line on a page the app hides from every reader is not asked (scrollhidden)', () => holds('scrollhidden'));
     it('past the window, a chip keeps its halo along the scroll; 2pt short is small, and past the scroll’s end is cut (fold)', () => holds('fold'));
+  });
+
+  describe('ORDER, BENEATH, COLOUR and SHORT: each said, and its near miss allowed', () => {
+    it('a stop built after one it is drawn above is read out of turn (order-late)', () => holds('order-late'));
+    it('the same two built in the order drawn are read in turn (order-kept)', () => holds('order-kept'));
+    it('a page under a sheet laid over it is still reached by a screen reader (beneath-sheet)', () => holds('beneath-sheet'));
+    it('the same page hidden while the sheet is up is not asked (beneath-hidden)', () => holds('beneath-hidden'));
+    it('a chosen option told from its sibling by colour alone is said (colour-alone)', () => holds('colour-alone'));
+    it('the same option underlined as well is told apart in any colour (colour-marked)', () => holds('colour-marked'));
+    it('a one-line text the phone ends with an ellipsis is listed as shortened (short-cut)', () => holds('short-cut'));
+    it('the same words with room for them are not (short-fits)', () => holds('short-fits'));
   });
 
   describe('a view hidden at rest holds nothing to measure (round 14)', () => {

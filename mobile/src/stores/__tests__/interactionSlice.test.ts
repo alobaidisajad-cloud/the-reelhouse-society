@@ -221,6 +221,60 @@ describe('interactionSlice', () => {
             expect(Object.keys(state._listEndorsedIndex).sort()).toEqual(['list-1', 'stack-now']);
             expect(state.interactions.filter((i) => i.type === 'endorse_list').map((i) => i.targetId).sort()).toEqual(['list-1', 'stack-now']);
         });
+
+        /** The read's answers, each held until let go: rows as the house held them when asked. */
+        const heldReads = () => {
+            const going: ((rows: unknown[]) => void)[] = [];
+            (supabase.from as jest.Mock) = jest.fn(() => {
+                const chain: Record<string, unknown> = {};
+                for (const k of ['select', 'eq', 'order']) chain[k] = () => chain;
+                chain.limit = () => new Promise((res) => { going.push((rows) => res({ data: rows, error: null })); });
+                return chain;
+            });
+            return going;
+        };
+
+        it('a read asked before the member takes a heart back does not draw it again', async () => {
+            useLogStore.setState({ interactions: [endorsement('log-9')], _endorsedIndex: { 'log-9': endorsement('log-9') } });
+            const answers = heldReads();
+            const read = useLogStore.getState().fetchEndorsements();
+            await useLogStore.getState().toggleEndorse('log-9');
+            answers[0]!([{ target_log_id: 'log-9', created_at: '2024-01-03' }]);
+            await read;
+            expect(useLogStore.getState()._endorsedIndex['log-9']).toBeUndefined();
+            expect(useLogStore.getState().interactions.some((i) => i.targetId === 'log-9')).toBe(false);
+        });
+
+        it('a stack’s read asked before the member takes its heart back does not draw it again', async () => {
+            useLogStore.setState({ interactions: [endorsement('list-9', 'endorse_list')], _listEndorsedIndex: { 'list-9': endorsement('list-9', 'endorse_list') } });
+            const answers = heldReads();
+            const read = useLogStore.getState().fetchListEndorsements();
+            await useLogStore.getState().toggleListEndorse('list-9');
+            answers[0]!([{ target_list_id: 'list-9', created_at: '2024-01-03' }]);
+            await read;
+            expect(useLogStore.getState()._listEndorsedIndex['list-9']).toBeUndefined();
+        });
+
+        it('of two reads, the older answering last is not laid over the newer', async () => {
+            const answers = heldReads();
+            const older = useLogStore.getState().fetchEndorsements();
+            const newer = useLogStore.getState().fetchEndorsements();
+            // Taken back on another phone between the two asks: the newer answer has it no longer.
+            answers[1]!([]);
+            await newer;
+            answers[0]!([{ target_log_id: 'log-gone', created_at: '2024-01-03' }]);
+            await older;
+            expect(useLogStore.getState()._endorsedIndex['log-gone']).toBeUndefined();
+
+            const lists = heldReads();
+            const olderList = useLogStore.getState().fetchListEndorsements();
+            const newerList = useLogStore.getState().fetchListEndorsements();
+            lists[1]!([]);
+            await newerList;
+            lists[0]!([{ target_list_id: 'list-gone', created_at: '2024-01-03' }]);
+            await olderList;
+            expect(useLogStore.getState()._listEndorsedIndex['list-gone']).toBeUndefined();
+        });
     });
 
     // ── toggleListEndorse ──

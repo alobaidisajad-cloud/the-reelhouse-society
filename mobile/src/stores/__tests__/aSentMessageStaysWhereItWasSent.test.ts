@@ -164,3 +164,44 @@ describe('a message the house took', () => {
     expect(mine().map((m) => [m.content, m.status])).toEqual([['Hello.', 'failed']]);
   });
 });
+
+// The same holds for a message sent again: its answer, once another room is open, is marked in the
+// words kept for its own room, never left 'sending' there with no way to send it again.
+describe('a failed message sent again', () => {
+  /** A message refused, so it stands failed in its room, then sent again with the answer held. */
+  const sendAgainHeld = async () => {
+    mockRefused = true;
+    await useLoungeStore.getState().sendMessage(L1, 'Hello.');
+    mockRefused = false;
+    const [failed] = mine();
+    expect(failed?.status).toBe('failed');
+    const answer = holdTheSend();
+    const again = useLoungeStore.getState().retryMessage(failed!.id);
+    await settle();
+    expect(mine().map((m) => m.status)).toEqual(['sending']);
+    await useLoungeStore.getState().fetchMessages(L2);
+    return { answer, again };
+  };
+
+  it('sent again, answered after another room was opened, is sent in the room’s kept words', async () => {
+    const { answer, again } = await sendAgainHeld();
+    answer();
+    await expect(again).resolves.toBe(true);
+    expect(mine()).toEqual([]);                   // never drawn into the room on screen
+
+    mockUnreachable = true;
+    await useLoungeStore.getState().fetchMessages(L1);
+    expect(mine().map((m) => [m.content, m.status])).toEqual([['Hello.', 'sent']]);
+  });
+
+  it('sent again, refused after another room was opened, is failed in the room’s kept words: offered again', async () => {
+    const { answer, again } = await sendAgainHeld();
+    mockRefused = true;
+    answer();
+    await expect(again).resolves.toBe(false);
+
+    mockUnreachable = true;
+    await useLoungeStore.getState().fetchMessages(L1);
+    expect(mine().map((m) => [m.content, m.status])).toEqual([['Hello.', 'failed']]);
+  });
+});

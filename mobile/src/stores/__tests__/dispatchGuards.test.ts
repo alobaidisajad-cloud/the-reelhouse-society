@@ -14,6 +14,7 @@
  */
 import { useDispatch } from '../dispatch';
 import type { Filing } from '../dispatchTypes';
+import { resetMarkCounts } from '../markCounts';
 
 let mockOutcome: 'ok' | 'refused' | 'offline' | 'paced' | 'broken' = 'ok';
 let mockRow: Record<string, unknown> | null = null;
@@ -135,6 +136,8 @@ beforeEach(() => {
   mockRow = row();
   mockViewer = {};
   mockSent.length = 0; mockQueued.length = 0;
+  // A new session: no act of the last test's still on its way (the queue here never delivers).
+  resetMarkCounts();
   reset();
 });
 

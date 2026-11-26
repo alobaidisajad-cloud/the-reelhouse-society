@@ -97,7 +97,10 @@ describe('#24 · the client keyset still matches the RPC ordering', () => {
     // ordered last, and the list is never re-sorted before that read. A perfect
     // keyset paged from the wrong row still skips reports — and a skipped page
     // here is an unreviewed report.
-    expect(code).toMatch(/const last = priorityItems\[priorityItems\.length - 1\];/);
+    // A page more reads on from the docket's last case; a read again reads each page on from that
+    // page's last case.
+    expect(code).toMatch(/loadMoreMutation\.mutate\(priorityCursorOf\(priorityItems\[priorityItems\.length - 1\]\)\)/);
+    expect(code).toMatch(/readAsFar\(readPriority, priorityCursorOf, /);
     expect(code).toMatch(/report_count: Number\(last\.report_count/);
     expect(code).toMatch(/created_at: last\.created_at/);
     expect(code).toMatch(/id: last\.id/);

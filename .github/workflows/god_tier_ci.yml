@@ -162,6 +162,9 @@ jobs:
       - name: Each rule fires on a planted secret, and the baseline excuses none
         run: node mobile/scripts/secrets-planted.cjs
 
+      - name: The whole history holds no secret but those the register counts
+        run: node mobile/scripts/secrets-history.cjs
+
       - name: The commits this brings hold no secret
         env:
           BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}

@@ -316,8 +316,8 @@ export function PasswordChangePanel() {
   const [endingOthers, setEndingOthers] = React.useState(false);
   const endOthers = async () => {
     setEndingOthers(true);
-    const ended = await endOtherSessions();
-    if (isMountedRef.current) setEndingOthers(false);
+    let ended = false;
+    try { ended = await endOtherSessions(); } finally { if (isMountedRef.current) setEndingOthers(false); }
     if (ended) reelToast.success('Every other device is signed out.');
     else reelToast.error('The house could not be reached. Nothing was signed out.');
   };

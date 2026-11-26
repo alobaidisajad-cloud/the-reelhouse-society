@@ -1281,6 +1281,63 @@ describe('SAVE', () => {
     expect(mockPrevent.enabled).toBe(true);
     r.unmount();
   });
+
+  // The lead's call (stage C, EXIT): the ways out are never held over a filing; the amendments are
+  // kept as a draft, and refused after the member left, Settings opens with them and what was said.
+  describe('left while the amendments were on their way', () => {
+    const disk = new Map<string, string>();
+    const storage = () => jest.requireMock('@/src/stores/mmkv-storage').storage as { set: jest.Mock; getString: jest.Mock; delete: jest.Mock };
+    beforeEach(() => {
+      disk.clear();
+      storage().set.mockImplementation((k: string, v: string) => { disk.set(k, v); });
+      storage().getString.mockImplementation((k: string) => disk.get(k));
+      storage().delete.mockImplementation((k: string) => { disk.delete(k); });
+    });
+    afterEach(() => { storage().set.mockReset(); storage().getString.mockReset(); storage().delete.mockReset(); });
+
+    const leaveWhileFiling = async (answer: (settle: { res: (v: 'saved') => void; rej: (e: Error) => void }) => void) => {
+      let held: { res: (v: 'saved') => void; rej: (e: Error) => void } = { res: () => {}, rej: () => {} };
+      mockSavePrefs.mockImplementation(() => new Promise<'saved'>((res, rej) => { held = { res, rej }; }));
+      const r = await changeAndSave();
+      r.unmount();
+      await act(async () => { answer(held); });
+    };
+
+    it('refused after leaving: the return opens with the changes unsent, and the refusal said', async () => {
+      await leaveWhileFiling(({ rej }) => rej(new Error('refused')));
+      toast().error.mockClear();
+      const back = await settle(mount());
+      await act(async () => {});
+      expect(back.getByLabelText('New Followers').props.value).toBe(false);
+      expect(back.getByLabelText('Save settings').props.accessibilityState).toEqual(expect.objectContaining({ disabled: false }));
+      expect(toast().error).toHaveBeenCalledWith('Your last amendments could not be filed. Your amendments are here, unsent.');
+      back.unmount();
+    });
+
+    it('filed after leaving: the return opens on the house\'s settings, the draft gone', async () => {
+      await leaveWhileFiling(({ res }) => res('saved'));
+      expect([...disk.keys()].filter((k) => k.includes('_settings'))).toEqual([]);
+      toast().error.mockClear();
+      const back = await settle(mount());
+      await act(async () => {});
+      expect(back.getByLabelText('New Followers').props.value).toBe(true);
+      expect(toast().error).not.toHaveBeenCalled();
+      back.unmount();
+    });
+
+    it('a draft discarded at the way out does not come back', async () => {
+      mockSavePrefs.mockRejectedValue(new Error('refused'));
+      const r = await changeAndSave();
+      await act(async () => { mockPrevent.cb?.({ data: { action: { type: 'GO_BACK' } } }); });
+      const discard = (mockAlert.mock.calls.at(-1)?.[2] as { text: string; onPress?: () => void }[]).find((b) => b.text === 'Discard');
+      await act(async () => { discard?.onPress?.(); });
+      r.unmount();
+      const back = await settle(mount());
+      await act(async () => {});
+      expect(back.getByLabelText('New Followers').props.value).toBe(true);
+      back.unmount();
+    });
+  });
 });
 
 // Review round 11: a right code checked while the line was down was called "invalid or has expired",

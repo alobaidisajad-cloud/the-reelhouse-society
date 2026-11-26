@@ -90,11 +90,71 @@ function ownNodes(fn, pick) {
  * Where the last wait before `pos` ends, in this function's own body: an await, or for a tail the
  * start of its body. -1 when nothing waits before it.
  */
-function lastWaitBefore(body, pos) {
-  if (!body.waits) body.waits = ownNodes(body.fn, (n) => (ts.isAwaitExpression(n) || (ts.isForOfStatement(n) && n.awaitModifier) ? n.getEnd() : null));
-  const before = body.waits.filter((w) => w <= pos);
+function lastWaitBefore(body, pos, node) {
+  if (!body.waits) body.waits = ownNodes(body.fn, (n) => (ts.isAwaitExpression(n) || (ts.isForOfStatement(n) && n.awaitModifier) ? n : null));
+  const before = body.waits.filter((w) => w.getEnd() <= pos && !(node && (otherBranch(w, node) || leavesFirst(w, node) || leavesItsArm(w, node)))).map((w) => w.getEnd());
   if (before.length) return Math.max(...before);
   return body.tail ? body.fn.body.getStart() : -1;
+}
+
+/** The arm of an if, or of a `?:`, that a node stands in: 'then', 'else', or null below another. */
+function armOf(parent, child) {
+  if (ts.isIfStatement(parent)) return child === parent.thenStatement ? 'then' : child === parent.elseStatement ? 'else' : null;
+  if (ts.isConditionalExpression(parent)) return child === parent.whenTrue ? 'then' : child === parent.whenFalse ? 'else' : null;
+  return null;
+}
+
+/** A wait inside a return (or throw) that does not hold the node: the run that waits there leaves. */
+function leavesFirst(w, node) {
+  for (let n = w.parent; n && !isFn(n); n = n.parent) {
+    if (ts.isReturnStatement(n) || ts.isThrowStatement(n)) return !(node.getStart() >= n.getStart() && node.getEnd() <= n.getEnd());
+  }
+  return false;
+}
+
+/** A statement that always ends the run here: a return or a throw, at the end of every path through it. */
+function endsTheRun(s) {
+  if (!s) return false;
+  if (ts.isReturnStatement(s) || ts.isThrowStatement(s)) return true;
+  if (ts.isBlock(s)) return s.statements.length > 0 && endsTheRun(s.statements[s.statements.length - 1]);
+  if (ts.isIfStatement(s)) return endsTheRun(s.thenStatement) && endsTheRun(s.elseStatement);
+  return false;
+}
+
+/**
+ * A wait in an arm of an if that ends the run (`if (editing) { await amend(); return; }`), the
+ * node outside that arm: the run that waits there leaves before it. Not when the node stands in a
+ * catch or finally of a try around that if, which the run still passes on its way out.
+ */
+function leavesItsArm(w, node) {
+  for (let n = w; n && n.parent && !isFn(n.parent); n = n.parent) {
+    const p = n.parent;
+    if (!(ts.isIfStatement(p) && (n === p.thenStatement || n === p.elseStatement) && endsTheRun(n))) continue;
+    if (node.getStart() >= n.getStart() && node.getEnd() <= n.getEnd()) return false;
+    for (let t = p.parent; t && !isFn(t); t = t.parent) {
+      if (ts.isTryStatement(t) && t.tryBlock.getStart() <= p.getStart() && p.getEnd() <= t.tryBlock.getEnd()) {
+        const outside = [t.catchClause, t.finallyBlock].filter(Boolean);
+        if (outside.some((o) => node.getStart() >= o.getStart() && node.getEnd() <= o.getEnd())) return false;
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
+/** Two nodes in opposite arms of one if (or `?:`): a run that passes one never passes the other. */
+function otherBranch(a, b) {
+  const path = new Map();
+  for (let n = a; n && n.parent; n = n.parent) path.set(n.parent, n);
+  for (let n = b; n && n.parent; n = n.parent) {
+    const viaA = path.get(n.parent);
+    if (viaA) {
+      const x = armOf(n.parent, viaA);
+      const y = armOf(n.parent, n);
+      return !!x && !!y && x !== y;
+    }
+  }
+  return false;
 }
 
 const strip = (e) => { while (e && ts.isParenthesizedExpression(e)) e = e.expression; return e; };

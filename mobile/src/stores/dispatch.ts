@@ -24,6 +24,7 @@
  * editorial content, and a stale copy on disk is worse than a fetch on launch.
  */
 import * as Crypto from 'expo-crypto';
+import { useMemo } from 'react';
 import { create } from 'zustand';
 
 import { houseIso } from '@/src/lib/houseClock';
@@ -44,11 +45,13 @@ import { saidOfAFailure } from '../utils/saidOfARefusal';
 import { sanitizeInput } from '../utils/sanitizeInput';
 import { withAbortSignal } from '../utils/withAbortSignal';
 import { withTimeout } from '../utils/withTimeout';
+import { keysetAfter, type KeyAxis } from '../utils/keysetCursor';
 import { useAuthStore } from './auth';
 import { useBlockStore } from './blockStore';
 import { useOfflineQueueStore } from './offlineQueueStore';
 import { memberUnchanged } from './domain/helpers/sessionGuard';
 import { registerStoreReset } from './resetAllStores';
+import { beginTap, markOf, queueTap, settleTap, tappedSince, withdrawTap, type MarkKind, type Tap } from './markCounts';
 import {
   COMMENT_PAGE_SIZE,
   CRITIQUE_COLUMNS,
@@ -109,6 +112,16 @@ export interface DispatchState {
    */
   acted: Record<string, Acted>;
   /**
+   * The filings a read on this phone found the house no longer gives this member (withheld, withdrawn,
+   * or their author has blocked them since). The paper lets go of its copy at once; a list holding its
+   * own (a room, an archive, a series) draws through asTheHouseNowHolds, so the row leaves there too.
+   * Each mark is the goneMoment it was learned at: a list's read asked after it that gives the filing
+   * again (a verdict overturned) takes the mark away (givenAgain).
+   */
+  gone: Record<string, number>;
+  /** A list's read, asked at `asked` (goneMoment), gave these filings: a mark learned before it goes. */
+  givenAgain: (ids: readonly string[], asked: number) => void;
+  /**
    * The critiques this member wrote (+1) or took back (-1) on this phone, by filing. A list holding
    * its own copy of a filing (a room, an archive) read its critique count once, and printed it still
    * after the member critiqued the filing from it, beside the paper's new count (review round 8): it
@@ -161,12 +174,12 @@ export interface DispatchState {
   /** Whether the server has more beyond what has been asked for. */
   critiquesHasMore: Record<string, boolean>;
   /**
-   * Where the next page begins: the rows the house has sent, less those withdrawn since. The rows
-   * HELD counted the member's own new critique, set at the top whatever the order, and under
-   * CERTIFIED (where it sorts below) the next page began one past the true next row and skipped it.
-   * Too few asks a row twice, which the merge drops; too many loses one.
+   * Where the next page begins: after the last row the house sent, by its own place in the order
+   * (its certifications, when it was filed, its id), never by a count of rows. A count moved with
+   * every critique filed or withdrawn meanwhile, and a row was skipped or asked twice; the rows HELD
+   * also count the member's own new critique, set at the top whatever the order.
    */
-  critiquesRead: Record<string, number>;
+  critiquesAfter: Record<string, CritiqueKey>;
   /**
    * Whether the last page asked for could not be read: the footer says so and asks again. A first
    * page that failed was drawn as no critiques under a MORE that pressed did nothing.
@@ -314,6 +327,64 @@ const heldFiling = (st: DispatchState, id: string): Filing | null =>
   st.filings.find((f) => f.id === id) ?? st.opened[id] ?? null;
 
 /**
+ * Each filing's reads, numbered by thing: one filing read whole (hydrate), its ballot's count
+ * (readTally), its critiques' pages (a first page takes the next number; a next page asks under the
+ * number of the first page it continues). An answer is laid only while its number is still the
+ * thing's latest: a read asked again meanwhile (a notice, a pull, the order changed) answers for
+ * itself, and the older answer, landing last, is dropped. They only rise: a sign-out never sets one
+ * back, or a read still out for the member who left could match the next one's.
+ */
+const filingReads = new Map<string, number>();
+const tallyReads = new Map<string, number>();
+const critiqueReads = new Map<string, number>();
+
+/**
+ * Whether the member's own act on a thing (kept in the shared acts ledger, markCounts, from the tap
+ * until the house has it), made since `askedAt` or still on its way, or waiting in the queue, is
+ * newer than a read asked at `askedAt`: that read's answer about it is not laid over the act.
+ */
+function actedSince(kind: MarkKind, id: string, askedAt: number): boolean {
+  if (tappedSince(kind, id, askedAt)) return true;
+  return useOfflineQueueStore.getState().queued.some((m) => {
+    const mark = markOf(m as { type: string; payload: Record<string, unknown> });
+    return !!mark && mark[0] === kind && mark[1] === id;
+  });
+}
+
+/** An act begun: its taps in the ledger, each settled, queued or withdrawn as the act ends. */
+function beginActs(marks: [MarkKind, string][]): { settle: () => void; queue: () => void; withdraw: () => void } {
+  const taps: [MarkKind, string, Tap][] = marks.map(([kind, id]) => [kind, id, beginTap(kind, id, 1)]);
+  return {
+    settle: () => { for (const [kind, id, tap] of taps) settleTap(kind, id, tap); },
+    queue: () => { for (const [kind, id, tap] of taps) queueTap(kind, id, tap); },
+    withdraw: () => { for (const [kind, id, tap] of taps) withdrawTap(kind, id, tap); },
+  };
+}
+
+/** A critique's place in its order, as the house sent it: the next page begins after it. */
+export interface CritiqueKey { certifyCount: number; createdAt: string; id: string }
+
+/** The axes a filing's critiques are ordered on, each with the value `after` holds (CERTIFIED: most certified, then newest). */
+function critiqueAxes(order: CritiqueOrder, after: CritiqueKey): KeyAxis[] {
+  const newest: KeyAxis[] = [
+    { column: 'created_at', direction: 'desc', value: after.createdAt },
+    { column: 'id', direction: 'desc', value: after.id },
+  ];
+  return order === 'CERTIFIED' ? [{ column: 'certify_count', direction: 'desc', value: after.certifyCount }, ...newest] : newest;
+}
+
+/** The last row of a page as sent that carries its place (a row the parser drops still stood in the order). */
+function lastKeyOf(rows: unknown[]): CritiqueKey | null {
+  for (let i = rows.length - 1; i >= 0; i -= 1) {
+    const r = rows[i] as { id?: unknown; created_at?: unknown; certify_count?: unknown } | null;
+    if (r && typeof r.id === 'string' && typeof r.created_at === 'string' && typeof r.certify_count === 'number') {
+      return { certifyCount: r.certify_count, createdAt: r.created_at, id: r.id };
+    }
+  }
+  return null;
+}
+
+/**
  * Change a filing in BOTH places at once.
  *
  * Written once because every optimistic update and every rollback has to touch
@@ -340,6 +411,30 @@ const patchActed = (
   ...patchFiling(st, id, next),
   acted: { ...st.acted, [id]: actedOf(next(heldFiling(st, id) ?? base)) },
 });
+
+/** The order gone marks are learned in (DispatchState.gone): a count, never a clock. */
+let goneSeq = 0;
+/** The moment a list's read is asked at, for givenAgain. */
+export const goneMoment = (): number => goneSeq;
+
+const withoutKeys = <T,>(o: Record<string, T>, keys: readonly string[]): Record<string, T> => {
+  const next = { ...o };
+  for (const k of keys) delete next[k];
+  return next;
+};
+
+/**
+ * A list's own copy of filings as the phone now knows them: what the member withdrew or amended
+ * here laid over each, and those the house no longer gives left out.
+ */
+export function asTheHouseNowHolds(
+  filings: readonly Filing[],
+  st: Pick<DispatchState, 'acted' | 'gone'>,
+): Filing[] {
+  return filings
+    .filter((f) => st.gone[f.id] === undefined)
+    .map((f) => (st.acted[f.id] ? { ...f, ...st.acted[f.id] } : f));
+}
 
 /**
  * The page as drawn: the member's filings still queued (`queued`, the queue's ids) laid at its
@@ -385,6 +480,7 @@ const emptyState = () => ({
   filings: [] as Filing[],
   opened: {} as Record<string, Filing>,
   acted: {} as Record<string, Acted>,
+  gone: {} as Record<string, number>,
   critiqued: {} as Record<string, number>,
   unsent: [] as Filing[],
   section: 'ALL' as Section,
@@ -405,7 +501,7 @@ const emptyState = () => ({
   critiquesLoading: {} as Record<string, boolean>,
   critiquesLoadingMore: {} as Record<string, boolean>,
   critiquesHasMore: {} as Record<string, boolean>,
-  critiquesRead: {} as Record<string, number>,
+  critiquesAfter: {} as Record<string, CritiqueKey>,
   critiquesFailed: {} as Record<string, boolean>,
   critiquesOrder: {} as Record<string, CritiqueOrder>,
   certifiedCritiqueIds: new Set<string>(),
@@ -561,8 +657,18 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
   keepOpened: (one) => set((st) => ({ opened: capOpened(st.opened, one.id, one) })),
 
+  givenAgain: (ids, asked) => {
+    const back = ids.filter((id) => (get().gone[id] ?? Infinity) <= asked);
+    if (back.length) set((st) => ({ gone: withoutKeys(st.gone, back) }));
+  },
+
   hydrate: async (id) => {
     const startedAs = useAuthStore.getState().user?.id ?? null;
+    // This read's number, and when it was asked: an older read of the filing landing after a newer
+    // one, or after the member's own act on it, is not laid over them.
+    const mine = (filingReads.get(id) ?? 0) + 1;
+    filingReads.set(id, mine);
+    const askedAt = Date.now();
     try {
       const { data, error } = await timed(
         (signal) =>
@@ -574,6 +680,12 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       );
       if (error) throw error;
       if (!memberUnchanged(startedAs)) return null;
+      const one = data ? (parseFilingRows([data]).filings[0] ?? null) : null;
+      // Read again since, or amended, ended, certified, answered or critiqued by the member since it
+      // was asked: what the phone holds is newer than this answer, and stays.
+      if (mine !== filingReads.get(id) || actedSince('filing', id, askedAt) || actedSince('filingCertify', id, askedAt)) {
+        return heldFiling(get(), id) ?? one;
+      }
       if (!data) {
         // The house no longer gives it to this member (withheld, withdrawn, or its author has
         // blocked them since the paper was read): the paper's copy goes too, or the reader drew
@@ -582,17 +694,15 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         const waiting = useOfflineQueueStore.getState().queued
           .some((m) => m.type === 'add_filing' && m.payload._tempId === id);
         if (!waiting) {
+          const at = ++goneSeq;
           set((st) => {
-            if (!st.filings.some((f) => f.id === id) && !st.opened[id]) return st;
             const opened = { ...st.opened };
             delete opened[id];
-            return { filings: st.filings.filter((f) => f.id !== id), opened };
+            return { filings: st.filings.filter((f) => f.id !== id), opened, gone: { ...st.gone, [id]: at } };
           });
         }
         return null;
       }
-      const { filings } = parseFilingRows([data]);
-      const one = filings[0] ?? null;
       if (!one) return null;
       // Kept on the row, where the reader reads it: in a component the essay would fall back
       // to its 500-character opening on the next render. Re-opening is then instant.
@@ -602,6 +712,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
           : st.filings,
         // Recorded (bounded) whether or not the page holds it, so acts find it after a cold open.
         opened: capOpened(st.opened, id, one),
+        // Given again (a verdict overturned): no longer gone from the lists holding it.
+        ...(st.gone[id] !== undefined ? { gone: withoutKeys(st.gone, [id]) } : {}),
       }));
       // Not waited for: the reader shows the filing, its marks unknown until read. A ballot this
       // member has voted in, still open, has its running count read once the vote is known.
@@ -735,6 +847,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       ...(opened ? { fullContent: opened.fullContent } : {}),
     }));
 
+    const acts = beginActs([['filing', id]]);
     set((st) => patchActed(st, id, (f) => ({
       ...f,
       title: clean.title !== undefined ? clean.title : f.title,
@@ -752,20 +865,23 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       // PostgREST answers with 200: the kept write reads that silence as refused.
       const kept = await keepFilingEdit(id, user.id, { ...dbUpdates, edited_at: now, updated_at: now }, was);
       if (kept === 'gone' || kept === 'refused') throw new Error('dispatch.amend: refused');
+      acts.settle();
       // Its words or its spoiler mark: the Lobby may be hanging it.
       wallMayHaveChanged();
     } catch (e) {
       // Neither queued as the next member nor put back on their page.
-      if (!memberUnchanged(startedAs)) throw e;
+      if (!memberUnchanged(startedAs)) { acts.withdraw(); throw e; }
       if (isNetworkError(e)) {
         if (enqueueMutation({
           type: 'update_filing',
           payload: { id, user_id: user.id, kind: filing.kind, updates: dbUpdates, was },
         })) {
+          acts.queue();
           flushOfflineQueue();
           return { offline: true };
         }
       }
+      acts.withdraw();
       set((st) => patchActed(st, id, () => before, before));
       throw e;
     }
@@ -794,21 +910,25 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       film: before.film ? { ...before.film, posterPath: null, backdropPath: null } : null,
       endedAt: houseIso(), endedBy: 'author',
     };
+    const acts = beginActs([['filing', id]]);
     set((st) => patchActed(st, id, () => ended, before));
 
     try {
       const { error } = await supabase.rpc('end_filing', { p_post: id, p_by: 'author' });
       if (error) throw error;
+      acts.settle();
       wallMayHaveChanged();
     } catch (e) {
       // Neither queued as the next member nor put back on their page.
-      if (!memberUnchanged(startedAs)) throw e;
+      if (!memberUnchanged(startedAs)) { acts.withdraw(); throw e; }
       if (isNetworkError(e)) {
         if (enqueueMutation({ type: 'end_filing', payload: { id, user_id: user.id } })) {
+          acts.queue();
           flushOfflineQueue();
           return { offline: true };
         }
       }
+      acts.withdraw();
       set((st) => patchActed(st, id, () => before, before));
       throw e;
     }
@@ -843,6 +963,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         if (refusedMark(error, next)) throw error;
       },
       { type: 'certify_filing', payload: { post_id: id, desired_state: next } },
+      [['filingCertify', id], ['filing', id]],
       () => {
         if (!memberUnchanged(user.id)) return;
         set((st) => {
@@ -887,6 +1008,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         if (refusedMark(error, next)) throw error;
       },
       { type: next ? 'save_filing' : 'unsave_filing', payload: { post_id: id, user_id: user.id } },
+      [['filingSave', id]],
       () => {
         if (!memberUnchanged(user.id)) return;
         set((st) => {
@@ -946,6 +1068,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         throw error;
       },
       { type: 'cast_vote', payload: { post_id: id, user_id: user.id, option_index: optionIndex } },
+      [['filingVote', id]],
       () => {
         if (!memberUnchanged(user.id)) return;
         set((st) => {
@@ -962,10 +1085,13 @@ export const useDispatch = create<DispatchState>((set, get) => ({
   readTally: async (id) => {
     const startedAs = useAuthStore.getState().user?.id ?? null;
     if (!startedAs) return;
+    // Asked after a vote and again after the ballot is read: the count laid is the latest asked.
+    const mine = (tallyReads.get(id) ?? 0) + 1;
+    tallyReads.set(id, mine);
     try {
       const { data, error } = await supabase.rpc('ballot_tally', { p_post: id });
       if (error) throw error;
-      if (!memberUnchanged(startedAs)) return;
+      if (!memberUnchanged(startedAs) || mine !== tallyReads.get(id)) return;
       const tally = tallyOf(data);
       // Not given (no vote of theirs the house holds yet): the count stays unknown, never 0.
       if (tally) set((st) => ({ tallies: { ...st.tallies, [id]: tally } }));
@@ -995,6 +1121,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         if (!data || data.length === 0) throw new Error('dispatch.takeAnswer: refused');
       },
       { type: 'take_answer', payload: { post_id: postId, user_id: user.id, answer_id: critiqueId } },
+      [['filing', postId]],
       () => {
         if (!memberUnchanged(user.id)) return;
         set((st) => ({
@@ -1011,12 +1138,18 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     // The write after the await is guarded too: a logout mid-read must not put this id
     // back into a store the reset just cleared (staleWriteGuard).
     const startedAs = useAuthStore.getState().user?.id ?? null;
+    // A first page takes the filing's next read number: every page of an earlier read still out,
+    // first or next, answers under an older one and is dropped.
+    const readNo = (critiqueReads.get(postId) ?? 0) + 1;
+    critiqueReads.set(postId, readNo);
     set((st) => ({
       critiquesLoading: { ...st.critiquesLoading, [postId]: true },
+      // A next page of the read this replaces lowers its flag only under its own number.
+      critiquesLoadingMore: { ...st.critiquesLoadingMore, [postId]: false },
       critiquesOrder: { ...st.critiquesOrder, [postId]: order },
     }));
-    await readCritiquePage(postId, order, 0, set);
-    if (!memberUnchanged(startedAs)) return;
+    await readCritiquePage(postId, order, null, readNo, set);
+    if (!memberUnchanged(startedAs) || readNo !== critiqueReads.get(postId)) return;
     set((st) => ({ critiquesLoading: { ...st.critiquesLoading, [postId]: false } }));
   },
 
@@ -1029,10 +1162,11 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     // Its own write lands after the await too, so it is guarded as fetchCritiques' is.
     const startedAs = useAuthStore.getState().user?.id ?? null;
     const order = st0.critiquesOrder[postId] ?? 'NEWEST';
-    const from = st0.critiquesRead[postId] ?? (st0.critiques[postId] ?? []).length;
+    // Under the number of the first page it continues: a first page asked again meanwhile wins.
+    const readNo = critiqueReads.get(postId) ?? 0;
     set((s) => ({ critiquesLoadingMore: { ...s.critiquesLoadingMore, [postId]: true } }));
-    await readCritiquePage(postId, order, from, set);
-    if (!memberUnchanged(startedAs)) return;
+    await readCritiquePage(postId, order, st0.critiquesAfter[postId] ?? null, readNo, set);
+    if (!memberUnchanged(startedAs) || readNo !== critiqueReads.get(postId)) return;
     set((s) => ({ critiquesLoadingMore: { ...s.critiquesLoadingMore, [postId]: false } }));
   },
 
@@ -1048,18 +1182,14 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       id,
       postId,
       authorId: user.id,
-      author: {
-        name: user.username ?? '',
-        memberNo: (user as { member_no?: number }).member_no ?? 0,
-        tier: paperTierOf(user),
-        avatar: (user as { avatar_url?: string | null }).avatar_url ?? null,
-      },
+      author: asAuthor(user),
       body: clean,
       certifyCount: 0,
       createdAt: houseIso(),
       editedAt: null,
     };
 
+    const acts = beginActs([['filing', postId]]);
     set((st) => ({
       critiques: { ...st.critiques, [postId]: [optimistic, ...(st.critiques[postId] ?? [])] },
       // Filed this moment: nobody has certified it, this member least of all.
@@ -1076,15 +1206,18 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         const { error } = await supabase.from('dispatch_comments').insert([row]);
         if (error) throw error;
       });
+      acts.settle();
     } catch (e) {
       // Neither queued as the next member nor taken off their page.
-      if (!memberUnchanged(startedAs)) throw e;
+      if (!memberUnchanged(startedAs)) { acts.withdraw(); throw e; }
       if (isNetworkError(e)) {
         if (enqueueMutation({ type: 'add_critique', payload: { _tempId: id, ...row } })) {
+          acts.queue();
           flushOfflineQueue();
           return { offline: true };
         }
       }
+      acts.withdraw();
       set((st) => ({
         critiques: { ...st.critiques, [postId]: (st.critiques[postId] ?? []).filter((c) => c.id !== id) },
         ...patchFiling(st, postId, (f) => ({
@@ -1104,10 +1237,9 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     const startedAs = user.id;
     const at = list.indexOf(before);
 
+    const acts = beginActs([['filing', postId]]);
     set((st) => ({
       critiques: { ...st.critiques, [postId]: (st.critiques[postId] ?? []).filter((c) => c.id !== id) },
-      // Gone from the house's order too: the rows after it move up one.
-      critiquesRead: { ...st.critiquesRead, [postId]: Math.max(0, (st.critiquesRead[postId] ?? 0) - 1) },
       ...patchFiling(st, postId, (f) => ({
         ...f, commentCount: Math.max(0, f.commentCount - 1),
       })),
@@ -1125,21 +1257,24 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         .select('id');
       if (error) throw error;
       if (!removed || removed.length === 0) throw new Error('critique not removed');
+      acts.settle();
     } catch (e) {
       // Neither queued as the next member nor put back on their page.
-      if (!memberUnchanged(startedAs)) throw e;
+      if (!memberUnchanged(startedAs)) { acts.withdraw(); throw e; }
       if (isNetworkError(e)) {
-        enqueueMutation({ type: 'remove_critique', payload: { id, user_id: user.id } });
+        // The filing named too: the read of it waits for this, as for every act on it (actedSince).
+        if (enqueueMutation({ type: 'remove_critique', payload: { id, user_id: user.id, post_id: postId } })) acts.queue();
+        else acts.withdraw();
         flushOfflineQueue();
         return;
       }
+      acts.withdraw();
       // Back where it was, not at the top: a failed network must not reorder an argument.
       set((st) => {
         const next = [...(st.critiques[postId] ?? [])];
         next.splice(Math.min(at, next.length), 0, before);
         return {
           critiques: { ...st.critiques, [postId]: next },
-          critiquesRead: { ...st.critiquesRead, [postId]: (st.critiquesRead[postId] ?? 0) + 1 },
           ...patchFiling(st, postId, (f) => ({ ...f, commentCount: f.commentCount + 1 })),
           ...critiquedBy(st, postId, 1),
         };
@@ -1180,6 +1315,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         if (refusedMark(error, next)) throw error;
       },
       { type: 'certify_critique', payload: { comment_id: id, desired_state: next } },
+      [['critiqueCertify', id]],
       undo,
       'dispatch.certifyCritique',
       user.id,
@@ -1191,6 +1327,10 @@ registerStoreReset(() => {
   useDispatch.setState(emptyState());
   // The module's own request too: the next member must not be handed the last one's fetch.
   invalidateInflight();
+  // Every read still out is the last member's: each thing's number raised, never set back to 0.
+  for (const reads of [filingReads, tallyReads, critiqueReads]) for (const [k, n] of reads) reads.set(k, n + 1);
+  // The gone marks went with the state; their count goes on, so a read still out is older than any mark to come.
+  goneSeq += 1;
 });
 
 /**
@@ -1202,6 +1342,13 @@ registerStoreReset(() => {
  * (leaveBehind), so only a sign-in from nobody is heard here. Heard from the app's start
  * (AppBootstrapper) until the returned unsubscribe.
  */
+/** asTheHouseNowHolds for a screen, drawn again whenever the member acts or a filing is found gone. */
+export function useAsTheHouseNowHolds(filings: readonly Filing[]): Filing[] {
+  const acted = useDispatch((s) => s.acted);
+  const gone = useDispatch((s) => s.gone);
+  return useMemo(() => asTheHouseNowHolds(filings, { acted, gone }), [filings, acted, gone]);
+}
+
 export function readMarksWhenAVisitorSignsIn(): () => void {
   return useAuthStore.subscribe((now, before) => {
     const memberId = now.user?.id ?? null;
@@ -1266,28 +1413,34 @@ function refusedMark(error: { code?: string } | null, adding: boolean): boolean 
 async function writeThrough(
   online: () => Promise<void>,
   queued: Parameters<typeof enqueueMutation>[0],
+  marks: [MarkKind, string][],
   undo: () => void,
   where: string,
   startedAs: string,
 ): Promise<void> {
+  // The act in the ledger until the house has it: a read asked before it lands is not laid over it.
+  const acts = beginActs(marks);
   try {
     // Through the one door of the thing it sets (writeOnline, keyed by what the queue would carry):
     // a certification, save or answer of it still queued, older than this act, is let go once this
     // lands, never sent after it (round 13). A vote or an end has no key and goes as it is.
     // At the house's pace (check_write_pace): a moment's wait is waited and the act sent again.
     await writeOnline(keyOf(queued), () => atTheHousesPace(online));
+    acts.settle();
   } catch (e) {
     // After a logout the store is already clear: undoing would write the last member's
     // counts back into it (and to disk), and queueing would send the act as the next
     // member. Their whole store is gone, a stronger undo.
-    if (!memberUnchanged(startedAs)) return;
+    if (!memberUnchanged(startedAs)) { acts.withdraw(); return; }
     // A longer wait is kept in the queue, sent once the wait is over, as with no signal: never
     // undone, reported or said as a refusal.
     if (isNetworkError(e) || isRateLimited(e)) {
-      enqueueMutation(queued);
+      if (enqueueMutation(queued)) acts.queue();
+      else acts.withdraw();
       flushOfflineQueue();
       return;
     }
+    acts.withdraw();
     undo();
     captureError(e, { where });
     reelToast.error(saidOfAFailure(e, 'That could not be done.', 'The house did not accept that.'));
@@ -1365,6 +1518,7 @@ async function loadViewerState(
 ): Promise<void> {
   if (!startedAs || filings.length === 0) return;
   const ids = filings.map((f) => f.id);
+  const askedAt = Date.now();
 
   try {
     const [certs, saves, votes] = await Promise.all([
@@ -1374,13 +1528,29 @@ async function loadViewerState(
     ]);
     if (!memberUnchanged(startedAs)) return;
 
+    // Each mark the read answered is laid as the house holds it, filing by filing, except where the
+    // member has marked it since the read was asked, or the mark waits in the queue: the member's
+    // act is newer than this answer. An un-certify made meanwhile put the heart back.
     set((st) => {
       const certified = new Set(st.certifiedIds);
-      for (const r of certs.data ?? []) if (r.post_id) certified.add(r.post_id as string);
       const saved = new Set(st.savedIds);
-      for (const r of saves.data ?? []) if (r.post_id) saved.add(r.post_id as string);
       const myVotes = { ...st.myVotes };
-      for (const r of votes.data ?? []) myVotes[r.post_id as string] = r.option_index as number;
+      const heldIn = (rows: { post_id?: unknown }[] | null) => new Set((rows ?? []).map((r) => r.post_id as string));
+      const certifiedNow = heldIn(certs.data);
+      const savedNow = heldIn(saves.data);
+      const votedNow = new Map((votes.data ?? []).map((r) => [r.post_id as string, r.option_index as number]));
+      for (const id of ids) {
+        if (!certs.error && !actedSince('filingCertify', id, askedAt)) {
+          if (certifiedNow.has(id)) certified.add(id); else certified.delete(id);
+        }
+        if (!saves.error && !actedSince('filingSave', id, askedAt)) {
+          if (savedNow.has(id)) saved.add(id); else saved.delete(id);
+        }
+        if (!votes.error && !actedSince('filingVote', id, askedAt)) {
+          const vote = votedNow.get(id);
+          if (vote !== undefined) myVotes[id] = vote; else delete myVotes[id];
+        }
+      }
       // Known only where its read answered: a failed one leaves its kind unknown, not "off".
       const known = (held: Set<string>, answered: boolean) => (answered ? new Set([...held, ...ids]) : held);
       const marksKnown = {
@@ -1402,13 +1572,12 @@ async function loadViewerState(
 /**
  * One page of critiques, in one order, merged into what is already there.
  *
- * ── OFFSET, NOT KEYSET, AND WHY THAT IS RIGHT HERE ─────────────────────────
- * The FEED pages by keyset, because a feed is unbounded and a member scrolls it
- * for a long time while new filings land at the top. A filing's critiques are
- * neither: they are tens, occasionally hundreds, read in one sitting. `.range()`
- * costs nothing at that size and — the part that matters — it works IDENTICALLY
- * for both orders. A keyset over `certify_count` needs a three-column cursor
- * with a tiebreaker, and a wrong one silently skips rows rather than failing.
+ * ── AFTER THE LAST ROW, NEVER BY A COUNT ───────────────────────────────────
+ * A next page begins after the last row the house sent, by its place in the
+ * order (keysetCursor.keysetAfter): most certified orders by its count, then the
+ * newest, then the id; newest by when, then the id. A page counted from the top
+ * moved with every critique filed or withdrawn while the first was held, and a
+ * row was skipped or drawn twice.
  *
  * ── THE ORDER IS THE SERVER'S ──────────────────────────────────────────────
  * Ordered on the device, CERTIFIED would rank only what is loaded and call it the
@@ -1420,10 +1589,45 @@ async function loadViewerState(
  * member has just written is already at the top, and the server will hand it back
  * in a later page.
  */
+/** The member as a critique's author is drawn. */
+function asAuthor(user: NonNullable<ReturnType<typeof useAuthStore.getState>['user']>): Critique['author'] {
+  return {
+    name: user.username ?? '',
+    memberNo: (user as { member_no?: number }).member_no ?? 0,
+    tier: paperTierOf(user),
+    avatar: (user as { avatar_url?: string | null }).avatar_url ?? null,
+  };
+}
+
+/**
+ * The member's own critiques of a filing still in the queue, newest first, and those they took off
+ * that the queue still holds: a page of critiques read again from the house, which has neither yet,
+ * lays the first at its head and leaves the second out, until the queue sends them.
+ */
+function queuedCritiques(postId: string): { filed: Critique[]; off: Set<string> } {
+  const user = useAuthStore.getState().user;
+  const filed: Critique[] = [];
+  const off = new Set<string>();
+  if (!user) return { filed, off };
+  for (const m of useOfflineQueueStore.getState().queued) {
+    const p = m.payload ?? {};
+    if (p.post_id !== postId || (m.owner !== undefined && m.owner !== user.id)) continue;
+    if (m.type === 'remove_critique') off.add(String(p.id));
+    else if (m.type === 'add_critique' && typeof p.body === 'string') {
+      filed.unshift({
+        id: String(p._tempId ?? p.id), postId, authorId: user.id, author: asAuthor(user), body: p.body,
+        certifyCount: 0, createdAt: new Date(m.timestamp).toISOString(), editedAt: null,
+      });
+    }
+  }
+  return { filed: filed.filter((c) => !off.has(c.id)), off };
+}
+
 async function readCritiquePage(
   postId: string,
   order: CritiqueOrder,
-  from: number,
+  after: CritiqueKey | null,
+  readNo: number,
   set: (fn: (st: DispatchState) => Partial<DispatchState>) => void,
 ): Promise<void> {
   const startedAs = useAuthStore.getState().user?.id ?? null;
@@ -1432,28 +1636,33 @@ async function readCritiquePage(
       .from('dispatch_comments')
       .select(CRITIQUE_COLUMNS)
       .eq('post_id', postId);
+    if (after) {
+      const beyond = keysetAfter(critiqueAxes(order, after));
+      if (beyond) q = q.or(beyond);
+    }
 
     q = order === 'CERTIFIED'
-      // created_at breaks ties, so equal counts keep one order across pages.
-      ? q.order('certify_count', { ascending: false }).order('created_at', { ascending: false })
-      : q.order('created_at', { ascending: false });
+      // The newest first among equal counts, then the id: one order from page to page, as drawn.
+      ? q.order('certify_count', { ascending: false }).order('created_at', { ascending: false }).order('id', { ascending: false })
+      : q.order('created_at', { ascending: false }).order('id', { ascending: false });
 
     const { data, error } = await timed(
-      (signal) => withAbortSignal(q.range(from, from + COMMENT_PAGE_SIZE - 1), signal),
-      from === 0 ? 'dispatch.fetchCritiques' : 'dispatch.moreCritiques',
+      (signal) => withAbortSignal(q.limit(COMMENT_PAGE_SIZE), signal),
+      after ? 'dispatch.moreCritiques' : 'dispatch.fetchCritiques',
     );
     if (error) throw error;
-    if (!memberUnchanged(startedAs)) return;
+    // Asked again since (a first page, or the order changed): this answer is the older read's.
+    if (!memberUnchanged(startedAs) || readNo !== critiqueReads.get(postId)) return;
 
     const { critiques } = parseCritiqueRows(data ?? []);
+    const lastKey = lastKeyOf(data ?? []);
 
     set((st) => {
-      // An answer in an order no longer chosen is the other order's: the member switched while it
-      // was on its way, and its rows would stand under the wrong heading.
-      if ((st.critiquesOrder[postId] ?? order) !== order) return {};
-      const existing = from === 0 ? [] : (st.critiques[postId] ?? []);
+      // What the member filed or took off that the queue still holds, laid over the house's page.
+      const { filed, off } = queuedCritiques(postId);
+      const existing = after ? (st.critiques[postId] ?? []) : filed;
       const seen = new Set(existing.map((c) => c.id));
-      const merged = [...existing, ...critiques.filter((c) => !seen.has(c.id))];
+      const merged = [...existing, ...critiques.filter((c) => !seen.has(c.id) && !off.has(c.id))];
       return {
         critiques: { ...st.critiques, [postId]: merged },
         // A short page is the end of the list. A full one MIGHT be, and the next
@@ -1464,10 +1673,7 @@ async function readCritiquePage(
           [postId]: (data ?? []).length === COMMENT_PAGE_SIZE,
         },
         // As sent, as the end is judged: a row the parser drops still stood in the house's order.
-        critiquesRead: {
-          ...st.critiquesRead,
-          [postId]: (from === 0 ? 0 : (st.critiquesRead[postId] ?? from)) + (data ?? []).length,
-        },
+        ...(lastKey ? { critiquesAfter: { ...st.critiquesAfter, [postId]: lastKey } } : {}),
         critiquesFailed: { ...st.critiquesFailed, [postId]: false },
       };
     });
@@ -1475,8 +1681,8 @@ async function readCritiquePage(
   } catch (e) {
     // Said as failed, and asked again from the footer: the page that failed, first or next.
     if (!isNetworkError(e)) captureError(e, { where: 'dispatch.readCritiquePage' });
-    if (!memberUnchanged(startedAs)) return;
-    set((st) => ((st.critiquesOrder[postId] ?? order) !== order ? {} : { critiquesFailed: { ...st.critiquesFailed, [postId]: true } }));
+    if (!memberUnchanged(startedAs) || readNo !== critiqueReads.get(postId)) return;
+    set((st) => ({ critiquesFailed: { ...st.critiquesFailed, [postId]: true } }));
   }
 }
 
@@ -1486,6 +1692,7 @@ async function loadCritiqueCertifications(
   startedAs: string | null,
 ): Promise<void> {
   if (!startedAs || critiques.length === 0) return;
+  const askedAt = Date.now();
   try {
     const { data, error } = await supabase
       .from('dispatch_certifications')
@@ -1494,12 +1701,17 @@ async function loadCritiqueCertifications(
       .in('comment_id', critiques.map((c) => c.id));
     if (error) throw error;
     if (!memberUnchanged(startedAs)) return;
+    // Answered for every critique asked about: those not in the answer are not certified, unless
+    // the member has certified or taken it back since the read was asked, or it waits in the queue.
+    const certifiedNow = new Set((data ?? []).map((r) => r.comment_id as string));
     set((st) => {
       const ids = new Set(st.certifiedCritiqueIds);
-      for (const r of data ?? []) if (r.comment_id) ids.add(r.comment_id as string);
-      // Answered for every critique asked about: those not in the answer are not certified.
       const known = new Set(st.critiqueMarksKnown);
-      for (const c of critiques) known.add(c.id);
+      for (const c of critiques) {
+        known.add(c.id);
+        if (actedSince('critiqueCertify', c.id, askedAt)) continue;
+        if (certifiedNow.has(c.id)) ids.add(c.id); else ids.delete(c.id);
+      }
       return { certifiedCritiqueIds: ids, critiqueMarksKnown: known };
     });
   } catch (e) {

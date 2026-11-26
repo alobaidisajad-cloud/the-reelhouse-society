@@ -17,6 +17,7 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import TribunalScreen from '../tribunal';
 import reelToast from '@/src/utils/reelToast';
+import { ONE_PRESS_MS } from '@/src/utils/onePress';
 
 const mockResolveReportV2 = jest.fn();
 const mockGetPendingReports = jest.fn();
@@ -41,7 +42,7 @@ jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHouse.clien
 
 const mockAuthStore = { user: { id: 'admin-uuid-001', role: 'admin', username: 'tribunal_admin' } };
 jest.mock('@/src/stores/auth', () => ({
-  useAuthStore: (sel?: (s: unknown) => unknown) => (sel ? sel(mockAuthStore) : mockAuthStore),
+  useAuthStore: Object.assign((sel?: (s: unknown) => unknown) => (sel ? sel(mockAuthStore) : mockAuthStore), { getState: () => mockAuthStore }),
 }));
 jest.mock('react-native-gesture-handler', () => {
   const React = require('react');
@@ -234,5 +235,61 @@ describe('a piece its author already deleted', () => {
     expect(r.getByText('The evidence has been destroyed — the page no longer exists.')).toBeTruthy();
     expect(r.queryByLabelText('Remove the reported content')).toBeNull();
     expect(reelToast).not.toHaveBeenCalledWith('Directive executed. Action recorded in the archives.');
+  });
+});
+
+/** Stage C, every word written is kept: a sheet closed, or a verdict refused, lost the reason. */
+describe('the reason for a verdict', () => {
+  const { readDraft } = require('@/src/utils/memberDrafts');
+  const kept = (id: string) => readDraft('admin-uuid-001', 'verdict', id)?.data.body;
+  beforeEach(() => { require('@/src/stores/mmkv-storage').storage.clearAll(); });
+  const reason = (r: ReturnType<typeof render>) => r.getByLabelText('Reason for this action');
+
+  it('is kept per case: the sheet closed and opened again on the case opens on it; another case on its own', async () => {
+    const r = renderTribunal();
+    await waitFor(() => expect(r.getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy());
+    await act(async () => { await fireEvent.press(firstOf(r.getAllByLabelText('Warn: issue a warning'))); });
+    await act(async () => { await fireEvent.changeText(reason(r), 'Repeated abuse in the review.'); });
+    const xs = r.getAllByLabelText('Close');
+    await act(async () => { await fireEvent.press(xs[xs.length - 1]!); });
+    expect(kept('report-001')).toBe('Repeated abuse in the review.');
+    // The other case opens on none; the first again on its reason.
+    await act(async () => { jest.advanceTimersByTime(ONE_PRESS_MS); });
+    await act(async () => { await fireEvent.press(r.getAllByLabelText('Warn: issue a warning')[1]!); });
+    expect(reason(r).props.value).toBe('');
+    const ys = r.getAllByLabelText('Close');
+    await act(async () => { await fireEvent.press(ys[ys.length - 1]!); });
+    await act(async () => { jest.advanceTimersByTime(ONE_PRESS_MS); });
+    await act(async () => { await fireEvent.press(firstOf(r.getAllByLabelText('Warn: issue a warning'))); });
+    expect(reason(r).props.value).toBe('Repeated abuse in the review.');
+  });
+
+  it('refused, with the case still standing, is put back for the case; judged, it is let go', async () => {
+    mockGetPendingReports.mockResolvedValue({ rows: [CASE], total: 1 });
+    const r = renderTribunal();
+    await waitFor(() => expect(r.getByLabelText('Remove the reported content')).toBeTruthy());
+    mockResolveReportV2.mockRejectedValueOnce(refusal('PIECE_GONE'));
+    await act(async () => { await fireEvent.press(r.getByLabelText('Remove the reported content')); });
+    await act(async () => { await fireEvent.changeText(reason(r), 'Slurs'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Render verdict: remove content')); });
+    await waitFor(() => expect(reelToast.error).toHaveBeenCalledWith('The piece is already gone. Dismiss the case, or judge the member.'));
+    expect(kept('report-001')).toBe('Slurs');
+    await act(async () => { jest.advanceTimersByTime(ONE_PRESS_MS); });
+    await act(async () => { await fireEvent.press(firstOf(r.getAllByLabelText('Warn: issue a warning'))); });
+    expect(reason(r).props.value).toBe('Slurs');
+    await act(async () => { await fireEvent.press(r.getByLabelText('Render verdict: issue warning')); });
+    await waitFor(() => expect(reelToast).toHaveBeenCalledWith('Directive executed. Action recorded in the archives.'));
+    expect(kept('report-001')).toBeUndefined();
+  });
+
+  it('refused as already judged is let go with the case', async () => {
+    const r = renderTribunal();
+    await waitFor(() => expect(r.getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy());
+    mockResolveReportV2.mockRejectedValueOnce(refusal('ALREADY_JUDGED'));
+    await act(async () => { await fireEvent.press(firstOf(r.getAllByLabelText('Warn: issue a warning'))); });
+    await act(async () => { await fireEvent.changeText(reason(r), 'Repeated abuse'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Render verdict: issue warning')); });
+    await waitFor(() => expect(reelToast).toHaveBeenCalledWith('Already judged by another moderator.'));
+    expect(kept('report-001')).toBeUndefined();
   });
 });

@@ -114,11 +114,16 @@ const HOUSE_DAYS_JUDGED: Record<string, string> = {
   'check_critique_pace()': PACE_DAY,
   'check_interaction_rate_limit()': PACE_DAY,
   'check_write_pace()': PACE_DAY,
+  'a_members_call_is_paced(uuid, text)': PACE_DAY,
+  'private.a_members_room_is_spent(uuid, text, real, real)': PACE_DAY,
   'calendar_days(uuid)': "only the window read: the house's day less 364 to the house's day plus 1 holds every member's 52 weeks (today less 363) in any zone, west of UTC or east; the days drawn are the viewings' own",
   'log_viewing_add(uuid, uuid, jsonb)': "the default for a viewing given no day, which no phone sends: the rewatch names the member's own day (logOperations: watchedDate ?? localCalendarDate())",
   'get_user_analytics(uuid)': `current_streak (for older builds) and the newest run are chosen around the house's day with a day either side, and the phone judges the run on its own calendar (runStillStanding); and ${NO_ZONE}`,
   'get_public_profile_analytics(uuid)': NO_ZONE,
   'member_viewings(uuid)': NO_ZONE,
+  'private.lobby_edition_begun()': "the day's draft of the Lobby's edition is begun on the house's UTC day, as get_lobby reads it: one wall for every member",
+  'private.viewing_months(uuid, jsonb, timestamp with time zone)': "only the months a viewing is filed under: its UTC day with a day either side holds the member's own day in any zone; the day drawn is the viewing's own",
+  'private.viewings_between(uuid, date, date)': NO_ZONE,
 };
 
 /** Each house function that takes a day from the house's clock, as name: the shape found. */
@@ -198,9 +203,11 @@ describe('a day is read on its own calendar', () => {
     const fns = houseFunctions();
     // A name a pending migration makes is read from it, every other from the snapshot (none pending,
     // all of them); each name is held once per list of types.
-    const madePending = new Set([...PENDING_SQL().matchAll(/CREATE (?:OR REPLACE )?FUNCTION (?:public\.)?"?(\w+)"?\s*\(/gi)]
-      .map((m) => (m[1] ?? '').toLowerCase()));
+    const madePending = new Set([...PENDING_SQL().matchAll(/CREATE (?:OR REPLACE )?FUNCTION (?:public\.|(?<schema>private)\.)?"?(?<name>\w+)"?\s*\(/gi)]
+      .map((m) => `${m.groups?.schema ? 'private.' : ''}${m.groups?.name ?? ''}`.toLowerCase()));
     expect(fns.filter((f) => f.from === 'pending' && !madePending.has(f.name)).map((f) => f.name)).toEqual([]);
+    // The private schema too, where the house's jobs and rules live: every function a pending car makes is held.
+    expect([...madePending].filter((n) => !fns.some((f) => f.name === n))).toEqual([]);
     expect([...madePending].filter((n) => fns.some((f) => f.name === n) && !fns.some((f) => f.name === n && f.from === 'pending'))).toEqual([]);
     expect(fns.find((f) => f.name === 'get_user_analytics')?.from).toBe(madePending.has('get_user_analytics') ? 'pending' : 'snapshot');
     expect(fns.find((f) => f.name === 'log_viewing_add')?.from).toBe('snapshot');

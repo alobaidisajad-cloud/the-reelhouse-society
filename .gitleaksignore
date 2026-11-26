@@ -24,6 +24,24 @@ e7e1dc74b8214521b54c1ab60d35e1ab7b26618e:scripts/migrate-staging.ps1:supabase-pe
 # token lasts hours
 f66caf0a08dd538571ab604a447e4df76c52c888:.env.vercel.pull:jwt:2
 
+# dead: a TMDB API key, refused by TMDB (HTTP 401 on 2026-11-25, its status
+# alone read, never its value)
+329ec06628ecff36dd8371d69f6b0cc694c8f162:lighthouse-live.json:hex-key-32:1234
+329ec06628ecff36dd8371d69f6b0cc694c8f162:lighthouse-live.json:hex-key-32:1251
+329ec06628ecff36dd8371d69f6b0cc694c8f162:lighthouse-live.json:hex-key-32:1268
+329ec06628ecff36dd8371d69f6b0cc694c8f162:lighthouse-live.json:hex-key-32:6406
+329ec06628ecff36dd8371d69f6b0cc694c8f162:lighthouse-live.json:hex-key-32:6411
+329ec06628ecff36dd8371d69f6b0cc694c8f162:lighthouse-live.json:hex-key-32:6416
+329ec06628ecff36dd8371d69f6b0cc694c8f162:lighthouse-report-v2.json:hex-key-32:1113
+329ec06628ecff36dd8371d69f6b0cc694c8f162:lighthouse-report-v2.json:hex-key-32:1130
+329ec06628ecff36dd8371d69f6b0cc694c8f162:lighthouse-report-v2.json:hex-key-32:1147
+329ec06628ecff36dd8371d69f6b0cc694c8f162:lighthouse-report-v2.json:hex-key-32:6875
+329ec06628ecff36dd8371d69f6b0cc694c8f162:lighthouse-report-v2.json:hex-key-32:6880
+329ec06628ecff36dd8371d69f6b0cc694c8f162:lighthouse-report-v2.json:hex-key-32:6885
+b25aaaa85e3f64a4fa66c145bf2a85c9fc29e36a:live.js:hex-key-32:186
+c9dba7b85043933b1d626137d64a8bd2ffedaf14:mobile/eas.json:hex-key-32:32
+f66caf0a08dd538571ab604a447e4df76c52c888:.env.vercel.pull:hex-key-32:5
+
 # public by design: the Supabase publishable (anon) key, built into the app
 # and the website
 c9dba7b85043933b1d626137d64a8bd2ffedaf14:mobile/eas.json:generic-api-key:31
