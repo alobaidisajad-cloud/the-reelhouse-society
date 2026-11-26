@@ -3762,7 +3762,7 @@
     "class": "STATE-one-screen-changed-another-printing-the-old",
     "mutant": "shape-row-prints-the-old-words",
     "proof": "m34",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "4c480d5bfdbdb85569a3d0b8c2ca77f5b0ae4d52",
     "verdict": "caught"
   },
   {
