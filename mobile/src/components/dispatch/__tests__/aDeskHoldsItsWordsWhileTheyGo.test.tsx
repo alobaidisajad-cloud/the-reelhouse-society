@@ -1,11 +1,12 @@
 /**
  * aDeskHoldsItsWordsWhileTheyGo.test.tsx — review round 10 (A1, the short desk)
  * ─────────────────────────────────────────────────────────────────────────────
- * The short desks (take, seeking, wire) keep no draft. While FILE IT was on its way, nothing held
- * the desk: "Discard what you wrote?" stood down for the send, and a swipe or Android's back left at
- * once. A refusal then lost the words, and its "Your words are still here." spoke to a desk already
+ * While FILE IT was on its way, nothing held the short desk (take, seeking, wire): a swipe or
+ * Android's back left at once, and a refusal said "Your words are still here." to a desk already
  * gone. Now every way out is held until the house answers: "Still on its way", with one answer,
- * Wait. Once it has answered, the desk is as it was: a refusal leaves the words, and a leave asks.
+ * Wait. The desk keeps its draft (stage C), and lets it go only once the house has the filing: a
+ * desk opened again meanwhile would take up words already on their way. Once the house has
+ * answered, nothing holds: a refusal leaves the words on the desk and kept on the phone.
  *
  * The navigator's hold is stood in for by one that records each hold the desk sets (by the hook
  * that set it), so a way out meets what the navigator would meet: every hold standing.
@@ -69,6 +70,7 @@ function holdTheFiling() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  require('@/src/stores/mmkv-storage').storage.clearAll();
   mockHolds.clear();
   alerts = [];
   jest.spyOn(Alert, 'alert').mockImplementation(((t: string, m?: string, b?: Button[]) => { alerts.push([t, m, b]); }) as never);
@@ -99,19 +101,19 @@ it('a way out while FILE IT is on its way is held: "Still on its way", and only 
   expect(wayOut()).toBe(false);
 });
 
-it('a filing refused while it was held keeps the words on the desk, and a way out then asks before they go, as before the send', async () => {
+it('a filing refused while it was held keeps the words on the desk and on the phone, and nothing then holds a way out', async () => {
   const filing = holdTheFiling();
   const r = await writeATake();
-  expect(wayOut()).toBe(true);
-  expect(alerts.map(([t]) => t)).toEqual(['Discard what you wrote?']);
+  // The words are kept: a way out asks nothing.
+  expect(wayOut()).toBe(false);
 
   await act(async () => { await fireEvent.press(r.getByLabelText('File it')); });
   expect(wayOut()).toBe(true);
   expect(alerts.map(([t]) => t)).toEqual(['Still on its way']);
   await filing.refuse();
 
-  expect(mockToast.error).toHaveBeenCalledWith('It did not go. Your words are still here.');
+  expect(mockToast.error).toHaveBeenCalledWith('It did not go. Your words are kept.');
   expect(r.getByLabelText('Your take').props.value).toBe('Ozu never once stood up.');
-  expect(wayOut()).toBe(true);
-  expect(alerts.map(([t]) => t)).toEqual(['Discard what you wrote?']);
+  expect(require('@/src/utils/memberDrafts').readDraft('u1', 'short', 'take')?.data.body).toBe('Ozu never once stood up.');
+  expect(wayOut()).toBe(false);
 });

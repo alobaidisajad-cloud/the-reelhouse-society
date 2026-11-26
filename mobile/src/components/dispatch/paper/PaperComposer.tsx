@@ -1,11 +1,13 @@
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { RemoteImage } from '@/src/components/Picture';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { FilmIcon, ImageIcon, AlertTriangle } from 'lucide-react-native';
 
 import PressableScale from '@/src/components/PressableScale';
-import { colors } from '@/src/theme/theme';
+import { SaidText } from '@/src/components/SaidText';
+import { TryAgainLine } from '@/src/components/TryAgain';
+import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
 import { useModalTop } from '@/src/components/layout/navMetrics';
@@ -46,9 +48,11 @@ import { DeskDoc } from './PaperDeskDoc';
  */
 export const PaperComposer = memo(function PaperComposer({
   kind, me, hour, body, film, remaining, spoiler, source,
-  onBody, onBack, onFile, onFilm, onStill, onSpoiler, onSource, ready, sending, amending,
+  onBody, onBack, onFile, onFilm, onStill, onSpoiler, onSource, ready, sending, amending, reading, takenUp,
 }: {
   kind: string;
+  /** The line over a draft the desk took up, with START CLEAN, as the ballot's desk draws it. */
+  takenUp?: ReactNode;
   me: PaperAuthor;
   /** A wire's provenance. Ignored by every other kind, required by this one. */
   source?: string;
@@ -84,6 +88,12 @@ export const PaperComposer = memo(function PaperComposer({
    * member who taps it expecting that has been misled by one word.
    */
   amending?: boolean;
+  /**
+   * An amend whose filing is not yet in hand: said where the words go, and nothing to type
+   * into, so nothing is written over a filing the desk has not read. Out of reach, it is
+   * offered again.
+   */
+  reading?: { state: 'reading' | 'unreachable' | 'gone'; onReadAgain: () => void } | null;
 }) {
   const tier = me.tier;
   // Live in the app, drawn in the harness. `onBody` is what decides which, so a
@@ -127,6 +137,7 @@ export const PaperComposer = memo(function PaperComposer({
 
       {/* The document, filling the room — the same frame the feed uses. */}
       <DeskDoc>
+        {takenUp}
         <View style={p.postRow}>
           <View style={p.margin}>
             <Text style={p.marginValue} {...decorativeTextProps}>{hour}</Text>
@@ -164,6 +175,19 @@ export const PaperComposer = memo(function PaperComposer({
 
                 In the harness there is no `onBody`, so this stays a Text with
                 the drawn caret and every screenshot is unchanged. */}
+            {reading ? (
+              <View style={s.readingBox}>
+                {/* Spoken on both phones as it changes (a live region alone is Android's). */}
+                <SaidText style={s.readingHead} {...scaledTextProps}>
+                  {reading.state === 'reading' ? `READING THE ${nameOf(kind)} AS FILED…`
+                    : reading.state === 'unreachable' ? `THE ${nameOf(kind)} COULD NOT BE READ`
+                      : `THIS ${nameOf(kind)} CAN NO LONGER BE AMENDED`}
+                </SaidText>
+                {reading.state === 'unreachable' ? (
+                  <TryAgainLine onPress={reading.onReadAgain} what={`read the ${nameOf(kind).toLowerCase()} again`} style={s.readingAgain} />
+                ) : null}
+              </View>
+            ) : (<>
             <View style={p.leadRow}>
               <Text
                 style={
@@ -252,6 +276,7 @@ export const PaperComposer = memo(function PaperComposer({
             ) : null}
 
             {film ? <Credit film={film} /> : null}
+            </>)}
           </View>
         </View>
       </DeskDoc>
@@ -274,10 +299,13 @@ export const PaperComposer = memo(function PaperComposer({
             </PressableScale>
           </>
         )}
-        <PressableScale room style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onSpoiler} accessibilityRole="button" accessibilityState={{ selected: !!spoiler }} accessibilityLabel="Mark a spoiler">
-          <AlertTriangle size={13} strokeWidth={2} color={spoiler ? colors.crimson : colors.bone} />
-          <Text style={[p.rl, spoiler && { color: CRIMSON_INK }]} {...scaledTextProps}>SPOILER</Text>
-        </PressableScale>
+        {/* Nothing to mark until the filing is in hand. */}
+        {reading ? null : (
+          <PressableScale room style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onSpoiler} accessibilityRole="button" accessibilityState={{ selected: !!spoiler }} accessibilityLabel="Mark a spoiler">
+            <AlertTriangle size={13} strokeWidth={2} color={spoiler ? colors.crimson : colors.bone} />
+            <Text style={[p.rl, spoiler && { color: CRIMSON_INK }]} {...scaledTextProps}>SPOILER</Text>
+          </PressableScale>
+        )}
         {/* Quiet until it could plausibly matter. A counter watching from the
             first word makes a memory fence feel like an editorial one. */}
         {remaining <= COUNTER_SHOWS_AT ? (
@@ -291,4 +319,17 @@ export const PaperComposer = memo(function PaperComposer({
       <PaperKeyWell drawn={!live} />
     </View>
   );
+});
+
+// The essay desk's own box for an amend not yet in hand (app/dispatch/compose.tsx), set inside the column.
+const s = StyleSheet.create({
+  readingBox: {
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.30)', borderRadius: 2,
+    paddingHorizontal: 12, paddingVertical: 12, marginTop: 4,
+  },
+  readingHead: {
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
+    color: colors.parchment, includeFontPadding: false,
+  },
+  readingAgain: { marginTop: 8, alignSelf: 'flex-start' },
 });

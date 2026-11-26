@@ -36,12 +36,23 @@ const PLANTED = [
     `const url = \`${'postgres' + 'ql://'}postgres:\${password}@db.example.com:5432/postgres\`;`].join('\n'), 'password-in-code'],
   ['vapid.env', `# (${'Private' + ' Key'} manually stored in Vercel for the Edge Function: ${made('vapid', 43, B64URL)})`,
     'vapid-private-key'],
+  // A key of TMDB's shape in each place gitleaks' own rules read past.
+  ['fallback.ts', `const KEY = import.meta.env.VITE_SOME_KEY || ${Q}${made('fallback', 32, HEX)}${Q}`, 'hex-key-32'],
+  ['note.md', `The key: \`${made('note', 32, HEX)}\``, 'hex-key-32'],
+  ['query.md', `curl "https://api.example.org/3/search/movie?query=x&${'api' + '_key'}=${made('query', 32, HEX)}&page=2"`, 'hex-key-32'],
+  ['bundle.js', `const u="/3/movie/"+i+"?${'api' + '_key'}="+"${made('bundle', 32, HEX)}";`, 'hex-key-32'],
 ];
-// Never a finding: the local stack's published default password.
-const CLEAN = ['local.env', `DB_URL=${'postgres' + 'ql://'}postgres:postgres@127.0.0.1:54322/postgres`];
+// Never a finding: the local stack's published default password; a Sentry DSN's public key (public by
+// design); a commit's 40 hex characters; a dashed id.
+const CLEAN_FILES = [
+  ['local.env', `DB_URL=${'postgres' + 'ql://'}postgres:postgres@127.0.0.1:54322/postgres`],
+  ['dsn.ts', `const dsn = 'https://${made('dsn', 32, HEX)}@o1.ingest.sentry.io/2';`],
+  ['commit.md', `fixed in ${made('commit', 40, HEX)}; row ${made('id', 8, HEX)}-${made('id2', 4, HEX)}-4${made('id3', 3, HEX)}-8${made('id4', 3, HEX)}-${made('id5', 12, HEX)}`],
+];
+const CLEAN = new Set(CLEAN_FILES.map(([file]) => file));
 
 const dir = mkdtempSync(join(tmpdir(), 'planted-'));
-for (const [file, text] of [...PLANTED, CLEAN]) writeFileSync(join(dir, file), `${text}\n`);
+for (const [file, text] of [...PLANTED, ...CLEAN_FILES]) writeFileSync(join(dir, file), `${text}\n`);
 const report = join(dir, 'report.json');
 const run = spawnSync('gitleaks', ['dir', dir, '--config', join(ROOT, '.gitleaks.toml'), '--gitleaks-ignore-path',
   join(ROOT, '.gitleaksignore'), '--redact=100', '--no-banner', '--report-format', 'json', '--report-path', report,
@@ -52,10 +63,10 @@ if (!existsSync(report)) { console.error(`gitleaks wrote no report (exit ${run.s
 const found = JSON.parse(readFileSync(report, 'utf8')).map((f) => `${f.File.split(/[\\/]/).pop()} ${f.RuleID}`);
 
 const missed = PLANTED.filter(([file, , rule]) => !found.includes(`${file} ${rule}`)).map(([file, , rule]) => `${file}: ${rule}`);
-const wrong = found.filter((f) => f.startsWith(`${CLEAN[0]} `) || f.startsWith('split.js postgres-url-password'));
+const wrong = found.filter((f) => CLEAN.has(f.slice(0, f.indexOf(' '))) || f.startsWith('split.js postgres-url-password'));
 if (missed.length || wrong.length) {
   if (missed.length) console.error(`Not reported:\n  ${missed.join('\n  ')}`);
   if (wrong.length) console.error(`Reported, but not a secret:\n  ${wrong.join('\n  ')}`);
   process.exit(1);
 }
-console.log(`Every rule fired on its planted secret (${PLANTED.length}), and the local default was left alone.`);
+console.log(`Every rule fired on its planted secret (${PLANTED.length}), and the ${CLEAN.size} values never secrets were left alone.`);

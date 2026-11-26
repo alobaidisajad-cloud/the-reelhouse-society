@@ -12,6 +12,7 @@ import { houseIso } from '@/src/lib/houseClock';
 import { useAuthStore } from '@/src/stores/auth';
 import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 import { sanitizeInput } from '@/src/utils/sanitizeInput';
+import { beginTap, queueTap, settleTap, tappedSince, withdrawTap, type Tap } from './markCounts';
 
 /**
  * THE VAULT, on the device.
@@ -75,6 +76,28 @@ const STORAGE_KEY = 'reelhouse-vault';
 /** Records asked to be read again (forced) while a read of them was out: read once more after it. */
 const _readAgain = new Set<string>();
 
+/**
+ * A note's write that did not land, for the member who wrote it: queued when the wire is down (its
+ * tap stays on its way until the queue sends it), put back when refused (the tap withdrawn: it never
+ * happened).
+ */
+function keptOrPutBack(
+  e: unknown,
+  tap: Tap,
+  viewingId: string,
+  enqueue: () => boolean,
+  putBack: () => void,
+): { queuedOffline: boolean } {
+  if (isNetworkError(e)) {
+    if (enqueue()) queueTap('note', viewingId, tap);
+    else withdrawTap('note', viewingId, tap);
+    return { queuedOffline: true };
+  }
+  withdrawTap('note', viewingId, tap);
+  putBack();
+  throw e;
+}
+
 export const useVaultStore = create<VaultState>()(
   persist(
     (set, get) => ({
@@ -107,6 +130,9 @@ export const useVaultStore = create<VaultState>()(
         const askedBy = useAuthStore.getState().user?.id ?? null;
 
         set((s) => ({ loading: { ...s.loading, [logId]: true } }));
+        // A note written or taken back since this moment, or still on its way, is the member's newer
+        // word: it stays as the phone holds it over an answer read before it (the acts ledger).
+        const askedAt = Date.now();
         try {
           const rows = await VaultService.fetchNotesForLog(logId);
           if (!stillSignedIn(askedBy)) { useVaultStore.getState().clear(); return; }
@@ -115,13 +141,16 @@ export const useVaultStore = create<VaultState>()(
             // device has no row to arrive, so merging would keep it for ever.
             const notes = { ...s.notes };
             const notesLog = { ...s.notesLog };
+            // A note saved while this read was out, not in its answer and in no queue, vanished.
+            const writtenSince = (viewingId: string) => tappedSince('note', viewingId, askedAt);
             for (const viewingId of Object.keys(notesLog)) {
-              if (notesLog[viewingId] === logId) {
+              if (notesLog[viewingId] === logId && !writtenSince(viewingId)) {
                 delete notes[viewingId];
                 delete notesLog[viewingId];
               }
             }
             for (const row of rows) {
+              if (writtenSince(row.viewing_id)) continue;
               notes[row.viewing_id] = row.notes;
               notesLog[row.viewing_id] = row.log_id;
             }
@@ -194,6 +223,7 @@ export const useVaultStore = create<VaultState>()(
         // Shown as written straight away. A note is the member's own writing
         // about their own viewing — there is nothing for the server to decide,
         // so waiting on the round trip would only make it feel unsure.
+        const tap = beginTap('note', viewingId, 1);
         if (text) get().rememberNote(viewingId, text, logId);
         else get().forgetNote(viewingId);
 
@@ -201,19 +231,18 @@ export const useVaultStore = create<VaultState>()(
           // Through the one door of a viewing's note (writeOnline): a note for it still queued,
           // older than this one, is let go when this lands, never sent over it.
           await writeOnline(keyOf(queued), () => VaultService.setNote(logId, viewingId, text, writtenAt));
+          settleTap('note', viewingId, tap);
           return { queuedOffline: false };
         } catch (e) {
-          // Nothing is put back into a Vault that now belongs to someone else.
-          if (!stillSignedIn(askedBy)) throw e;
-          if (isNetworkError(e)) {
-            enqueueMutation({ type: text ? 'set_viewing_note' : 'remove_viewing_note', payload: queued.payload });
-            return { queuedOffline: true };
-          }
-          // Put back exactly what was there. A refusal — the rank, most likely —
-          // must not leave the screen showing writing the Vault does not hold.
-          if (before === undefined) get().forgetNote(viewingId);
-          else get().rememberNote(viewingId, before, logId);
-          throw e;
+          // Nothing is queued or put back into a Vault that now belongs to someone else.
+          if (!stillSignedIn(askedBy)) { withdrawTap('note', viewingId, tap); throw e; }
+          const enqueue = () => enqueueMutation({ type: text ? 'set_viewing_note' : 'remove_viewing_note', payload: queued.payload });
+          return keptOrPutBack(e, tap, viewingId, enqueue, () => {
+            // Put back exactly what was there. A refusal — the rank, most likely —
+            // must not leave the screen showing writing the Vault does not hold.
+            if (before === undefined) get().forgetNote(viewingId);
+            else get().rememberNote(viewingId, before, logId);
+          });
         }
       },
 
@@ -224,19 +253,19 @@ export const useVaultStore = create<VaultState>()(
         const queued: Parameters<typeof enqueueMutation>[0] = {
           type: 'remove_viewing_note', payload: { log_id: logId, viewing_id: viewingId, written_at: writtenAt },
         };
+        const tap = beginTap('note', viewingId, 1);
         get().forgetNote(viewingId);
         try {
           // The same door as saveNote: an older note still queued for this viewing is let go.
           await writeOnline(keyOf(queued), () => VaultService.removeNote(viewingId, writtenAt));
+          settleTap('note', viewingId, tap);
           return { queuedOffline: false };
         } catch (e) {
-          if (!stillSignedIn(askedBy)) throw e;
-          if (isNetworkError(e)) {
-            enqueueMutation({ type: 'remove_viewing_note', payload: queued.payload });
-            return { queuedOffline: true };
-          }
-          if (before !== undefined) get().rememberNote(viewingId, before, logId);
-          throw e;
+          if (!stillSignedIn(askedBy)) { withdrawTap('note', viewingId, tap); throw e; }
+          const enqueue = () => enqueueMutation({ type: 'remove_viewing_note', payload: queued.payload });
+          return keptOrPutBack(e, tap, viewingId, enqueue, () => {
+            if (before !== undefined) get().rememberNote(viewingId, before, logId);
+          });
         }
       },
 

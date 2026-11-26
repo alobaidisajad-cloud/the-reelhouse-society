@@ -3,8 +3,9 @@
  *
  * Three faults, each found by reading it: a list that could not be read looked
  * like "none begun" (and a member would begin a second series under the same
- * name); a thirteenth series could not be rejoined; and reopening the sheet kept
- * a half-typed name and drew the old pick for a frame.
+ * name); a thirteenth series could not be rejoined; and reopening the sheet drew
+ * the old pick for a frame. A half-typed name is kept (stage C: nothing a member
+ * types is lost), opened on again, and let go once the series is set.
  */
 import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
@@ -34,8 +35,11 @@ jest.mock('@/src/lib/supabase', () => ({
   },
 }));
 jest.mock('@/src/stores/auth', () => ({
-  useAuthStore: (pick: (s: unknown) => unknown) => pick({ user: { id: 'u1' } }),
+  useAuthStore: Object.assign((pick: (s: unknown) => unknown) => pick({ user: { id: 'u1' } }), { getState: () => ({ user: { id: 'u1' } }) }),
 }));
+
+// Each test opens with no name kept from the last.
+beforeEach(() => { require('@/src/stores/mmkv-storage').storage.clearAll(); });
 
 const row = (n: number, part = 1) => ({ series_id: `s${n}`, series_title: `Series ${n}`, part_number: part });
 const flush = () => act(async () => { for (let i = 0; i < 4; i++) await Promise.resolve(); });
@@ -102,18 +106,29 @@ describe('the series sheet', () => {
     expect(mockAsked[0].order).toEqual(['created_at', { ascending: false }]);
   });
 
-  it('opens fresh: a name half-typed and closed is not there the next time', async () => {
-    const r = render(sheet());
+  it('keeps a name half-typed: closed, it opens on it again, and once the series is set it is let go', async () => {
+    const onSet = jest.fn();
+    const at = (visible: boolean) => (
+      <SeriesPicker visible={visible} chosen={null} bottomInset={0} onClose={() => {}} onSet={onSet} onClear={() => {}} />
+    );
+    const r = render(at(true));
     await flush();
     await act(async () => { await fireEvent.press(r.getByLabelText('Begin a new series')); });
     await act(async () => { await fireEvent.changeText(r.getByLabelText("The new series' name"), 'Ozu'); });
     expect(r.getByText('THIS ESSAY WILL BE FILED AS')).toBeTruthy();
 
-    r.rerender(sheet(false));
-    r.rerender(sheet(true));
+    await act(async () => { r.rerender(at(false)); });
+    await act(async () => { r.rerender(at(true)); });
+    await flush();
+    expect(r.getByLabelText("The new series' name").props.value).toBe('Ozu');
+    await act(async () => { await fireEvent.press(r.getByLabelText('Set the series')); });
+    expect(JSON.stringify(onSet.mock.calls[0])).toContain('Ozu');
+
+    // Set: the essay holds it, and the next opening starts with no name.
+    await act(async () => { r.rerender(at(false)); });
+    await act(async () => { r.rerender(at(true)); });
     await flush();
     expect(r.queryByLabelText("The new series' name")).toBeNull();
-    expect(r.queryByText('THIS ESSAY WILL BE FILED AS')).toBeNull();
   });
 
   // P4.40: a member who types sets the series with Enter, as with SET THE SERIES.

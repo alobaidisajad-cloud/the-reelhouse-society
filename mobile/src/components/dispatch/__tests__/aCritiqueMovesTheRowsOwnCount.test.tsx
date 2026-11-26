@@ -72,6 +72,19 @@ it('a critique taken back from a room moves that row down by one, never below no
   expect(counts(r)).toEqual(['Critique', 'Critique. 1 critique']);
 });
 
+it('a row handed its list\'s old copy draws what the member\'s act left: the amended words, then the withdrawal', async () => {
+  const r = draw(0);
+  const drawn = () => JSON.stringify(r.toJSON());
+  expect(drawn()).toContain('A take a room holds.');
+  const left = { title: null, fullContent: null, source: null, sourceUrl: null, spoilerLabel: null, film: null, endedBy: null };
+  await act(async () => { useDispatch.setState({ acted: { held: { ...left, body: 'The take, amended.', endedAt: null, editedAt: '2026-11-16T09:00:00Z' } } } as never); });
+  expect(drawn()).toContain('The take, amended.');
+  expect(drawn()).not.toContain('A take a room holds.');
+  await act(async () => { useDispatch.setState({ acted: { held: { ...left, body: '', endedAt: '2026-11-16T10:00:00Z', endedBy: 'author', editedAt: null } } } as never); });
+  expect(drawn()).not.toContain('The take, amended.');
+  expect(drawn()).toContain('A take on the paper.');
+});
+
 it('a row read after the member\'s critique is not moved by it again, only by one written since', async () => {
   // The house's count already holds the member's critique: read with it, the row prints it once.
   useDispatch.setState({ critiqued: { held: 1 } } as never);

@@ -1,50 +1,47 @@
 {
   "why": "Each shard is one machine of e2e.yml flows job: what e2e/flow-history.mjs makes of e2e/flow-history.json (each part weighed by its 90th-percentile time over the measured runs; the launch and the keyboard probes on shard 1; each flow to the lightest shard, heaviest first; minutes = weight and a quarter). Read by e2e/shards.mjs and run-flows.sh; shards.test.ts and flowHistory.test.ts hold it.",
-  "firstRuns": {
-    "recovery probe": "New on 2026-11-12 (WORKLIST P4.35, the keyboard over the recovery card, a sheet over a sheet): weighed by the estimate for a part with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list."
-  },
   "shards": [
     {
       "keyboardProbes": true,
       "launchWithAnimations": true,
       "flows": [
-        "auth_flow",
-        "error_recovery",
+        "boot_verification",
+        "darkroom_search",
         "house_link",
-        "push_tap_salon"
+        "lounge_flow",
+        "member_pages",
+        "push_tap_house"
       ],
-      "minutes": 34
+      "minutes": 31
+    },
+    {
+      "flows": [
+        "auth_deep_link",
+        "auth_flow",
+        "browse_vault",
+        "film_log",
+        "flow_critical_path",
+        "login_flow",
+        "push_tap",
+        "push_tap_critique",
+        "trailer"
+      ],
+      "minutes": 31
     },
     {
       "flows": [
         "admin_second_key",
-        "auth_deep_link",
-        "boot_verification",
-        "browse_vault",
-        "darkroom_search",
-        "film_log",
-        "flow_critical_path",
-        "lounge_flow",
-        "member_pages",
-        "push_tap_critique"
-      ],
-      "minutes": 34
-    },
-    {
-      "flows": [
         "email_link_chrome",
         "email_link_customtab",
+        "error_recovery",
         "lobby_wall_flow",
         "log_film_flow",
-        "login_flow",
         "offline_resilience",
-        "push_tap",
-        "push_tap_house",
+        "push_tap_salon",
         "session_survives_restart",
-        "trailer",
         "turned"
       ],
-      "minutes": 34
+      "minutes": 31
     }
   ]
 }

@@ -35,6 +35,14 @@ import { isRateLimited, writePaceSaid } from '../utils/housePace';
 // ── MMKV Key ────────────────────────────────────────────────────────────────
 const MMKV_KEY = (userId: string) => `reelhouse_blocks_${userId}`;
 
+/** Each sync takes the next number: an answer whose number is no longer the latest is dropped. */
+let blockSyncs = 0;
+/**
+ * Each block, unblock, mute or unmute made here: a sync asked before one answers for the lists
+ * before it, and is not laid over them.
+ */
+let blockActs = 0;
+
 // ── Store Interface ─────────────────────────────────────────────────────────
 
 export interface BlockState {
@@ -111,6 +119,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
     const prevBlockedIndex = state._blockedIndex;
     const prevMutedIndex = state._mutedIndex;
 
+    // A sync still out was asked before this act (syncFromServer).
+    blockActs += 1;
     // Optimistic update — block supersedes mute
     const nextBlockedIndex = new Set(state._blockedIndex);
     nextBlockedIndex.add(targetId);
@@ -188,6 +198,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
     const prevBlocked = state.blocked;
     const prevBlockedIndex = state._blockedIndex;
 
+    // A sync still out was asked before this act (syncFromServer).
+    blockActs += 1;
     // Optimistic update
     const nextBlockedIndex = new Set(state._blockedIndex);
     nextBlockedIndex.delete(targetId);
@@ -252,6 +264,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
     const prevMuted = state.muted;
     const prevMutedIndex = state._mutedIndex;
 
+    // A sync still out was asked before this act (syncFromServer).
+    blockActs += 1;
     // Optimistic update
     const nextMutedIndex = new Set(state._mutedIndex);
     nextMutedIndex.add(targetId);
@@ -318,6 +332,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
     const prevMuted = state.muted;
     const prevMutedIndex = state._mutedIndex;
 
+    // A sync still out was asked before this act (syncFromServer).
+    blockActs += 1;
     // Optimistic update
     const nextMutedIndex = new Set(state._mutedIndex);
     nextMutedIndex.delete(targetId);
@@ -414,6 +430,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
     // BELOW its first write, so that variable cannot guard it — and `userId` is
     // who the sync is FOR, which is not necessarily the session.
     const startedAs = useAuthStore.getState().user?.id ?? null;
+    const mine = ++blockSyncs;
+    const actsBefore = blockActs;
     try {
       const { data, error } = await supabase.rpc('get_user_blocks', {
         p_user_id: userId,
@@ -422,6 +440,11 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       // Left mid-sync: writing would put the previous member's block list into a
       // cleared store, and persistToCache below would write it to disk.
       if (!stillSignedIn(startedAs)) return;
+      // A newer sync is out: its answer is laid, not this one.
+      if (mine !== blockSyncs) return;
+      // A block or a mute made while it was out may not be in this answer (its own write may still
+      // be on its way): the lists held here have it, and stand until the next sync.
+      if (actsBefore !== blockActs) return;
 
       if (error) throw error;
 
@@ -478,5 +501,9 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
 
 // ── Register cleanup handler for centralized logout ──────────────────────────
 registerStoreReset((previousUserId) => {
+  // Raised, never set back to 0 (a number handed out before could then match one handed out
+  // after): a sync still out, or one asked before an act, was the member's who left.
+  blockSyncs += 1;
+  blockActs += 1;
   useBlockStore.getState().clearOnLogout(previousUserId);
 });

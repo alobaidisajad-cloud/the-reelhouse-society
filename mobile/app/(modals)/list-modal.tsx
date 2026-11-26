@@ -388,7 +388,7 @@ export default function ListModal() {
         void (async () => {
             const all = [...films];
             while (all.length < trueFilmCount) {
-                const page = await StackService.getStackItemsPage(stackId, all.length);
+                const page = await StackService.getStackItemsPage(stackId, all[all.length - 1]?.id ?? null);
                 if (page.length === 0) break;
                 all.push(...page);
             }

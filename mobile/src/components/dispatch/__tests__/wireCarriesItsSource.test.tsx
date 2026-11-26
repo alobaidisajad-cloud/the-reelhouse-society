@@ -66,6 +66,8 @@ jest.mock('@/src/stores/dispatch', () => ({
       // so the mock has to offer both.
       filings: mockHeld ? [mockHeld] : [],
       opened: mockHeld ? { [String(mockHeld.id)]: mockHeld } : {},
+      // Held in neither, the filing is read from the house: here, it is never answered.
+      hydrate: () => new Promise(() => {}),
     }),
   },
 }));
@@ -109,6 +111,8 @@ beforeEach(() => {
   mockAmendFails = false;
   mockAmendOffline = false;
   mockToast.error.mockClear(); mockToast.success.mockClear();
+  // Each desk opens with no draft kept from the last test: every desk keeps its own.
+  require('@/src/stores/mmkv-storage').storage.clearAll();
   jest.useFakeTimers({ doNotFake: ['nextTick'] });
 });
 afterEach(() => { jest.useRealTimers(); });
@@ -358,14 +362,13 @@ describe('a filing that does not go', () => {
     await typeAndFile(r, 'take');
 
     /**
-     * "Still here", not "kept" — and the difference is the point. This desk
-     * keeps no draft on purpose, so the words survive only because the desk is
-     * still open with them in the field. The essay's message says KEPT because
-     * the essay is on the phone. One sentence for both would be a promise this
-     * form does not make.
+     * "Kept", as the essay says it: the desk keeps its draft on the phone at
+     * once, so the words survive the desk closing too. A phone that cannot keep
+     * a draft says "still here" instead (nothingIsLostQuietly).
      */
     expect(String(mockToast.error.mock.calls[0]?.[0]))
-      .toBe('It did not go. Your words are still here.');
+      .toBe('It did not go. Your words are kept.');
+    expect(require('@/src/utils/memberDrafts').readDraft('u1', 'short', 'take')?.data.body).toBe('Ozu never once stood up.');
     // The sentence survives. Without this the member types it again from memory.
     expect(r.getByLabelText('Your take').props.value).toBe('Ozu never once stood up.');
     // And they are still at the desk — no navigation on a failure.
@@ -487,12 +490,14 @@ describe('a desk opened on a filing that already exists', () => {
     expect((mockAmended[0].updates as Record<string, unknown>).source).toBe('Cahiers du Cinéma');
   });
 
-  it('still says FILE IT when there is nothing to amend', () => {
-    // The control. `?edit=` pointing at a filing the store does not hold must
-    // not silently turn a new filing into an amendment of nothing.
+  it('an amend of a filing the store does not hold stays an amend, unlit until it is read', () => {
+    // `?edit=` pointing at a filing the store does not hold is read from the house
+    // (anAmendLinkReadsItsFiling): never a new filing, never an amendment of nothing.
     mockHeld = null;
-    const { getByText } = render(<ComposeShortScreen kind="take" />);
-    expect(getByText('FILE IT')).toBeTruthy();
+    const { getByText, queryByText } = render(<ComposeShortScreen kind="take" />);
+    expect(getByText('AMEND IT')).toBeTruthy();
+    expect(queryByText('FILE IT')).toBeNull();
+    expect(getByText('READING THE TAKE AS FILED…')).toBeTruthy();
   });
 });
 

@@ -17,9 +17,12 @@ const HEARING: Hearing = {
   act: 'LIFT', actSaid: 'Lift the ban',
 };
 
-const sheet = (props: Partial<React.ComponentProps<typeof HearingSheet>> = {}) => (
-  <HearingSheet hearing={HEARING} busy={false} onClose={jest.fn()} onSubmit={jest.fn()} {...props} />
-);
+/** The sheet as a docket holds it: the word kept by its holder, as each docket keeps it. */
+function Held(props: Partial<React.ComponentProps<typeof HearingSheet>>) {
+  const [word, setWord] = React.useState('');
+  return <HearingSheet hearing={HEARING} word={word} onWord={setWord} busy={false} onClose={jest.fn()} onSubmit={jest.fn()} {...props} />;
+}
+const sheet = (props: Partial<React.ComponentProps<typeof HearingSheet>> = {}) => <Held {...props} />;
 
 /** A touch as the responder system hands it to the press that holds it. */
 const touch = () => ({

@@ -299,6 +299,23 @@ function serverHeld(msgs: LoungeMessage[]): LoungeMessage[] {
   return msgs.filter((m) => (m.status === undefined || m.status === 'sent') && !queued.has(m.id) && !m.id.startsWith('offline-'));
 }
 
+/**
+ * The messages this member withdrew that the queue still holds: drawn withdrawn, and taken out of
+ * every reply quoting them, however often the room is read again, until the queue sends it.
+ */
+function withdrawnInQueue(): Set<string> {
+  return new Set(getOfflineQueue()
+    .filter((q) => q.type === 'withdraw_lounge_message' || q.type === 'delete_lounge_message')
+    .map((q) => String(q.payload.message_id)));
+}
+
+/** A message read from the house, with a withdrawal still queued laid over it (withdrawnInQueue). */
+function asWithdrawnHere(m: LoungeMessage, withdrawn: ReadonlySet<string>): LoungeMessage {
+  if (withdrawn.has(m.id) && !m.deleted_at) return { ...m, content: '', deleted_at: houseIso(), reactions: [] };
+  if (m.reply_to_id && withdrawn.has(m.reply_to_id) && m.reply_to_content) return { ...m, reply_to_content: null };
+  return m;
+}
+
 /** A message's place in the (created_at, id) order every read of a room keeps. */
 const placeOf = (m: { created_at: string; id: string }) => [instantOf(m.created_at), m.id] as const;
 const before = (a: { created_at: string; id: string }, b: { created_at: string; id: string }) => {
@@ -739,6 +756,18 @@ export const loungesAtStart = () => ({
  */
 const _readRoomsHere = new Map<string, number>();
 
+/**
+ * The corridor's reads, numbered (it is read every thirty seconds while open, and again on each
+ * return): an older read landing after a newer one is not laid over it. And each room's first read,
+ * numbered by room: a room read again (left and entered, or asked again from its TRY AGAIN) answers
+ * for itself, and an older page of it, first or next, is dropped. They only rise: a sign-out raises
+ * them, so a read still out for the member who left never matches the next one's.
+ */
+let _corridorReads = 0;
+const _roomReads = new Map<string, number>();
+/** A room's latest read's number: 0 before any. */
+const roomRead = (loungeId: string): number => _roomReads.get(loungeId) ?? 0;
+
 export const useLoungeStore = create<LoungeState>()((set, get) => ({
   ...loungesAtStart(),
 
@@ -752,6 +781,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (kept.length > 0) set({ lounges: kept });
     }
     set({ loungesLoading: true });
+    const mine = ++_corridorReads;
     const askedAt = monotonicNow();
     try {
       // The corridor in one trip (get_lounge_list, 20261109_02): the member's seats, the newest
@@ -841,14 +871,14 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       }));
 
       // Left mid-flight — see sessionGuard. Writing here would repopulate a store
-      // the logout reset has already cleared.
-      if (!memberUnchanged(startedAs)) return;
+      // the logout reset has already cleared. Read again since: the newer read answers.
+      if (!memberUnchanged(startedAs) || mine !== _corridorReads) return;
       set({ lounges: enriched, loungesFailed: false, loungesLoading: false, loungesRead: true });
       keepPage('lounges', user.id, enriched);
     } catch (err) {
       if (__DEV__) console.warn('[Lounge] fetchLounges failed:', err);
-      // Their failed read is not the next member's.
-      if (!memberUnchanged(startedAs)) return;
+      // Their failed read is not the next member's, nor an older read's failure the newer's.
+      if (!memberUnchanged(startedAs) || mine !== _corridorReads) return;
       // Said by the screen that asked, not here: the Lounge polls every thirty
       // seconds while open, and a toast here would be a toast every thirty
       // seconds for as long as the signal is gone.
@@ -892,6 +922,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const kept = (_keptRooms.get(loungeId) ?? []).filter((m) => !hiddenHere(m));
     _keptRooms.delete(loungeId);
     if (serverHeld(kept).length > 0) {
+      // Drawn from what was kept and caught up from it: a whole read of the room still out is older.
+      _roomReads.set(loungeId, (_roomReads.get(loungeId) ?? 0) + 1);
       set({ currentLoungeId: loungeId, currentMessages: kept, messagesLoading: false, messagesFailed: false });
       return get().catchUpMessages(loungeId);
     }
@@ -906,6 +938,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     }));
     // Words heard after this moment are kept over the answer, which was read before them.
     const heardFrom = _heardSeq;
+    // This room's read: one asked again since answers for itself.
+    const mine = (_roomReads.get(loungeId) ?? 0) + 1;
+    _roomReads.set(loungeId, mine);
     let failed = false;
     try {
       // The cursor's own order (loadMoreMessages): created_at alone leaves a burst's order to
@@ -924,7 +959,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         logger.error('[LoungeStore.fetchMessages] load failed:', error);
         failed = true;
       } else if (data) {
-        const messages = messagesOf(data as unknown as LoungeMessageRow[], useAuthStore.getState().user?.id);
+        // A withdrawal still queued is laid over the house's copy, which does not have it yet.
+        const withdrawn = withdrawnInQueue();
+        const messages = messagesOf(data as unknown as LoungeMessageRow[], useAuthStore.getState().user?.id)
+          .map((m) => asWithdrawnHere(m, withdrawn));
         // Offline Queue Stitching
         const queue = getOfflineQueue();
         const pendingMessages = queue.filter(q => q.type === 'send_lounge_message' && q.payload.lounge_id === loungeId);
@@ -953,8 +991,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
                 created_at: houseIso(),
             } as unknown as LoungeMessage);
         }
-        // Only for the member who asked: the queued messages stitched in are theirs.
-        if (!memberUnchanged(startedAs)) return;
+        // Only for the member who asked: the queued messages stitched in are theirs. And only the
+        // room's latest read: an older one, landing after, would lay words read before it.
+        if (!memberUnchanged(startedAs) || mine !== _roomReads.get(loungeId)) return;
         keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
         // Only if this room is still the open one: a slower fetch for a room left
         // behind would put its words under the new room's name.
@@ -982,8 +1021,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       failed = true;
     }
     if (!memberUnchanged(startedAs)) return;
-    // A stale fetch must not lower the spinner of the room now open, nor say it failed.
-    if (get().currentLoungeId !== loungeId) return;
+    // A stale fetch must not lower the spinner of the room now open, nor say it failed: another
+    // room's, or this room's read asked again since, which lowers it itself.
+    if (get().currentLoungeId !== loungeId || mine !== _roomReads.get(loungeId)) return;
     // A room with nothing to show says so itself (the salon's transcript, with TRY AGAIN);
     // over words it kept, the toast says the new ones could not come.
     if (failed && get().currentMessages.length > 0) reelToast.error('Could not load messages — check your connection.');
@@ -1000,6 +1040,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     // The oldest message is at index 0 because fetchMessages reverses the chronological array
     const oldestMessage = current[0];
     if (oldestMessage.id.startsWith('optimistic')) return; // Safety
+    // Under the room's read it continues: the room read again meanwhile, this page is of the old one.
+    const mine = roomRead(loungeId);
 
     try {
       // A (created_at, id) cursor, with the same two keys in the order: created_at alone
@@ -1022,7 +1064,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
         // Prepend older messages (filter blocked/muted)
         const filteredOlder = olderMessages.filter(m => !hiddenHere(m));
-        if (!memberUnchanged(startedAs)) return;
+        if (!memberUnchanged(startedAs) || mine !== roomRead(loungeId)) return;
         keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
         // Into the LIVE list, not `current` (read before the await), which would erase what
         // arrived over realtime during the scroll; and only into this room.
@@ -1082,6 +1124,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         const newest = messagesOf(data as unknown as LoungeMessageRow[], myId);
         if (!memberUnchanged(startedAs)) return;
         keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
+        // The room begins again from its newest: an older page still out would leave a hole above it.
+        _roomReads.set(loungeId, (_roomReads.get(loungeId) ?? 0) + 1);
         set((s) => {
           if (s.currentLoungeId !== loungeId) return s;
           const fromHouse = new Set(serverHeld(s.currentMessages).map((m) => m.id));
@@ -1115,6 +1159,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Absent from a whole answer, a held message was taken down; a cut answer proves nothing.
       const answeredWhole = !!read && read.length < 1000;
       const heldIds = new Set(held.map((m) => m.id));
+      // Withdrawn here and still queued: the house's copy is not yet withdrawn, and is not laid back.
+      const withdrawnHere = withdrawnInQueue();
 
       set((s) => {
         if (s.currentLoungeId !== loungeId) return s;
@@ -1130,8 +1176,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           }
           const r = reactions.get(m.id);
           const withdrawn = !!mark.deleted_at && !m.deleted_at;
-          const putBack = !mark.deleted_at && !!m.deleted_at;
-          const quote = mark.reply_to_content ?? null;
+          const putBack = !mark.deleted_at && !!m.deleted_at && !withdrawnHere.has(m.id);
+          const quote = m.reply_to_id && withdrawnHere.has(m.reply_to_id) ? null : mark.reply_to_content ?? null;
           const requoted = quote !== (m.reply_to_content ?? null);
           const recarded = isCardOfAPiece(m.type) && !!mark.metadata && JSON.stringify(mark.metadata) !== JSON.stringify(m.metadata ?? null);
           if (!withdrawn && !putBack && !requoted && !recarded && JSON.stringify(r ?? null) === JSON.stringify(m.reactions ?? null)) return [m];
@@ -1725,11 +1771,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Sent: the queue holds it no longer, for this member or the next.
       if (held) letHeldGo(messageId);
       if (!memberUnchanged(startedAs)) return true;
-      set(s => ({
-        currentMessages: s.currentMessages.map(m =>
-          m.id === messageId ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const } : m
-        ),
-      }));
+      // Marked where it stands, on screen or kept for a room left meanwhile (as sendMessage does).
+      inRoomWords(msg.lounge_id, (words) => words.map(m =>
+        m.id === messageId ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const } : m
+      ));
       return true;
     } catch (e) {
       // Neither queued as the next member nor marked in their transcript.
@@ -1739,7 +1784,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         if (held) sendHeldAgain(messageId);
         else enqueueMutation({ type: 'send_lounge_message', payload: { ...payload, _tempId: payload.id } });
         flushOfflineQueue();
-        set(s => ({ currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'sending' as const } : m) }));
+        inRoomWords(msg.lounge_id, (words) => words.map(m => m.id === messageId ? { ...m, status: 'sending' as const } : m));
         return true;
       }
       // The stack sealed or gone since, or the record or filing (round 14): final, said, and the card
@@ -1747,11 +1792,11 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       const cardRefused = cardShareRefusal(e);
       if (cardRefused) {
         if (held) letHeldGo(messageId);
-        set(s => ({ currentMessages: s.currentMessages.filter(m => m.id !== messageId) }));
+        inRoomWords(msg.lounge_id, (words) => words.filter(m => m.id !== messageId));
         reelToast.error(saidOfCardShareRefusal(cardRefused));
         return false;
       }
-      set(s => ({ currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'failed' as const } : m) }));
+      inRoomWords(msg.lounge_id, (words) => words.map(m => m.id === messageId ? { ...m, status: 'failed' as const } : m));
       // "Try again" is the one thing that cannot help a member without the
       // rank — so a refusal gets the door, and only a real failure gets that.
       if (showTierDoor(e, { returnTo: `/lounge/${msg.lounge_id}` })) return false;
@@ -2124,6 +2169,9 @@ registerStoreReset(() => {
     _lastSendAt.clear();
     _keptRooms.clear();
     _readRoomsHere.clear();
+    // Raised, never set back to 0: a read still out is the last member's.
+    _corridorReads += 1;
+    for (const [id, n] of _roomReads) _roomReads.set(id, n + 1);
     _readBackIn = null;
     _heardSeq = 0;
     _heardLive.clear();

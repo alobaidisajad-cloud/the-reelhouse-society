@@ -27,7 +27,7 @@ import { characterCount } from '@/src/utils/text';
 import { supabase } from '@/src/lib/supabase';
 import type { PaperFilm } from '@/src/components/dispatch/paper/PaperPost';
 import { FILING_CARD_COLUMNS, parseFilingRows, type Filing } from '@/src/stores/dispatchTypes';
-import { useDispatch } from '@/src/stores/dispatch';
+import { goneMoment, useAsTheHouseNowHolds, useDispatch } from '@/src/stores/dispatch';
 import { logger } from '@/src/utils/logger';
 import { buildSearchPattern } from '@/src/utils/searchPattern';
 import { dateOf } from '@/src/utils/instant';
@@ -271,6 +271,7 @@ export function useDispatchArchive(): DispatchArchive {
         // read in the app carries this second key.
         .order('id', { ascending: false });
       if (past) read = read.or(past);
+      const asked = goneMoment();
       const rows = await read.limit(ARCHIVE_PAGE);
       if (mine !== filmSeq.current) return;
       // A later page: the rows drawn stay, and the foot says the rest could not be reached.
@@ -279,6 +280,8 @@ export function useDispatchArchive(): DispatchArchive {
       const raw = rows.data?.length ?? 0;
       const { filings: got, dropped } = parseFilingRows(rows.data ?? []);
       if (dropped > 0) logger.warn('[archive] filings failed to parse', dropped);
+      // Given by this read, asked after one was found gone here: it is given again.
+      useDispatch.getState().givenAgain(got.map((f) => f.id), asked);
       // Count what the SERVER gave, not what survived parsing — see `fetched`.
       fetched.current = from === 0 ? raw : fetched.current + raw;
       const last = (rows.data ?? [])[raw - 1] as { created_at?: string; id?: string } | undefined;
@@ -372,8 +375,10 @@ export function useDispatchArchive(): DispatchArchive {
   // Drawn through who is hidden NOW, as the paper is: a member blocked or muted from a filing's
   // reader stayed listed here when the member came back. The count leaves out those held here.
   const whoIsHidden = useWhoIsHidden();
+  // And as the phone now knows them: one a read here found the house no longer gives leaves too.
+  const held = useAsTheHouseNowHolds(filings);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- whoIsHidden is the change that redraws it; filterContentByBlocks reads the block store itself
-  const shown = useMemo(() => filterContentByBlocks(filings, (f) => f.authorId ?? ''), [filings, whoIsHidden]);
+  const shown = useMemo(() => filterContentByBlocks(held, (f) => f.authorId ?? ''), [held, whoIsHidden]);
   const shownCount = Math.max(shown.length, count - (filings.length - shown.length));
 
   return {

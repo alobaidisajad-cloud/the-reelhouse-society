@@ -47,7 +47,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { supabase } from '@/src/lib/supabase';
 import type { PaperAuthor } from '@/src/components/dispatch/paper/PaperPost';
-import { useDispatch } from '@/src/stores/dispatch';
+import { goneMoment, useAsTheHouseNowHolds, useDispatch } from '@/src/stores/dispatch';
 import {
   FILING_CARD_COLUMNS, paperTierOf, parseFilingRows, type Filing,
 } from '@/src/stores/dispatchTypes';
@@ -183,6 +183,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
       .order('id', { ascending: false });
     if (past) read = read.or(past);
 
+    const asked = goneMoment();
     const [rows, totals] = await Promise.all([
       read.limit(ROOM_PAGE),
       // Once, at the head. The totals do not change as you scroll, and asking
@@ -207,6 +208,8 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
     // A row the parser refuses is a row the screen cannot draw. Saying so is the
     // difference between finding a schema change and calling the room "short".
     if (dropped > 0) logger.warn('[room] filings failed to parse', dropped);
+    // Given by this read, asked after one was found gone here: it is given again.
+    useDispatch.getState().givenAgain(got.map((f) => f.id), asked);
 
     const raw = rows.data?.length ?? 0;
     fetched.current = from + raw;
@@ -321,8 +324,11 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
     })();
   }, [loading, loadingMore, more, page]);
 
+  // As the phone now knows them: a filing a read here found the house no longer gives leaves the room.
+  const held = useAsTheHouseNowHolds(filings);
+
   return {
-    author, memberId, filings, filed, certified, totalsKnown, certifiedAtFetch, critiquedAtFetch,
+    author, memberId, filings: held, filed, certified, totalsKnown, certifiedAtFetch, critiquedAtFetch,
     loading, loadingMore, missing, failed, reload, more, moreFailed, loadMore,
   };
 }

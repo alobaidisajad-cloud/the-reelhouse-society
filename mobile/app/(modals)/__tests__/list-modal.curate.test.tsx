@@ -249,7 +249,8 @@ describe('the form can never destroy a stack', () => {
     mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: FILMS.length + 1 } };
     const r = mount();
     await waitFor(() => expect(r.getByText('The Third Man')).toBeTruthy());
-    expect(rest.mock.calls).toEqual([[STACK_ID, FILMS.length]]);
+    // Asked after the last film held, by that film: never by a count of films.
+    expect(rest.mock.calls).toEqual([[STACK_ID, FILMS[FILMS.length - 1]!.id]]);
     expect(r.queryByText(/larger than this sheet can hold/)).toBeNull();
     expect(r.getByLabelText('Remove Blade Runner')).toBeTruthy();
     await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });

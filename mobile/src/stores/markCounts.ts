@@ -34,7 +34,18 @@
 import { create } from 'zustand';
 import { registerStoreReset } from './resetAllStores';
 
-export type MarkKind = 'certify' | 'critique';
+/** A count drawn from what the server said plus the member's taps. */
+export type CountKind = 'certify' | 'critique';
+
+/**
+ * Every act of the member's a read asked before it must not undo: the counts' taps, and the paper's
+ * marks (a filing's certification, save and vote, a critique's certification) and changes to a
+ * filing itself (amended, ended, its answer taken, a critique filed or withdrawn under it), and a
+ * viewing's private note written or taken back. One ledger for all, asked through `tappedSince`;
+ * only the counts are drawn from it.
+ */
+export type MarkKind = CountKind | 'filing' | 'filingCertify' | 'filingSave' | 'filingVote' | 'critiqueCertify' | 'note';
+const MARK_KINDS: readonly MarkKind[] = ['certify', 'critique', 'filing', 'filingCertify', 'filingSave', 'filingVote', 'critiqueCertify', 'note'];
 
 /**
  * One tap: +1 or −1, and when the server confirmed it (Infinity while in
@@ -47,13 +58,13 @@ export interface Tap { by: 1 | -1; at: number; queued?: boolean }
 interface Told { value: number; askedAt: number }
 
 interface MarkCountsState {
-  told: Record<MarkKind, Record<string, Told>>;
+  told: Record<CountKind, Record<string, Told>>;
   taps: Record<MarkKind, Record<string, Tap[]>>;
 }
 
 const empty = (): MarkCountsState => ({
   told: { certify: {}, critique: {} },
-  taps: { certify: {}, critique: {} },
+  taps: Object.fromEntries(MARK_KINDS.map((k) => [k, {}])) as Record<MarkKind, Record<string, Tap[]>>,
 });
 
 export const useMarkCounts = create<MarkCountsState>(() => empty());
@@ -72,7 +83,7 @@ export function tellMarkCounts(rows: TellRow[], askedAt: number): void {
   if (rows.length === 0) return;
   useMarkCounts.setState((s) => {
     const told = { certify: { ...s.told.certify }, critique: { ...s.told.critique } };
-    const taps = { certify: { ...s.taps.certify }, critique: { ...s.taps.critique } };
+    const taps = { ...s.taps, certify: { ...s.taps.certify }, critique: { ...s.taps.critique } };
     for (const row of rows) {
       for (const kind of ['certify', 'critique'] as const) {
         const value = row[kind];
@@ -114,11 +125,24 @@ export function queueTap(kind: MarkKind, id: string, tap: Tap): void {
   });
 }
 
-/** Which count a queued write moves, read from the queue's own payload. */
-function deliveredMark(m: { type: string; payload: Record<string, unknown> }): [MarkKind, string] | null {
+/** Which mark a queued write moves, read from the queue's own payload. */
+export function markOf(m: { type: string; payload: Record<string, unknown> }): [MarkKind, string] | null {
   const p = m.payload ?? {};
   const str = (v: unknown) => (typeof v === 'string' && v ? v : null);
+  const at = (kind: MarkKind, id: string | null): [MarkKind, string] | null => (id ? [kind, id] : null);
   switch (m.type) {
+    case 'certify_filing': return at('filingCertify', str(p.post_id));
+    case 'save_filing':
+    case 'unsave_filing': return at('filingSave', str(p.post_id));
+    case 'cast_vote': return at('filingVote', str(p.post_id));
+    case 'certify_critique': return at('critiqueCertify', str(p.comment_id));
+    case 'update_filing':
+    case 'end_filing': return at('filing', str(p.id));
+    case 'take_answer':
+    case 'add_critique':
+    case 'remove_critique': return at('filing', str(p.post_id));
+    case 'set_viewing_note':
+    case 'remove_viewing_note': return at('note', str(p.viewing_id));
     case 'endorse_log': return str(p.target_log_id) ? ['certify', str(p.target_log_id)!] : null;
     case 'endorse_list': return str(p.target_list_id) ? ['certify', str(p.target_list_id)!] : null;
     case 'remove_endorsement': {
@@ -138,7 +162,7 @@ function deliveredMark(m: { type: string; payload: Record<string, unknown> }): [
  * runs in order): an answer asked after this moment replaces them.
  */
 export function settleDelivered(m: { type: string; payload: Record<string, unknown> }): void {
-  const mark = deliveredMark(m);
+  const mark = markOf(m);
   if (!mark) return;
   const [kind, id] = mark;
   useMarkCounts.setState((s) => {
@@ -192,7 +216,7 @@ export function withdrawTap(kind: MarkKind, id: string, tap: Tap): void {
  * until a fresh answer arrives, with the session's taps on top (a cached page
  * predates every tap made since the app opened).
  */
-export function selectMarkCount(s: MarkCountsState, kind: MarkKind, id: string, fallback?: number | null): number | null {
+export function selectMarkCount(s: MarkCountsState, kind: CountKind, id: string, fallback?: number | null): number | null {
   const told = s.told[kind][id];
   const base = told ? told.value : usable(fallback) ? fallback : null;
   if (base === null) return null;
@@ -202,7 +226,7 @@ export function selectMarkCount(s: MarkCountsState, kind: MarkKind, id: string, 
 }
 
 /** A bar's count. Re-renders only when THIS log's number changes. */
-export function useMarkCount(kind: MarkKind, id: string, fallback?: number | null): number | null {
+export function useMarkCount(kind: CountKind, id: string, fallback?: number | null): number | null {
   return useMarkCounts((s) => selectMarkCount(s, kind, id, fallback));
 }
 

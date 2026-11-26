@@ -162,8 +162,10 @@ registerStoreReset(() => {
 });
 
 // A queued replay from an older build names only its record: its film is the one held here
-// (mutationExecutor reads the film's verdict again once it is delivered).
+// (mutationExecutor reads the film's verdict again once it is delivered). A record older than
+// the pages is found in the index of films logged, whose light copy still names its film.
 findRecordsFilmBy((logId) => {
-    const held = useFilmStore.getState().logs.find((l) => l.id === logId);
+    const { logs, _loggedIndex } = useFilmStore.getState();
+    const held = logs.find((l) => l.id === logId) ?? Object.values(_loggedIndex).find((l) => l?.id === logId);
     return held?.filmId != null ? Number(held.filmId) : null;
 });

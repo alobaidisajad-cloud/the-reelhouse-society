@@ -2,6 +2,7 @@
 import { useShallow } from 'zustand/react/shallow';
 import { houseIso } from '@/src/lib/houseClock';
 import { useAuthStore } from '@/src/stores/auth';
+import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useFilmStore, useInteractionStore } from '@/src/stores/films';
 import { beginTap, queueTap, settleTap, useMarkCount, withdrawTap } from '@/src/stores/markCounts';
@@ -558,8 +559,7 @@ function LogDetailScreen({ id }: { id: string }) {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await queryClient.invalidateQueries({ queryKey: ['log', id] });
-    setRefreshing(false);
+    try { await queryClient.invalidateQueries({ queryKey: ['log', id] }); } finally { setRefreshing(false); }
     // The page stays as it was; a pull that reached nothing says so, as every list does.
     if (queryClient.getQueryState(['log', id])?.status === 'error') reelToast.error(REFRESH_FAILED);
   }, [queryClient, id]);
@@ -630,8 +630,9 @@ function LogDetailScreen({ id }: { id: string }) {
         throw new Error('Insert failed');
       }
     } catch (error: unknown) {
-      // Kept for the network's return; one the phone had no room to keep comes off the page.
-      if (isNetworkError(error) && enqueueMutation({
+      // Kept for the network's return; one the phone had no room to keep comes off the page, and
+      // one whose member has signed out meanwhile is never queued in whoever's name is here now.
+      if (isNetworkError(error) && stillSignedIn(user?.id) && enqueueMutation({
          type: 'add_log_comment',
          payload: {
              id: commentId,

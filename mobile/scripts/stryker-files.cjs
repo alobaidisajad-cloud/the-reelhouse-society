@@ -112,6 +112,8 @@ if (require.main === module) {
   const argv = process.argv.slice(2);
   const refused = argumentsFault(argv);
   if (refused) { console.error(refused); process.exit(2); }
+  // A Stryker run fills the machine: never beside a push gate (gate-lock.cjs); --judge only reads.
+  if (!argv.includes('--judge')) require('./gate-lock.cjs').refuseWhileGate('a Stryker run');
   const arg = (name) => { const i = argv.indexOf(name); return i < 0 ? null : argv[i + 1]; };
   const only = arg('--only')?.split(',');
   let files = LIST.files.map((f) => f.file).filter((f) => !only || only.includes(f));

@@ -5,9 +5,10 @@
  * opens whole (VerdictSheet), where it may be appealed. The banner of a pause or a silence opens here too
  * (StandingNotice, `/settings?section=record`).
  */
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { moreMayFollow, readAsFar } from '@/src/utils/readAsFar';
 import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
 import { TryAgainLine } from '@/src/components/TryAgain';
@@ -46,20 +47,23 @@ export function verdictStands(v: Pick<MyVerdictEntry, 'appeal_status' | 'lifted_
 
 export function VerdictRecord() {
   const memberId = useAuthStore((s) => s.user?.id ?? null);
+  // How far the member has read: a read again (an appeal filed) reads this far, not page one alone.
+  const asFar = useRef(PAGE);
   const { data: firstPage, isLoading, isError, refetch } = useQuery({
     queryKey: myVerdictsKey(memberId),
-    queryFn: () => ModerationService.getMyVerdicts(undefined, PAGE),
+    queryFn: () => readAsFar((after, size) => ModerationService.getMyVerdicts(after, size), (v: MyVerdictEntry) => ({ created_at: v.created_at, id: v.id }), asFar.current, PAGE),
     enabled: !!memberId,
   });
-  // Page one is the live read; pages after are laid on it, each verdict once.
+  // The live read, as far as the member has read; pages after are laid on it, each verdict once.
   const [items, setItems] = useState<MyVerdictEntry[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [from, setFrom] = useState<MyVerdictEntry[] | undefined>(undefined);
   if (firstPage && firstPage !== from) {
     setFrom(firstPage);
     setItems(firstPage);
-    setHasMore(firstPage.length >= PAGE);
+    setHasMore(moreMayFollow(firstPage, PAGE));
   }
+  useEffect(() => { asFar.current = Math.max(PAGE, items.length); }, [items.length]);
   const more = useMutation({
     mutationFn: (last: MyVerdictEntry) => ModerationService.getMyVerdicts({ created_at: last.created_at, id: last.id }, PAGE),
     onSuccess: (rows) => {

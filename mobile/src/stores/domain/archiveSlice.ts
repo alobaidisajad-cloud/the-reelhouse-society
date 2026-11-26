@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 import { houseIso } from '@/src/lib/houseClock';
 import { supabase } from '../../lib/supabase';
 import { PhysicalArchiveItem } from '../../types';
-import { enqueueMutation } from '../../utils/offlineQueue';
+import { enqueueMutation, getOfflineQueue } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
 import { isArchivistPlusTier } from '../../utils/tier';
 import { useAuthStore } from '../auth';
@@ -11,6 +11,45 @@ import { fileOnShelf } from '../../services/ShelfService';
 
 import { captureError } from '../../lib/sentry';
 import { isNetworkError } from '../../utils/networkError';
+
+/**
+ * The shelf as the house sent it, with the member's own writes still in the queue laid over it in
+ * the order they were made: an entry filed offline stays on the shelf, one taken off stays off, and
+ * a change stays made, however often the shelf is read again. A queued entry the page does not hold
+ * leads the first page alone.
+ */
+export function overlayQueuedShelf(
+    memberId: string,
+    items: readonly PhysicalArchiveItem[],
+    queue: readonly { type: string; payload: Record<string, unknown>; timestamp: number }[],
+    firstPage: boolean,
+): PhysicalArchiveItem[] {
+    let shelf = [...items];
+    for (const q of queue) {
+        const p = q.payload ?? {};
+        if (p.user_id !== memberId) continue;
+        const filmId = Number(p.film_id);
+        if (q.type === 'remove_archive') {
+            shelf = shelf.filter((i) => i.filmId !== filmId);
+        } else if (q.type === 'update_archive') {
+            const updates = (p.updates ?? {}) as Partial<PhysicalArchiveItem>;
+            shelf = shelf.map((i) => (i.filmId === filmId ? { ...i, ...updates } : i));
+        } else if (q.type === 'add_archive') {
+            const formats = Array.isArray(p.formats) ? (p.formats as string[]) : [];
+            if (shelf.some((i) => i.filmId === filmId)) {
+                shelf = shelf.map((i) => (i.filmId === filmId ? { ...i, formats: Array.from(new Set([...i.formats, ...formats])) } : i));
+            } else if (firstPage) {
+                const poster = typeof p.poster_path === 'string' ? p.poster_path : null;
+                shelf = [{
+                    id: `-${q.timestamp}`, filmId, title: typeof p.film_title === 'string' ? p.film_title : 'Unknown',
+                    poster, poster_path: poster, year: typeof p.year === 'number' ? p.year : null,
+                    formats, notes: '', condition: 'good', createdAt: new Date(q.timestamp).toISOString(),
+                }, ...shelf];
+            }
+        }
+    }
+    return shelf;
+}
 
 /** The DATA this slice owns — see the note on `LogSliceData`. */
 export interface ArchiveSliceData {
@@ -112,8 +151,12 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
                 const nextCursor = hasMore && lastRow ? `${lastRow.created_at}|${lastRow.id}` : null;
 
                 if (!userId || userId === useAuthStore.getState().user?.id) {
+                    // The member's own shelf: what still waits in the queue is laid over the page.
+                    const shown = overlayQueuedShelf(uid, items, getOfflineQueue(), !loadMore);
                     set((prev) => ({
-                        physicalArchive: loadMore ? [...prev.physicalArchive, ...items] : items,
+                        physicalArchive: loadMore
+                            ? [...prev.physicalArchive, ...shown.filter((i) => !prev.physicalArchive.some((p) => p.filmId === i.filmId))]
+                            : shown,
                         archiveHasMore: hasMore,
                         archivePage: (loadMore ? prev.archivePage : 0) + 1,
                         _archiveCursor: nextCursor,

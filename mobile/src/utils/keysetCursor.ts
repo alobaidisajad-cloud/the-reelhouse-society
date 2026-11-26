@@ -88,6 +88,43 @@ export function keysetFilter(
   return `${column}.${op}.${p},and(${column}.eq.${p},id.${op}.${i})`;
 }
 
+/** One axis of an order, with the value the last row read holds on it. */
+export interface KeyAxis {
+  column: string;
+  direction: CursorDirection;
+  value: string | number | null;
+  /** The column may hold no value: rows without one are ordered as Postgres orders them. */
+  nullable?: boolean;
+}
+
+/**
+ * The `.or()` filter that asks for every row strictly after one row, over any number of axes
+ * (the last one unique, so no two rows tie on all of them): for each axis, the rows equal on every
+ * axis before it and beyond it on this one.
+ *
+ * Nulls are where Postgres puts them with no NULLS clause: last going up, first going down. So
+ * going up, past a value come the greater values and then the rows with none, and past a row with
+ * none comes nothing on that axis; going down, past a value come only the smaller values, and past
+ * a row with none come all the rows with one.
+ *
+ * Null when no row can follow it on any axis: the page read was the last.
+ */
+export function keysetAfter(axes: KeyAxis[]): string | null {
+  const same = ({ column, value }: KeyAxis) => (value === null ? `${column}.is.null` : `${column}.eq.${pgLiteral(String(value))}`);
+  const beyond = ({ column, direction, value, nullable }: KeyAxis): string[] => {
+    if (value === null) return direction === 'asc' ? [] : [`${column}.not.is.null`];
+    const v = pgLiteral(String(value));
+    if (direction === 'desc') return [`${column}.lt.${v}`];
+    return nullable ? [`${column}.gt.${v}`, `${column}.is.null`] : [`${column}.gt.${v}`];
+  };
+  const out: string[] = [];
+  axes.forEach((axis, i) => {
+    const prior = axes.slice(0, i).map(same);
+    for (const b of beyond(axis)) out.push(prior.length ? `and(${[...prior, b].join(',')})` : b);
+  });
+  return out.length ? out.join(',') : null;
+}
+
 /**
  * The axis a sort orders by. Shared so a query's ORDER BY, its cursor filter
  * and the cursor it hands back can never name three different columns — which

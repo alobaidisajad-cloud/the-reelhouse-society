@@ -226,6 +226,20 @@ describe('the door', () => {
     expect(marked[0]).toMatch(/^Ballot./i);
   });
 
+  it('says a take or a wire is in progress, each by its own draft (stage C: every desk keeps its draft)', async () => {
+    const { writeDraft, clearDraft } = require('@/src/utils/memberDrafts');
+    writeDraft('u1', 'short', { body: 'Ozu never once stood up.' }, 'take');
+    writeDraft('u1', 'short', { body: 'A print, unrestored.', source: 'BFI' }, 'wire');
+    const { getAllByLabelText } = render(<ComposeScreen />);
+    await flush();
+    const marked = getAllByLabelText(/One in progress/).map((n) => String(n.props.accessibilityLabel));
+    clearDraft('u1', 'short', 'take');
+    clearDraft('u1', 'short', 'wire');
+    expect(marked).toHaveLength(2);
+    expect(marked.some((l) => /^Take./i.test(l))).toBe(true);
+    expect(marked.some((l) => /^Wire./i.test(l))).toBe(true);
+  });
+
   it('turns a member without the tier away at the route, not at the desk', async () => {
     // A ballot and a dossier need the tier; a take, a seeking and a wire do
     // not. Checking it here means nobody writes an essay and is refused at the

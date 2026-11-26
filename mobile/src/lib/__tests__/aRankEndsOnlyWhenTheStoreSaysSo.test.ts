@@ -27,6 +27,11 @@ jest.mock('@/src/utils/offlineQueue', () => ({
   flushOfflineQueue: jest.fn(),
 }));
 
+// The member the store sold to is the one signed in on the phone.
+jest.mock('@/src/stores/domain/helpers/sessionGuard', () => ({
+  stillSignedIn: (id: string) => id === '11111111-1111-4111-8111-111111111111',
+}));
+
 type Module = typeof import('@/src/lib/revenueCat');
 
 /** A fresh copy of the module (its key and configured flag are module state). */

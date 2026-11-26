@@ -274,6 +274,40 @@ describe('the circle, read and failed, and read a page at a time', () => {
         expect(await screen.findByText('@MEMBER3')).toBeTruthy();
     });
 
+    it('a first read asked again after the wait ran long: the older answer, landing last, is dropped', async () => {
+        jest.useFakeTimers();
+        try {
+            let answerFirst: (v: unknown) => void = () => {};
+            (ProfileService.getSocialConnections as jest.Mock)
+                .mockReturnValueOnce(new Promise((r) => { answerFirst = r; }))
+                .mockResolvedValueOnce({ profiles: [member(2)], hasMore: false });
+            const screen = render(<SocialModal />);
+            await act(async () => { jest.advanceTimersByTime(15000); });
+            await act(async () => { await fireEvent.press(screen.getByLabelText('Try again')); });
+            expect(screen.getByText('@MEMBER2')).toBeTruthy();
+            await act(async () => { answerFirst({ profiles: [member(1)], hasMore: false }); });
+            expect([!!screen.queryByText('@MEMBER1'), !!screen.queryByText('@MEMBER2')]).toEqual([false, true]);
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    it('a next page asked of one circle is not laid under another read since', async () => {
+        let answerMore: (v: unknown) => void = () => {};
+        (ProfileService.getSocialConnections as jest.Mock)
+            .mockResolvedValueOnce({ profiles: [member(1)], hasMore: true, nextCursor: 'c1' })
+            .mockReturnValueOnce(new Promise((r) => { answerMore = r; }))
+            .mockResolvedValueOnce({ profiles: [member(5)], hasMore: false });
+        const screen = render(<SocialModal />);
+        expect(await screen.findByText('@MEMBER1')).toBeTruthy();
+        await act(async () => { mockList.onEndReached?.(); });
+        mockParams = { type: 'followers', userId: '00000015-0000-4000-8000-000000000015' };
+        screen.rerender(<SocialModal />);
+        expect(await screen.findByText('@MEMBER5')).toBeTruthy();
+        await act(async () => { answerMore({ profiles: [member(2)], hasMore: false }); });
+        expect([!!screen.queryByText('@MEMBER2'), !!screen.queryByText('@MEMBER5')]).toEqual([false, true]);
+    });
+
     it('and a page that failed is said at the foot, with the way to ask again', async () => {
         (ProfileService.getSocialConnections as jest.Mock)
             .mockResolvedValueOnce({ profiles: [member(1)], hasMore: true, nextCursor: 'c1' })

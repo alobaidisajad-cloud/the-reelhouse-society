@@ -1,0 +1,155 @@
+name: 🧪 Mutants on demand
+# A builder's mutants, run on GitHub's runners and not on the one machine every builder and the push
+# gate share (2026-11-25: three builders' runs beside a push gate took 11 of 11 processors and 6.8 of
+# 6.8 GB, and the gate's own runs died). mobile/scripts/mutants-remote.cjs pushes the commit to a
+# plant/mutants-* branch, starts this there with the ids, and records the verdicts it keeps exactly as
+# a run on the machine records them: register/mutant-results.json at the commit run at, and the
+# private record of the run. The ids run in parts side by side, each part every n-th of them.
+run-name: "Mutants on demand: ${{ inputs.token }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      # The commit the mutants run at: the plant branch the run is started on holds it.
+      commit:
+        type: string
+        required: true
+      # The mutants' ids, by commas, or all: every public mutant (the private half never leaves the machine).
+      ids:
+        type: string
+        required: true
+      # How many parts run side by side, 1 to 20.
+      parts:
+        type: string
+        required: false
+        default: '4'
+      # The words mutants-remote.cjs finds its run by.
+      token:
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  parts:
+    name: 🧪 Mutants on demand, its parts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      parts: ${{ steps.parts.outputs.parts }}
+    steps:
+      - name: The parts, 1 to 20
+        id: parts
+        env:
+          PARTS: ${{ inputs.parts }}
+        run: |
+          if ! [[ "$PARTS" =~ ^([1-9]|1[0-9]|20)$ ]]; then echo "parts takes 1 to 20 (has $PARTS)"; exit 1; fi
+          echo "parts=[$(seq -s, 1 "$PARTS")]" >> "$GITHUB_OUTPUT"
+
+  # The night's mutants job (nightly.yml), on the ids given at the commit given.
+  mutants:
+    name: 🧪 Mutants on demand, part ${{ matrix.part }}
+    needs: parts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        part: ${{ fromJSON(needs.parts.outputs.parts) }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ inputs.commit }}
+          # A past mutant reverses its fix's commit, read from the history.
+          fetch-depth: 0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            mobile/package-lock.json
+
+      # The measuring tools' own tests prove layout.cjs's mutants in the root's Playwright and Chromium.
+      - name: Install Root (Web) Dependencies
+        id: install-1
+        timeout-minutes: 5
+        continue-on-error: true
+        run: npm ci
+      - name: Install Root (Web) Dependencies, once more
+        if: steps.install-1.outcome == 'failure'
+        timeout-minutes: 5
+        run: npm ci
+      - name: The runner's image, which the kept packages are keyed by
+        id: image-2
+        run: echo "version=$ImageVersion" >> "$GITHUB_OUTPUT"
+      - name: Chromium for the measuring tools — its system packages, from the cache
+        id: debs-install-2
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs
+          key: apt-debs-ubuntu-24.04-${{ steps.image-2.outputs.version }}-playwright-chromium
+      - name: Chromium for the measuring tools
+        id: install-2
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
+          if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+            mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          fi
+      - name: Chromium for the measuring tools, once more
+        if: steps.install-2.outcome == 'failure'
+        timeout-minutes: 5
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
+          if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+            mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          fi
+
+      - name: Install Mobile Dependencies
+        id: install-3
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-3.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: ./mobile
+        run: npm ci
+
+      - name: This part's mutants, by the kill rules
+        working-directory: ./mobile
+        env:
+          TZ: UTC
+          IDS: ${{ inputs.ids }}
+          PART: ${{ matrix.part }}
+          PARTS: ${{ inputs.parts }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/verdicts"
+          if [ "$IDS" = all ]; then CHOSEN=(); else printf '%s\n' "$IDS" | tr ',' '\n' | sed '/^$/d' > "$RUNNER_TEMP/ids.txt"; CHOSEN=(--ids "@$RUNNER_TEMP/ids.txt"); fi
+          node scripts/mutants.cjs "${CHOSEN[@]}" --part "$PART/$PARTS" --results "$RUNNER_TEMP/verdicts/mutant-results.json" --fresh --record "$RUNNER_TEMP/verdicts/mutant-record.json"
+
+      - name: Keep the verdicts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mutants-on-demand-${{ matrix.part }}
+          path: ${{ runner.temp }}/verdicts/
+          retention-days: 7
+          if-no-files-found: error

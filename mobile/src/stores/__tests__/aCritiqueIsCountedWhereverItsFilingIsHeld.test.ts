@@ -34,7 +34,7 @@ const moved = () => useDispatch.getState().critiqued[POST];
 
 beforeEach(() => {
   useAuthStore.setState({ user: { id: ME, username: 'me', is_social_private: false } as never, isAuthenticated: true } as never);
-  useDispatch.setState({ critiques: {}, critiquesRead: {}, critiqued: {}, critiqueMarksKnown: new Set() } as never);
+  useDispatch.setState({ critiques: {}, critiquesAfter: {}, critiqued: {}, critiqueMarksKnown: new Set() } as never);
 });
 
 it('a critique written moves its filing\'s count by one wherever it is held, and a second by one more', async () => {

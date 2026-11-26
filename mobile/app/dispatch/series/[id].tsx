@@ -42,7 +42,7 @@ import { roomOf } from '@/src/components/dispatch/roomLink';
 import { supabase } from '@/src/lib/supabase';
 import { FILING_SERIES_COLUMNS, parseFilingRows, type Filing } from '@/src/stores/dispatchTypes';
 import { nav } from '@/src/utils/typedRouter';
-import { useDispatch } from '@/src/stores/dispatch';
+import { goneMoment, useAsTheHouseNowHolds, useDispatch } from '@/src/stores/dispatch';
 import { logger } from '@/src/utils/logger';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
@@ -63,7 +63,7 @@ export default function SeriesScreenRoute() {
 function SeriesScreen({ id, from }: { id: string; from?: string }) {
   const end = useContentBottom();
 
-  const [parts, setParts] = useState<Filing[]>([]);
+  const [asRead, setParts] = useState<Filing[]>([]);
   /**
    * How many parts the SERVER says there are, which is not always how many are
    * listed. `SeriesList` prints `3 OF 3` from the array it was handed, so a
@@ -85,6 +85,7 @@ function SeriesScreen({ id, from }: { id: string; from?: string }) {
     let cancelled = false;
     (async () => {
       setFailed(false);
+      const asked = goneMoment();
       try {
         const { data, error, count } = await supabase
           .from('dispatch_posts')
@@ -109,6 +110,8 @@ function SeriesScreen({ id, from }: { id: string; from?: string }) {
         if (cancelled) return;
         const got = parseFilingRows(data ?? []).filings;
         setParts(got);
+        // Given by this read, asked after a part was found gone here: it is given again.
+        useDispatch.getState().givenAgain(got.map((f) => f.id), asked);
         // `count` is null when the server does not send one. Falling back to the
         // rows in hand is the only honest default: it claims nothing extra.
         setTotal(count ?? got.length);
@@ -124,7 +127,12 @@ function SeriesScreen({ id, from }: { id: string; from?: string }) {
 
   // A series is its author's: one blocked or muted (from a part's reader, say) is not what the
   // member wants to see, so the page leaves as the reader does, never standing as their list.
-  const authorHidden = useLeavesWhenHidden(parts.find((f) => !!f.authorId)?.authorId);
+  const authorHidden = useLeavesWhenHidden(asRead.find((f) => !!f.authorId)?.authorId);
+  // The parts as the phone now knows them: one the member withdrew or amended here follows the act
+  // (a part withdrawn leaves, as the read leaves out an ended one), and one a read here found the
+  // house no longer gives leaves too. The count left unread moves by those that left.
+  const parts = useAsTheHouseNowHolds(asRead).filter((f) => !f.endedAt);
+  const partsTotal = total - (asRead.length - parts.length);
 
   if (loading || authorHidden) {
     return (
@@ -220,9 +228,9 @@ function SeriesScreen({ id, from }: { id: string; from?: string }) {
           />
           {/* Said out loud rather than swallowed. The alternative is a page that
               lists twenty-four parts, prints `24 OF 24`, and is wrong. */}
-          {total > parts.length ? (
+          {partsTotal > parts.length ? (
             <Text style={p.ballotFoot} {...scaledTextProps}>
-              {`THE FIRST ${parts.length} OF ${total} PARTS`}
+              {`THE FIRST ${parts.length} OF ${partsTotal} PARTS`}
             </Text>
           ) : null}
         </PaperSheet>

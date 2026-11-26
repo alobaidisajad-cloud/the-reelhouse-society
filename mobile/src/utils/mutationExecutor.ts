@@ -1129,6 +1129,21 @@ const MOVES_A_VERDICT: ReadonlySet<QueuedMutation['type']> = new Set<QueuedMutat
     'add_log', 'mark_watched', 'update_log', 'remove_log', 'add_viewing', 'remove_viewing',
 ]);
 
+/** The page each replay's online twin reads again once the house has answered it: the queue's send is
+ *  the house's answer too, so the page that drew the act as the phone laid it reads the house's own
+ *  copy then (a critique's cleaned words, a stack's films in their order, a record's edited mark).
+ *  aChangeReachesEveryHolder holds it to the online acts. */
+const READ_AGAIN_ONCE_SENT: Partial<Record<QueuedMutation['type'], (p: Record<string, unknown>) => readonly unknown[]>> = {
+    add_list_comment: (p) => ['stackComments', p.list_id],
+    update_list: (p) => ['stack', p.list_id],
+    add_film_to_list: (p) => ['stack', p.list_id],
+    remove_film_from_list: (p) => ['stack', p.list_id],
+    update_log: (p) => ['log', p.id],
+    remove_log: (p) => ['log', p.log_id],
+    add_viewing: (p) => ['log', p.log_id],
+    remove_viewing: (p) => ['log', p.log_id],
+};
+
 /** The film a replay is about: the one it names, else the film of the record the phone holds by its id. */
 function filmOfReplay(type: QueuedMutation['type'], p: Record<string, unknown>): number | null {
     if (p.film_id != null && Number.isFinite(Number(p.film_id))) return Number(p.film_id);
@@ -1167,5 +1182,7 @@ export async function executeMutation(
     // has it, as one written online is (round 11).
     const film = MOVES_A_VERDICT.has(mutation.type) ? filmOfReplay(mutation.type, mapped) : null;
     if (film != null) void queryClient.invalidateQueries({ queryKey: ['film', film] });
+    const page = READ_AGAIN_ONCE_SENT[mutation.type];
+    if (page) void queryClient.invalidateQueries({ queryKey: page(mapped) });
     return result;
 }

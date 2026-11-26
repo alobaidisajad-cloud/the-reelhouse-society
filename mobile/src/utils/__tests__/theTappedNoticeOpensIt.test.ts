@@ -17,6 +17,7 @@ import { noticeRoute } from '../noticeRoute';
 import { NOTICES_SHEET, noticeIdOf, openNoticeFromPush } from '../openNoticeFromPush';
 import { deliverEachTapOnce } from '@/src/lib/pushNotifications';
 import { useNotificationStore, type AppNotification } from '@/src/stores/notificationStore';
+import { useAuthStore } from '@/src/stores/auth';
 import { nav } from '@/src/utils/typedRouter';
 import { supabase } from '@/src/lib/supabase';
 import { readCode } from '@/test-utils/readCode';
@@ -126,6 +127,28 @@ describe('a tapped push', () => {
     expect(eq).toHaveBeenCalledWith('user_id', '11111111-1111-4111-8111-111111111111');
     // Already read on the server — not marked again.
     expect(markRead).not.toHaveBeenCalled();
+  });
+
+  it('a notice read for a member who signed out while it was read is marked read in no one’s name', async () => {
+    const auth = useAuthStore.getState() as unknown as { user: { id: string } | null };
+    const held = auth.user;
+    const chain: Record<string, jest.Mock> = {
+      select: jest.fn(() => chain),
+      eq: jest.fn(() => chain),
+      maybeSingle: jest.fn(async () => {
+        auth.user = null;
+        return { data: { id: 'n8', user_id: 'u', type: 'follow', message: 'followed you', is_read: false, created_at: '2026-09-17T00:00:00Z', from_username: 'marguerite' }, error: null };
+      }),
+    };
+    jest.mocked(supabase.from).mockReturnValue(chain as never);
+    const markRead = jest.fn(async () => {});
+    useNotificationStore.setState({ markRead } as never);
+    try {
+      await openNoticeFromPush('n8');
+      expect(markRead).not.toHaveBeenCalled();
+    } finally {
+      auth.user = held;
+    }
   });
 
   it('a notice that cannot be found, or points nowhere, opens the notices sheet', async () => {

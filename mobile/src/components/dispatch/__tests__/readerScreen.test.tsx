@@ -101,11 +101,8 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.gt = () => self();
       chain.in = () => Promise.resolve({ data: [], error: null });
       chain.order = () => self();
-      // The critiques arrive HERE: the reader's own fetch replaces the store's.
-      chain.range = () => {
-        const r = Promise.resolve({ data: mockCritiqueRows, error: null });
-        return Object.assign(r, { abortSignal: () => r });
-      };
+      // A next page of critiques begins after the last row read.
+      chain.or = () => self();
       // A BUILDER, not a bare result: every store read calls `.abortSignal()`
       // on it, and a throw there renders "could not be reached".
       const builder = (data: unknown, error: unknown = null) => {
@@ -117,7 +114,8 @@ jest.mock('@/src/lib/supabase', () => ({
         : mockRowFails
         ? builder(null, { message: 'TypeError: Network request failed' })
         : builder(mockRow));
-      chain.limit = () => builder(mockNextRows); // the next part (critiques use range)
+      // The critiques arrive HERE (the reader's own fetch replaces the store's); any other, the next part.
+      chain.limit = () => builder(table === 'dispatch_comments' ? mockCritiqueRows : mockNextRows);
       // Writes: missing, every act would roll back as if refused.
       chain.insert = () => (mockWriteAnswers.length
         ? Promise.resolve({ data: null, error: mockWriteAnswers.shift() })

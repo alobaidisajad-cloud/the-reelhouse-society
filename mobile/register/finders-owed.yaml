@@ -8,29 +8,7 @@ TOLD:
   - COPY-one-failure-said-twice
   - COPY-a-refusal-undone-unsaid
 LATE:
-  - LATE-an-answer-over-a-newer-state
-  - READ-a-page-ordered-by-a-key-rows-share
-  - WRITE-words-let-go-unsent
-  - READ-an-answer-drawn-under-an-order-left
-  - READ-the-next-page-asks-an-old-one
-  - READ-a-page-judged-by-the-rows-kept
-  - READ-a-page-begun-past-its-row
-  - WRITE-a-failure-put-back-by-a-read
-  - READ-a-reread-that-drops-waiting-writes
-  - STATE-an-unsent-write-left-off-a-redrawn-page
-  - WRITE-a-rollback-that-undoes-another-write
-  - STATE-pages-read-past-the-first-dropped
-  - READ-a-later-page-failing-in-silence
-  - AUTH-a-sign-out-undone-by-a-late-answer
 COPY:
-  - DATA-edit-sealed-over-an-unread-record
-  - UI-notice-opens-elsewhere
-  - STATE-a-request-held-after-its-answer
-  - WRITE-a-sent-message-taken-off-the-screen
-  - STATE-a-reset-listed-by-hand
-  - READ-a-refresh-aimed-at-no-query
-  - STATE-one-screen-changed-another-printing-the-old
-  - STATE-a-copy-drawn-after-the-house-let-it-go
 PROT:
   - DB-rule-kept-on-one-path
   - DB-row-reaches-past-its-reader
@@ -43,7 +21,6 @@ UNKN:
   - NAV-a-stranger-at-a-members-door
   - READ-a-search-cut-at-a-fixed-count
 EXIT:
-  - EXIT-work-past-its-screen
   - UI-a-sheet-with-no-way-out
   - UI-a-modal-over-a-falling-modal
   - NAV-a-leave-asked-after-it-was-decided
@@ -64,7 +41,6 @@ LIB:
 ABUSE:
   - SEC-a-sign-in-pace-hardened
   - AUTH-a-member-held-out-by-anothers-guesses
-  - SEC-a-write-a-script-repeats-without-end
   - SEC-a-card-that-speaks-for-another
   - SEC-a-rule-helper-served-to-members
   - DATA-a-count-anyone-can-inflate
@@ -75,7 +51,6 @@ MOD:
   - MOD-the-evidence-changed-before-the-verdict
   - MOD-a-removal-that-cannot-be-undone
 EDGE:
-  - TOOL-a-measure-faults-what-the-phone-allows
 SPEED:
   - DB-lookup-without-index
   - SPEED-page-waits-for-the-members-marks
@@ -85,6 +60,7 @@ SPEED:
   - SPEED-a-screen-takes-a-store-whole
   - SPEED-a-page-waits-for-what-it-knows
   - DB-the-rule-asked-twice-a-row
+  - SPEED-a-mark-redraws-the-words
 SIDE:
   - DB-certification-held-twice
   - COPY-one-act-told-as-another
@@ -93,6 +69,7 @@ SESS:
   - AUTH-a-recovery-left-open
   - AUTH-a-member-signed-in-over-another
 R:
+  - TEST-a-test-near-its-time-limit
   - REHEARSE-a-borrowed-member-read-as-empty
   - E2E-keyboard-covers-the-field
   - NAV-launch-link-overridden

@@ -137,7 +137,8 @@ export interface NotificationState {
     moreFailed: boolean;
     _fetching: boolean;
     _fetchingMore: boolean;
-    fetchNotifications: () => Promise<void>;
+    /** Reads the board again as far as it was read; from its top alone when the member pulls for the newest. */
+    fetchNotifications: (how?: { fromTop?: boolean }) => Promise<void>;
     loadMoreNotifications: () => Promise<void>;
     markRead: (id: string) => Promise<void>;
     /** One notice by id — from the list if it is loaded, else from the server. */
@@ -287,10 +288,10 @@ type Failed = { message: string } | null;
  * other, and the bell counted a notice the board did not hold (or missed one it did). A house
  * without the form yet (its migration not applied: PGRST202) is read as before, in two reads.
  */
-async function readBoard(userId: string): Promise<{ data: unknown[] | null; error: Failed; unread: { count: number | null; more: boolean; error: Failed } }> {
+async function readBoard(userId: string, size: number): Promise<{ data: unknown[] | null; error: Failed; unread: { count: number | null; more: boolean; error: Failed } }> {
     let page: { data: unknown; error: { code?: string; message: string } | null } | null = null;
     try {
-        page = await supabase.rpc('notices_page', { p_limit: PAGE_SIZE });
+        page = await supabase.rpc('notices_page', { p_limit: size });
     } catch {
         // The call could not be made at all: read as before.
         page = null;
@@ -311,7 +312,7 @@ async function readBoard(userId: string): Promise<{ data: unknown[] | null; erro
             .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .order('id', { ascending: false })
-            .limit(PAGE_SIZE),
+            .limit(size),
         // A thousand unread ids at most (the API's own ceiling), never a count of every unread notice:
         // a read that grows with a member's audience grows with the house. A full thousand is a floor.
         supabase
@@ -325,12 +326,43 @@ async function readBoard(userId: string): Promise<{ data: unknown[] | null; erro
     return { data: data as unknown[] | null, error, unread: { count: held, more: (held ?? 0) >= UNREAD_CAP, error: unreadRes.error } };
 }
 
+/** The most notices one read of the board asks for: notices_page answers no more than 100. */
+const BOARD_READ_MOST = 100;
+
+/** The notices older than a cursor (`created_at|id`), newest first, as many as `size`. */
+function readOlder(userId: string, cursor: string, size: number) {
+    const [cursorDate, cursorId] = cursor.split('|');
+    let query = supabase
+        .from('notifications')
+        .select(NOTIFICATION_COLUMNS)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(size);
+    if (cursorDate && cursorId) {
+        query = query.or(`created_at.lt.${cursorDate},and(created_at.eq.${cursorDate},id.lt.${cursorId})`);
+    } else if (cursorDate) {
+        // A bare created_at cursor, as an older saved state may hold.
+        query = query.lt('created_at', cursorDate);
+    }
+    return query;
+}
+
+/**
+ * Where the board reads on from: `created_at|id`, so two rows at one instant are neither repeated nor
+ * skipped; from the RAW last row, or a bad last row would never be passed.
+ */
+function cursorPast(rows: unknown[]): string | null {
+    const lastRaw = rows[rows.length - 1] as { created_at?: string; id?: string } | undefined;
+    return lastRaw?.created_at && lastRaw?.id ? `${lastRaw.created_at}|${lastRaw.id}` : null;
+}
+
 export const useNotificationStore = create<NotificationState>()(
     persist(
         (set, get) => ({
     ...noticesAtStart(),
 
-    fetchNotifications: async () => {
+    fetchNotifications: async (how) => {
         const user = useAuthStore.getState().user;
         if (!user) return;
 
@@ -341,10 +373,29 @@ export const useNotificationStore = create<NotificationState>()(
 
         set({ loading: true, _fetching: true });
         const askedAt = monotonicNow();
+        // As far as the board was read (the app come back to, a channel back, the board opened), never
+        // its first page alone in place of the pages read past it; from its top when the member pulls.
+        const want = how?.fromTop ? PAGE_SIZE : Math.min(LOCAL_NOTIFICATION_CAP, Math.max(PAGE_SIZE, state.notifications.length));
         try {
-            // The badge is asked of the SERVER, never counted from one page of 30: with the page, at
-            // one moment (readBoard).
-            const { data, error, unread: unreadRes } = await readBoard(user.id);
+            // The badge is asked of the SERVER, never counted from one page of 30: with the first page,
+            // at one moment (readBoard). The rest read past it is ONE more read on from its last row
+            // (as many as the board holds, 500 at most): two trips at most, never a walk page by page.
+            let asked = Math.min(want, BOARD_READ_MOST);
+            const first = await readBoard(user.id, asked);
+            const unreadRes = first.unread;
+            let { data, error } = first;
+            let lastRead = data?.length ?? 0;
+            const past = data && !error && lastRead === asked && data.length < want ? cursorPast(data) : null;
+            if (data && past) {
+                asked = want - data.length;
+                const older = await readOlder(user.id, past, asked);
+                // The rest past the first that could not be read: the board is not read, never cut short.
+                if (older.error || !older.data) { error = older.error ?? { message: 'an older page answered nothing' }; data = null; }
+                else {
+                    lastRead = older.data.length;
+                    data = [...data, ...(older.data as unknown[])];
+                }
+            }
 
         if (unreadRes.error) {
             // The page's own count stands in, said aloud.
@@ -364,10 +415,7 @@ export const useNotificationStore = create<NotificationState>()(
                 }
                 return [r.data];
             });
-            // `created_at|id`, so two rows at one instant are neither repeated nor
-            // skipped; from the RAW last row, or a bad last row would never be passed.
-            const lastRaw = data[data.length - 1] as { created_at?: string; id?: string } | undefined;
-            const cursor = lastRaw?.created_at && lastRaw?.id ? `${lastRaw.created_at}|${lastRaw.id}` : null;
+            const cursor = cursorPast(data);
             // Marks this read was asked before the house took: laid over its answer (readHere).
             const markedSince = new Set([...readHere].filter(([, at]) => at >= askedAt).map(([id]) => id));
             for (const [id, at] of readHere) if (at < askedAt) readHere.delete(id);
@@ -391,7 +439,8 @@ export const useNotificationStore = create<NotificationState>()(
                 .filter((n) => heardSince.has(n.id) && !inAnswer.has(n.id) && !goneSince.has(n.id))
                 .map((n) => (!n.read && readSince(n) ? { ...n, read: true } : n));
             const heardUnread = heard.filter((n) => !n.read).length;
-            const shown = heard.length === 0 ? answered : [...heard, ...answered];
+            // Held to the board's most: a notice heard lets the oldest read go.
+            const shown = heard.length === 0 ? answered : [...heard, ...answered.slice(0, LOCAL_NOTIFICATION_CAP - heard.length)];
             set({
                 fetchFailed: false,
                 moreFailed: false,
@@ -400,8 +449,8 @@ export const useNotificationStore = create<NotificationState>()(
                 _unreadCount: unreadRes.error || allReadSince ? shown.filter(n => !n.read).length : Math.max(0, (unreadRes.count ?? 0) - answeredUnread) + heardUnread,
                 // At the house's thousand the count is a floor, said as "a thousand or more".
                 _unreadMore: !unreadRes.error && !allReadSince && unreadRes.more,
-                // Did the SERVER send a full page (not: how many rows survived)?
-                _hasMore: !!cursor && data.length >= PAGE_SIZE,
+                // Did the SERVER send its last read full (not: how many rows survived)?
+                _hasMore: !!cursor && lastRead >= asked && shown.length < LOCAL_NOTIFICATION_CAP,
                 _cursor: cursor,
             });
         } else if (error) {
@@ -431,23 +480,7 @@ export const useNotificationStore = create<NotificationState>()(
         set({ loading: true, _fetchingMore: true });
         const askedAt = monotonicNow();
         try {
-            const [cursorDate, cursorId] = _cursor.split('|');
-            let query = supabase
-                .from('notifications')
-                .select(NOTIFICATION_COLUMNS)
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
-                .order('id', { ascending: false })
-                .limit(PAGE_SIZE);
-
-        if (cursorDate && cursorId) {
-            query = query.or(`created_at.lt.${cursorDate},and(created_at.eq.${cursorDate},id.lt.${cursorId})`);
-        } else if (cursorDate) {
-            // A bare created_at cursor, as an older saved state may hold.
-            query = query.lt('created_at', cursorDate);
-        }
-
-        const { data, error } = await query;
+        const { data, error } = await readOlder(user.id, _cursor, PAGE_SIZE);
 
         // Same as the initial fetch — see the note there.
         if (!stillSignedIn(user.id)) return;
@@ -479,10 +512,7 @@ export const useNotificationStore = create<NotificationState>()(
                 const allNotifs = [...state.notifications, ...deduped].slice(0, LOCAL_NOTIFICATION_CAP);
 
                 // From the RAW response, as in the first fetch.
-                const lastRaw = data[data.length - 1] as { created_at?: string; id?: string } | undefined;
-                const advanced = lastRaw?.created_at && lastRaw?.id
-                    ? `${lastRaw.created_at}|${lastRaw.id}`
-                    : null;
+                const advanced = cursorPast(data);
 
                 return {
                     moreFailed: false,

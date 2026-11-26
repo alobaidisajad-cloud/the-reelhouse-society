@@ -27,9 +27,13 @@ export default function OfflineBanner() {
 
     const handleRetry = async () => {
         setChecking(true);
-        await NetInfo.fetch(); // Force re-check
-        if (settle.current) clearTimeout(settle.current);
-        settle.current = setTimeout(() => setChecking(false), 1000);
+        try {
+            await NetInfo.fetch(); // Force re-check
+        } finally {
+            // Settled a second later either way: a check that threw is never left checking.
+            if (settle.current) clearTimeout(settle.current);
+            settle.current = setTimeout(() => setChecking(false), 1000);
+        }
     };
 
     return (

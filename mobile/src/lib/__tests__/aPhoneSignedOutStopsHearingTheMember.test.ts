@@ -11,13 +11,15 @@
  * forgets its token by the token itself; signing out every other device takes the other phones'
  * tokens and keeps this one's; a token that could not be forgotten (the house away) is owed and
  * forgotten when the network returns, with no session left to refresh; and a token registered again
- * here is no longer owed, so the forget never takes the new registration with it.
+ * here is no longer owed, so the forget never takes the new registration with it, unless the member
+ * signed out while the house took it: then it is forgotten again, and the phone keeps no record of it.
  */
 import { supabase } from '@/src/lib/supabase';
 import * as Notifications from 'expo-notifications';
 import { endOtherSessions, endSessionHere, settleOwedSignOut, owePushToken, __owedForTests, __othersOwedForTests } from '@/src/lib/endSession';
 import { PUSH_REGISTERED_AT_KEY, PUSH_TOKEN_KEY, REREGISTER_AFTER_MS, registerForPushNotifications, registrationIsDue, removePushToken } from '@/src/lib/pushNotifications';
 import { houseNow } from '@/src/lib/houseClock';
+import { useAuthStore } from '@/src/stores/auth';
 
 // The real client, over the network this test plays.
 jest.unmock('@supabase/supabase-js');
@@ -52,12 +54,20 @@ let asked: { at: string; body: unknown }[] = [];
 let networkUp = true;
 /** The house refuses forget_other_devices (a moment's failure after the sign-out landed). */
 let othersRefused = false;
+/** Run as the house takes a registration, before its answer reaches the phone. */
+let whileRegistering: (() => void) | null = null;
+/** Run as the house is asked to forget the other phones' tokens. */
+let whileForgettingOthers: (() => void) | null = null;
 
 beforeEach(() => {
   mockDisk.clear();
   asked = [];
   networkUp = true;
   othersRefused = false;
+  whileRegistering = null;
+  whileForgettingOthers = null;
+  // The member signed in on the phone, as every registration is made for.
+  useAuthStore.setState({ user: { id: ME } } as never);
   jest.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const url = new URL(String(input instanceof Request ? input.url : input));
     let body: unknown = null;
@@ -65,12 +75,14 @@ beforeEach(() => {
     asked.push({ at: `${init?.method ?? 'GET'} ${url.pathname}${url.search.includes('scope=others') ? '?others' : ''}`, body });
     if (!networkUp) throw new TypeError('Network request failed');
     if (url.pathname.endsWith('/rpc/forget_other_devices')) {
+      whileForgettingOthers?.();
       if (othersRefused) return new Response(JSON.stringify({ code: '57014', message: 'canceling statement due to statement timeout' }), { status: 500, headers: { 'content-type': 'application/json' } });
       return new Response('2', { status: 200, headers: { 'content-type': 'application/json' } });
     }
     if (url.pathname.endsWith('/rpc/forget_push_token')) {
       return new Response('true', { status: 200, headers: { 'content-type': 'application/json' } });
     }
+    if (url.pathname.endsWith('/rpc/register_push_token')) whileRegistering?.();
     return new Response(null, { status: 204 });
   });
 });
@@ -147,6 +159,19 @@ it('a token registered again on this phone is no longer owed: the forget would t
   expect(rpcAsked('forget_push_token')).toEqual([]);
 });
 
+it('a registration answered after the member signed out is forgotten again, kept by nothing, and an owed forget stays owed', async () => {
+  mockDisk.set(PUSH_TOKEN_KEY, 'test-push-token');
+  owePushToken(ME);
+  mockDisk.delete(PUSH_TOKEN_KEY);
+  mockDisk.set(KEY, session('again'));
+  // The member signs out while the house takes the registration made for them.
+  whileRegistering = () => useAuthStore.setState({ user: null } as never);
+  await registerForPushNotifications(ME);
+  expect(rpcAsked('forget_push_token')).toEqual([{ p_token: 'test-push-token', p_user: ME }]);
+  expect([mockDisk.has(PUSH_TOKEN_KEY), mockDisk.has(PUSH_REGISTERED_AT_KEY)]).toEqual([false, false]);
+  expect(__owedForTests()).toEqual({ refreshToken: null, userId: ME, pushToken: 'test-push-token' });
+});
+
 it('a forget of the other phones’ tokens that failed is owed, and asked again, under this phone’s session', async () => {
   mockDisk.set(KEY, session('first'));
   mockDisk.set(PUSH_TOKEN_KEY, 'ExponentPushToken[this-phone]');
@@ -159,6 +184,14 @@ it('a forget of the other phones’ tokens that failed is owed, and asked again,
   asked = [];
   await settleOwedSignOut();
   expect(rpcAsked('forget_other_devices')).toEqual([{ p_keep_token: 'ExponentPushToken[this-phone]' }]);
+  expect(__othersOwedForTests()).toBeNull();
+});
+
+it('a forget of the other phones’ tokens refused after another member signed in is owed in no one’s name', async () => {
+  mockDisk.set(KEY, session('first'));
+  othersRefused = true;
+  whileForgettingOthers = () => useAuthStore.setState({ user: { id: '22222222-2222-4222-8222-222222222222' } } as never);
+  expect(await endOtherSessions()).toBe(true);
   expect(__othersOwedForTests()).toBeNull();
 });
 

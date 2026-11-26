@@ -52,6 +52,23 @@ export interface InteractionSlice extends InteractionSliceData {
     learnEndorsements: (kind: 'log' | 'list', rows: { id: string; certified: boolean | null | undefined }[], askedAt: number) => void;
 }
 
+/**
+ * The member's certifications, read whole from the house (the newest 500 of each kind), numbered: asked
+ * again from the Reel's sign-in effect while the last was out, only the latest asked is laid. They
+ * only rise.
+ */
+let logEndorseReads = 0;
+let listEndorseReads = 0;
+
+/** The entries whose certification waits in the queue: no read holds yet what they will be. */
+function queuedEndorsements(): Set<string> {
+    return new Set(
+        getOfflineQueue()
+            .filter((q) => q.type === 'endorse_log' || q.type === 'endorse_list' || q.type === 'remove_endorsement')
+            .map((q) => String((q.payload as Record<string, unknown>).target_log_id ?? (q.payload as Record<string, unknown>).target_list_id ?? '')),
+    );
+}
+
 export const createInteractionSlice: StateCreator<InteractionSlice, [], [], InteractionSlice> = (set, get) => ({
     ...interactionSliceInitialState(),
 
@@ -156,6 +173,8 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
     fetchEndorsements: async () => {
         const user = useAuthStore.getState().user;
         if (!user) return;
+        const mine = ++logEndorseReads;
+        const askedAt = Date.now();
         const { data, error } = await supabase
             .from('interactions')
             .select('target_log_id, created_at')
@@ -163,9 +182,10 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
             .eq('type', 'endorse_log')
             .order('created_at', { ascending: false })
             .limit(500); // Reduced from 2000 — prevents massive payloads
-        // Left mid-fetch — see sessionGuard.
-        if (!stillSignedIn(user.id)) return;
+        // Left mid-fetch — see sessionGuard. Asked again since: the newer read answers.
+        if (!stillSignedIn(user.id) || mine !== logEndorseReads) return;
         if (!error && data) {
+            const queued = queuedEndorsements();
             const mapped: Interaction[] = (data ?? []).map(r => ({
                 type: 'endorse' as const,
                 targetId: r.target_log_id,
@@ -176,8 +196,11 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 // assign it, so a re-run — it is called from an auth effect —
                 // discarded anything learned since, including a certification the
                 // member had just made optimistically.
+                // An entry the member certified or took back since the read was asked, or whose
+                // certification waits in the queue, is the member's: a heart taken back meanwhile
+                // was put back by this answer.
                 const idx: Record<string, Interaction> = { ...state._endorsedIndex };
-                mapped.forEach(i => { if (i.type === 'endorse') idx[i.targetId] = i; });
+                mapped.forEach(i => { if (i.type === 'endorse' && !tappedSince('certify', i.targetId, askedAt) && !queued.has(i.targetId)) idx[i.targetId] = i; });
                 // The list is what the index is rebuilt from at the next launch
                 // (films.ts, on rehydrate), so it holds exactly what the index holds.
                 return {
@@ -298,11 +321,7 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
     learnEndorsements: (kind, rows, askedAt) => {
         const user = useAuthStore.getState().user;
         if (!user || rows.length === 0) return;
-        const queued = new Set(
-            getOfflineQueue()
-                .filter((q) => q.type === 'endorse_log' || q.type === 'endorse_list' || q.type === 'remove_endorsement')
-                .map((q) => String((q.payload as Record<string, unknown>).target_log_id ?? (q.payload as Record<string, unknown>).target_list_id ?? '')),
-        );
+        const queued = queuedEndorsements();
         const type = kind === 'log' ? ('endorse' as const) : ('endorse_list' as const);
         set((state) => {
             const key = kind === 'log' ? '_endorsedIndex' : '_listEndorsedIndex';
@@ -330,6 +349,8 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
     fetchListEndorsements: async () => {
         const user = useAuthStore.getState().user;
         if (!user) return;
+        const mine = ++listEndorseReads;
+        const askedAt = Date.now();
         const { data, error } = await supabase
             .from('interactions')
             .select('target_list_id, created_at')
@@ -337,19 +358,21 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
             .eq('type', 'endorse_list')
             .order('created_at', { ascending: false })
             .limit(500); // Reduced from 2000
-        // Left mid-fetch — see sessionGuard.
-        if (!stillSignedIn(user.id)) return;
+        // Left mid-fetch — see sessionGuard. Asked again since: the newer read answers.
+        if (!stillSignedIn(user.id) || mine !== listEndorseReads) return;
         if (!error && data) {
+            const queued = queuedEndorsements();
             const newListEndorsements = (data ?? []).map(r => ({
                 type: 'endorse_list' as const,
                 targetId: r.target_list_id,
                 timestamp: r.created_at,
             }));
             
-            // MERGE, never replace, and read inside the write — same reasons as the log index above.
+            // MERGE, never replace, and read inside the write — same reasons as the log index above;
+            // a stack the member certified or took back since the ask, or queued, is left as it is.
             set((state) => {
                 const idx: Record<string, Interaction> = { ...state._listEndorsedIndex };
-                newListEndorsements.forEach(i => { idx[i.targetId] = i; });
+                newListEndorsements.forEach(i => { if (!tappedSince('certify', i.targetId, askedAt) && !queued.has(i.targetId)) idx[i.targetId] = i; });
                 return {
                     interactions: [
                         ...state.interactions.filter(i => i.type !== 'endorse_list'),
