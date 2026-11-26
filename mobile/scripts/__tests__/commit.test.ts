@@ -4,7 +4,7 @@
  * brings no change stops it, and what is staged is printed before it commits.
  */
 import { spawnSync } from 'child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
@@ -152,7 +152,7 @@ describe('--merge: a finished branch brought in by a merge commit, its history a
   it('writes the results itself once the registry is resolved by hand: a mark git left in the results is not the hand\'s', () => {
     const REGISTRY = 'mobile/register/mutants.yaml';
     const row = (id: string, file: string) => `  - { id: ${id}, class: X-y, source: shape, edits: [{ file: ${file}, find: x, replace: y }] }\n`;
-    const registry = readFileSync(join(repo, REGISTRY), 'utf8');
+    const registry = `${git('show', `HEAD:${REGISTRY}`)}\n`;
     // Each side adds a mutant at the registry's end and records both rows at its own commit: both files conflict.
     git('checkout', '-q', 'feature');
     write(REGISTRY, registry + row('shape-c', 'src/b.ts'));
