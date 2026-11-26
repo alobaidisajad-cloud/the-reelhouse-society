@@ -35,7 +35,11 @@ const tiedPages = (sources: { file: string; code: string }[]) => sources.flatMap
     const kept = /^\s*(?:let|const)\s+(\w+)\s*=/.exec(before.slice(opened + 1))?.[1];
     const after = end >= 0 ? rest.slice(end, next > 0 ? next : undefined) : '';
     const keyset = !!kept && new RegExp(`\\b${kept}\\s*=\\s*${kept}\\.or\\(`).test(after);
-    const range = ranged >= 0 && !(next > 0 && next < ranged) && !(end >= 0 && end < ranged) ? ranged : keyset ? end : -1;
+    // A read of the order the next pages walk (`.limit(HELD_FILMS)`, `.limit(HELD_ORDER)`): its ties
+    // would stand in another order on the next read, and the walk would skip one and repeat the other.
+    const holds = rest.search(/\.limit\(\s*HELD_[A-Z_]+\s*\)/);
+    const inRead = (at: number) => at >= 0 && !(next > 0 && next < at) && !(end >= 0 && end < at);
+    const range = inRead(ranged) ? ranged : keyset ? end : inRead(holds) ? holds : -1;
     if (range < 0) continue;
     const chain = rest.slice(0, range);
     // A read kept in a name may be ordered by the statements after it (one order a branch). An order
@@ -65,6 +69,10 @@ it("says NO to a page ordered by a moment or a rank alone, and not to one ended 
   expect(tiedPages(page('dispatch_posts', ".order('created_at', { ascending: false }).order('id', { ascending: false })"))).toEqual([]);
   expect(tiedPages(page('list_items', ".eq('list_id', id).order('rank_position').order('film_id')"))).toEqual([]);
   expect(tiedPages([{ file: 'b.ts', code: "supabase.from('logs').select('id').order('created_at').limit(5);" }])).toEqual([]);
+  // The order the next pages walk, read once: a page as much as a range is.
+  const held = (orders: string) => [{ file: 'e.ts', code: `const order = await supabase.from('list_items').select('film_id').eq('list_id', id)${orders}.limit(HELD_FILMS);` }];
+  expect(tiedPages(held(".order('rank_position').order('created_at')"))).toEqual(['e.ts:1 list_items [rank_position, created_at]']);
+  expect(tiedPages(held(".order('rank_position').order('created_at').order('film_id')"))).toEqual([]);
   // A keyset page: kept in a name, narrowed after its last row; ended by the moment alone it is a tie.
   const keyset = (orders: string) => [{ file: 'c.ts', code: `let read = supabase.from('dispatch_posts').select('id')${orders};\nif (past) read = read.or(past);\nawait read.limit(20);` }];
   expect(tiedPages(keyset(".order('created_at', { ascending: false })"))).toEqual(['c.ts:1 dispatch_posts [created_at]']);

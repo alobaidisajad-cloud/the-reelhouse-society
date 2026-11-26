@@ -46,6 +46,12 @@ const JUDGED: Record<string, { n: number; why: string }> = {
   'src/hooks/useMemberRoom.ts · Promise.all · totals': {
     n: 1, why: 'read through `r`, its typed alias',
   },
+  'src/services/StackService.ts · [from] assigned to order, .error never read': {
+    n: 1, why: 'the answer is rowsOf\'s, which reads its error and throws it; `order` holds only its rows',
+  },
+  'src/stores/dispatch.ts · Promise.all · heldRows': {
+    n: 1, why: 'the answer is rowsOf\'s, which reads its error and throws it; `heldRows` holds only its rows',
+  },
 };
 
 // ── the scan ────────────────────────────────────────────────────────────────

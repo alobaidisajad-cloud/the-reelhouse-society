@@ -307,6 +307,26 @@ describe('the circle, read and failed, and read a page at a time', () => {
         expect([!!screen.queryByText('@MEMBER2'), !!screen.queryByText('@MEMBER5')]).toEqual([false, true]);
     });
 
+    it('a next page asked of the list before it was read again lands on no other list', async () => {
+        let answerPage: (v: unknown) => void = () => {};
+        (ProfileService.getSocialConnections as jest.Mock)
+            .mockResolvedValueOnce({ profiles: [member(1)], hasMore: true, nextCursor: 'c1' })
+            .mockImplementationOnce(() => new Promise((r) => { answerPage = r; }))
+            .mockResolvedValueOnce({ profiles: [member(9)], hasMore: false });
+        const screen = render(<SocialModal />);
+        expect(await screen.findByText('@MEMBER1')).toBeTruthy();
+        await act(async () => { mockList.onEndReached?.(); });
+
+        // The same member's following, read while the followers' next page is out.
+        mockParams = { type: 'following', userId: '00000014-0000-4000-8000-000000000014' };
+        await act(async () => { await screen.rerender(<SocialModal />); });
+        expect(await screen.findByText('@MEMBER9')).toBeTruthy();
+
+        await act(async () => { answerPage({ profiles: [member(2)], hasMore: false }); });
+        expect(screen.queryByText('@MEMBER2')).toBeNull();
+        expect(screen.getByText('@MEMBER9')).toBeTruthy();
+    });
+
     it('and a page that failed is said at the foot, with the way to ask again', async () => {
         (ProfileService.getSocialConnections as jest.Mock)
             .mockResolvedValueOnce({ profiles: [member(1)], hasMore: true, nextCursor: 'c1' })

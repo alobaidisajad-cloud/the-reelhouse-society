@@ -208,3 +208,22 @@ describe('signing out', () => {
     expect(mockRemoveItem).toHaveBeenCalledWith('reelhouse-vault');
   });
 });
+
+describe('a note written while its log is read', () => {
+  it('stands over the read asked before it, which may be older than the write', async () => {
+    useVaultStore.setState({ notes: { [V1]: 'first words' }, notesLog: { [V1]: LOG_A }, loaded: { [LOG_A]: true } } as never);
+    let answer: (rows: unknown[]) => void = () => undefined;
+    mockFetch.mockReturnValueOnce(new Promise((res) => { answer = res; }));
+    let landed: () => void = () => undefined;
+    mockSet.mockReturnValueOnce(new Promise<void>((res) => { landed = res; }));
+    const read = useVaultStore.getState().loadForLog(LOG_A, { force: true });
+    const write = useVaultStore.getState().saveNote(LOG_A, V1, 'second words');
+    answer([{ viewing_id: V1, log_id: LOG_A, notes: 'first words' }, { viewing_id: V2, log_id: LOG_A, notes: 'untouched' }]);
+    await read;
+    expect(useVaultStore.getState().notes[V1]).toBe('second words');
+    expect(useVaultStore.getState().notes[V2]).toBe('untouched');
+    landed();
+    await write;
+    expect(useVaultStore.getState().notes[V1]).toBe('second words');
+  });
+});

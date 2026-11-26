@@ -599,7 +599,7 @@ classes:
     seriousness: behaviour
     area: tests
     status: OPEN
-    count: 123
+    count: 122
     source: { kind: history, ref: "the salon roster read a missing column for three months under green tests (a-mock-accepts-any-column); P0.63" }
     methods:
       - { kind: running, file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "a column the table does not have, in a select, a filter or an order" }
@@ -1362,7 +1362,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 1414
+    count: 1412
     source: { kind: reviewer, ref: P0.65 }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
@@ -2906,9 +2906,9 @@ classes:
     count: 2
     source: { kind: reviewer, ref: "review round 3, every feature, 2026-11-15" }
     methods:
-      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique of the member's own, set at the top, does not move the next page past a row" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique of the member's own, set at the top, is not read again and moves no row past the next page" }
       - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a row the house sent and the parser dropped still stands in the order: the next page follows it" }
-      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique withdrawn from a page read leaves the next page beginning after the same last row" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique filed, and one withdrawn, between two pages move no row past the next page" }
       - { kind: running, file: src/hooks/__tests__/aNextPageStartsAfterTheLastRowRead.test.tsx, test: "a filing withdrawn while the member reads does not make the next page skip the one after the page" }
       - { kind: running, file: src/hooks/__tests__/aNextPageStartsAfterTheLastRowRead.test.tsx, test: "a filing filed while the member reads does not draw one already on screen a second time" }
       - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "2: no page is asked by its count" }
@@ -5457,7 +5457,7 @@ classes:
     seriousness: serious
     area: [notices, lounge, dispatch, profile, stacks, settings]
     status: OPEN
-    count: 22
+    count: 0
     source: { kind: reviewer, ref: "the kinds of mistake of review rounds 8 to 14 (stage C): r8 A1, A3, A4; r9 B1, B2, B3, B4, B7; r10 B2, aside; r11 D3; r12 C2, C5, C6; r13 A1, A3; the fixes' reviews r13 A2, A3, A4, A5, B3, D2" }
     folds: [READ-a-reread-that-drops-waiting-writes, READ-an-answer-drawn-under-an-order-left, WRITE-a-rollback-that-undoes-another-write, WRITE-an-older-write-sent-over-a-newer, READ-an-answer-that-wipes-what-was-heard, READ-a-page-begun-past-its-row, STATE-pages-read-past-the-first-dropped]
     methods:
@@ -5480,8 +5480,7 @@ classes:
       - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a write laid thing by thing passes only when each thing the member acted on since the ask is skipped, the moment taken before the wait" }
       - { kind: running, file: src/services/__tests__/aStackPageBeginsAfterItsLastFilm.test.ts, test: "a film taken out of the stack while the first page was held: the next page still begins at the film after the last drawn" }
       - { kind: running, file: src/services/__tests__/aStackPageBeginsAfterItsLastFilm.test.ts, test: "pages a stack whose films are unranked and added together, every film once and in its order" }
-      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "continues after the last row it was sent, and keeps both pages" }
-      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "under CERTIFIED, the next page begins after the last row on all three of its places: its count, when, its id" }
+      - { kind: running, file: src/utils/__tests__/keysetCursor.test.ts, test: "a stack: rank (none last), then when added, then the film, 2 a page: every row once, in order" }
       - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a first page asked again in the same order: the older answer, landing last, is not drawn" }
       - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a next page of a read since asked again is not joined to the new first page, and its spinner is let down" }
       - { kind: running, file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "of two reads of a filing, the older answering last is not laid over the newer" }
@@ -5499,7 +5498,53 @@ classes:
       - { kind: running, file: src/stores/__tests__/aNoteWrittenWhileTheVaultIsReadStays.test.ts, test: "a note saved while the record’s notes are read again is not taken away by the answer" }
       - { kind: running, file: src/stores/__tests__/aNoteWrittenWhileTheVaultIsReadStays.test.ts, test: "a note taken back while the record’s notes are read again does not come back" }
       - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a read raising its own mark for one key, and leaving while that key's mark is up, is one at a time; without the leave it is not" }
-    sweep: { read: [appCode], found: 32, fixed: 30, judged: 2, commit: "91e79237", finder: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, result: "anAnswerIsStillTheOneAsked over app/, src/stores, src/hooks, src/components, src/features, src/providers, and every app file for pages (stage C): 23 re-asked reads with no token found, 21 fixed (the push permission's re-read, the essay's part, the circle sheet, a member's room read and filtered read, the profile read again, the rank history, the block list; a filing read whole, a ballot's count, a filing's critique pages first and next, the marks of filings and of critiques, each by a read number per thing and the shared acts ledger, markCounts; the Reel's and the stacks' hearts; the corridor, a room's first read and its next page; the Vault's notes of a record), 2 judged (one named in the finder with why it cannot be overtaken; one no defect, the door's next page, once the finder knew a busy flag let down with its own mark); the finder taught a reducer's dispatch, a room's switch and a signal the next read cancels found 5 more in the member's file (four next pages, the file's spinner), all fixed; taught a write laid thing by thing and a mark raised for one key of a map, it found none it had passed wrongly; 4 pages asked by their count found, all 4 fixed (the export, the import's stack read, a stack's films, a filing's critiques), each now after its last row by keysetCursor.keysetAfter; both of the finder's lists are empty" }
+      - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a pull, a store's setter called from outside it, and a turn of another family or taken after the wait are found" }
+      - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: and passes a thing's turn still its last, and a wait in the other branch" }
+      - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a pull lowers only the flag its RefreshControl holds, raised before it waited" }
+      - { kind: running, file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "lays the newer read when the older lands last, and answers the older call with it" }
+      - { kind: running, file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "a ballot's running count asked earlier never lands over one asked later" }
+      - { kind: running, file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "read again keep the newer list when the older lands last" }
+      - { kind: running, file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "a next page asked of the list before it was read again is not laid on the new one" }
+      - { kind: running, file: src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts, test: "a certification taken back while the member's marks were read stays taken back" }
+      - { kind: running, file: src/stores/__tests__/aCertificationTakenBackWhileReadStaysTakenBack.test.ts, test: "a record's certification taken back while they are read stays taken back" }
+      - { kind: running, file: src/stores/__tests__/aCertificationTakenBackWhileReadStaysTakenBack.test.ts, test: "a stack's certification taken back while they are read stays taken back" }
+      - { kind: running, file: src/stores/__tests__/vaultStore.test.ts, test: "stands over the read asked before it, which may be older than the write" }
+      - { kind: running, file: src/stores/__tests__/aBlockMadeWhileTheListsAreReadStays.test.ts, test: "of two reads, the later asked is laid, whichever lands last" }
+      - { kind: running, file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "lays the later asked, whichever lands last" }
+      - { kind: running, file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "a read of the member's standing asked before a whole read lands nowhere after it" }
+      - { kind: running, file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "read twice, lays the later asked, whichever lands last" }
+      - { kind: running, file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "a read asked before a leave never draws the room left as the member's again" }
+      - { kind: running, file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "read whole twice keep the newer read's words when the older lands last" }
+      - { kind: running, file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "a page of older words asked before the room was read again from its newest is asked again of the new list" }
+      - { kind: running, file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "a catch-up asked before a withdrawal never puts the words back" }
+      - { kind: running, file: src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts, test: "a send held in the queue, tried again twice, is tried once, and stands sent" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique filed, and one withdrawn, between two pages move no row past the next page" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "counts that move while the member reads skip and repeat no row of the order held" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "past the order held, by the last row read as it was read: no row is drawn twice" }
+      - { kind: running, file: src/services/__tests__/aStacksFilmsAreReadInTheOrderHeld.test.ts, test: "films moved while the member reads skip and repeat no film of the order held, and past it none is drawn twice" }
+      - { kind: running, file: src/services/__tests__/aStacksFilmsAreReadInTheOrderHeld.test.ts, test: "films with no rank come last, as the order has them, and a page past the order held reaches them" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "opened twice: the later read is laid, whichever lands last" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "searched again: an older search that fails says nothing over the newer one that answered" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "your own logs retried twice: the later retry says how the read went" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "read again while the last read is out: the later read is laid, whichever lands last" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the member's logs: read again while a next page is out, the page lands on no new first page" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the watchlist: searched while its next page is out, the page lands on no new list" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the shelf: searched while its next page is out, the page lands on no new list" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the stacks: searched while their next page is out, the page lands on no new list" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the watchlist: a page let go lowers no flag a newer search of the room raised" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the shelf: a page let go lowers no flag a newer search of the room raised" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the stacks: a page let go lowers no flag a newer search of the room raised" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the member's archive: a page let go lowers no flag a newer search of the archive raised" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "a search overtaken by a newer one lowers no flag the newer one raised" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "a member left while their read is out lowers no spinner over the next member's read" }
+      - { kind: running, file: src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx, test: "the summary asked again lands on no newer read of the file, nor under a later retry" }
+      - { kind: running, file: src/hooks/__tests__/theDoorsCountIsLaidInItsTurn.test.tsx, test: "a count asked earlier that lands last is laid over no newer one" }
+      - { kind: running, file: src/hooks/__tests__/theDoorsCountIsLaidInItsTurn.test.tsx, test: "a count read while an admission was out is asked again, and the admitted member stays off the badge" }
+      - { kind: running, file: app/(modals)/__tests__/social-modal.telemetry.test.tsx, test: "a next page asked of the list before it was read again lands on no other list" }
+      - { kind: running, file: app/(admin)/__tests__/tribunal.test.tsx, test: "an older summons that fails late takes no exhibit away, and says nothing over it" }
+      - { kind: running, file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "the rank history asked at a sign-in and asked again lays the later asked, whichever lands last" }
+      - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a reducer's dispatch is a write: found unchecked, passed behind a turn or a cleanup's flag" }
+    sweep: { read: [appCode], found: 32, fixed: 30, judged: 2, commit: f4bbe2ac, finder: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, result: "anAnswerIsStillTheOneAsked, main's rules and stage C's together (a store's set, its own setters called from outside it, a state setter, a query's data and a reducer's dispatch are writes; a token, a cleanup's flag, a thing's turn still its last (src/utils/turns.ts), a signal the next read cancels, a mark laid only where the member has not acted since the ask, a pull's own flag, a busy flag lowered with its own mark, or a wait in the other branch or in one that leaves, each passes), run over every app file at the merge base f4bbe2ac: 32 reads found and 2 pages asked by their count. On the merged code: 30 fixed (the filing, its ballot count, its critiques and marks, the certifications, the profile, the rank history and the standing, the block lists, the salons' corridor, words, catch-up and re-send, the profile rooms, their pages, flags, spinner, summary and retry, the door's count, the social sheet, the tribunal's evidence), 2 judged by name (the launch's effect, keyed on functions that never change; the marks ledger, one read per member at a time), and both pages now begin after the last row read (a stack's films along the order held, then its index list_items_in_order, car 20261126_00; a filing's critiques after the last row, CERTIFIED along the order held). Still to fix: none; each fix has a race test failing on the code before it, and a mutant" }
     places: [none]
 
   - id: REHEARSE-a-borrowed-member-read-as-empty

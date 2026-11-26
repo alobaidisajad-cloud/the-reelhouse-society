@@ -45,7 +45,6 @@ import { saidOfAFailure } from '../utils/saidOfARefusal';
 import { sanitizeInput } from '../utils/sanitizeInput';
 import { withAbortSignal } from '../utils/withAbortSignal';
 import { withTimeout } from '../utils/withTimeout';
-import { keysetAfter, type KeyAxis } from '../utils/keysetCursor';
 import { useAuthStore } from './auth';
 import { useBlockStore } from './blockStore';
 import { useOfflineQueueStore } from './offlineQueueStore';
@@ -174,12 +173,10 @@ export interface DispatchState {
   /** Whether the server has more beyond what has been asked for. */
   critiquesHasMore: Record<string, boolean>;
   /**
-   * Where the next page begins: after the last row the house sent, by its own place in the order
-   * (its certifications, when it was filed, its id), never by a count of rows. A count moved with
-   * every critique filed or withdrawn meanwhile, and a row was skipped or asked twice; the rows HELD
-   * also count the member's own new critique, set at the top whatever the order.
+   * Where the next page begins (CritiquesNext): after the last row read, never at a count of rows,
+   * which a critique filed or withdrawn meanwhile moves past a row or back onto one.
    */
-  critiquesAfter: Record<string, CritiqueKey>;
+  critiquesNext: Record<string, CritiquesNext>;
   /**
    * Whether the last page asked for could not be read: the footer says so and asks again. A first
    * page that failed was drawn as no critiques under a MORE that pressed did nothing.
@@ -361,29 +358,6 @@ function beginActs(marks: [MarkKind, string][]): { settle: () => void; queue: ()
   };
 }
 
-/** A critique's place in its order, as the house sent it: the next page begins after it. */
-export interface CritiqueKey { certifyCount: number; createdAt: string; id: string }
-
-/** The axes a filing's critiques are ordered on, each with the value `after` holds (CERTIFIED: most certified, then newest). */
-function critiqueAxes(order: CritiqueOrder, after: CritiqueKey): KeyAxis[] {
-  const newest: KeyAxis[] = [
-    { column: 'created_at', direction: 'desc', value: after.createdAt },
-    { column: 'id', direction: 'desc', value: after.id },
-  ];
-  return order === 'CERTIFIED' ? [{ column: 'certify_count', direction: 'desc', value: after.certifyCount }, ...newest] : newest;
-}
-
-/** The last row of a page as sent that carries its place (a row the parser drops still stood in the order). */
-function lastKeyOf(rows: unknown[]): CritiqueKey | null {
-  for (let i = rows.length - 1; i >= 0; i -= 1) {
-    const r = rows[i] as { id?: unknown; created_at?: unknown; certify_count?: unknown } | null;
-    if (r && typeof r.id === 'string' && typeof r.created_at === 'string' && typeof r.certify_count === 'number') {
-      return { certifyCount: r.certify_count, createdAt: r.created_at, id: r.id };
-    }
-  }
-  return null;
-}
-
 /**
  * Change a filing in BOTH places at once.
  *
@@ -501,7 +475,7 @@ const emptyState = () => ({
   critiquesLoading: {} as Record<string, boolean>,
   critiquesLoadingMore: {} as Record<string, boolean>,
   critiquesHasMore: {} as Record<string, boolean>,
-  critiquesAfter: {} as Record<string, CritiqueKey>,
+  critiquesNext: {} as Record<string, CritiquesNext>,
   critiquesFailed: {} as Record<string, boolean>,
   critiquesOrder: {} as Record<string, CritiqueOrder>,
   certifiedCritiqueIds: new Set<string>(),
@@ -1162,10 +1136,12 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     // Its own write lands after the await too, so it is guarded as fetchCritiques' is.
     const startedAs = useAuthStore.getState().user?.id ?? null;
     const order = st0.critiquesOrder[postId] ?? 'NEWEST';
+    const next = st0.critiquesNext[postId];
+    if (!next || next.order !== order) return;
     // Under the number of the first page it continues: a first page asked again meanwhile wins.
     const readNo = critiqueReads.get(postId) ?? 0;
     set((s) => ({ critiquesLoadingMore: { ...s.critiquesLoadingMore, [postId]: true } }));
-    await readCritiquePage(postId, order, st0.critiquesAfter[postId] ?? null, readNo, set);
+    await readCritiquePage(postId, order, next, readNo, set);
     if (!memberUnchanged(startedAs) || readNo !== critiqueReads.get(postId)) return;
     set((s) => ({ critiquesLoadingMore: { ...s.critiquesLoadingMore, [postId]: false } }));
   },
@@ -1570,14 +1546,110 @@ async function loadViewerState(
 }
 
 /**
+ * Where a filing's critiques continue, past the pages read.
+ *   NEWEST: after the last row read, by (created_at, id): a critique filed meanwhile is newer than
+ *   every row read and lands above them, and one withdrawn moves no row past the cursor.
+ *   CERTIFIED: by a count that moves while the member reads, so no cursor on it holds. The first page
+ *   reads the order once (HELD_ORDER rows' ids, beside the page) and the next pages walk it, each read
+ *   by id for its words and counts as they stand: the order the member began reading holds, and no row
+ *   in it is skipped or drawn twice. Past it, by (certify_count, created_at, id) strictly after the last
+ *   row read, as it was read; a row read again there (its count moved) is dropped as already shown.
+ */
+export type CritiquesNext =
+  | { order: 'NEWEST'; after: { at: string; id: string } | null }
+  | { order: 'CERTIFIED'; held: string[]; past: { count: number; at: string; id: string } | null };
+
+/** How many critiques' ids the first page of CERTIFIED holds the order of. */
+export const HELD_ORDER = 1000;
+
+type CritiqueKeys = { id: string; certify_count: number; created_at: string };
+/** A row's keys as the house sent them: a row the parser later drops still stands in the order. */
+const keysOf = (row: unknown): CritiqueKeys | null => {
+  const r = row as Partial<CritiqueKeys> | null;
+  return r && typeof r.id === 'string' && typeof r.created_at === 'string' ? { id: r.id, created_at: r.created_at, certify_count: Number(r.certify_count) || 0 } : null;
+};
+
+/** The rows of one page, where the next begins after it, and whether there may be more. */
+async function critiquePage(
+  postId: string,
+  order: CritiqueOrder,
+  next: CritiquesNext | null,
+  shown: ReadonlySet<string>,
+  signal: AbortSignal,
+): Promise<{ rows: unknown[]; next: CritiquesNext; more: boolean }> {
+  const page = () => supabase.from('dispatch_comments').select(CRITIQUE_COLUMNS).eq('post_id', postId);
+  const rowsOf = async <Q,>(q: Q): Promise<unknown[]> => {
+    const { data, error } = await (withAbortSignal(q, signal) as unknown as PromiseLike<{ data: unknown[] | null; error: unknown }>);
+    if (error) throw error;
+    return data ?? [];
+  };
+
+  if (order === 'NEWEST') {
+    const after = next?.order === 'NEWEST' ? next.after : null;
+    // A bound the index reads as a range (created_at at most the last row's), and the exact cursor
+    // within the rows of that one moment: both from a server row, so neither carries filter syntax.
+    const q = after
+      ? page().lte('created_at', after.at).or(`created_at.lt.${after.at},and(created_at.eq.${after.at},id.lt.${after.id})`)
+      : page();
+    const rows = await rowsOf(q.order('created_at', { ascending: false }).order('id', { ascending: false }).limit(COMMENT_PAGE_SIZE));
+    const last = keysOf(rows[rows.length - 1]);
+    return { rows, next: { order: 'NEWEST', after: last ? { at: last.created_at, id: last.id } : after }, more: rows.length === COMMENT_PAGE_SIZE };
+  }
+
+  if (next?.order !== 'CERTIFIED') {
+    // The first page, and the order it begins, side by side: one round trip.
+    const [heldRows, rows] = await Promise.all([
+      rowsOf(supabase.from('dispatch_comments').select('id, certify_count, created_at').eq('post_id', postId)
+        .order('certify_count', { ascending: false }).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(HELD_ORDER)),
+      rowsOf(page().order('certify_count', { ascending: false }).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(COMMENT_PAGE_SIZE)),
+    ]);
+    const keys = heldRows.map(keysOf).filter((k): k is CritiqueKeys => k !== null);
+    const last = keys[keys.length - 1];
+    const past = heldRows.length === HELD_ORDER && last ? { count: last.certify_count, at: last.created_at, id: last.id } : null;
+    const read = new Set(rows.map((r) => keysOf(r)?.id));
+    const held = keys.map((k) => k.id).filter((id) => !read.has(id) && !shown.has(id));
+    return { rows, next: { order: 'CERTIFIED', held, past }, more: held.length > 0 || past !== null };
+  }
+
+  const left = next.held.filter((id) => !shown.has(id));
+  if (left.length > 0) {
+    // The next of the order held, read by id: their words and counts as they stand, in that order.
+    const chunk = left.slice(0, COMMENT_PAGE_SIZE);
+    const place = new Map(chunk.map((id, i) => [id, i]));
+    const rows = (await rowsOf(page().in('id', chunk)))
+      .sort((a, b) => (place.get(keysOf(a)?.id ?? '') ?? 0) - (place.get(keysOf(b)?.id ?? '') ?? 0));
+    const held = left.slice(chunk.length);
+    return { rows, next: { ...next, held }, more: held.length > 0 || next.past !== null };
+  }
+  const past = next.past;
+  if (!past) return { rows: [], next, more: false };
+  // Past the order held: the rows of the last one's count after it, and those of every lower count,
+  // side by side, each a range of the post's index (post_id, certify_count, created_at).
+  const [ties, lower] = await Promise.all([
+    rowsOf(page().eq('certify_count', past.count).lte('created_at', past.at)
+      .or(`created_at.lt.${past.at},and(created_at.eq.${past.at},id.lt.${past.id})`)
+      .order('created_at', { ascending: false }).order('id', { ascending: false }).limit(COMMENT_PAGE_SIZE)),
+    rowsOf(page().lt('certify_count', past.count)
+      .order('certify_count', { ascending: false }).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(COMMENT_PAGE_SIZE)),
+  ]);
+  const read = [...ties, ...lower].slice(0, COMMENT_PAGE_SIZE);
+  const last = keysOf(read[read.length - 1]);
+  const full = read.length === COMMENT_PAGE_SIZE;
+  return {
+    rows: read.filter((r) => !shown.has(keysOf(r)?.id ?? '')),
+    next: { ...next, past: full && last ? { count: last.certify_count, at: last.created_at, id: last.id } : null },
+    more: full,
+  };
+}
+
+/**
  * One page of critiques, in one order, merged into what is already there.
  *
- * ── AFTER THE LAST ROW, NEVER BY A COUNT ───────────────────────────────────
- * A next page begins after the last row the house sent, by its place in the
- * order (keysetCursor.keysetAfter): most certified orders by its count, then the
- * newest, then the id; newest by when, then the id. A page counted from the top
- * moved with every critique filed or withdrawn while the first was held, and a
- * row was skipped or drawn twice.
+ * ── NEVER BY A COUNT ───────────────────────────────────────────────────────
+ * A next page begins where CritiquesNext says (critiquePage): NEWEST after the
+ * last row read; CERTIFIED along the order held as the first page was read. A
+ * page counted from the top moved with every critique filed or withdrawn while
+ * the first was held, and a row was skipped or drawn twice.
  *
  * ── THE ORDER IS THE SERVER'S ──────────────────────────────────────────────
  * Ordered on the device, CERTIFIED would rank only what is loaded and call it the
@@ -1626,54 +1698,35 @@ function queuedCritiques(postId: string): { filed: Critique[]; off: Set<string> 
 async function readCritiquePage(
   postId: string,
   order: CritiqueOrder,
-  after: CritiqueKey | null,
+  next: CritiquesNext | null,
   readNo: number,
   set: (fn: (st: DispatchState) => Partial<DispatchState>) => void,
 ): Promise<void> {
   const startedAs = useAuthStore.getState().user?.id ?? null;
+  const first = next === null;
   try {
-    let q = supabase
-      .from('dispatch_comments')
-      .select(CRITIQUE_COLUMNS)
-      .eq('post_id', postId);
-    if (after) {
-      const beyond = keysetAfter(critiqueAxes(order, after));
-      if (beyond) q = q.or(beyond);
-    }
-
-    q = order === 'CERTIFIED'
-      // The newest first among equal counts, then the id: one order from page to page, as drawn.
-      ? q.order('certify_count', { ascending: false }).order('created_at', { ascending: false }).order('id', { ascending: false })
-      : q.order('created_at', { ascending: false }).order('id', { ascending: false });
-
-    const { data, error } = await timed(
-      (signal) => withAbortSignal(q.limit(COMMENT_PAGE_SIZE), signal),
-      after ? 'dispatch.moreCritiques' : 'dispatch.fetchCritiques',
+    const shown = new Set(first ? [] : (useDispatch.getState().critiques[postId] ?? []).map((c) => c.id));
+    const answer = await timed(
+      (signal) => critiquePage(postId, order, next, shown, signal),
+      first ? 'dispatch.fetchCritiques' : 'dispatch.moreCritiques',
     );
-    if (error) throw error;
     // Asked again since (a first page, or the order changed): this answer is the older read's.
     if (!memberUnchanged(startedAs) || readNo !== critiqueReads.get(postId)) return;
 
-    const { critiques } = parseCritiqueRows(data ?? []);
-    const lastKey = lastKeyOf(data ?? []);
+    const { critiques } = parseCritiqueRows(answer.rows);
 
     set((st) => {
       // What the member filed or took off that the queue still holds, laid over the house's page.
       const { filed, off } = queuedCritiques(postId);
-      const existing = after ? (st.critiques[postId] ?? []) : filed;
+      const existing = first ? filed : (st.critiques[postId] ?? []);
       const seen = new Set(existing.map((c) => c.id));
       const merged = [...existing, ...critiques.filter((c) => !seen.has(c.id) && !off.has(c.id))];
       return {
         critiques: { ...st.critiques, [postId]: merged },
-        // A short page is the end of the list. A full one MIGHT be, and the next
-        // press finds out — which costs one query and never hides a critique.
-        // Short as SENT, not as parsed: a row the parser drops is not the end.
-        critiquesHasMore: {
-          ...st.critiquesHasMore,
-          [postId]: (data ?? []).length === COMMENT_PAGE_SIZE,
-        },
-        // As sent, as the end is judged: a row the parser drops still stood in the house's order.
-        ...(lastKey ? { critiquesAfter: { ...st.critiquesAfter, [postId]: lastKey } } : {}),
+        // A full page MIGHT be the end, and the next press finds out: one query, never a critique
+        // hidden. Full as SENT, not as parsed: a row the parser drops is not the end.
+        critiquesHasMore: { ...st.critiquesHasMore, [postId]: answer.more },
+        critiquesNext: { ...st.critiquesNext, [postId]: answer.next },
         critiquesFailed: { ...st.critiquesFailed, [postId]: false },
       };
     });

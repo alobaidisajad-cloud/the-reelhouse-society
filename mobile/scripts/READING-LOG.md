@@ -503,3 +503,6 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/diagnostics/a_members_call_to_the_store_is_paced_rehearsal.sql | — |  |
 | mobile/supabase/migrations-down/20261125_10_a_members_call_to_the_store_is_paced.sql | — |  |
 | supabase/migrations/20261125_10_a_members_call_to_the_store_is_paced.sql | — |  |
+| mobile/supabase/diagnostics/a_stacks_films_are_read_in_their_order_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261126_00_a_stacks_films_are_read_in_their_order.sql | — |  |
+| supabase/migrations/20261126_00_a_stacks_films_are_read_in_their_order.sql | — |  |

@@ -26,6 +26,7 @@ import { BAD_CREDENTIALS, isAddress, authLink, handleResting, doorFor, keepDoor 
 import { e2eTrace } from '../utils/e2eTrace';
 import { raceDeadline } from '../utils/raceDeadline';
 import { profileRead } from '../utils/profileRead';
+import { turns } from '../utils/turns';
 import { useBlockStore } from './blockStore';
 
 /**
@@ -237,13 +238,14 @@ async function signOutClosedAccount(): Promise<void> {
   reelToast.error(ACCOUNT_CLOSED_SAID);
 }
 
-/** Each read of the rank history takes the next number: only the latest is laid. */
-let rankHistoryReads = 0;
+/** Each member's rank history, read in turns. */
+const rankTurns = turns();
 /**
- * Each read of the member's profile again, and each change made to it here, takes the next number:
- * a read whose number is no longer the latest answers for a profile already behind.
+ * Each member's profile, in turns: a read of it whole (rereadProfile) and a change made to it here
+ * (updateProfile) each take one as they begin; a read of a part (refreshStanding) reads it, and is
+ * laid only while no whole read or change was asked since.
  */
-let profileTurns = 0;
+export const profileTurns = turns();
 
 /**
  * Whether this member once held a rank: the source that last granted one. Not
@@ -253,9 +255,8 @@ let profileTurns = 0;
  * what was known.
  */
 async function readRankHistory(userId: string): Promise<void> {
-  // Asked again by each restore (the polling after a purchase runs several): an older answer,
-  // landing last, would put back the history the purchase just changed.
-  const mine = ++rankHistoryReads;
+  // Asked at sign-in and at the session's restore: the later asked is laid, whichever lands last.
+  const mine = rankTurns.take(userId);
   let data: unknown;
   let error: { message: string } | null;
   try {
@@ -268,7 +269,7 @@ async function readRankHistory(userId: string): Promise<void> {
     logger.warn('[auth] could not read the member\'s rank history', error.message);
     return;
   }
-  if (!memberUnchanged(userId) || mine !== rankHistoryReads) return;
+  if (!memberUnchanged(userId) || !rankTurns.isLast(userId, mine)) return;
   useAuthStore.setState((s) => {
     if (!s.user) return {};
     const user = { ...s.user, entitlement_source: typeof data === 'string' ? data : null };
@@ -625,9 +626,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   rereadProfile: async () => {
     const id = get().user?.id ?? null;
     if (!id) return false;
+    // Asked again while one is out (the membership page, the clearance, the boot): the later asked is laid.
+    const mine = profileTurns.take(id);
     // What waited for the house goes first, then the read; still unreached, it is laid over the read.
     await sendPendingPrefs(id);
-    const mine = ++profileTurns;
     const { data, error } = await supabase.from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', id).single();
     // No row for this member: the account closed on another phone is signed out here (restoreSession's).
     if (noProfileRow(error) && memberUnchanged(id) && await accountIsClosed() && memberUnchanged(id)) {
@@ -635,9 +637,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       return false;
     }
     // Only onto the member it was read for, as the login's read lands.
-    if (error || !data || !memberUnchanged(id)) return profileRead(get().user);
-    // A newer read, or a change made here, since it was asked: what it holds is laid by that one.
-    if (mine !== profileTurns) return profileRead(get().user);
+    if (error || !data || !memberUnchanged(id) || !profileTurns.isLast(id, mine)) return profileRead(get().user);
     rankWasRead(id);
     set((s) => {
       const updatedUser = s.user ? ({ ...s.user, ...withPendingPrefs(id, data) } as User) : null;
@@ -793,7 +793,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const { role: _stripped, ...safeUpdates } = updates as Partial<User> & { role?: unknown };
     
     // Optimistic update; a profile read still out was asked before it.
-    profileTurns += 1;
+    profileTurns.take(user.id);
     set((state) => {
       const updatedUser = state.user ? { ...state.user, ...safeUpdates } : null;
       if (updatedUser) setSensitive(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
