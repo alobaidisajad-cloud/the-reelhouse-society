@@ -102,7 +102,7 @@ case "$1" in
       "settings put global "*_scale" "*) set -- $cmd; echo "$5" > "$T/state/$4" ;;
       "settings get secure autofill_service") echo null ;;
       date*) case "$cmd" in *S.%3N*) date +'%m-%d %H:%M:%S.%3N' ;; *S.000*) date +'%m-%d %H:%M:%S.000' ;; *) date +'%m-%d %H:%M:%S' ;; esac ;;
-      # The keyboard, bound and its process up, in Android 16's words (an emulator's dump, 2026-11-26),
+      # The keyboard, bound and its process up, in Android 16's words (an emulator's dump, 26 November 2026),
       # unless a scenario keeps it chosen and still connecting.
       "dumpsys input_method")
         echo "      mSelectedMethodId=com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"

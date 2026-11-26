@@ -243,13 +243,13 @@ jobs:
 
       # Gradle's packages, kept by the last build that had to fetch any (scripts/gradle-kept-first.sh
       # builds from them offline first, and asks the network only for what they lack). Seeded from the
-      # copy setup-java kept before (its paths, so its key restores here).
+      # copy setup-java kept before: its one path, written as it writes it (os.homedir()'s), so its key
+      # restores here; a second path made the cache another version, and nightly 45804336594's builds
+      # found nothing. The wrapper is the gradle-dists step's.
       - name: Gradle's packages, kept
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: |
-            /home/runner/.gradle/caches
-            /home/runner/.gradle/wrapper
+          path: /home/runner/.gradle/caches
           key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}
           restore-keys: |
             gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-
@@ -331,9 +331,7 @@ jobs:
         if: steps.build.outputs.fetched == 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: |
-            /home/runner/.gradle/caches
-            /home/runner/.gradle/wrapper
+          path: /home/runner/.gradle/caches
           key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}
 
       # Expo SDK 54's ready-made expo-image was built with Glide's logging on, so

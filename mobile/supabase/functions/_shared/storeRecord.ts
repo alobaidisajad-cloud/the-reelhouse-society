@@ -41,10 +41,9 @@ export function stampOf(text: string): number {
   const mi = Number(g.mi);
   const s = Number(g.s);
   const at = Date.UTC(y, mo, d, h, mi, s, Number((g.f ?? '').slice(0, 3).padEnd(3, '0')));
-  const back = new Date(at);
-  // Date.UTC rolls a field past its range into the next (a 31st of February into March): read back, it differs.
-  const whole = back.getUTCFullYear() === y && back.getUTCMonth() === mo && back.getUTCDate() === d
-    && back.getUTCHours() === h && back.getUTCMinutes() === mi && back.getUTCSeconds() === s;
+  // Date.UTC rolls a field past its range into the next (a 31st of February into March), and reads a
+  // year under 100 as 19xx: written back, the stamp's date and time differ from what was written.
+  const whole = new Date(at).toISOString().slice(0, 19) === `${g.y}-${g.mo}-${g.d}T${g.h}:${g.mi}:${g.s}`;
   const zone = g.z ?? 'Z';
   if (!whole) return NaN;
   if (zone === 'Z') return at;

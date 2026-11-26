@@ -300,8 +300,15 @@ it("the emulator has no keyboard of keys and no dock's lid, as a member's phone 
   expect(script).toMatch(/hw\.keyboard\.lid=no\\n/);
 });
 
-/** Gradle's packages as GitHub's cache keeps them: setup-java's own paths, so its old copy seeds them. */
-const GRADLE_PACKAGES = '/home/runner/.gradle/caches\n/home/runner/.gradle/wrapper';
+/** A hosted runner's home: os.homedir() there, the one place setup-java writes its paths from. */
+const RUNNER_HOME = '/home/runner';
+/**
+ * Gradle's packages as GitHub's cache keeps them: setup-java's own one path (v5.7.0's
+ * join(os.homedir(), '.gradle', 'caches'); its wrapper is a cache of its own), so its old copy seeds
+ * them. A cache's version is made from its paths as written: the wrapper beside it made another
+ * version, and every build of nightly 45804336594 found nothing to seed from.
+ */
+const GRADLE_PACKAGES = `${RUNNER_HOME}/.gradle/caches`;
 /**
  * Each Gradle run that downloads nothing itself, as `job › step` faults: it
  * passes android.builder.sdkDownload=false, after a step of its job that
@@ -340,7 +347,7 @@ it('every Gradle run finds its Android packages installed by a step tried once m
   expect(builds.flatMap((w) => gradleFaults(w.wf).map((f) => `${w.file} › ${f}`))).toEqual([]);
   const wf = (steps: string) => parse(`name: x\non: push\njobs:\n  j:\n    steps:\n${steps}`) as Workflow;
   const install = '      - name: Packages\n        run: sdkmanager --install $(node scripts/android-packages.cjs)\n';
-  const paths = '          path: |\n            /home/runner/.gradle/caches\n            /home/runner/.gradle/wrapper\n';
+  const paths = `          path: ${GRADLE_PACKAGES}\n`;
   const restore = `      - uses: actions/cache/restore@x\n        with:\n${paths}          key: k\n`;
   const save = (when: string, key = 'k') => `      - uses: actions/cache/save@x\n        if: ${when}\n        with:\n${paths}          key: ${key}\n`;
   const FETCHED = "steps.b.outputs.fetched == 'true'";
@@ -355,6 +362,10 @@ it('every Gradle run finds its Android packages installed by a step tried once m
   expect(gradleFaults(wf(install + build(KEPT) + save(FETCHED)))).toEqual(["j › Build: no step before it restores Gradle's packages"]);
   expect(gradleFaults(wf(install + restore + build(KEPT) + save('success()')))).toEqual(['j › Build: the packages it fetched are not kept after it, and only then']);
   expect(gradleFaults(wf(install + restore + build(KEPT) + save(FETCHED, 'other')))).toEqual(['j › Build: the packages are saved under another key than they are restored by']);
+  // The wrapper beside setup-java's one path: another cache version, which its copy never seeds.
+  const twoPaths = `          path: |\n            ${GRADLE_PACKAGES}\n            ${RUNNER_HOME}/.gradle/wrapper\n`;
+  expect(gradleFaults(wf(install + restore.split(paths).join(twoPaths) + build(KEPT) + save(FETCHED).split(paths).join(twoPaths))))
+    .toEqual(["j › Build: no step before it restores Gradle's packages", 'j › Build: the packages it fetched are not kept after it, and only then']);
   const java = "      - uses: actions/setup-java@x\n        with:\n          cache: 'gradle'\n";
   expect(gradleFaults(wf(java + kept(build(KEPT))))).toEqual(['j › Build: setup-java keeps a copy it never saves again']);
 });

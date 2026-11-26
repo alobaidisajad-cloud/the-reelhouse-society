@@ -1067,7 +1067,6 @@ classes:
       - { kind: running, file: e2e/__tests__/screenTimes.test.ts, test: "fails a write starved three times in a row: the lab could not measure it, which is never a pass" }
       - { kind: running, file: src/utils/__tests__/queryClient.test.ts, test: "times the same work again after a starved heartbeat, and stops at the first normal one" }
       - { kind: running, file: src/utils/__tests__/queryClient.test.ts, test: "takes a write starved each time in MEASURE_TAKES samples, never more" }
-      - { kind: running, file: src/utils/__tests__/queryClient.test.ts, test: "retakes at the judge's own bounds: one heartbeat bound and one count of takes" }
     fix: "the rule: a sample is measured beside a heartbeat, a fixed tiny task timed just before and just after it in the same moment (queryClient.ts, the E2E build alone). A slow sample whose heartbeat also blew past its own bound (HEARTBEAT_MS) is VOID and the same work is timed again, up to MEASURE_TAKES (3) samples; the write is judged on its first sample that is not void, so a slow write beside a normal heartbeat fails as ever; three void samples in a row fail as 'the lab could not measure this write', never a pass (screen-times.mjs judgeCacheWrites, which films.mjs shares) (mutants shape-a-slow-write-voided-by-itself, shape-three-starved-samples-pass, shape-a-starved-sample-never-retaken, shape-retaken-without-end, shape-heartbeat-after-only)"
     places: [emulator]
 
@@ -5191,13 +5190,15 @@ classes:
     status: OPEN
     count: 2
     source: { kind: ci, ref: "Sealed E2E 44541753500: the build failed reading the version list of bcprov-jdk15to18; nightly 45676715897: two builds, eleven minutes of 429 on a plugin marker's jar that does not exist" }
+    sweep: { read: [workflows], found: 6, fixed: 6, judged: 0, commit: ee1cea0d, finder: src/utils/__tests__/ciWorkflows.guard.test.ts, result: "six Gradle builds in the workflows (e2e.yml 1, god_tier_ci.yml 1, speed-lab.yml 4), each asking the network for what the cache held: all six build through scripts/gradle-kept-first.sh from the packages restored by setup-java's one path, kept again only after a fetch" }
     methods:
       - { kind: static, file: plugins/__tests__/withPinnedDependencies.test.ts, test: "pins each range for every configuration of every project, and refuses any other range" }
       - { kind: static, file: plugins/__tests__/withPinnedDependencies.test.ts, test: "pins bcprov to the version of the bcutil expo-updates names, which asks for that version's range" }
       - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every Gradle run finds its Android packages installed by a step tried once more, downloads none itself, and builds from the kept packages first" }
       - { kind: running, file: e2e/__tests__/gradleKeptFirst.test.ts, test: "asks the network, patiently, only for what the kept packages lack, and says it fetched" }
       - { kind: running, file: e2e/__tests__/gradleKeptFirst.test.ts, test: "builds offline, once, when the kept packages hold everything, and fetches nothing" }
-    fix: "plugins/withPinnedDependencies.js pins each range in every configuration of every project to the version it resolves to, and Gradle's failOnDynamicVersions refuses any other range in the graph (mutants shape-a-range-left-unpinned, shape-pin-behind-expo-updates); every build runs through scripts/gradle-kept-first.sh, offline from the packages the cache keeps, online only for what they lack, and the job keeps the fuller packages after a build that fetched (mutants shape-a-build-asks-what-is-kept, shape-the-fetched-packages-unkept, shape-the-kept-build-asks-the-network)"
+      - { kind: running, file: e2e/__tests__/gradleKeptFirst.test.ts, test: "asks the network for a plugin the kept packages lack, which Gradle names without a word of offline mode" }
+    fix: "plugins/withPinnedDependencies.js pins each range in every configuration of every project to the version it resolves to, and Gradle's failOnDynamicVersions refuses any other range in the graph (mutants shape-a-range-left-unpinned, shape-pin-behind-expo-updates); every build runs through scripts/gradle-kept-first.sh, offline from the packages the cache keeps, online only for what they lack (a library or a plugin Gradle could not resolve: nightly 45804336594's plugin was named with no word of offline mode), and the job keeps the fuller packages after a build that fetched, restored and saved by setup-java's one path so its copy seeds them (mutants shape-a-build-asks-what-is-kept, shape-the-fetched-packages-unkept, shape-the-kept-build-asks-the-network, shape-a-plugin-lacking-never-fetched, shape-the-packages-under-another-version)"
     places: [none]
 
   - id: CI-a-listener-port-lent-before-it-is-kept

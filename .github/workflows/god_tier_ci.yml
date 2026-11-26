@@ -1135,13 +1135,11 @@ jobs:
           node scripts/android-packages.cjs --installed
 
       # Gradle's packages, kept by the last build that had to fetch any: the build reads them offline
-      # first (scripts/gradle-kept-first.sh). Seeded from the copy setup-java kept before (its paths).
+      # first (scripts/gradle-kept-first.sh). Seeded from the copy setup-java kept before (its one path, as it writes it).
       - name: Gradle's packages, kept
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: |
-            /home/runner/.gradle/caches
-            /home/runner/.gradle/wrapper
+          path: /home/runner/.gradle/caches
           key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}
           restore-keys: |
             gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-
@@ -1184,9 +1182,7 @@ jobs:
         if: steps.release.outputs.fetched == 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: |
-            /home/runner/.gradle/caches
-            /home/runner/.gradle/wrapper
+          path: /home/runner/.gradle/caches
           key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}
 
       - name: The release manifest, the Info.plist and the embedded config hold the release rules

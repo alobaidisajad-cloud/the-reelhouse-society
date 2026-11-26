@@ -42,12 +42,6 @@ equivalents:
     replacement: "i <= a.length"
     why: The lengths are equal by this loop, so one step past the end compares two missing bytes; undefined ^ undefined is 0, and the difference, and the answer, stay the same.
   - file: supabase/functions/_shared/storeRecord.ts
-    code: "if (!entitlement || typeof entitlement !== 'object') return false;"
-    at: 21
-    mutator: ConditionalExpression
-    replacement: "false"
-    why: Past the empty check, an entitlement that is not an object is a string, number, boolean or function; none has an end or a grace date, so it reads as no end and is not in force either way.
-  - file: supabase/functions/_shared/storeRecord.ts
     code: "const product = String((e as { product_identifier?: unknown }).product_identifier ?? '').toLowerCase();"
     at: 86
     mutator: StringLiteral

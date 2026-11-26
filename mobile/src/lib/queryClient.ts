@@ -8,7 +8,7 @@
  * when the app leaves the front.
  */
 
-import { agedSince } from './waits';
+import { agedSince, monotonicNow } from './waits';
 import NetInfo from '@/src/lib/reachability';
 import { AppState } from 'react-native';
 import { defaultShouldDehydrateQuery, focusManager, onlineManager, QueryClient, type Query } from '@tanstack/react-query';
@@ -16,6 +16,7 @@ import { defaultShouldDehydrateQuery, focusManager, onlineManager, QueryClient, 
 import { storage, setSensitive } from '../stores/mmkv-storage';
 import { E2E_BUILD, e2eTrace } from '../utils/e2eTrace';
 import { QUERY_POLICY } from './queryPolicy';
+import BOUNDS from './cacheWriteBounds.json';
 import { keepsEachPagesWord } from './feedPages';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 
@@ -119,16 +120,16 @@ function serialise(client: PersistedClient): string | null {
 }
 
 /**
- * The heartbeat's bound, the judge's own (e2e/screen-times.mjs HEARTBEAT_MS, one number: the
- * queryClient tests hold them equal). A wall-clock sample taken while the phone itself is starved
+ * The heartbeat's bound, the judge's own: one number, in cacheWriteBounds.json, which
+ * e2e/screen-times.mjs reads too. A wall-clock sample taken while the phone itself is starved
  * measures the phone, not the write (the dark walk, nightly 45676715897: one write 235 ms in a
  * second the whole phone stalled, its neighbours 1 ms). So beside each write a fixed tiny task, the
  * heartbeat, is timed just before and just after it; one over this bound says the moment was
  * starved, and the judge voids a slow write then and reads its next sample.
  */
-export const HEARTBEAT_MS = 20;
-/** The samples a write is taken in at most, the judge's MEASURE_TAKES: three starved in a row fail it. */
-export const MEASURE_TAKES = 3;
+export const HEARTBEAT_MS: number = BOUNDS.heartbeatMs;
+/** The samples a write is taken in at most, the judge's own (cacheWriteBounds.json): three starved in a row fail it. */
+export const MEASURE_TAKES: number = BOUNDS.measureTakes;
 /** How long after a starved sample the same work is timed again: a phone-wide stall lasts about a second. */
 const RETAKE_AFTER_MS = 1000;
 /** The heartbeat's task: always the same small serialisation, well under a millisecond on a phone at rest. */
@@ -136,17 +137,17 @@ const BEAT = Array.from({ length: 200 }, (_, i) => ({ id: i, title: 'La Passion 
 
 /** The heartbeat: the ms its fixed task took now. */
 export function heartbeat(): number {
-  const started = Date.now();
+  const started = monotonicNow();
   JSON.stringify(BEAT);
-  return Date.now() - started;
+  return monotonicNow() - started;
 }
 
 /** One sample of a write's work: the ms it held the thread, and the slower of its two heartbeats. */
 function sample(client: PersistedClient): { serialized: string | null; ms: number; beat: number } {
   const before = heartbeat();
-  const started = Date.now();
+  const started = monotonicNow();
   const serialized = serialise(client);
-  const ms = Date.now() - started;
+  const ms = monotonicNow() - started;
   return { serialized, ms, beat: Math.max(before, heartbeat()) };
 }
 
@@ -161,7 +162,7 @@ function retake(client: PersistedClient, write: number, take: number): void {
   setTimeout(() => requestIdleCallback(() => {
     try {
       const s = sample(client);
-      e2eTrace('cache.persist', { chars: s.serialized?.length ?? 0, ms: s.ms, beat: s.beat, write, take });
+      e2eTrace('cache.persist', { chars: s.serialized?.length ?? 0, ms: Math.round(s.ms), beat: Math.round(s.beat), write, take });
       if (s.beat > HEARTBEAT_MS && take < MEASURE_TAKES) retake(client, write, take + 1);
     } catch { /* a measure only: the write itself was stored */ }
   }, { timeout: IDLE_WAIT_MS }), RETAKE_AFTER_MS);
@@ -179,7 +180,7 @@ function writeCache(client: PersistedClient): void {
       const write = ++writesTimed;
       const s = sample(client);
       serialized = s.serialized;
-      e2eTrace('cache.persist', { chars: serialized?.length ?? 0, ms: s.ms, beat: s.beat, write, take: 1 });
+      e2eTrace('cache.persist', { chars: serialized?.length ?? 0, ms: Math.round(s.ms), beat: Math.round(s.beat), write, take: 1 });
       if (s.beat > HEARTBEAT_MS) retake(client, write, 2);
     } else {
       serialized = serialise(client);
@@ -260,11 +261,11 @@ export const mmkvPersister: Persister = {
   },
   restoreClient: async () => {
     try {
-      const started = Date.now();
+      const started = monotonicNow();
       const data = storage.getString(CACHE_KEY);
       if (!data) return undefined;
       const parsed = JSON.parse(data) as PersistedClient;
-      e2eTrace('cache.restore', { chars: data.length, ms: Date.now() - started });
+      e2eTrace('cache.restore', { chars: data.length, ms: Math.round(monotonicNow() - started) });
       // Discard cache if older than 24 hours
       if (parsed.timestamp && agedSince(parsed.timestamp) > MAX_CACHE_AGE_MS) {
         storage.delete(CACHE_KEY);

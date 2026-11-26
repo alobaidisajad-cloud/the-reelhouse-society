@@ -42,6 +42,29 @@ describe('what a record grants', () => {
     expect(inForce({ expires_date: AHEAD }, NOW)).toBe(true);
   });
 
+  it('reads a stamp whole or not at all: its year, its fraction, its offset each to the letter', () => {
+    // A year under 100 the engine reads as 19xx; written back, it is another year.
+    expect(stampOf('0099-01-01T00:00:00Z')).toBeNaN();
+    expect(['2025-01-01T00:00:60Z', '2025-04-31T00:00:00Z'].map(stampOf)).toEqual([NaN, NaN]);
+    // A fraction is of a second: ".5" is five hundred milliseconds.
+    expect(stampOf('2026-11-03T12:00:00.5Z')).toBe(Date.UTC(2026, 10, 3, 12, 0, 0, 500));
+    // An offset east is behind UTC by it, one west ahead, its minutes counted with its hours, with or without a colon.
+    expect(stampOf('2026-11-03T17:30:00+05:30')).toBe(Date.UTC(2026, 10, 3, 12));
+    expect(stampOf('2026-11-03T06:30:00-05:30')).toBe(Date.UTC(2026, 10, 3, 12));
+    expect(stampOf('2026-11-03T17:30:00+0530')).toBe(Date.UTC(2026, 10, 3, 12));
+    expect(stampOf('2026-11-03T23:59:00+23:59')).toBe(Date.UTC(2026, 10, 3, 0, 0));
+    expect(['2026-11-03T12:00:00+24:00', '2026-11-03T12:00:00+00:60'].map(stampOf)).toEqual([NaN, NaN]);
+    // The stamp and nothing else: before it, or after it.
+    expect(['x2026-11-03T12:00:00Z', '2026-11-03T12:00:00Zx', '2026-11-03T12:00:00+05:30x'].map(stampOf)).toEqual([NaN, NaN, NaN]);
+  });
+
+  it('reads an end only from a record of a shape, and a date only from a string', () => {
+    // A function holds properties as a record does, and is none.
+    expect(inForce(Object.assign(() => undefined, { expires_date: null }), NOW)).toBe(false);
+    // A list holding a date prints as that date, and is none.
+    expect(inForce({ expires_date: [AHEAD] }, NOW)).toBe(false);
+  });
+
   it('reads only a written date as an end: a bare number, even a year ahead, is none', () => {
     expect(inForce({ expires_date: 2099 }, NOW)).toBe(false);
     expect(inForce({ grace_period_expires_date: 2099 }, NOW)).toBe(false);

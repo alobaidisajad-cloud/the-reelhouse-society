@@ -22,7 +22,6 @@ const JUDGED: Record<string, { readings: number; why: string }> = {
   'src/lib/houseClock.ts': { readings: 1, why: 'the house clock is the phone\'s clock and how far the house found it off' },
   'src/lib/authSessionStorage.ts': { readings: 2, why: 'a session is dated by the clock supabase-js weighs it against: the phone\'s' },
   'src/lib/supabase.ts': { readings: 3, why: 'how long a request took, and when it was asked and heard, for the house clock' },
-  'src/lib/queryClient.ts': { readings: 4, why: 'how long the cache took to keep and to read, and its stamp, read back through agedSince' },
   'src/lib/tmdb.ts': { readings: 1, why: 'a cached answer\'s stamp, read back through agedSince (a search\'s budget is on monotonicNow)' },
   'src/lib/pushPrimer.ts': { readings: 1, why: 'when this phone last asked, read back on this phone' },
   'src/providers/AppBootstrapper.tsx': { readings: 3, why: 'when the app went away and the rank was read, stamped for agedSince: both count the phone\'s sleep' },

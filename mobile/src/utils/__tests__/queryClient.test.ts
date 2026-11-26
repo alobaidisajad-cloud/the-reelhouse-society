@@ -6,10 +6,7 @@
  */
 import { AppState } from 'react-native';
 import { focusManager, onlineManager, QueryObserver } from '@tanstack/react-query';
-import { spawnSync } from 'child_process';
-import { join } from 'path';
-import { pathToFileURL } from 'url';
-import { CACHE_KEEPS, HEARTBEAT_MS, keepsQuery, MEASURE_TAKES, mmkvPersister, queryClient, writeHeldCache } from '@/src/lib/queryClient';
+import { CACHE_KEEPS, keepsQuery, MEASURE_TAKES, mmkvPersister, queryClient, writeHeldCache } from '@/src/lib/queryClient';
 import { QUERY_POLICY, shouldRetry } from '@/src/lib/queryPolicy';
 import { TmdbUnreachable } from '@/src/lib/tmdbErrors';
 import { storage, setSensitive } from '@/src/stores/mmkv-storage';
@@ -238,11 +235,14 @@ describe('a write timed beside its heartbeat, for the speed lab', () => {
     jest.useRealTimers();
   });
 
-  /** The clock as each sample reads it: the heartbeat before, the write, the heartbeat after, each a start and an end. */
+  /**
+   * The forward clock (waits.ts's monotonicNow) as each sample reads it: the heartbeat before, the
+   * write, the heartbeat after, each a start and an end.
+   */
   function clock(samples: [number, number, number][]) {
     const steps = samples.flatMap(([before, ms, after]) => [0, before, 0, ms, 0, after]);
-    let now = 1_700_000_000_000;
-    jest.spyOn(Date, 'now').mockImplementation(() => { now += steps.shift() ?? 0; return now; });
+    let now = 1000;
+    jest.spyOn(jest.requireActual('@/src/lib/waits'), 'monotonicNow').mockImplementation(() => { now += steps.shift() ?? 0; return now; });
   }
   const takes = () => traced.mock.calls.filter(([e]) => e === 'cache.persist').map(([, d]) => d as Record<string, number>);
   const c = client({ clientState: { mutations: [], queries: [{ queryKey: ['film', 2], state: { data: 'Dreyer' } }] } });
@@ -281,13 +281,6 @@ describe('a write timed beside its heartbeat, for the speed lab', () => {
     await written();
     expect(takes()).toEqual([]);
     expect(setSensitive).toHaveBeenCalledTimes(1);
-  });
-
-  it('retakes at the judge\'s own bounds: one heartbeat bound and one count of takes', () => {
-    const judge = pathToFileURL(join(__dirname, '..', '..', '..', 'e2e', 'screen-times.mjs')).href;
-    const r = spawnSync(process.execPath, ['--input-type=module', '-e',
-      `const m = await import(${JSON.stringify(judge)}); console.log(JSON.stringify([m.HEARTBEAT_MS, m.MEASURE_TAKES]));`], { encoding: 'utf8' });
-    expect(JSON.parse(r.stdout)).toEqual([HEARTBEAT_MS, MEASURE_TAKES]);
   });
 });
 

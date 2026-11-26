@@ -112,13 +112,15 @@ export function readScreens(log, flowTimes) {
 export const CACHE_WRITE_MS = 100;
 
 /**
- * The heartbeat's bound: the ms its fixed tiny task (src/lib/queryClient.ts's heartbeat, timed just
- * before and just after each write) may take before the moment is taken as the phone itself starved.
- * The app retakes a sample at the same number (its HEARTBEAT_MS; the queryClient tests hold them equal).
+ * The heartbeat's bound and the takes, one file the app reads too (src/lib/cacheWriteBounds.json):
+ * HEARTBEAT_MS is the ms the heartbeat's fixed tiny task (src/lib/queryClient.ts, timed just before
+ * and just after each write) may take before the moment is taken as the phone itself starved, and
+ * the app retakes a sample at it; MEASURE_TAKES the samples a write is taken in at most: three
+ * starved in a row, and the lab could not measure it.
  */
-export const HEARTBEAT_MS = 20;
-/** The samples a write is taken in at most: three starved in a row, and the lab could not measure it. */
-export const MEASURE_TAKES = 3;
+const BOUNDS = JSON.parse(readFileSync(new URL('../src/lib/cacheWriteBounds.json', import.meta.url), 'utf8'));
+export const HEARTBEAT_MS = BOUNDS.heartbeatMs;
+export const MEASURE_TAKES = BOUNDS.measureTakes;
 
 /**
  * Every sample of a write of the query cache in the log: its size in characters, the ms it held the

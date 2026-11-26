@@ -75,6 +75,35 @@ it('is the list the config runs, file by file', () => {
   expect(config).toMatch(/enableFindRelatedTests: false/);
 });
 
+it('takes into its sandbox every file the tests\' own jest machinery loads', () => {
+  // Nightly 45804336594: the sequencer read scripts/gate-lock.cjs for a run of more than twenty test
+  // files, the sandbox left scripts/ out, and Stryker could not start on offlineQueue.ts.
+  const config = readFileSync(join(MOBILE, 'stryker.config.mjs'), 'utf8');
+  const list = /ignorePatterns: \[(?<items>[^\]]*)\]/.exec(config)?.groups?.items ?? '';
+  const patterns = [...list.matchAll(/'(?<p>[^']+)'/g)].map((m) => m.groups?.p ?? '');
+  expect(patterns.length).toBeGreaterThan(10);
+  const ignore = require('ignore') as () => { add: (p: string[]) => { ignores: (path: string) => boolean } };
+  const sandbox = ignore().add(patterns);
+  const machinery = ['jest.config.js', 'jest.stryker.config.js', 'jest.setup.ts', 'jest.afterEnv.ts',
+    'test-utils/weightedSequencer.js', 'test-utils/timerCheckingEnvironment.js'];
+  // Loads left out on purpose: each only under a switch a Stryker run never sets.
+  const SWITCHED: Record<string, string> = {
+    'jest.config.js loads scripts/test-timezones': 'JEST_OUTSIDE_UTC=1, the run outside UTC alone',
+    'jest.setup.ts loads mockups/paths': 'MOCKUPS_CAPTURE, a drawing run alone',
+    'jest.setup.ts loads mockups/srcMark': 'MOCKUPS_CAPTURE, a drawing run alone',
+    'jest.afterEnv.ts loads mockups/capture': 'MOCKUPS_CAPTURE, a drawing run alone',
+    'jest.afterEnv.ts loads mockups/paths': 'MOCKUPS_CAPTURE, a drawing run alone',
+  };
+  const loads = machinery.flatMap((file) => [...readFileSync(join(MOBILE, file), 'utf8').matchAll(/require\('(?<to>\.{1,2}\/[^']+)'\)/g)]
+    .map((m) => relative(MOBILE, join(MOBILE, dirname(file), m.groups?.to ?? '')).split('\\').join('/'))
+    .filter((to) => sandbox.ignores(to))
+    .map((to) => `${file} loads ${to}`));
+  expect([...new Set(loads)].filter((l) => !SWITCHED[l])).toEqual([]);
+  expect(Object.keys(SWITCHED).filter((l) => !loads.includes(l))).toEqual([]);
+  expect(sandbox.ignores('scripts/gate-lock.cjs')).toBe(false);
+  expect(sandbox.ignores('scripts/train.cjs')).toBe(true);
+});
+
 it('runs every mutant every time, never a verdict kept from a run before', () => {
   const config = readFileSync(join(MOBILE, 'stryker.config.mjs'), 'utf8');
   expect(config).toMatch(/^ {2}incremental: false,$/m);

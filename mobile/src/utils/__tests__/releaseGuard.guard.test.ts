@@ -357,10 +357,10 @@ describe('the input is a real build, never the E2E app', () => {
       expect(step.run).toMatch(/--(bundles|manifest)/);
     }
     // The native job makes what a store build starts from: both platforms,
-    // and Gradle's merged release manifest.
+    // and Gradle's merged release manifest (built from the kept packages first: scripts/gradle-kept-first.sh).
     const native = calls.find((c) => c.id === 'release-build')!.job.steps.map((s) => s.run ?? '').join('\n');
     expect(native).toContain('npx expo prebuild --platform all --no-install --clean');
-    expect(native).toContain('./gradlew :app:processReleaseManifest');
+    expect(native).toContain('(cd android && bash "$GITHUB_WORKSPACE/mobile/scripts/gradle-kept-first.sh" :app:processReleaseManifest');
     expect(native).toContain('getAppConfig.js');
     expect(native).toMatch(/release-guard\.cjs --config "\$RUNNER_TEMP\/embedded\/app\.config" \\\s+--manifest "\$manifest" --plist "\$plist"/);
     // The bundles it reads are the ones bundle-size.js weighs and keeps.

@@ -11573,3 +11573,19 @@ mutants:
         find: "  return { serialized, ms, beat: Math.max(before, heartbeat()) };"
         replace: "  return { serialized, ms, beat: before * 0 + heartbeat() };"
     proof: { file: src/utils/__tests__/queryClient.test.ts, test: "times the same work again after a starved heartbeat, and stops at the first normal one" }
+  - id: shape-a-plugin-lacking-never-fetched
+    class: CI-build-reads-a-version-list
+    source: shape
+    edits:
+      - file: scripts/gradle-kept-first.sh
+        find: "LACKING='offline mode|could not resolve'"
+        replace: "LACKING='offline mode'"
+    proof: { file: e2e/__tests__/gradleKeptFirst.test.ts, test: "asks the network for a plugin the kept packages lack, which Gradle names without a word of offline mode" }
+  - id: shape-the-packages-under-another-version
+    class: CI-build-reads-a-version-list
+    source: shape
+    edits:
+      - file: ../.github/workflows/e2e.yml
+        find: "          path: /home/runner/.gradle/caches\n          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}\n          restore-keys:"
+        replace: "          path: |\n            /home/runner/.gradle/caches\n            /home/runner/.gradle/wrapper\n          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}\n          restore-keys:"
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every Gradle run finds its Android packages installed by a step tried once more, downloads none itself, and builds from the kept packages first" }

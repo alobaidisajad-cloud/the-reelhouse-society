@@ -26,9 +26,12 @@ export default {
   coverageAnalysis: 'perTest',
   mutate: [entry.file],
   // The sandbox takes only what the app's tests read: never the worktrees, the drawings or the audit.
+  // Of scripts/, the machine lock alone, which the tests' sequencer reads for a wide run (a file with
+  // more than twenty tests: offlineQueue.ts's, nightly 45804336594).
   ignorePatterns: ['/*', '!/src', '!/app', '!/__tests__', '!/test-utils', '!/supabase', '!/types', '!/assets', '!/register',
     '!/jest.config.js', '!/jest.stryker.config.js', '!/jest.setup.ts', '!/jest.afterEnv.ts', '!/tsconfig.json',
-    '!/package.json', '!/app.json', '!/eas.json', '!/expo-env.d.ts', '!/patches', '!/modules'],
+    '!/package.json', '!/app.json', '!/eas.json', '!/expo-env.d.ts', '!/patches', '!/modules',
+    '!/scripts', '/scripts/*', '!/scripts/gate-lock.cjs'],
   incremental: false,
   // A progress line every ten seconds, to the console scripts/stryker-files.cjs hands each run.
   reporters: ['json', 'clear-text', 'progress-append-only'],

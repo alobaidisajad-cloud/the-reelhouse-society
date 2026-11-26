@@ -9,14 +9,20 @@
 # Eleven builds of a night asking at once met 429 Too Many Requests, which Gradle answers by turning
 # the repository off for the rest of the build (nightly 45676715897: two builds, eleven minutes of
 # 429 on one jar that does not exist). So the build first runs offline, from the kept packages
-# alone. Only when they lack something (Gradle says "offline mode") is it run again online, each
-# package asked up to eight times from five seconds apart, and the step's output says fetched=true,
-# so the workflow keeps the fuller packages for the next build. Any other failure stops the build.
+# alone. Only when they lack something is it run again online, each package asked up to eight times
+# from five seconds apart, and the step's output says fetched=true, so the workflow keeps the fuller
+# packages for the next build. Any other failure stops the build.
+#
+# Gradle says a package is lacking in more than one way: a library "No cached version ... available
+# for offline mode", a plugin "could not resolve plugin artifact" with no word of offline mode (the
+# foojay toolchain plugin, nightly 45804336594: every build of the night failed in 24 s, never asking
+# the network). Both are a resolution Gradle could not make, and that is what LACKING reads.
+LACKING='offline mode|could not resolve'
 set -u
 LOG="$(mktemp)"
 ./gradlew --offline "$@" 2>&1 | tee "$LOG"
 rc=${PIPESTATUS[0]}
-if [ "$rc" -ne 0 ] && grep -q 'offline mode' "$LOG"; then
+if [ "$rc" -ne 0 ] && grep -qiE "$LACKING" "$LOG"; then
   echo "(the kept packages lack what the build asks for: it is run again, asking the network)"
   if [ -n "${GITHUB_OUTPUT:-}" ]; then echo "fetched=true" >> "$GITHUB_OUTPUT"; fi
   ./gradlew -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 "$@"
