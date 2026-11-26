@@ -9996,3 +9996,28 @@ mutants:
         find: "  WHILE private.member_grams_fill(5000) <> 'complete' LOOP"
         replace: "  WHILE false LOOP"
     proof: { file: e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts, test: "each seed laying a source with its triggers off makes every kept table of it again" }
+  - id: shape-stack-film-read-by-its-row-key
+    class: TEST-an-export-never-brought-back
+    source: shape
+    # The instance put back: a stack's film read from its row's own uuid, as the import read it.
+    edits:
+      - file: src/features/archive/archiveImport.ts
+        find: "              film_id:     named.film,"
+        replace: "              film_id:     (f.id ?? f.film_id) as number,"
+    proof: { file: src/features/archive/__tests__/anExportComesBackWhole.test.ts, test: "every row comes back: the same films, the same notes, every stack in the same order" }
+  - id: shape-imported-text-emptied
+    class: TEST-an-export-never-brought-back
+    source: shape
+    edits:
+      - file: src/features/archive/archiveImport.ts
+        find: "  typeof raw === 'string' ? sanitizeInput(raw, field) : null;"
+        replace: "  sanitizeInput(typeof raw === 'string' ? raw : '', field);"
+    proof: { file: src/features/archive/__tests__/anExportComesBackWhole.test.ts, test: "every row comes back: the same films, the same notes, every stack in the same order" }
+  - id: shape-fake-takes-any-integer
+    class: TEST-mock-accepts-anything
+    source: shape
+    edits:
+      - file: test-utils/supabaseFake.ts
+        find: "  integer: [BigInt('-2147483648'), BigInt('2147483647')],"
+        replace: ""
+    proof: { file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "a value not a whole number in its bounds where the column is an integer; a whole number, or its digits, taken" }

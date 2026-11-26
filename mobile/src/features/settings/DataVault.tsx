@@ -7,7 +7,6 @@
 import { monotonicNow } from '@/src/lib/waits';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
-import { houseIso } from '@/src/lib/houseClock';
 import { Text } from '@/src/components/text';
 import {
   Upload, Download, CheckCircle, AlertCircle, Undo2,
@@ -25,10 +24,10 @@ import { importArchiveZip, importArchiveJSON, ImportProgress, ImportResult } fro
 import { loadReceipt, undoImport } from '@/src/features/archive/undoImport';
 import { receiptSize } from '@/src/features/archive/importReceipt';
 import { readAllRows } from '@/src/features/settings/readAllRows';
+import { readHouseArchive, holdsAnything } from '@/src/features/settings/houseArchive';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { escapeCsvCell } from '@/src/utils/csv';
-import { byKey } from '@/src/utils/order';
 import { counted, grouped } from '@/src/utils/counted';
 import { Arrive } from '@/src/components/Arrive';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
@@ -297,49 +296,16 @@ export default function DataVault() {
     let filePath = '';
 
     try {
-      const [dbLogs, dbWatchlist, dbVault, dbLists, dbNotes] = await Promise.all([
-        fetchAllRows('logs'),
-        fetchAllRows('watchlists'),
-        fetchAllRows('physical_archive'),
-        fetchAllRows('lists', '*, list_items(*)'),
-        // The member's private notes, one per viewing. Owner-only at the
-        // database, and this export is the member asking for their own.
-        fetchAllRows('log_private_notes', '*', 'viewing_id'),
-      ]);
+      // The one builder of the archive, which the round trip back through the import is proven on.
+      const dump = await readHouseArchive(user.id);
 
       if (!isMounted.current) return;
-      const hasData = (dbLogs?.length ?? 0) + (dbWatchlist?.length ?? 0) + (dbVault?.length ?? 0) + (dbLists?.length ?? 0) > 0;
-      if (!hasData) {
+      if (!holdsAnything(dump)) {
         reelToast.error('No data to export yet. Start logging films first.');
         setExporting(null);
         return;
       }
 
-      const dump = {
-        meta: { exported_at: houseIso(), version: '2.1' },
-        logs: dbLogs || [],
-        // Kept as their own list, keyed by viewing, because that is what a note
-        // belongs to: a log with three viewings can hold three different notes,
-        // and folding them onto the log would keep only one.
-        private_notes: (dbNotes || []).map((n: any) => ({
-          log_id: n.log_id,
-          viewing_id: n.viewing_id,
-          notes: n.notes,
-          updated_at: n.updated_at,
-        })),
-        watchlist: dbWatchlist || [],
-        vault: dbVault || [],
-        // Strip the embedded list_items key (it used to ship TWICE — once raw,
-        // once as `films`, doubling every list's payload) and emit films in
-        // rank order so a re-import restores every placement exactly.
-        lists: (dbLists || []).map(({ list_items, ...rest }: any) => ({
-          ...rest,
-          films: [...(list_items || [])].sort((a: any, b: any) =>
-            (a.rank_position ?? 0) - (b.rank_position ?? 0) ||
-            byKey(String(a.created_at ?? ''), String(b.created_at ?? ''))
-          )
-        }))
-      };
       await new Promise(resolve => setTimeout(resolve, 50)); // Yield to UI thread
       const jsonStr = JSON.stringify(dump); // Stripped whitespace for optimal memory usage
 

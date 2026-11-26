@@ -1455,6 +1455,56 @@ async function importLists(
 const ARCHIVE_PARTS = ['logs', 'watchlist', 'vault', 'lists'] as const;
 
 /**
+ * Where each part of a house archive names its film, first key first. The
+ * export (houseArchive.ts, version 2) writes each table's rows as they are
+ * kept, so every film is `film_id`, and a row's `id` is that row's own key: a
+ * stack's film is a list_items row, its `id` a uuid. The first export (version
+ * 1.0, the phone's stores written out whole) named a log's film `filmId`, and
+ * a watchlist entry's and a stack film's by their `id`, which there was the
+ * film (stores/films.ts at e35d789c). Its vault was another table's, since
+ * removed, and has no place here.
+ */
+const FILM_KEYS = {
+  log: ['film_id', 'filmId'],
+  watchlist: ['film_id', 'filmId', 'id'],
+  vault: ['film_id', 'filmId'],
+  stackFilm: ['film_id', 'id'],
+} as const;
+
+/** The largest film_id the house can hold: an integer column. */
+const MAX_FILM_ID = 2_147_483_647;
+
+/**
+ * The film a row of an archive names, by its part's keys (FILM_KEYS): a whole
+ * number above nought that film_id can hold. `missing` when the row names
+ * none; `refused` when it names anything else (a uuid, a title, a fraction),
+ * which is never written.
+ */
+export function filmOf(row: Record<string, unknown>, keys: readonly string[]): { film: number } | { missing: true } | { refused: true } {
+  const key = keys.find((k) => row[k] !== undefined && row[k] !== null && row[k] !== '');
+  if (key === undefined) return { missing: true };
+  const raw = row[key];
+  const n = typeof raw === 'number' ? raw : typeof raw === 'string' && /^\d+$/.test(raw.trim()) ? Number(raw.trim()) : NaN;
+  return Number.isInteger(n) && n > 0 && n <= MAX_FILM_ID ? { film: n } : { refused: true };
+}
+
+/**
+ * A text of an archive's row as the file holds it: none stays none, and words pass the
+ * sanitiser with their field's cap (lossless for anything written in the app). Read as
+ * `(x ?? '')`, a pull quote or a stack's description the member never wrote came back as
+ * empty words, and an empty note on a copy came back as none.
+ */
+const keptText = (raw: unknown, field: Parameters<typeof sanitizeInput>[1]): string | null =>
+  typeof raw === 'string' ? sanitizeInput(raw, field) : null;
+
+/** A row refused for its film, said plainly (within the cap on what is collected). */
+function refuseRow(errors: string[], where: string, title: unknown) {
+  if (errors.length >= MAX_COLLECTED_ERRORS) return;
+  const named = typeof title === 'string' && title ? `"${title}"` : 'A film';
+  errors.push(`${where}: ${named} bears no film number the house can file, so it was left out.`);
+}
+
+/**
  * An exported viewing history with a fresh identity on every viewing, and the
  * old → new pairs so each viewing's note can follow it. The file's identities
  * are still the original log's, and a viewing belongs to one log only. A
@@ -1527,8 +1577,10 @@ async function runJSONImport(
     const payloads: Record<string, unknown>[] = [];
 
     for (const log of logs) {
-      const filmId = (log.filmId ?? log.film_id) as number | undefined;
-      if (!filmId) { skipped++; continue; }
+      const named = filmOf(log, FILM_KEYS.log);
+      if ('missing' in named) { skipped++; continue; }
+      if ('refused' in named) { refuseRow(errors, 'Film log', log.title ?? log.film_title); continue; }
+      const filmId = named.film;
 
       // Fresh identities for the log and every viewing, so each note can be
       // filed on the viewing it was written on.
@@ -1559,7 +1611,7 @@ async function runJSONImport(
         poster_path:      (log.poster ?? log.poster_path ?? null) as string | null,
         year:             (log.year ?? null) as number | null,
         rating:           clampRating(log.rating), // hard DB CHECK is [0,5]
-        review:           sanitizeInput((log.review ?? '') as string, 'review'),
+        review:           keptText(log.review, 'review'),
         status:           (log.status ?? 'watched') as string,
         watched_date:     watchedDate,
         is_spoiler:       (log.isSpoiler ?? log.is_spoiler ?? false) as boolean,
@@ -1573,7 +1625,7 @@ async function runJSONImport(
         alt_poster:       (log.altPoster ?? log.alt_poster ?? null) as string | null,
         editorial_header: (log.editorialHeader ?? log.editorial_header ?? null) as string | null,
         drop_cap:         (log.dropCap ?? log.drop_cap ?? false) as boolean,
-        pull_quote:       sanitizeInput((log.pullQuote ?? log.pull_quote ?? '') as string, 'pullQuote'),
+        pull_quote:       keptText(log.pullQuote ?? log.pull_quote, 'pullQuote'),
         video_url:        (log.videoUrl ?? log.video_url ?? null) as string | null,
         format:           (log.format ?? 'digital') as string,
         view_count:       (log.viewCount ?? log.view_count ?? 1) as number,
@@ -1617,8 +1669,10 @@ async function runJSONImport(
     const payloads: Record<string, unknown>[] = [];
 
     for (const item of watchlist) {
-      const filmId = (item.filmId ?? item.film_id) as number | undefined;
-      if (!filmId) { skipped++; continue; }
+      const named = filmOf(item, FILM_KEYS.watchlist);
+      if ('missing' in named) { skipped++; continue; }
+      if ('refused' in named) { refuseRow(errors, 'Watchlist', item.title ?? item.film_title); continue; }
+      const filmId = named.film;
 
       const originalCreated = importableTimestamp(item.createdAt ?? item.created_at);
       payloads.push({
@@ -1654,11 +1708,12 @@ async function runJSONImport(
     const payloads: Record<string, unknown>[] = [];
 
     for (const item of vault) {
-      const filmId = (item.filmId ?? item.film_id) as number | undefined;
-      if (!filmId) { skipped++; continue; }
+      const named = filmOf(item, FILM_KEYS.vault);
+      if ('missing' in named) { skipped++; continue; }
+      if ('refused' in named) { refuseRow(errors, 'Physical Archive', item.title ?? item.film_title); continue; }
+      const filmId = named.film;
 
       const originalCreated = importableTimestamp(item.createdAt ?? item.created_at);
-      const rawNotes = (item.notes ?? null) as string | null;
       payloads.push({
         user_id:     userId,
         film_id:     filmId,
@@ -1667,7 +1722,7 @@ async function runJSONImport(
         year:        (item.year ?? null) as number | null,
         formats:     (item.formats ?? []) as string[],
         // Untrusted text: each field's own sanitiser and cap (lossless for anything written in-app).
-        notes:       rawNotes ? sanitizeInput(rawNotes, 'physicalNotes') : null,
+        notes:       keptText(item.notes, 'physicalNotes'),
         condition:   typeof item.condition === 'string' ? (sanitizeInput(item.condition, 'physicalCondition') || null) : null,
         ...(originalCreated ? { created_at: originalCreated } : {}),
       });
@@ -1703,7 +1758,7 @@ async function runJSONImport(
       try {
         // Untrusted title and description: the in-app editor's caps.
         const listTitle = sanitizeInput((list.title ?? 'Untitled') as string, 'listTitle') || 'Imported Stack';
-        const listDescription = sanitizeInput((list.description ?? '') as string, 'listDescription');
+        const listDescription = keptText(list.description, 'listDescription');
         const originalCreated = importableTimestamp(list.createdAt ?? list.created_at);
 
         // Idempotency: reuse list ID if one with the same title exists for this user
@@ -1758,16 +1813,22 @@ async function runJSONImport(
         // Order films by rank_position (ReelHouse exports) / legacy position /
         // array order, then write the app's real ordering column (0-based) —
         // every film in its right placement, even from old bloated exports.
+        // Each film by the film it names (FILM_KEYS.stackFilm), never by its row's own
+        // key: the export's films are list_items rows, whose `id` is a uuid.
         const films = orderImportedFilms((list.films ?? []) as Record<string, unknown>[]);
         if (films.length > 0) {
-          const items = films.map((f) => ({
-            list_id:     listId,
-            film_id:     (f.id ?? f.film_id) as number,
-            film_title:  (f.title ?? f.film_title ?? 'Unknown') as string,
-            poster_path: (f.poster ?? f.poster_path ?? null) as string | null,
-            ...(importableTimestamp(f.created_at) ? { created_at: importableTimestamp(f.created_at) } : {}),
-          })).filter(item => item.film_id)
-             .map((item, pos) => ({ ...item, rank_position: pos }));
+          const items = films.flatMap((f) => {
+            const named = filmOf(f, FILM_KEYS.stackFilm);
+            if ('missing' in named) { skipped++; return []; }
+            if ('refused' in named) { refuseRow(errors, `Stack "${listTitle}"`, f.title ?? f.film_title); return []; }
+            return [{
+              list_id:     listId,
+              film_id:     named.film,
+              film_title:  (f.title ?? f.film_title ?? 'Unknown') as string,
+              poster_path: (f.poster ?? f.poster_path ?? null) as string | null,
+              ...(importableTimestamp(f.created_at) ? { created_at: importableTimestamp(f.created_at) } : {}),
+            }];
+          }).map((item, pos) => ({ ...item, rank_position: pos }));
 
           for (let j = 0; j < items.length; j += BATCH_SIZE) {
             // Micro-batching event-loop yield to prevent UI freeze
