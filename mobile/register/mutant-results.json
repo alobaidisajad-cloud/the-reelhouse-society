@@ -5785,21 +5785,21 @@
     "class": "SPEED-the-cache-written-whole-at-every-change",
     "mutant": "shape-cache-written-at-every-change",
     "proof": "m1",
-    "commit": "96b9edca0979ec850550b28ed4173aadf1cba60c",
+    "commit": "eaeddcf712c8a8b2e080b902b44654f138f66c43",
     "verdict": "caught"
   },
   {
     "class": "SPEED-the-cache-written-whole-at-every-change",
     "mutant": "shape-cache-written-mid-fling",
     "proof": "m2",
-    "commit": "96b9edca0979ec850550b28ed4173aadf1cba60c",
+    "commit": "eaeddcf712c8a8b2e080b902b44654f138f66c43",
     "verdict": "caught"
   },
   {
     "class": "SPEED-the-cache-written-whole-at-every-change",
     "mutant": "shape-cache-bytes-counted-every-write",
     "proof": "m5",
-    "commit": "96b9edca0979ec850550b28ed4173aadf1cba60c",
+    "commit": "eaeddcf712c8a8b2e080b902b44654f138f66c43",
     "verdict": "caught"
   },
   {
@@ -5855,7 +5855,7 @@
     "class": "STATE-a-choice-kept-past-sign-out",
     "mutant": "shape-held-cache-written-for-another-member",
     "proof": "m5",
-    "commit": "96b9edca0979ec850550b28ed4173aadf1cba60c",
+    "commit": "eaeddcf712c8a8b2e080b902b44654f138f66c43",
     "verdict": "caught"
   },
   {
