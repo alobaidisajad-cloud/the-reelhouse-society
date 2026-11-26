@@ -6905,77 +6905,77 @@
     "class": "DB-a-count-that-starts-nowhere",
     "mutant": "shape-a-count-from-nowhere",
     "proof": "m1",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
     "class": "DB-the-rule-asked-twice-a-row",
     "mutant": "shape-the-faces-ask-the-rule-twice",
     "proof": "m1",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
     "class": "DB-the-rule-asked-twice-a-row",
     "mutant": "shape-the-stacks-ask-the-file-twice",
     "proof": "m1",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-asked-of-every-follow",
     "mutant": "shape-the-feed-asks-each-follow",
     "proof": "m1",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-folded-into-every-row",
     "mutant": "shape-the-last-words-ask-each-row",
     "proof": "m1",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
     "class": "DB-the-caller-met-after-the-rules",
     "mutant": "shape-the-feed-meets-every-mark",
     "proof": "m1",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-hashes-a-whole-table",
     "mutant": "shape-the-critiques-hash-every-filing",
     "proof": "m1",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-asks-one-test-twice",
     "mutant": "shape-the-follows-rule-asks-twice",
     "proof": "m1",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-asks-of-a-key-not-held",
     "mutant": "shape-the-marks-ask-of-no-piece",
     "proof": "m1",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
     "class": "DB-the-same-rows-read-twice",
     "mutant": "shape-the-counts-read-twice",
     "proof": "m1",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
     "class": "DB-words-read-past-a-row-rule",
     "mutant": "shape-the-search-reads-as-the-caller",
     "proof": "m1",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
@@ -7136,14 +7136,14 @@
     "class": "SEC-a-write-a-script-repeats-without-end",
     "mutant": "shape-a-members-write-left-unpaced",
     "proof": "m2",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
     "class": "SEC-a-write-a-script-repeats-without-end",
     "mutant": "shape-the-critique-pace-taken-off",
     "proof": "m2",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
@@ -7185,7 +7185,7 @@
     "class": "DB-a-notice-left-when-its-cause-is-undone",
     "mutant": "shape-a-critique-leaves-its-notice",
     "proof": "m2",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
@@ -7199,7 +7199,7 @@
     "class": "DB-a-count-taken-before-its-lock",
     "mutant": "shape-the-seat-count-read-before-its-lock",
     "proof": "m2",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
@@ -7304,14 +7304,14 @@
     "class": "SEC-a-write-a-script-repeats-without-end",
     "mutant": "shape-a-critique-dated-by-its-writer",
     "proof": "m9",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
     "class": "SEC-a-write-a-script-repeats-without-end",
     "mutant": "shape-a-pace-counted-by-the-writers-date",
     "proof": "m10",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
@@ -7360,7 +7360,7 @@
     "class": "DB-rule-kept-on-one-path",
     "mutant": "shape-a-stacks-count-read-past-its-stack",
     "proof": "m3",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
@@ -7458,7 +7458,7 @@
     "class": "SPEED-an-index-refuses-the-writes-it-serves",
     "mutant": "shape-the-short-pieces-kept-from-members",
     "proof": "m1",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
@@ -7577,7 +7577,7 @@
     "class": "SPEED-a-write-counts-the-house-again",
     "mutant": "shape-a-films-verdict-counted-at-every-move",
     "proof": "m1",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
@@ -8060,7 +8060,7 @@
     "class": "UI-notice-opens-elsewhere",
     "mutant": "shape-log-critique-notice-unkeyed",
     "proof": "m21",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "90d6b0373f037f0058e25a2ff72bc3a27af948ea",
     "verdict": "caught"
   },
   {
