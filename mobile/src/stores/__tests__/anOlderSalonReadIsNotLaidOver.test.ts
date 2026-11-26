@@ -111,9 +111,12 @@ it('a next page asked before the room was read again from what it kept is not jo
   void useLoungeStore.getState().fetchMessages(ROOM);
   await settled();
   expect(ids()).toEqual(['words 2', 'words 3', 'words 4', 'words 5', 'words 6']);
-  // The page answers first, then the other room, then the catch-up.
+  // Meanwhile words 1 is taken away: the page asked before holds it still; one asked now does not.
+  mockWords = [0, 2, 3, 4, 5, 6].map((i) => word(i));
+  // The page answers first, then the other room, then the catch-up: the page, the old list's, lands
+  // nowhere and is asked again of the list the room holds now.
   mockHouse.release();
   await more;
   await settled();
-  expect(ids()).toEqual(['words 2', 'words 3', 'words 4', 'words 5', 'words 6']);
+  expect(ids()).toEqual(['words 0', 'words 2', 'words 3', 'words 4', 'words 5', 'words 6']);
 });

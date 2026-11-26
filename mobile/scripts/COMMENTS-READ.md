@@ -2178,3 +2178,11 @@ files of the reading map this one does not.
 | src/utils/__tests__/aSignInIsCountedAtItsMembersAddress.guard.test.ts | — |  |
 | src/utils/__tests__/theHousesFailureIsTheHouses.guard.test.ts | — |  |
 | scripts/mutants-plan.cjs | — |  |
+| src/stores/__tests__/aBlockMadeWhileTheListsAreReadStays.test.ts | — |  |
+| src/stores/__tests__/aCertificationTakenBackWhileReadStaysTakenBack.test.ts | — |  |
+| src/stores/__tests__/aFilingAnswerIsLaidInItsTurn.test.ts | — |  |
+| src/utils/turns.ts | — |  |
+| src/services/__tests__/aStacksFilmsAreReadInTheOrderHeld.test.ts | — |  |
+| src/stores/__tests__/aSalonAnswerIsLaidInItsTurn.test.ts | — |  |
+| src/hooks/__tests__/aRoomAnswerIsLaidInItsTurn.test.tsx | — |  |
+| src/hooks/__tests__/theDoorsCountIsLaidInItsTurn.test.tsx | — |  |

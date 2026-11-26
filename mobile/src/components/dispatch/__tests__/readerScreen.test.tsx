@@ -35,6 +35,8 @@ let mockRowPending = false;
 /** Each held read's answer, given when the test ends: its deadline timer is cleared by it. */
 const mockHeldReads: (() => void)[] = [];
 let mockCritiqueRows: unknown[] = [];
+/** Every critique of the filing the house holds, when a test says: the order CERTIFIED walks, and the rows read by id. */
+let mockCritiquePool: { id: string }[] = [];
 let mockNextRows: unknown[] = [];
 let mockWriteFails = false;
 /** The house's answers to the next writes, one each, before any other: its pace (round 14). */
@@ -99,7 +101,10 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.is = () => self();
       // The next-part read's; missing, the screen's catch hides the throw.
       chain.gt = () => self();
-      chain.in = () => Promise.resolve({ data: [], error: null });
+      // A page of the order held is read by id: the rows of the house's that it names.
+      chain.in = (_col: string, ids: string[]) => (table === 'dispatch_comments' && mockCritiquePool.length
+        ? builder(mockCritiquePool.filter((r) => ids.includes(r.id)))
+        : Promise.resolve({ data: [], error: null }));
       chain.order = () => self();
       // A next page of critiques begins after the last row read.
       chain.or = () => self();
@@ -115,7 +120,10 @@ jest.mock('@/src/lib/supabase', () => ({
         ? builder(null, { message: 'TypeError: Network request failed' })
         : builder(mockRow));
       // The critiques arrive HERE (the reader's own fetch replaces the store's); any other, the next part.
-      chain.limit = () => builder(table === 'dispatch_comments' ? mockCritiqueRows : mockNextRows);
+      // The order CERTIFIED walks (its first 1,000 critiques' ids) is the house's whole, when a test holds one.
+      chain.limit = (n?: number) => builder(table === 'dispatch_comments'
+        ? (n === 1000 && mockCritiquePool.length ? mockCritiquePool.slice(0, n) : mockCritiqueRows)
+        : mockNextRows);
       // Writes: missing, every act would roll back as if refused.
       chain.insert = () => (mockWriteAnswers.length
         ? Promise.resolve({ data: null, error: mockWriteAnswers.shift() })
@@ -223,6 +231,7 @@ beforeEach(() => {
   mockRowFails = false;
   mockRowPending = false;
   mockCritiqueRows = [];
+  mockCritiquePool = [];
   mockNextRows = [];
   mockWriteFails = false;
   mockWriteAnswers = [];
@@ -984,16 +993,17 @@ describe('the reader', () => {
       body: 'Critique ' + i, certify_count: 0,
       created_at: '2026-08-28T22:00:00Z', edited_at: null, profiles: null,
     }));
-    mockRow = row({ comment_count: 200 });
-    const { getByLabelText } = await mount();
-    expect(useDispatch.getState().critiques['00000017-0000-4000-8000-000000000017']).toHaveLength(30);
-
     // The next page is thirty others: it said `>= 30`, which the first page met alone.
-    mockCritiqueRows = Array.from({ length: 30 }, (_, i) => ({
+    const later = Array.from({ length: 30 }, (_, i) => ({
       id: 'c' + (i + 30), post_id: '00000017-0000-4000-8000-000000000017', user_id: 'u3', author_username: 'someone',
       body: 'Critique ' + (i + 30), certify_count: 0,
       created_at: '2026-08-28T21:00:00Z', edited_at: null, profiles: null,
     }));
+    mockCritiquePool = [...(mockCritiqueRows as { id: string }[]), ...later];
+    mockRow = row({ comment_count: 200 });
+    const { getByLabelText } = await mount();
+    expect(useDispatch.getState().critiques['00000017-0000-4000-8000-000000000017']).toHaveLength(30);
+
     await act(async () => { await fireEvent.press(getByLabelText(/more, \d+ at a time: read the next critiques/)); });
     await act(async () => { await Promise.resolve(); });
     expect(useDispatch.getState().critiques['00000017-0000-4000-8000-000000000017']).toHaveLength(60);

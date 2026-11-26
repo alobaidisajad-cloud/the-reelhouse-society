@@ -47,9 +47,27 @@ describe('it refuses what production refuses', () => {
 
   it('a filter it cannot read, unless the test answers the table itself', async () => {
     const strict = supabaseFake({ rows: { logs: [] } });
-    expect(() => (strict.client.from('logs').select('id')).or('rating.eq.5,rating.eq.4')).toThrow('or() is not read here');
+    expect(() => (strict.client.from('logs').select('id')).contains('rating', [5])).toThrow('contains() is not read here');
+    expect(() => (strict.client.from('logs').select('id')).or('rating.cs.{5}')).toThrow('cannot read "rating.cs.{5}" in an or() of logs');
+    expect(() => (strict.client.from('logs').select('id')).or('ratting.eq.5')).toThrow('logs has no column "ratting" (or)');
     const answered = supabaseFake({ answer: { logs: () => [log(7)] } });
-    await expect(answered.client.from('logs').select('id').or('rating.eq.5,rating.eq.4')).resolves.toMatchObject({ data: [{ id: log(7).id }] });
+    await expect(answered.client.from('logs').select('id').or('rating.cs.{5}')).resolves.toMatchObject({ data: [{ id: log(7).id }] });
+    await expect(answered.client.from('logs').select('id').contains('rating', [5])).resolves.toMatchObject({ data: [{ id: log(7).id }] });
+  });
+
+  it('orders a null as PostgreSQL does: last going up, first going down', async () => {
+    const { client } = supabaseFake({ rows: { logs: [{ ...log(1), rating: null }, log(2), log(3)] } });
+    expect((await client.from('logs').select('id').order('rating')).data).toEqual([{ id: log(2).id }, { id: log(3).id }, { id: log(1).id }]);
+    expect((await client.from('logs').select('id').order('rating', { ascending: false })).data).toEqual([{ id: log(1).id }, { id: log(3).id }, { id: log(2).id }]);
+  });
+
+  it('reads an or() as PostgREST does: items joined by OR, and(…) nested, a number read as one', async () => {
+    const { client } = supabaseFake({ rows: { logs: [log(1), log(2), log(3), log(4), log(9)] } });
+    // A keyset cursor's shape: before a moment, or at it and before an id.
+    const after = (await client.from('logs').select('id').or(`created_at.lt.${log(3).created_at},and(created_at.eq.${log(3).created_at},id.lt.${log(4).id})`).order('id')).data;
+    expect(after).toEqual([{ id: log(1).id }, { id: log(2).id }, { id: log(3).id }]);
+    const rated = (await client.from('logs').select('id').or('rating.gte.4,rating.eq.1').order('id')).data;
+    expect(rated).toEqual([{ id: log(1).id }, { id: log(4).id }, { id: log(9).id }]);
   });
 });
 
