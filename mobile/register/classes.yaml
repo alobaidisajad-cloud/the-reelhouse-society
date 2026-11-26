@@ -5480,7 +5480,7 @@ classes:
       - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a write laid thing by thing passes only when each thing the member acted on since the ask is skipped, the moment taken before the wait" }
       - { kind: running, file: src/services/__tests__/aStackPageBeginsAfterItsLastFilm.test.ts, test: "a film taken out of the stack while the first page was held: the next page still begins at the film after the last drawn" }
       - { kind: running, file: src/services/__tests__/aStackPageBeginsAfterItsLastFilm.test.ts, test: "pages a stack whose films are unranked and added together, every film once and in its order" }
-      - { kind: running, file: src/utils/__tests__/keysetCursor.test.ts, test: "a stack: rank (none last), then when added, then the film, 2 a page: every row once, in order" }
+      - { kind: running, file: src/utils/__tests__/keysetCursor.test.ts, test: "going up, past a row with a value, the rows with none come after it: every row once, in order" }
       - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a first page asked again in the same order: the older answer, landing last, is not drawn" }
       - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a next page of a read since asked again is not joined to the new first page, and its spinner is let down" }
       - { kind: running, file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "of two reads of a filing, the older answering last is not laid over the newer" }

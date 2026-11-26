@@ -10325,7 +10325,7 @@ mutants:
       - file: src/utils/keysetCursor.ts
         find: "    return nullable ? [`${column}.gt.${v}`, `${column}.is.null`] : [`${column}.gt.${v}`];"
         replace: "    return [`${column}.gt.${v}`];"
-    proof: { file: src/utils/__tests__/keysetCursor.test.ts, test: "a stack: rank (none last), then when added, then the film, 2 a page: every row once, in order" }
+    proof: { file: src/utils/__tests__/keysetCursor.test.ts, test: "going up, past a row with a value, the rows with none come after it: every row once, in order" }
 
   - id: shape-older-critique-read-laid
     class: LATE-an-answer-over-a-newer-state
