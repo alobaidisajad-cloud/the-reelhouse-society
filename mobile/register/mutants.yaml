@@ -9996,3 +9996,66 @@ mutants:
         find: "  WHILE private.member_grams_fill(5000) <> 'complete' LOOP"
         replace: "  WHILE false LOOP"
     proof: { file: e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts, test: "each seed laying a source with its triggers off makes every kept table of it again" }
+  - id: shape-a-verdict-kept-whose-files-moved
+    class: TOOL-a-rebase-loses-the-mutant-verdicts
+    source: shape
+    # A recorded verdict taken again though a file the mutant stands on changed since its run.
+    edits:
+      - file: scripts/mutants.cjs
+        find: "  if (moved.length) return `${moved.join(', ')} changed since its run`;"
+        replace: "  if (moved.length < 0) return `${moved.join(', ')} changed since its run`;"
+    proof: { file: scripts/__tests__/mutantVerdictsStand.test.ts, test: "a recorded verdict stands only where its run is in this history and nothing it stands on, nor the runner, changed since" }
+  - id: shape-a-merge-keeps-the-older-run
+    class: TOOL-a-rebase-loses-the-mutant-verdicts
+    source: shape
+    # A merge's results file keeps our side's verdict whatever stands.
+    edits:
+      - file: scripts/mutants.cjs
+        find: "  return sides.length ? [keep(standing[0] ?? (b && later(b, a) ? b : a))] : [];"
+        replace: "  return sides.length ? [keep(a)] : [];"
+    proof: { file: scripts/__tests__/mutantVerdictsStand.test.ts, test: "a merge keeps the verdict that stands on the merged files, else the later run, and leaves out a mutant neither side ran" }
+  - id: shape-a-private-mutant-run-everywhere
+    class: TOOL-a-private-mutant-of-unpushed-work
+    source: shape
+    # A private mutant run in every checkout, whether or not its commit is there.
+    edits:
+      - file: scripts/mutants.cjs
+        find: "  const kept = entries.filter((m) => !bare.includes(m) && inHistory(m.since));"
+        replace: "  const kept = entries.filter((m) => !bare.includes(m));"
+    proof: { file: scripts/__tests__/mutantVerdictsStand.test.ts, test: "runs a private mutant only where the commit it names is in HEAD's history, and refuses one that names none" }
+  - id: shape-the-gate-lock-lets-everyone-by
+    class: TOOL-a-heavy-run-beside-the-push-gate
+    source: shape
+    # Every run taken for the gate's own child, so the lock holds nothing back.
+    edits:
+      - file: scripts/gate-lock.cjs
+        find: "  const mine = env[CHILD] && (lock.token === null || env[CHILD] === lock.token);"
+        replace: "  const mine = !!env[CHILD] || lock.token !== undefined;"
+    proof: { file: scripts/__tests__/gateLock.test.ts, test: "refuses a heavy run while a gate holds the machine, and lets the gate's own children and a free machine run" }
+  - id: shape-remote-verdicts-at-two-commits
+    class: TOOL-a-heavy-run-beside-the-push-gate
+    source: shape
+    # A remote run's parts recorded though they ran at different commits.
+    edits:
+      - file: scripts/mutants-remote.cjs
+        find: "    ...(commits.length > 1 ? [`the parts ran at"
+        replace: "    ...(commits.length > 9 ? [`the parts ran at"
+    proof: { file: scripts/__tests__/mutantsRemote.test.ts, test: "records a run's parts only when every verdict is at the one commit, each id once, each with its record" }
+  - id: shape-a-test-held-to-its-whole-limit
+    class: TEST-a-test-near-its-time-limit
+    source: shape
+    # A test found only once it has reached its limit, as it fails, not while it still passes.
+    edits:
+      - file: scripts/slow-tests.cjs
+        find: "filter((t) => t.ms > t.limit * share)"
+        replace: "filter((t) => t.ms > t.limit)"
+    proof: { file: scripts/__tests__/slowTests.test.ts, test: "finds both tests that failed the push gates, and none at half its limit or under" }
+  - id: shape-a-dead-run-told-by-its-tail
+    class: TOOL-a-dead-run-told-without-its-error
+    source: shape
+    # A dead run told by the last lines of its words, the error itself cut.
+    edits:
+      - file: scripts/mutants.cjs
+        find: "  const at = lines.findIndex((l) => ERROR_LINE.test(l));"
+        replace: "  const at = -1;"
+    proof: { file: scripts/__tests__/mutantVerdictsStand.test.ts, test: "keeps a dead run's own error, not the tail of its stack" }

@@ -16,6 +16,7 @@ files of the reading map this one does not.
 
 | File | Read | What changed |
 |---|---|---|
+| ../.github/workflows/mutants-on-demand.yml | 2026-11-26 | new: a builder's mutants on GitHub's runners, at the commit given, in parts; the verdicts and the record kept per part |
 | __tests__/animationMockCoverage.test.ts | 2026-10-22 | edited: every name the app imports from Reanimated is in the mock, hooks and all; the entrances are Arrive's own values; the layout transitions remain |
 | __tests__/backendContract.test.ts | 2026-10-16 | edited: the tables and buckets read from the code, those passed through the export's and the import's helpers included |
 | __tests__/colorLock.test.ts | 2026-10-27 | edited: TMDB's wordmark on the artwork list, its pigments as published; edited: the drawn eye's file left the exempt list with the file |
@@ -316,10 +317,14 @@ files of the reading map this one does not.
 | scripts/__tests__/androidPackages.test.ts | 2026-10-16 | new: a package counts as installed only with its package.xml |
 | scripts/__tests__/contractsRan.test.ts | 2026-11-02 | edited: a sealed run read by its own files; new |
 | scripts/__tests__/flakeHistory.test.ts | 2026-10-16 | new |
+| scripts/__tests__/gateLock.test.ts | 2026-11-26 | new |
 | scripts/__tests__/hermesSuites.test.ts | 2026-11-07 | edited: the segmenter's reason, and a suite that only proves it unasked still runs; edited: the planted interval counted by ticks, not the wall clock; new |
 | scripts/__tests__/jestShards.test.ts | 2026-10-16 | new: a zone's record holds that zone's files |
 | scripts/__tests__/mergeCoverage.test.ts | 2026-10-30 | edited: the refusal test keeps a part of its own; new: read against jest's CoverageReporter, which it runs whole and in parts |
+| scripts/__tests__/mutantVerdictsStand.test.ts | 2026-11-26 | new |
+| scripts/__tests__/mutantsRemote.test.ts | 2026-11-26 | new |
 | scripts/__tests__/privateSettings.test.ts | 2026-10-16 | new |
+| scripts/__tests__/slowTests.test.ts | 2026-11-26 | new |
 | scripts/absence-only.cjs | 2026-10-16 | new: the finder of TST-09, a rendering test whose every check finds the screen without something, with nothing shown drawn |
 | scripts/add-only.cjs | 2026-10-15 | new; a migration by its kind (test-utils/universe.js); SQL no rule names is refused |
 | scripts/android-packages.cjs | 2026-10-16 | new: read against React Native's libs.versions.toml, Expo's root project plugin and the Reanimated and Worklets build files; --installed asks the disk for each package's package.xml, as sdkmanager does |
@@ -337,6 +342,7 @@ files of the reading map this one does not.
 | scripts/flake-history.cjs | 2026-10-16 | new: read against Maestro's JUnit reports (run 38824884948's) and jest --json's record |
 | scripts/frozen-counts.cjs | 2026-11-02 | edited: a sealed test's real client is no hand mock; planted both ways; edited: a hand-made house's client handed over without the shared fake is planted for the mock finder |
 | scripts/functions-check.mjs | 2026-10-03 | compares every file a deploy bundles, _shared included, each function in its own folder; a listed exception is reported once |
+| scripts/gate-lock.cjs | 2026-11-26 | new: the push gate's hold on the machine; refusal, the stale lock, hold and check |
 | scripts/gates-check.js | 2026-10-16 | edited: a failed read of the database ends the check with psql's reason, the address hidden |
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
 | scripts/hooks/commit-msg.cjs | 2026-10-15 | new |
@@ -350,6 +356,7 @@ files of the reading map this one does not.
 | scripts/lucide-icons.js | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | scripts/merge-coverage.cjs | 2026-10-15 | new: read against @jest/reporters 29.7's CoverageReporter (onTestResult, onRunComplete, _checkThreshold) and jest-config's readConfig |
 | scripts/migration-lint.cjs | 2026-10-30 | edited: an index on a table that already holds rows is built CONCURRENTLY; edited: reads a file by its kind (test-utils/universe.js); the archive is not read; SQL no rule names is refused |
+| scripts/mutants-remote.cjs | 2026-11-26 | new: run, status and record of a builder's mutants on GitHub's runners |
 | scripts/mutants.cjs | 2026-11-20 | edited: --green: a report of this tree that ran a mutant's test green is its first run; the private record written by one lane at a time; edited: a judge's records may hold pictures, carried as bytes, never edited as text; edited: a YAML change parses document by document (a flow is two); each mutant applied by the code around it and judged by the kill rules; a judge fed a bad log; those a change stands on, a part of all, the parts read together; the mutant in place recorded first and put back by the next run; an unknown option refused |
 | scripts/press-again.cjs | 2026-10-16 | new: the finder of TST-14, a second press of the same control in a test with no timer advanced and no real wait between |
 | scripts/private-settings.cjs | 2026-10-16 | edited: once a value is read, an error nobody catches is printed with every value read hidden; a rejection reaches the same handler |
@@ -359,6 +366,7 @@ files of the reading map this one does not.
 | scripts/schema-snapshot.mjs | 2026-10-15 | edited: the address from the private settings file; default privileges that name no schema |
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
 | scripts/secrets-planted.cjs | 2026-10-16 | edited: gitleaks writing no report ends it in gitleaks's words |
+| scripts/slow-tests.cjs | 2026-11-26 | new: a test over half its time limit, found in a run and again alone; the two past ones |
 | scripts/stryker-files.cjs | 2026-10-31 | edited: an equivalent is stale only when its mutant was killed, never when it timed out; edited: equivalents named by the code of their line, never its number; new: Stryker file by file, on the console as it goes, in a zone behind UTC; each report judged against the floor and the equivalents; an unknown option refused |
 | scripts/surface-jest-failure.sh | 2026-10-03 | read whole: sound |
 | scripts/test-timezones.js | 2026-10-16 | edited: ZONES and each zone's record name exported, the one list CI reads; ONLY_IN_UTC: the tooling's tests run in UTC alone, the app's in all six zones |

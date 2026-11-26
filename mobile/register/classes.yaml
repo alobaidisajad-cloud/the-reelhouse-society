@@ -5464,3 +5464,68 @@ classes:
     fix: "the snapshot carries the fill's row as production holds it (schema-snapshot.mjs, rows the cars lay as the house's state), complete on a copy built with no member, so every member a seed writes is listed as production lists one; the load seed and the speed lab's seed, which lay members with their triggers off, list them again from the first member as the car's job does, and the load seed counts its ballots' votes and its logs' certifications and critiques as the cars counted them; the car's rehearsal needs the row before it moves the fill. The finder reads every car: each table its own statements insert into (never a function's) is carried by the snapshot, kept (every seed laying a source with its triggers off makes it again), planted (the attack matrix's specimen and the rehearsals' seed) or moved once, and each job its DO blocks schedule stands in the snapshot or is a kept table's work (mutants shape-the-fill-row-left-out-of-the-snapshot, shape-the-load-house-votes-uncounted, shape-the-lab-members-unlisted)"
     sweep: { read: [migrations, snapshot, scripts], found: 18, fixed: 3, judged: 15, commit: f675618a, finder: e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts, result: "every car of both trees: 16 tables their own statements insert into (the cars' scratch tables aside) and 3 jobs their DO blocks schedule; 3 fixed (the fill's row carried; the load house's ballot counts and logs' counts, and the lists in both seeds that lay members with triggers off); the rest judged: 1 carried before (the avatars bucket), 4 kept and made again by every such seed, 2 planted, 8 moved once, 2 jobs standing in the snapshot" }
     places: [none]
+
+  - id: TOOL-a-rebase-loses-the-mutant-verdicts
+    title: "An integration rebased four finished branches onto main, which wrote every one of their commits anew, so every mutant verdict recorded at the old commits ('ran at a commit this branch holds') stood on no commit of the history any more, and some 500 mutants whose files the integration never changed ran again, for over three hours on the one machine every builder shares"
+    seriousness: code
+    area: tooling
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "integrator I2, 2026-11-25/26: lane B (B12 to B14), C20 and C21 rebased onto main for one push; their recorded verdicts all lost" }
+    methods:
+      - { kind: running, file: scripts/__tests__/mutantVerdictsStand.test.ts, test: "a recorded verdict stands only where its run is in this history and nothing it stands on, nor the runner, changed since" }
+      - { kind: running, file: scripts/__tests__/mutantVerdictsStand.test.ts, test: "a merge keeps the verdict that stands on the merged files, else the later run, and leaves out a mutant neither side ran" }
+      - { kind: running, file: scripts/__tests__/commit.test.ts, test: "makes a merge commit of both, writing each mutant's verdict from the side that ran it last" }
+    fix: "a finished branch comes into main by a merge commit, its history kept (commit.cjs --merge, --merge-continue; a merge git makes itself runs the pre-commit checks, githooks/pre-merge-commit). A recorded verdict stands (mutants.cjs whyNotStanding) where it is caught, its commit is in HEAD's history, nothing the mutant stands on nor the runner changed since, its entry is as it was, and this machine's private record of that run holds it; touchedSince, which the push gate, its lanes and --changed read, runs only the mutants touched with no verdict that stands, so after a merge only those whose files the merge changed run; the merge writes the results file from both sides, the verdict that stands first, else the later run (mutants shape-a-verdict-kept-whose-files-moved, shape-a-merge-keeps-the-older-run)"
+    places: [none]
+
+  - id: TOOL-a-private-mutant-of-unpushed-work
+    title: "A private mutant of work not yet pushed reached every other push: the private half of the registry is one file for every checkout of the clone, so C20's seven mutants, whose targets only C20's branch held, ran in other builders' push gates on files that were not there, and refused their pushes"
+    seriousness: code
+    area: tooling
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "push gates of 2026-11-25: C20's seven private mutants read by every checkout from the plan's private folder; set aside by hand" }
+    methods:
+      - { kind: running, file: scripts/__tests__/mutantVerdictsStand.test.ts, test: "runs a private mutant only where the commit it names is in HEAD's history, and refuses one that names none" }
+    fix: "each private mutant names since: <commit>, the commit its files stand at, and mutants.cjs runs it only in a checkout whose HEAD holds that commit (privateHalf); a run refuses to start, in words, while an entry names none (bareRefusal) (mutant shape-a-private-mutant-run-everywhere)"
+    places: [none]
+
+  - id: TOOL-a-heavy-run-beside-the-push-gate
+    title: "A push gate was refused for faults the pushed code did not have: three builders' mutant and jest runs beside it took 11 of the machine's 11 processors and 6.8 of its 6.8 GB, a test ran out of its time and the gate's mutants died unrun; the gate's lock was a promise passed by message, which no run checked"
+    seriousness: code
+    area: tooling
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "the push gates of 2026-11-25 (C19's report): memory starved beside three builders' heavy runs" }
+    methods:
+      - { kind: running, file: scripts/__tests__/gateLock.test.ts, test: "refuses a heavy run while a gate holds the machine, and lets the gate's own children and a free machine run" }
+      - { kind: running, file: scripts/__tests__/gateLock.test.ts, test: "holds the lock for the command's whole run, its children passing, and lets it go when the command fails" }
+      - { kind: running, file: scripts/__tests__/mutantsRemote.test.ts, test: "records a run's parts only when every verdict is at the one commit, each id once, each with its record" }
+    fix: "push-head.ps1 runs the push under gate-lock.cjs hold, which writes C:/tmp/push-gate.lock (who, since, its pid, a token) for the push's whole run and removes it however it ends; mutants.cjs, the push gate (pre-push.cjs), every jest run of more than twenty files (the test sequencer) and stryker-files.cjs refuse to start while it is held, unless they are the gate's own children (RH_PUSH_GATE, the lock's token), saying who holds it and how to wait; a lock whose holder no longer runs is removed. A builder's mutants run on GitHub's runners instead (mutants-on-demand.yml, mutants-remote.cjs), recorded as a run here records them (mutants shape-the-gate-lock-lets-everyone-by, shape-remote-verdicts-at-two-commits)"
+    places: [none]
+
+  - id: TEST-a-test-near-its-time-limit
+    title: "A test took over half its time limit when it ran alone, so it passed on a quiet machine and ran out of its time on a loaded one: the cold start's prefetch check loaded the films store inside its own five seconds (2.9 s), and the docket test drew dozens of cases again per verdict, and two push gates were refused for code that was not at fault"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 2
+    source: { kind: running, ref: "the push gates of 2026-11-25: imagePrefetchSites (a cold start) and theDocketsReadAgainKeepTheirLaterPages ran out of five seconds under load" }
+    methods:
+      - { kind: running, file: scripts/__tests__/slowTests.test.ts, test: "finds both tests that failed the push gates, and none at half its limit or under" }
+      - { kind: running, file: scripts/__tests__/slowTests.test.ts, test: "holds a test that waits to its limit, and lets be one that returns at once, which no limit stops" }
+    fix: "each fixed at its cause (the store loaded with the file; each case drawn again only when it changed), never by a longer limit. The jest environment writes each test's time beside its own limit, and whether it waits (RH_TEST_TIMES); slow-tests.cjs finds every test over half its limit and runs its file again alone, and the nightly's random-order run fails on any still over half alone (mutant shape-a-test-held-to-its-whole-limit)"
+    places: [none]
+
+  - id: TOOL-a-dead-run-told-without-its-error
+    title: "A mutant whose test run died (jest out of memory, beside heavy runs) was called 'invalid: its test did not run' with only the last five lines of the run's words, a page of stack, so the error itself was cut, twice in one push gate, and the cause had to be guessed"
+    seriousness: code
+    area: tooling
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "a push gate of 2026-11-25 (C19's report): two mutants invalid, their own error cut" }
+    methods:
+      - { kind: running, file: scripts/__tests__/mutantVerdictsStand.test.ts, test: "keeps a dead run's own error, not the tail of its stack" }
+    fix: "mutants.cjs keeps a run's own words (errorWords): from the first line that names an error, forty lines and its last five, its exit first, up to 4,000 characters, in the verdict and the private record (mutant shape-a-dead-run-told-by-its-tail)"
+    places: [none]

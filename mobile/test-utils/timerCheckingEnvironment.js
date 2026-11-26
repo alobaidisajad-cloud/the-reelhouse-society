@@ -122,6 +122,35 @@ function nameOf(test) {
   return parts.join(' › ');
 }
 
+/**
+ * Each test's time beside its limit, one JSON line each, appended where RH_TEST_TIMES names (the
+ * nightly's run, and a builder's own): { file, test, ms, limit }. The limit is the test's own (its
+ * third argument), else the file's (jest.setTimeout), else the config's. scripts/slow-tests.cjs reads
+ * them: a test over half its limit times out once the machine is loaded.
+ */
+function recordTime(into, file, test, state) {
+  const line = { file, test: nameOf(test), ms: test.duration ?? null, limit: test.timeout ?? state.testTimeout ?? null, waits: test[WAITS] ?? null };
+  require('fs').appendFileSync(into, `${JSON.stringify(line)}\n`);
+}
+
+/**
+ * Whether a test waits: it takes a done callback, or hands back a promise. Only a test that waits can
+ * run out of its limit; one that returns at once ends whatever it took. Told by wrapping its function as
+ * it starts (its length kept: jest reads a done callback from it), and only while times are written.
+ */
+const WAITS = Symbol.for('reelhouse.testWaits');
+function watchWaiting(test) {
+  const fn = test.fn;
+  if (typeof fn !== 'function' || fn.length > 0) { test[WAITS] = typeof fn === 'function'; return; }
+  const wrapped = function (...args) {
+    const r = fn.apply(this, args);
+    test[WAITS] = !!r && typeof r.then === 'function';
+    return r;
+  };
+  Object.defineProperty(wrapped, 'length', { value: 0 });
+  test.fn = wrapped;
+}
+
 class TimerCheckingEnvironment extends ReactNativeEnvironment {
   constructor(config, context) {
     super(config, context);
@@ -131,12 +160,15 @@ class TimerCheckingEnvironment extends ReactNativeEnvironment {
     this.global[Symbol.for('reelhouse.nodeFetch')] = globalThis.fetch;
     this.timers = new Map();
     shared.running = this.timers;
+    this.testPath = context.testPath;
   }
 
   async handleTestEvent(event, state) {
     // A timer started in a test's afterEach (cleanup's unmount) is that test's.
     if (event.name === 'test_start') shared.test = nameOf(event.test);
     if (event.name === 'test_done') shared.test = null;
+    if (event.name === 'test_start' && process.env.RH_TEST_TIMES) watchWaiting(event.test);
+    if (event.name === 'test_done' && process.env.RH_TEST_TIMES) recordTime(process.env.RH_TEST_TIMES, this.testPath, event.test, state);
     if (event.name !== 'run_finish') return;
     // The real one: the wait is the environment's, not the file's.
     await new Promise((resolve) => shared.realImmediate(resolve));

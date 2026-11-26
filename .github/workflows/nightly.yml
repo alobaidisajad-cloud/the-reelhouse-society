@@ -269,12 +269,24 @@ jobs:
         working-directory: ./mobile
         run: npm ci
 
-      # The seed is printed, so an order that fails can be run again.
+      # The seed is printed, so an order that fails can be run again. Each test's time and its limit are
+      # kept as it ends (RH_TEST_TIMES, the jest environment), for the step after.
       - name: Jest, in a random order
         working-directory: ./mobile
         env:
           TZ: UTC
+          RH_TEST_TIMES: ${{ runner.temp }}/test-times.jsonl
         run: npx jest --ci --randomize --showSeed --maxWorkers=2 --json --outputFile="$RUNNER_TEMP/jest-random.json"
+
+      # A test over half its time limit passes here and runs out of its time on a loaded machine (two
+      # failed push gates on 2026-11-25): each one found is run again alone, and one still over half
+      # alone turns the night red, to be fixed at its cause before it fails anyone's push.
+      - name: No test takes over half its time limit, run alone
+        if: ${{ !cancelled() }}
+        working-directory: ./mobile
+        env:
+          TZ: UTC
+        run: node scripts/slow-tests.cjs --times "$RUNNER_TEMP/test-times.jsonl" --alone
 
       - name: Keep the run's record
         if: ${{ !cancelled() }}

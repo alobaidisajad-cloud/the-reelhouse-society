@@ -151,6 +151,28 @@ const atNormalPriority = (fn, at = os) => {
  */
 const testArgs = (file, test, out) => ['--runTestsByPath', file, '-t', escapeRe(test), '--runInBand', '--json', '--outputFile', out, '--silent'];
 
+/** A line that names an error: a fatal one, an exception, a module not found, memory or a disk run out, a kill. */
+const ERROR_LINE = /FATAL|\b(?:[A-Z]\w*)?Error\b|\berror\b|Cannot |ENOMEM|ENOSPC|EBUSY|EPERM|out of memory|heap limit|Allocation failed|Killed|SIGKILL|SIGTERM/;
+/** How much of a run's words a verdict keeps: from its first error line, this many lines and characters at most. */
+const ERROR_LINES = 40;
+const ERROR_CHARS = 4000;
+
+/**
+ * What a run that never reported said, in its own words: from the first line that names an error, up to
+ * ERROR_LINES lines (and its last five lines when there were more), or its last fifteen lines when no
+ * line names one; ERROR_CHARS characters at most, `head` (its exit) first. Never its tail alone: a jest
+ * that died out of memory prints its own error first and a page of stack after it, and five lines of the
+ * stack were all an invalid verdict said in the push gate of 2026-11-25.
+ */
+const errorWords = (text, head = '') => {
+  const lines = lf(String(text ?? '')).split('\n').map((l) => l.trimEnd()).filter((l) => l.trim());
+  const at = lines.findIndex((l) => ERROR_LINE.test(l));
+  const kept = at < 0 ? lines.slice(-15)
+    : [...lines.slice(at, at + ERROR_LINES), ...(lines.length > at + ERROR_LINES ? ['…', ...lines.slice(Math.max(at + ERROR_LINES, lines.length - 5))] : [])];
+  const words = `${head}${kept.join(' / ')}`.trim();
+  return words.length > ERROR_CHARS ? `${words.slice(0, ERROR_CHARS)} …` : words;
+};
+
 /** One named test, run alone; its status, and jest's own words when it never ran. */
 const runTest = ({ file, test }) => {
   const dir = mkdtempSync(join(tmpdir(), 'mutant-'));
@@ -159,10 +181,13 @@ const runTest = ({ file, test }) => {
     const run = () => spawnSync(process.execPath, [join(MOBILE, 'node_modules', 'jest', 'bin', 'jest.js'), ...testArgs(file, test, out)],
       { cwd: MOBILE, encoding: 'utf8', maxBuffer: 1e9 });
     const r = REHEARSAL.test(file) ? atNormalPriority(run) : run();
-    if (!existsSync(out)) return { status: 'missing', said: `${r.stderr}`.trim().split('\n').slice(-5).join(' / ') };
+    if (!existsSync(out)) {
+      const exit = `jest ended with no report (exit ${r.status ?? r.signal}${r.error ? `, ${r.error.message}` : ''}): `;
+      return { status: 'missing', said: errorWords(`${r.stderr ?? ''}\n${r.stdout ?? ''}`, exit) };
+    }
     const report = JSON.parse(readFileSync(out, 'utf8'));
     const status = statusIn(report, test);
-    const said = (report.testResults ?? []).map((t) => t.message).filter(Boolean).join(' ').split('\n').slice(0, 3).join(' / ');
+    const said = errorWords((report.testResults ?? []).map((t) => t.message).filter(Boolean).join('\n'));
     return { status, said };
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -322,7 +347,7 @@ const putBackLeftover = (placed = PLACED) => {
 /** The options and whether each takes a value. */
 const OPTIONS = {
   '--ids': true, '--changed': true, '--part': true, '--results': true, '--fresh': false, '--gather': true, '--out': true, '--put-back': false, '--green': true,
-  '--types-out': true, '--types-from': true, '--rerun': false,
+  '--types-out': true, '--types-from': true, '--rerun': false, '--record': true,
 };
 
 /** What is wrong with these arguments, or null: an unknown one, or an option missing its value. */
@@ -471,16 +496,47 @@ const runOne = (m, green = [], types = null) => {
   }
 };
 
-/** The registry, and the private half where this checkout can read it. */
-const readMutants = () => {
-  const pub = yaml.parse(readFileSync(REGISTRY, 'utf8')).mutants ?? [];
-  let priv = [];
+/** Whether `commit` is in the history of `head` (a commit this repository does not hold is not). */
+const ancestor = (commit, head = 'HEAD', cwd = MOBILE) => {
+  try { execFileSync('git', ['merge-base', '--is-ancestor', commit, head], { cwd, stdio: 'ignore' }); return true; } catch { return false; }
+};
+
+/**
+ * The private half's entries that belong to this checkout. The file is one for every checkout of the
+ * clone (the main checkout's plan folder), so a private mutant of work not yet pushed reached every
+ * other push, whose files did not hold its target, and refused it (C20's seven, 2026-11-25). Each entry
+ * names `since: <commit>`, the commit its files stand at, and runs only where that commit is in HEAD's
+ * history. One that names none (`bare`) is never run: a mutants run refuses to start while one is there
+ * (bareRefusal), in words. `aside` are those whose commit HEAD does not hold.
+ */
+const privateHalf = (entries, inHistory = (c) => ancestor(c)) => {
+  const bare = entries.filter((m) => !/^[0-9a-f]{7,40}$/.test(String(m.since ?? '')));
+  const kept = entries.filter((m) => !bare.includes(m) && inHistory(m.since));
+  return { kept, aside: entries.filter((m) => !bare.includes(m) && !kept.includes(m)), bare };
+};
+
+/** Why a mutants run may not start for these private entries with no `since`, or null. */
+const bareRefusal = (bare) => (bare.length
+  ? `a mutants run refused: mutants.private.yaml's ${bare.map((m) => m.id).join(', ')} name${bare.length === 1 ? 's' : ''} no since: <commit>. `
+    + 'Each private mutant names the commit its files stand at (the work it proves), and runs only in a checkout whose HEAD holds that commit: '
+    + 'add since: <that commit> to each'
+  : null);
+
+/** The private half's file, in the main checkout's plan folder; null where this is no checkout. */
+const privateFile = () => {
   try {
     const common = execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: MOBILE, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-    const file = join(common, '..', 'mobile', 'audit', 'final', 'private', 'mutants.private.yaml');
-    if (existsSync(file)) priv = yaml.parse(readFileSync(file, 'utf8')).mutants ?? [];
-  } catch { /* not a checkout: the public half alone */ }
-  return [...pub, ...priv.map((m) => ({ ...m, private: true }))];
+    return join(common, '..', 'mobile', 'audit', 'final', 'private', 'mutants.private.yaml');
+  } catch { return null; }
+};
+
+/** The private entries of the file (none where there is no file), as privateHalf parts them. */
+const readPrivate = (file = privateFile()) => privateHalf(file && existsSync(file) ? yaml.parse(readFileSync(file, 'utf8')).mutants ?? [] : []);
+
+/** The registry, and the private half where this checkout can read it: each private entry whose commit HEAD holds. */
+const readMutants = () => {
+  const pub = yaml.parse(readFileSync(REGISTRY, 'utf8')).mutants ?? [];
+  return [...pub, ...readPrivate().kept.map((m) => ({ ...m, private: true }))];
 };
 
 /** The proof id of a mutant's test: its index among its class's methods, m1 first. */
@@ -523,17 +579,108 @@ const mutantState = (m, root = ROOT, tools = null) => {
 /** Whether a changed path (from mobile/) is one a mutant stands on: the path itself, or one under its folder. */
 const standsOn = (m, changed) => pathsOf(m).some((p) => (p.endsWith('/') ? changed.startsWith(p) : changed === p));
 
-/** The mutants a change from `base` touches: by the paths they stand on, their own entry, or the runner. */
-const touchedSince = (base, mutants) => {
-  const changed = execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1e8 })
-    .split('\n').filter(Boolean).map((p) => relative(MOBILE, join(ROOT, p)).split('\\').join('/'));
-  if (changed.includes('scripts/mutants.cjs')) return mutants;
-  let before = [];
+/** Paths git names (from the root), as the registry writes them: from mobile/. */
+const fromMobile = (paths, root = ROOT) => paths.filter(Boolean).map((p) => relative(join(root, 'mobile'), join(root, p)).split('\\').join('/'));
+
+/** The registry's entries at a commit ([] where it had none). */
+const registryAt = (commit, root = ROOT) => {
   try {
-    before = yaml.parse(execFileSync('git', ['show', `${base}:mobile/register/mutants.yaml`], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })).mutants ?? [];
-  } catch { /* the registry is new since then: every mutant is */ }
-  const same = (m) => { const was = before.find((b) => b.id === m.id); return !!was && JSON.stringify(was) === JSON.stringify({ ...m, private: undefined }); };
-  return mutants.filter((m) => !same(m) || changed.some((c) => standsOn(m, c)));
+    return yaml.parse(execFileSync('git', ['show', `${commit}:mobile/register/mutants.yaml`], { cwd: root, encoding: 'utf8', maxBuffer: 1e9, stdio: ['ignore', 'pipe', 'pipe'] })).mutants ?? [];
+  } catch { return []; }
+};
+
+/** An entry as the registry holds it, for comparing: the run's own `private` mark left out. */
+const asEntry = (m) => JSON.stringify({ ...m, private: undefined });
+
+/**
+ * Why a recorded verdict does not stand for `m` now, or null when it stands and the mutant need not run
+ * again. It stands when it is caught; its run's commit is in this history (`inHistory`: a merge keeps a
+ * branch's commits, where a rebase writes new ones and every verdict recorded on the old ones is lost);
+ * nothing the mutant stands on (pathsOf) and not the runner itself changed from that commit to now
+ * (`changedSince`); its entry is the one the registry held then (`entryAt`); and the private record of
+ * that very run, which this machine keeps beside every run (P0.54), holds it caught (`recordAt`): a
+ * verdict written into the results by hand stands on no run, and a machine with no record (CI) runs it.
+ */
+const whyNotStanding = (m, r, { inHistory, changedSince, entryAt, recordAt }) => {
+  if (!r) return 'no verdict recorded';
+  if (r.verdict !== 'caught') return `recorded ${r.verdict}`;
+  if (!inHistory(r.commit)) return `run at ${String(r.commit).slice(0, 8)}, which is not in this history`;
+  const changed = changedSince(r.commit);
+  if (changed.includes('scripts/mutants.cjs')) return 'the runner changed since its run';
+  const moved = changed.filter((c) => standsOn(m, c));
+  if (moved.length) return `${moved.join(', ')} changed since its run`;
+  if (asEntry(entryAt(r.commit, m.id) ?? null) !== asEntry(m)) return 'its entry changed since its run';
+  if (!(recordAt(r.commit) ?? []).some((x) => x.mutant === m.id && x.verdict === 'caught')) return 'no private record of its run on this machine';
+  return null;
+};
+
+/**
+ * What whyNotStanding asks, from git and the private record, each commit's answer read once: against
+ * `head` (a commit), or, with head null, against the working files and the commits of a merge in hand
+ * (HEAD and MERGE_HEAD), as commit.cjs --merge asks before the merge is made.
+ */
+const standingContext = (head = 'HEAD', root = ROOT) => {
+  const once = (fn) => { const seen = new Map(); return (k) => { if (!seen.has(k)) seen.set(k, fn(k)); return seen.get(k); }; };
+  const diff = (c) => execFileSync('git', ['diff', '--name-only', c, ...(head ? [head] : [])], { cwd: root, encoding: 'utf8', maxBuffer: 1e9, stdio: ['ignore', 'pipe', 'pipe'] }).split('\n');
+  const entries = once((c) => registryAt(c, root));
+  const dir = privateDir();
+  return {
+    inHistory: once((c) => (head ? ancestor(c, head, root) : ancestor(c, 'HEAD', root) || ancestor(c, 'MERGE_HEAD', root))),
+    changedSince: once((c) => { try { return fromMobile(diff(c), root); } catch { return ['scripts/mutants.cjs']; } }),
+    entryAt: (c, id) => entries(c).find((b) => b.id === id),
+    recordAt: once((c) => { try { return JSON.parse(readFileSync(join(dir, 'mutants', `${c}.json`), 'utf8')); } catch { return null; } }),
+  };
+};
+
+/** The results file as this checkout holds it ([] where there is none). */
+const RESULTS = join(MOBILE, 'register', 'mutant-results.json');
+const readResults = (file = RESULTS) => { try { return JSON.parse(readFileSync(file, 'utf8')); } catch { return []; } };
+
+/**
+ * The mutants a change from `base` touches: by the paths they stand on, their own entry, or the runner;
+ * less those whose recorded verdict still stands (whyNotStanding), unless `standing` is false (--rerun).
+ * The array carries how many stood (`stood`).
+ */
+const touchedSince = (base, mutants, { standing = true, results = null, context = null } = {}) => {
+  const changed = fromMobile(execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1e8 }).split('\n'));
+  const before = registryAt(base);
+  const same = (m) => { const was = before.find((b) => b.id === m.id); return !!was && JSON.stringify(was) === asEntry(m); };
+  const touched = changed.includes('scripts/mutants.cjs') ? mutants : mutants.filter((m) => !same(m) || changed.some((c) => standsOn(m, c)));
+  if (!standing) return Object.assign(touched, { stood: 0 });
+  const kept = results ?? readResults();
+  const ctx = context ?? standingContext();
+  const left = touched.filter((m) => whyNotStanding(m, kept.find((r) => r.mutant === m.id), ctx) !== null);
+  return Object.assign(left, { stood: touched.length - left.length });
+};
+
+/**
+ * The results file of a merge: each public mutant of the merged registry once, in its order, its verdict
+ * from either side: the one that still stands on the merged files (`whyNot`), else the later run of the two
+ * (`later(a, b)`: a's commit holds b's in its history), else ours. A mutant neither side ran is left out, so it runs.
+ */
+const mergeResults = (ours, theirs, mutants, whyNot, later = () => false) => mutants.filter((m) => !m.private).flatMap((m) => {
+  const sides = [ours.find((r) => r.mutant === m.id), theirs.find((r) => r.mutant === m.id)].filter(Boolean);
+  const standing = sides.filter((r) => whyNot(m, r) === null);
+  const [a, b] = sides;
+  return sides.length ? [keep(standing[0] ?? (b && later(b, a) ? b : a))] : [];
+});
+
+/**
+ * A merge in hand (commit.cjs --merge, before its commit): the results file written as mergeResults
+ * makes it, from HEAD's and MERGE_HEAD's, against the merged registry in the working files. Says how
+ * many stand; throws while the registry itself is not merged.
+ */
+const resolveMergedResults = (root = ROOT) => {
+  const show = (rev) => { try { return JSON.parse(execFileSync('git', ['show', `${rev}:mobile/register/mutant-results.json`], { cwd: root, encoding: 'utf8', maxBuffer: 1e9, stdio: ['ignore', 'pipe', 'pipe'] })); } catch { return []; } };
+  const text = readFileSync(join(root, 'mobile', 'register', 'mutants.yaml'), 'utf8');
+  if (/^(?:<{7}|>{7}) /m.test(text)) throw new Error('register/mutants.yaml is not merged: resolve it first');
+  const mutants = yaml.parse(text).mutants ?? [];
+  const ctx = standingContext(null, root);
+  const merged = mergeResults(show('HEAD'), show('MERGE_HEAD'), mutants, (m, r) => whyNotStanding(m, r, ctx),
+    (a, b) => a.commit !== b.commit && ancestor(b.commit, a.commit, root));
+  writeFileSync(join(root, 'mobile', 'register', 'mutant-results.json'), `${JSON.stringify(merged, null, 2)}\n`);
+  const stand = merged.filter((r) => whyNotStanding(mutants.find((m) => m.id === r.mutant), r, ctx) === null).length;
+  return { mutants: mutants.length, stand };
 };
 
 /** Part i of n: every n-th mutant from the i-th, so each part holds every kind. */
@@ -546,6 +693,19 @@ const partOf = (mutants, spec) => {
 /** Results kept: ids and verdicts only (P0.39), each mutant once, in the registry's order. */
 const RESULT_KEYS = ['class', 'mutant', 'proof', 'commit', 'verdict'];
 const keep = (r) => Object.fromEntries(RESULT_KEYS.map((k) => [k, r[k]]));
+
+/**
+ * The count-only file after a run: the public mutants it ran (`ran`, each `keep`'s shape) replace their
+ * entries, the others' are kept (none with `fresh`), each once in the registry's order (`all`).
+ */
+const writeResults = (out, ran, all, fresh = false) => {
+  const kept = existsSync(out) && !fresh ? JSON.parse(readFileSync(out, 'utf8')) : [];
+  const merged = all.filter((m) => !m.private).map((m) => ran.find((r) => r.mutant === m.id) ?? kept.find((r) => r.mutant === m.id)).filter(Boolean);
+  writeFileSync(out, `${JSON.stringify(merged, null, 2)}\n`);
+};
+
+/** A run's fuller record: each verdict's ids, its source, its test file and title (or its judge), and why, whole. */
+const fullRecord = (results) => results.map(({ m, ...r }) => ({ ...keep(r), source: m.source, test: m.proof ? `${m.proof.file}: ${m.proof.test}` : m.judge.run.slice(1, 2).join(''), why: r.why }));
 
 /** One results file from the parts' files: each public mutant exactly once, or what is wrong, in words. */
 const gather = (parts, mutants) => {
@@ -588,6 +748,19 @@ const privateDir = () => {
   } catch { return null; }
 };
 
+/** A run's fuller record (fullRecord) kept in the private folder under its commit, beside what is there: one writer at a time. */
+const writePrivate = (full, commit, priv = privateDir()) => {
+  if (!priv || !full.length) return;
+  const dir = join(priv, 'mutants');
+  mkdirSync(dir, { recursive: true });
+  const file = join(dir, `${commit}.json`);
+  // The push's mutant lanes (scripts/hooks/mutant-lanes.cjs) end side by side.
+  withLock(`${file}.lock`, () => {
+    const had = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : [];
+    writeFileSync(file, `${JSON.stringify([...had.filter((h) => !full.some((f) => f.mutant === h.mutant)), ...full], null, 2)}\n`);
+  });
+};
+
 if (require.main === module) {
   const argv = process.argv.slice(2);
   const refused = argumentsFault(argv);
@@ -596,7 +769,12 @@ if (require.main === module) {
   const left = putBackLeftover();
   if (left.length) console.log(`put back what a stopped run left in place: ${left.join(', ')}`);
   if (argv.includes('--put-back')) process.exit(0);
+  // A run of mutants fills the machine: never beside a push gate but as its own (gate-lock.cjs); --gather only reads.
+  if (!argv.includes('--gather')) require('./gate-lock.cjs').refuseWhileGate('a mutants run');
   const all = readMutants();
+  const { aside, bare } = readPrivate();
+  if (bare.length) { console.error(bareRefusal(bare)); process.exit(2); }
+  if (aside.length) console.log(`${aside.length} private mutant(s) set aside: the commit each names (since) is not in this checkout's history`);
 
   if (argv.includes('--gather')) {
     const dir = arg('--gather');
@@ -615,8 +793,9 @@ if (require.main === module) {
   let chosen = ids ? all.filter((m) => ids.includes(m.id)) : all;
   if (ids && chosen.length !== ids.length) { console.error(`no such mutant: ${ids.filter((i) => !all.some((m) => m.id === i)).join(', ')}`); process.exit(2); }
   if (arg('--changed')) {
-    chosen = touchedSince(arg('--changed'), chosen);
-    console.log(`${chosen.length} of ${all.length} mutants stand on what changed since ${arg('--changed').slice(0, 8)}`);
+    chosen = touchedSince(arg('--changed'), chosen, { standing: !argv.includes('--rerun') });
+    console.log(`${chosen.length} of ${all.length} mutants stand on what changed since ${arg('--changed').slice(0, 8)} and have no verdict that still stands`
+      + `${chosen.stood ? ` (${chosen.stood} more stand by a verdict recorded at a commit in this history, nothing they stand on changed since: not run again)` : ''}`);
   }
   if (arg('--part')) chosen = partOf(chosen, arg('--part'));
   if (arg('--types-out')) {
@@ -666,26 +845,11 @@ if (require.main === module) {
     results.push({ class: m.class, mutant: m.id, proof: m.source === 'judge' ? 'judge' : proofId(m, classes), commit, verdict, private: !!m.private, why, m });
   }
   // The count-only file: a run of some mutants replaces their entries and keeps the others'.
-  const out = arg('--results');
-  if (out) {
-    const kept = existsSync(out) && !argv.includes('--fresh') ? JSON.parse(readFileSync(out, 'utf8')) : [];
-    const ran = results.filter((r) => !r.private).map(keep);
-    const merged = all.filter((m) => !m.private).map((m) => ran.find((r) => r.mutant === m.id) ?? kept.find((r) => r.mutant === m.id)).filter(Boolean);
-    writeFileSync(out, `${JSON.stringify(merged, null, 2)}\n`);
-  }
-  // The fuller record, in the private folder: source, the test file and title, and why (P0.72).
-  const priv = privateDir();
-  if (priv && results.length) {
-    const dir = join(priv, 'mutants');
-    mkdirSync(dir, { recursive: true });
-    const file = join(dir, `${commit}.json`);
-    const full = results.map(({ m, ...r }) => ({ ...keep(r), source: m.source, test: m.proof ? `${m.proof.file}: ${m.proof.test}` : m.judge.run.slice(1, 2).join(''), why: r.why }));
-    // The push's mutant lanes (scripts/hooks/mutant-lanes.cjs) end side by side: one writer at a time.
-    withLock(`${file}.lock`, () => {
-      const had = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : [];
-      writeFileSync(file, `${JSON.stringify([...had.filter((h) => !full.some((f) => f.mutant === h.mutant)), ...full], null, 2)}\n`);
-    });
-  }
+  if (arg('--results')) writeResults(arg('--results'), results.filter((r) => !r.private).map(keep), all, argv.includes('--fresh'));
+  // The fuller record, in the private folder: source, the test file and title, and why (P0.72); with
+  // --record, its public part in that file too (a machine with no private folder: mutants-remote.cjs).
+  writePrivate(fullRecord(results), commit);
+  if (arg('--record')) writeFileSync(arg('--record'), `${JSON.stringify(fullRecord(results.filter((r) => !r.private)), null, 2)}\n`);
   const bad = results.filter((r) => r.verdict !== 'caught');
   if (typeAnswers.warm + typeAnswers.tsc) console.log(`type checks: ${typeAnswers.warm} by the warm checker from the same bytes, ${typeAnswers.tsc} by tsc`);
   console.log(`\n${results.length - bad.length} of ${results.length} caught`);
@@ -695,4 +859,5 @@ if (require.main === module) {
 module.exports = {
   applyEdits, argumentsFault, atNormalPriority, changesHash, changesOf, verdictOf, gather, greenIn, hunksOf, lf, partOf, pathsOf, PLACED, privateDir, proofId, putBackLeftover,
   compileFaults, mutantState, readMutants, really, REHEARSAL, testArgs, reverse, runOne, standsOn, statusIn, syntaxFaults, touchedSince, typesFrom, warmTypes, withLock,
+  ancestor, bareRefusal, errorWords, fullRecord, keep, mergeResults, privateHalf, readPrivate, readResults, resolveMergedResults, standingContext, whyNotStanding, writePrivate, writeResults,
 };

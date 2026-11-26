@@ -1,0 +1,4 @@
+#!/bin/sh
+# A merge commit git makes itself (git merge with no conflict) passes the same checks as any commit:
+# mobile/scripts/hooks/pre-commit.cjs. Without it, commit-msg would mark the merge made with the hooks.
+exec node mobile/scripts/hooks/pre-commit.cjs

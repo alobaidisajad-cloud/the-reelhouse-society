@@ -64,7 +64,23 @@ const readTable = (kind) => {
   try { return JSON.parse(readFileSync(WEIGHTS, 'utf8'))[kind] ?? {}; } catch { return {}; }
 };
 
+/**
+ * A jest run of more files than this is wide: it takes every processor and gigabytes of memory, as a push
+ * gate's own run does. While a gate holds the machine (scripts/gate-lock.cjs), only the gate's own wide
+ * runs start; a narrow one (a file or a few, a mutant's proof) runs beside it.
+ */
+const WIDE = 20;
+
+/** Why this run of `count` files may not start now, or null (gate-lock.cjs's refusal, for a wide run alone). */
+const wideRefusal = (count, opts) => (count > WIDE ? require('../scripts/gate-lock.cjs').refusal(`a jest run of ${count} test files`, opts) : null);
+
 class WeightedSequencer extends Sequencer {
+  sort(tests) {
+    const why = wideRefusal(tests.length);
+    if (why) throw new Error(why);
+    return super.sort(tests);
+  }
+
   shard(tests, { shardIndex, shardCount }) {
     return split(weighed(tests, readTable(kindOf(process.env))), shardCount)[shardIndex - 1].items.map((i) => i.test);
   }
@@ -77,3 +93,5 @@ module.exports.median = median;
 module.exports.kindOf = kindOf;
 module.exports.isGenerator = isGenerator;
 module.exports.readTable = readTable;
+module.exports.WIDE = WIDE;
+module.exports.wideRefusal = wideRefusal;
