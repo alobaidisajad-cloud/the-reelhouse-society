@@ -7,8 +7,9 @@
  * functions:check` compares the list with what is deployed; this keeps the
  * list honest about the folders.
  */
-import { existsSync } from 'fs';
-import { join } from 'path';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { dirname, join } from 'path';
 import { files as universe, repoRel } from '@/test-utils/universe';
 
 const fns = require('../../../scripts/edge-functions.cjs') as {
@@ -54,4 +55,46 @@ it('the printed deploy command carries --no-verify-jwt exactly when the function
   expect(wrong.map(([n]) => n)).toEqual([]);
   expect(fns.deployCommand('fetch-rss')).toMatch(/^cd mobile; /);
   expect(fns.deployCommand('tmdb-proxy')).toMatch(/^cd \.; /);
+});
+
+// A function is deployed only after the house holds what it calls: deployed before its car's train, its
+// call finds nothing to ask (sync-entitlement and 20261125_10 answered 502 there). functions:check prints
+// no command for one that waits, and one naming what no car makes is refused here.
+describe('a function waits for the car that makes what it calls', () => {
+  const waiting = fns as unknown as {
+    namedObjects: (name: string, root: string) => string[];
+    waitsFor: (name: string, root?: string) => { object: string; car: string | null }[];
+    deployCommand: (name: string, root?: string) => string;
+  };
+
+  it('every function names only what production holds, or what a pending car makes', () => {
+    const never = Object.keys(listed).flatMap((n) => waiting.waitsFor(n).filter((w) => w.car === null).map((w) => `${n}: ${w.object}`));
+    expect(never).toEqual([]);
+  });
+
+  it('reads what a function asks of the house, its shared code included, and no storage bucket', () => {
+    expect(waiting.namedObjects('revenuecat-webhook', REPO)).toEqual(expect.arrayContaining(['claim_founding_seat', 'grant_entitlement']));
+    expect(waiting.namedObjects('notify-push', REPO)).toEqual(expect.arrayContaining(['notifications', 'push_tokens', 'push_tokens_of']));
+  });
+
+  it('refuses the command for a function whose call a pending car makes, and names that car', () => {
+    const root = mkdtempSync(join(tmpdir(), 'rh-waits-'));
+    const put = (rel: string, text: string) => { mkdirSync(dirname(join(root, rel)), { recursive: true }); writeFileSync(join(root, rel), text); };
+    put('mobile/supabase/schema/live-schema.sql', 'CREATE FUNCTION public.grant_entitlement(p uuid) RETURNS void\n');
+    put('mobile/supabase/APPLIED.txt', '20260101_01_old.sql\n');
+    put('supabase/migrations/20260101_01_old.sql', 'CREATE FUNCTION public.long_gone() RETURNS void\n');
+    put('supabase/migrations/20261125_10_paced.sql', 'CREATE FUNCTION public.a_members_call_is_paced(p uuid, k text) RETURNS void\n');
+    put('mobile/supabase/functions/sync-entitlement/index.ts',
+      "await admin.rpc('a_members_call_is_paced', {}); await admin.rpc('grant_entitlement', {}); await admin.storage.from('avatars');\n");
+    try {
+      expect(waiting.waitsFor('sync-entitlement', root)).toEqual([{ object: 'a_members_call_is_paced', car: '20261125_10_paced.sql' }]);
+      expect(waiting.deployCommand('sync-entitlement', root)).toMatch(/^NOT YET: sync-entitlement calls a_members_call_is_paced \(made by 20261125_10_paced\.sql/);
+      put('mobile/supabase/APPLIED.txt', '20260101_01_old.sql\n20261125_10_paced.sql\n');
+      expect(waiting.waitsFor('sync-entitlement', root)).toEqual([{ object: 'a_members_call_is_paced', car: null }]);
+      put('mobile/supabase/schema/live-schema.sql', 'CREATE FUNCTION public.grant_entitlement(p uuid) RETURNS void\nCREATE FUNCTION public.a_members_call_is_paced(p uuid, k text) RETURNS void\n');
+      expect(waiting.deployCommand('sync-entitlement', root)).toMatch(/^cd mobile; npx supabase functions deploy sync-entitlement/);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });

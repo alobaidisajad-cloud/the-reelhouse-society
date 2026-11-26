@@ -166,9 +166,11 @@ runSql('6. the empty migration ledger', AS_ADMIN, `
   CREATE TABLE IF NOT EXISTS supabase_migrations.schema_migrations (version text PRIMARY KEY, statements text[], name text);`);
 
 // ── 7. sealed? ────────────────────────────────────────────────────────────────
-// The push sender's call to production must not leave the runner (e2e.yml sinks the host).
-const pushUrl = /url\s*:=\s*'(https:\/\/[^']+)'/.exec(dump)?.[1];
-if (!pushUrl) fail('7. sealed', 'could not find the push sender\'s URL in live-schema.sql — has it moved?');
+// A call to production's push sender must not leave the runner (e2e.yml sinks the host). The trigger
+// reads the address from production's Vault (notify_push_url), which a copy never holds; the address
+// tried here is production's own, named by the build the app ships in, as seal.sh names the host.
+const prodHost = new URL(JSON.parse(readFileSync(join(HERE, '..', '..', 'eas.json'), 'utf8')).build.production.env.EXPO_PUBLIC_SUPABASE_URL).host;
+const pushUrl = `https://${prodHost}/functions/v1/notify-push`;
 
 /** Fire one request from inside the database; return how pg_net says it ended. */
 const probe = (url) => {
