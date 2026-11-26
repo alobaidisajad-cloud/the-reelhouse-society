@@ -6,7 +6,7 @@
 -- The train applies 20261126_11 here (with_train), every car before it already applied; a sealed copy already holds it.
 -- The push trigger names no address of its own, and reads it from the Vault's notify_push_url. On the
 -- train, the house holds that setting (made by the owner before the train; never read here). On a sealed
--- copy, a notice is queued to the address the Vault holds, and to none when it holds no address. A queued
+-- copy, a notice is queued to the address the Vault holds, and to a name no host answers when it holds none. A queued
 -- request is never sent: the transaction that queued it is rolled back. Every row here is undone with it.
 -- Read each NOTICE as  case|expected|got ; the last line is the verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
@@ -36,6 +36,7 @@ SELECT pg_temp.rh_case('the house holds notify_push_url in its Vault', '1',
   (SELECT count(*)::text FROM vault.secrets WHERE name = 'notify_push_url')) AS done \gset rh_
 \else
 -- ── a sealed copy: a notice goes to the address the Vault holds, and nowhere without one ──
+-- (nowhere: notify-push.invalid, a name no host ever answers; the request is still queued, so a copy counts its pushes)
 INSERT INTO auth.users (id, aud, role, email, raw_user_meta_data, raw_app_meta_data, created_at, updated_at, email_confirmed_at)
 VALUES ('c25e0000-0000-4000-8000-000000000011', 'authenticated', 'authenticated', 'qzc25p@rehearsal.test',
         '{"username": "qzc25p"}'::jsonb, '{"provider":"email"}'::jsonb, now(), now(), now());
@@ -57,14 +58,14 @@ BEGIN
                                                          LIMIT (SELECT count(*) FROM net.http_request_queue) - v_before) q), 'none');
 END $$;
 
-SELECT pg_temp.rh_case('a copy, holding what a copy holds there (none, or a stand-in), calls no one', 'none',
+SELECT pg_temp.rh_case('a copy, holding what a copy holds there (none, or a stand-in), calls no one', 'https://notify-push.invalid/functions/v1/notify-push',
   pg_temp.cp_queued('As a copy holds it.')) AS done \gset rh_
 SELECT pg_temp.cp_hold('a-stand-in-that-is-no-address') AS done \gset rh_
-SELECT pg_temp.rh_case('nor one holding a stand-in that is no address', 'none', pg_temp.cp_queued('A stand-in held.')) AS done \gset rh_
+SELECT pg_temp.rh_case('nor one holding a stand-in that is no address', 'https://notify-push.invalid/functions/v1/notify-push', pg_temp.cp_queued('A stand-in held.')) AS done \gset rh_
 SELECT pg_temp.cp_hold('https://push.rehearsal.invalid/functions/v1/notify-push') AS done \gset rh_
 SELECT pg_temp.rh_case('the house holding its address calls it there',
   CASE WHEN (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'notify_push_url') LIKE 'https://%'
-       THEN 'https://push.rehearsal.invalid/functions/v1/notify-push' ELSE 'none' END,
+       THEN 'https://push.rehearsal.invalid/functions/v1/notify-push' ELSE 'https://notify-push.invalid/functions/v1/notify-push' END,
   pg_temp.cp_queued('An address held.')) AS done \gset rh_
 \endif
 

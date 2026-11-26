@@ -7,7 +7,8 @@
 --   would call production whenever its pg_net could reach it. Now the address is read from the Vault,
 --   notify_push_url, beside the shared secret: a setting production alone holds (a secret's value never
 --   leaves the house it was made in; every copy is given a stand-in that is no address). A value that is
---   not an address ending in /functions/v1/notify-push sends nothing, and the notice stays under the bell.
+--   not an address ending in /functions/v1/notify-push is called at notify-push.invalid, a name no host
+--   answers: the request is queued as before (what a copy would push is counted as before), and goes nowhere.
 --   Everything else the trigger does is as it was, word for word.
 --   Order: the owner makes notify_push_url in production's Vault first; the rehearsal's train form
 --   refuses this car on a house that has none, so no push is lost to a train run too early.
@@ -16,7 +17,7 @@
 SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 
--- add-only (3): it only fixes: every notice is pushed as before, to the same function at the same address, now read from production's Vault; TestFlight build 41 and the website never call the trigger (the rehearsal replays a notice pushed to the address the Vault holds, and none where it holds no address)
+-- add-only (3): it only fixes: every notice is pushed as before, to the same function at the same address, now read from production's Vault; TestFlight build 41 and the website never call the trigger (the rehearsal replays a notice queued to the address the Vault holds, and to a name no host answers where it holds none)
 CREATE OR REPLACE FUNCTION public.tg_notify_push() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
@@ -126,7 +127,9 @@ BEGIN
   FROM vault.decrypted_secrets
   WHERE name = 'notify_push_url' LIMIT 1;
   IF v_url IS NULL OR v_url !~ '^https?://[A-Za-z0-9.:_-]+/functions/v1/notify-push$' THEN
-    RETURN NEW;
+    -- A copy: its request is made all the same, to a name no host ever answers (.invalid, RFC 2606),
+    -- so what the house would push is counted alike in every copy, and nothing leaves it.
+    v_url := 'https://notify-push.invalid/functions/v1/notify-push';
   END IF;
 
   PERFORM net.http_post(

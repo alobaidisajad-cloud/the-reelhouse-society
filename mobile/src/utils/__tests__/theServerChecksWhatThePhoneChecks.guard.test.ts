@@ -11,7 +11,8 @@
  *   2. A seeking's answer is one of its own critiques, and a vote one of its ballot's options: the phone
  *      offers no other, and the house reads each by its key before it is written.
  *   3. A request the house sends out names no address of its own: every call through pg_net reads where
- *      to call from production's Vault, so no copy of the house can call production.
+ *      to call from production's Vault, so no copy of the house can call production (a name under
+ *      .invalid, which no host answers, is where a copy's request goes).
  */
 import { read, type House } from '@/test-utils/house';
 
@@ -68,7 +69,7 @@ function marks(house: House): string[] {
 
 /** Each function that calls out through pg_net with an address written into it. */
 const addressed = (house: House) => [...house.functions.values()]
-  .filter((f) => /\bnet\.http_(post|get|delete)\s*\(/.test(f.body) && /https?:\/\/[A-Za-z0-9.-]+\.[a-z]{2,}/.test(f.body))
+  .filter((f) => /\bnet\.http_(post|get|delete)\s*\(/.test(f.body) && [...f.body.matchAll(/https?:\/\/(?<host>[A-Za-z0-9.-]+\.[a-z]{2,})/g)].some((m) => !m.groups?.host.endsWith('.invalid')))
   .map((f) => f.name).sort();
 
 const now = read();

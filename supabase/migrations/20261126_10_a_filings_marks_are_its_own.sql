@@ -37,6 +37,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END $$;
+-- add-only (1): no shipped client uses it: a trigger's function this car makes, run by no one (TestFlight build 41 and the website never name it)
 REVOKE ALL ON FUNCTION private.an_answer_is_its_seekings_own() FROM PUBLIC, anon, authenticated;
 COMMENT ON FUNCTION private.an_answer_is_its_seekings_own() IS 'Refuses an answer_id that is not a critique of its own filing, or any answer on a filing that is not a seeking (trigger an_answer_is_its_own on dispatch_posts).';
 
@@ -57,6 +58,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END $$;
+-- add-only (1): no shipped client uses it: a trigger's function this car makes, run by no one (TestFlight build 41 and the website never name it)
 REVOKE ALL ON FUNCTION private.a_vote_is_one_of_its_ballots() FROM PUBLIC, anon, authenticated;
 COMMENT ON FUNCTION private.a_vote_is_one_of_its_ballots() IS 'Refuses a vote whose option_index is not one of its ballot''s options, or on a filing that is not a ballot (trigger a_vote_is_one_of_its_ballots on dispatch_votes).';
 
