@@ -7794,7 +7794,7 @@
     "class": "LATE-an-answer-over-a-newer-state",
     "mutant": "shape-keyset-unranked-never-beyond",
     "proof": "m20",
-    "commit": "7ff22287de2fd348d52f45d67a0c4af314d1f5de",
+    "commit": "d048b07c5197fac2effbdae5db3addb70ccbf5d6",
     "verdict": "caught"
   },
   {
@@ -7870,22 +7870,22 @@
   {
     "class": "LATE-an-answer-over-a-newer-state",
     "mutant": "shape-heart-read-over-a-take-back",
-    "proof": "m30",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "proof": "m29",
+    "commit": "d048b07c5197fac2effbdae5db3addb70ccbf5d6",
     "verdict": "caught"
   },
   {
     "class": "LATE-an-answer-over-a-newer-state",
     "mutant": "shape-stack-heart-read-over-a-take-back",
-    "proof": "m31",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "proof": "m30",
+    "commit": "d048b07c5197fac2effbdae5db3addb70ccbf5d6",
     "verdict": "caught"
   },
   {
     "class": "LATE-an-answer-over-a-newer-state",
     "mutant": "shape-older-heart-read-laid",
-    "proof": "m32",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "proof": "m31",
+    "commit": "d048b07c5197fac2effbdae5db3addb70ccbf5d6",
     "verdict": "caught"
   },
   {
@@ -7898,15 +7898,15 @@
   {
     "class": "LATE-an-answer-over-a-newer-state",
     "mutant": "shape-note-read-over-a-save",
-    "proof": "m36",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "proof": "m35",
+    "commit": "d048b07c5197fac2effbdae5db3addb70ccbf5d6",
     "verdict": "caught"
   },
   {
     "class": "LATE-an-answer-over-a-newer-state",
     "mutant": "shape-note-read-over-a-take-back",
-    "proof": "m37",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "proof": "m36",
+    "commit": "d048b07c5197fac2effbdae5db3addb70ccbf5d6",
     "verdict": "caught"
   },
   {
