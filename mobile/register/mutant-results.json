@@ -156,15 +156,15 @@
   {
     "class": "TEST-mock-accepts-anything",
     "mutant": "shape-hand-mock-finder-trusts-a-name",
-    "proof": "m6",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "proof": "m7",
+    "commit": "c2fc7a68e5d333c5cf14f2278b484f2af1353a14",
     "verdict": "caught"
   },
   {
     "class": "TEST-mock-accepts-anything",
     "mutant": "shape-hand-mock-finder-trusts-the-sealed-client-anywhere",
-    "proof": "m6",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "proof": "m7",
+    "commit": "c2fc7a68e5d333c5cf14f2278b484f2af1353a14",
     "verdict": "caught"
   },
   {
@@ -5084,8 +5084,8 @@
   {
     "class": "TEST-mock-accepts-anything",
     "mutant": "shape-query-guard-refuses-computed-fields",
-    "proof": "m7",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "proof": "m8",
+    "commit": "c2fc7a68e5d333c5cf14f2278b484f2af1353a14",
     "verdict": "caught"
   },
   {
