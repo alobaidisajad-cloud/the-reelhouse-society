@@ -38,9 +38,12 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * shows it: never the engine's own reading, which takes a 31st of February for the 3rd of March.
  */
 export function dayOf(raw) {
-  const g = typeof raw === 'string' ? /^(?<y>\d{4})-(?<m>\d{2})-(?<d>\d{2})$/.exec(raw)?.groups : undefined;
-  if (!g) return NaN;
-  const [y, m, d] = [Number(g.y), Number(g.m) - 1, Number(g.d)];
+  // Plain slices, no destructuring: the app's tests load this file through Babel, which would
+  // otherwise ask for a helper from a folder that holds none.
+  if (typeof raw !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return NaN;
+  const y = Number(raw.slice(0, 4));
+  const m = Number(raw.slice(5, 7)) - 1;
+  const d = Number(raw.slice(8, 10));
   const at = Date.UTC(y, m, d);
   const back = new Date(at);
   return back.getUTCFullYear() === y && back.getUTCMonth() === m && back.getUTCDate() === d ? at : NaN;
