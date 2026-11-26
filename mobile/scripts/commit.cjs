@@ -88,7 +88,10 @@ function merge(argv, message, paths) {
   if (argv.includes('--merge-continue')) {
     if (!inHand) refuse('no merge in hand (--merge <branch> starts one)');
     if (!paths.length) refuse('name the files you resolved after --');
-    const marked = paths.filter((p) => existsSync(p) && CONFLICT_MARK.test(readFileSync(p, 'utf8')));
+    // The results file is the merge's own to write (settleResults, from both sides' commits): a mark git left
+    // in it is not the hand's to resolve.
+    const marked = paths.filter((p) => existsSync(p) && CONFLICT_MARK.test(readFileSync(p, 'utf8'))
+      && resolve(p) !== resolve(root, 'mobile/register/mutant-results.json'));
     if (marked.length) refuse(`still holds a conflict mark: ${marked.join(', ')}`);
     const add = spawnSync('git', ['add', '--', ...paths], { encoding: 'utf8' });
     if (add.status !== 0) refuse(`git add: ${add.stderr.trim()}`);

@@ -4,7 +4,7 @@
  * brings no change stops it, and what is staged is printed before it commits.
  */
 import { spawnSync } from 'child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
@@ -147,6 +147,29 @@ describe('--merge: a finished branch brought in by a merge commit, its history a
     const done = commit('--merge-continue', '--message', 'msg.txt', '--', 'src/a.ts');
     expect([done.status, git('rev-list', '--parents', '-1', 'HEAD').split(' ').length]).toEqual([0, 3]);
     expect(commit('--merge', 'feature', '--message', 'msg.txt').stderr).toContain('REFUSED: git merge: Already up to date');
+  }, 60_000);
+
+  it('writes the results itself once the registry is resolved by hand: a mark git left in the results is not the hand\'s', () => {
+    const REGISTRY = 'mobile/register/mutants.yaml';
+    const row = (id: string, file: string) => `  - { id: ${id}, class: X-y, source: shape, edits: [{ file: ${file}, find: x, replace: y }] }\n`;
+    const registry = readFileSync(join(repo, REGISTRY), 'utf8');
+    // Each side adds a mutant at the registry's end and records both rows at its own commit: both files conflict.
+    git('checkout', '-q', 'feature');
+    write(REGISTRY, registry + row('shape-c', 'src/b.ts'));
+    record(head(), head());
+    git('commit', '-q', '-am', 'c added');
+    git('checkout', '-q', '-');
+    write(REGISTRY, registry + row('shape-d', 'src/a.ts'));
+    record(head(), head());
+    git('commit', '-q', '-am', 'd added');
+    const r = commit('--merge', 'feature', '--message', 'msg.txt');
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain(`-- ${RESULTS} ${REGISTRY}`);
+    write(REGISTRY, registry + row('shape-c', 'src/b.ts') + row('shape-d', 'src/a.ts'));
+    const done = commit('--merge-continue', '--message', 'msg.txt', '--', REGISTRY, RESULTS);
+    expect([done.status, done.stderr]).toEqual([0, '']);
+    expect(done.stdout).toContain(`${RESULTS}: written from both sides`);
+    expect(git('show', `HEAD:${RESULTS}`)).not.toMatch(/^(<{7}|>{7}) /m);
   }, 60_000);
 });
 
