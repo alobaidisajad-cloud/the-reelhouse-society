@@ -100,7 +100,7 @@ function start(argv, arg) {
     const touched = mutants.touchedSince(arg('--changed'), all);
     const here = touched.filter((m) => m.private).map((m) => m.id);
     console.log(`${touched.length} mutants touched since ${arg('--changed').slice(0, 8)} have no verdict that still stands (${touched.stood} stand)`);
-    if (here.length) console.log(`private, to run on this machine: node mobile/scripts/mutants.cjs --ids ${here.join(',')} --results register/mutant-results.json`);
+    if (here.length) console.log(`private, to run on this machine: node mobile/scripts/mutants.cjs --ids ${here.join(',')} --results mobile/register/mutant-results.json`);
     spec = touched.filter((m) => !m.private).map((m) => m.id).join(',');
     if (!spec) { console.log('none to run on GitHub'); return 0; }
   }
