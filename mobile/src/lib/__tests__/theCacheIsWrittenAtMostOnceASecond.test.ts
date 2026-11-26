@@ -35,6 +35,10 @@ jest.spyOn(AppState, 'addEventListener').mockImplementation((type, listener) => 
 });
 // Loaded after the spy: its listener is laid when the file loads.
 const { mmkvPersister, pastTheCeiling, writeHeldCache } = require('@/src/lib/queryClient') as typeof import('@/src/lib/queryClient');
+// The member store, which a write reads lazily (memberNow), loaded here as the app has it loaded long
+// before its first write: loaded inside the first test, its 1.4 s (alone) ran that test out of its
+// limit on a loaded machine.
+require('@/src/stores/auth');
 
 const disk = (storage as unknown as { __store: Map<string, string> }).__store;
 const written = () => JSON.parse(disk.get('REELHOUSE_QUERY_CACHE') ?? 'null') as
