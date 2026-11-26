@@ -4951,7 +4951,9 @@ mutants:
       - file: src/components/dispatch/FilingRow.tsx
         find: "  const f: Filing = acted ? { ...given, ...acted } : given;"
         replace: "  const f: Filing = given;"
-    proof: { file: src/components/dispatch/__tests__/archiveScreen.test.tsx, test: "a filing withdrawn in the reader is drawn withdrawn here, not in its old words" }
+    # The lists lay the member's acts over their copies now (useAsTheHouseNowHolds):
+    # the row's own laying is proved on a row handed an old copy.
+    proof: { file: src/components/dispatch/__tests__/aCritiqueMovesTheRowsOwnCount.test.tsx, test: "a row handed its list's old copy draws what the member's act left: the amended words, then the withdrawal" }
 
   - id: shape-act-kept-for-no-list
     class: STATE-one-screen-changed-another-printing-the-old
