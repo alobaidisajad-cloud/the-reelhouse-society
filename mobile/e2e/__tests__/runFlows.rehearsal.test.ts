@@ -412,7 +412,7 @@ it('a hiccup is run again and the run is green, with a warning that says so', as
   // Each probe: the panel, then the field and its press, on the letters and again on the emoji panel.
   const room = file(r, 'keyboard-room.txt').split('\n').filter((l) => /^\w+, (letters|emoji): /.test(l));
   expect(room).toEqual([
-    'stack, letters: the keyboard shows its letters, 883px tall',
+    'stack, letters: the keyboard shows its letters, 883px tall; its ?123 key carries no id',
     'stack, letters: #stack-note-input clear — its foot at 1200px, the keyboard from 1517px',
     'stack, letters: "FILE THE STACK" clear — its foot at 1367px, the keyboard from 1517px',
     'stack, letters: #stack-note-input and "FILE THE STACK" stand apart (#stack-note-input 1100..1200px, "FILE THE STACK" 1300..1367px)',
@@ -420,7 +420,7 @@ it('a hiccup is run again and the run is green, with a warning that says so', as
     'stack, emoji: #stack-note-input clear — its foot at 1200px, the keyboard from 1517px',
     'stack, emoji: "FILE THE STACK" clear — its foot at 1367px, the keyboard from 1517px',
     'stack, emoji: #stack-note-input and "FILE THE STACK" stand apart (#stack-note-input 1100..1200px, "FILE THE STACK" 1300..1367px)',
-    'log, letters: the keyboard shows its letters, 883px tall',
+    'log, letters: the keyboard shows its letters, 883px tall; its ?123 key carries no id',
     'log, letters: #review-input clear — its foot at 1517px, the keyboard from 1517px',
     'log, letters: #submit-log-button clear — its foot at 1280px, the keyboard from 1517px',
     'log, letters: #review-input and #submit-log-button stand apart (#review-input 1400..1517px, #submit-log-button 1200..1280px)',
@@ -428,7 +428,7 @@ it('a hiccup is run again and the run is green, with a warning that says so', as
     'log, emoji: #review-input clear — its foot at 1517px, the keyboard from 1517px',
     'log, emoji: #submit-log-button clear — its foot at 1280px, the keyboard from 1517px',
     'log, emoji: #review-input and #submit-log-button stand apart (#review-input 1400..1517px, #submit-log-button 1200..1280px)',
-    'recovery, letters: the keyboard shows its letters, 883px tall',
+    'recovery, letters: the keyboard shows its letters, 883px tall; its ?123 key carries no id',
     'recovery, letters: #recovery-email-input clear — its foot at 1000px, the keyboard from 1517px',
     'recovery, letters: #recovery-submit-button clear — its foot at 1150px, the keyboard from 1517px',
     'recovery, letters: #recovery-email-input and #recovery-submit-button stand apart (#recovery-email-input 900..1000px, #recovery-submit-button 1050..1150px)',

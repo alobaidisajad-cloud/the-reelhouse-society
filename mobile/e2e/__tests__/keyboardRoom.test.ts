@@ -162,7 +162,7 @@ describe('the keyboard’s panel, and its height', () => {
   }
 
   it('says the letters are showing, and how tall the keyboard stands', () => {
-    expect(panel('letters', keys(true), SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its letters, 1005px tall' });
+    expect(panel('letters', keys(true), SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its letters, 1005px tall; its ?123 key carries no id' });
   });
 
   it('says the emoji panel opened when the letters are gone', () => {
@@ -182,14 +182,29 @@ describe('the keyboard’s panel, and its height', () => {
 
   it('reads an address field’s letters, which name no letter key, by the ?123 key — run 43242130602', () => {
     const address = { attributes: {}, children: ['@', '.', 'Shift', 'Symbol keyboard', 'Emoji button', 'Go'].map((k) => ({ attributes: { accessibilityText: k } })) };
-    expect(panel('letters', address, SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its letters, 1005px tall' });
+    expect(panel('letters', address, SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its letters, 1005px tall; its ?123 key carries no id' });
   });
 
   it('reads the letters of a keyboard speaking Arabic, its names led by a direction mark — nightly 43848225969', () => {
     // The names Gboard gave on the right-to-left run's phone (ar-IQ): its ?123 key, and its GIF key
     // led by a right-to-left mark.
     const arabic = { attributes: {}, children: ['ض', 'ص', '\u200fلوحة مفاتيح GIF', 'لوحة مفاتيح الرموز', 'مسافة'].map((k) => ({ attributes: { accessibilityText: k } })) };
-    expect(panel('letters', arabic, SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its letters, 1005px tall' });
+    expect(panel('letters', arabic, SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its letters, 1005px tall; its ?123 key carries no id' });
+  });
+
+  // The ?123 key's id, said on the letters' look in any language, so a flow can press the key by what it
+  // is: the right-to-left run's phone names it in Arabic, and Maestro's tapOn by name is English-only.
+  // The id here is a stand-in for whatever Gboard gives (the judge prints it; none is assumed).
+  it('says the ?123 key\'s id on the letters\' look, in every language, and says so when it carries none', () => {
+    const ID = 'com.google.android.inputmethod.latin:id/a_key_id';
+    const named = (name: string) => ({ attributes: {}, children: [
+      { attributes: { accessibilityText: 'Q' } }, { attributes: { accessibilityText: name, 'resource-id': ID } },
+    ] });
+    expect(panel('letters', named('Symbol keyboard'), SHOWN)).toEqual({ status: 0, out: "the keyboard shows its letters, 1005px tall; its ?123 key's id: a_key_id" });
+    expect(panel('letters', named('\u200fلوحة مفاتيح الرموز'), SHOWN)).toEqual({ status: 0, out: "the keyboard shows its letters, 1005px tall; its ?123 key's id: a_key_id" });
+    expect(panel('letters', keys(true), SHOWN).out).toMatch(/; its \?123 key carries no id$/);
+    // Only the letters' own look says it: the emoji look's verdict stays as it was.
+    expect(panel('emoji', named('Symbol keyboard'), SHOWN).out).toBe('the keyboard shows its letters, 1005px tall (it should show its emoji panel)');
   });
 
   it('reads the emoji panel of a keyboard speaking Arabic, by its tabs — nightly 45406301103', () => {
@@ -287,7 +302,7 @@ describe('the keyboard’s panel, and its height', () => {
       '    Frames: parent=[0,128][1080,2400] display=[0,128][1080,2400] frame=[0,128][1080,2400] last=[0,128][1080,2400] insetsChanged=false',
       '    isOnScreen=true',
     ].join('\n');
-    expect(panel('letters', keys(true), seen).out).toBe('the keyboard shows its letters, 883px tall');
+    expect(panel('letters', keys(true), seen).out).toBe('the keyboard shows its letters, 883px tall; its ?123 key carries no id');
   });
 });
 

@@ -11966,3 +11966,11 @@ mutants:
         find: "  integer: [BigInt('-2147483648'), BigInt('2147483647')],"
         replace: ""
     proof: { file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "a value not a whole number in its bounds where the column is an integer; a whole number, or its digits, taken" }
+  - id: shape-the-symbols-key-unknown-by-its-id
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/keyboard-room.mjs
+        find: "  const symbolsId = want === 'letters' && shows === 'letters' ? symbolsKeyIdOf(tree) : null;"
+        replace: "  const symbolsId = null;"
+    proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: "says the ?123 key's id on the letters' look, in every language, and says so when it carries none" }

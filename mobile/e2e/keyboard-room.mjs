@@ -97,6 +97,24 @@ export function tallestReachablePanel(letters) {
   return letters !== null && lettersKeepNoEmoji(letters) ? 'symbols' : 'emoji';
 }
 
+/**
+ * The resource id of the letters' ?123 key (the key LETTERS_KEY names), without its package: '' when
+ * that key carries none, null when the screen holds no such key. A flow that presses the key by its id
+ * presses it in every language, where its name is the phone's.
+ */
+export function symbolsKeyIdOf(tree) {
+  let id = null;
+  const walk = (node) => {
+    if (id !== null || !node || typeof node !== 'object') return;
+    const a = node.attributes ?? {};
+    const name = (a.accessibilityText ?? '').replace(/[‎‏؜‪-‮⁦-⁩]/g, '').trim();
+    if (LETTERS_KEY.includes(name)) { id = (a['resource-id'] ?? '').replace(/^.*:id\//, ''); return; }
+    for (const c of node.children ?? []) walk(c);
+  };
+  walk(tree);
+  return id;
+}
+
 /** Every resource id on the screen. */
 function keyIds(tree) {
   const ids = [];
@@ -244,10 +262,14 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.arg
   // so a key there that is not the emoji key is known by what Gboard calls it.
   const asked = !ok && want === 'emoji' && letters !== null;
   const place = asked ? emojiPlaceOf(letters) : null;
+  // The letters' look says the ?123 key's id, or that it carries none, so a flow can press it by
+  // what it is rather than by its English name.
+  const symbolsId = want === 'letters' && shows === 'letters' ? symbolsKeyIdOf(tree) : null;
   console.log(`the keyboard shows ${said(shows)}${height == null ? ', and no window of its own' : `, ${height}px tall`}`
     + (ok ? (shows === want ? '' : ' (this field\'s letters keep no emoji key, its place the address key: its symbols are the tallest panel a member can open on it)')
       : ` (it should show ${said(want)}${noEmoji ? ' or, this field\'s letters keeping no emoji key, its symbols' : ''})`)
     + (asked ? (place !== null ? `; the letters' emoji place held "${place}"` : '; the letters had no key in the emoji place') : '')
+    + (symbolsId === null ? '' : symbolsId ? `; its ?123 key's id: ${symbolsId}` : '; its ?123 key carries no id')
     + (seen.length ? `; the names on the screen: ${seen.join(' | ')}` : ''));
   process.exit(ok && height != null ? 0 : 1);
 } else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
