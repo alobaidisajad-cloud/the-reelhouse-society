@@ -539,11 +539,16 @@ const readMutants = () => {
   return [...pub, ...readPrivate().kept.map((m) => ({ ...m, private: true }))];
 };
 
-/** The proof id of a mutant's test: its index among its class's methods, m1 first. */
+/**
+ * The proof id of a mutant's test, null where its class holds no such method: the test known by its
+ * file and title, hashed, so the results keep ids only (P0.39) and a private test's words never leave.
+ * Never its place in the list: a method inserted before it renumbered every proof after it, and their
+ * recorded verdicts were lost (nightly 45829548435, shape-picker-lets-the-first-tap-go).
+ */
 const proofId = (m, classes) => {
   const c = classes.find((k) => k.id === m.class);
-  const i = (c?.methods ?? []).findIndex((x) => x.file === m.proof?.file && x.test === m.proof?.test);
-  return i < 0 ? null : `m${i + 1}`;
+  const held = (c?.methods ?? []).some((x) => x.file === m.proof?.file && x.test === m.proof?.test);
+  return held ? `p${createHash('sha256').update(`${m.proof.file}\n${m.proof.test}`).digest('hex').slice(0, 12)}` : null;
 };
 
 /**
@@ -598,7 +603,7 @@ const asEntry = (m) => JSON.stringify({ ...m, private: undefined });
  * branch's commits, where a rebase writes new ones and every verdict recorded on the old ones is lost);
  * nothing the mutant stands on (pathsOf) and not the runner itself changed from that commit to now
  * (`changedSince`); its entry is the one the registry held then (`entryAt`); the proof id it was
- * recorded by is its test's place among its class's methods now (`proofNow`, where there are classes);
+ * recorded by is its test's id among its class's methods now (`proofNow`, where there are classes);
  * and the private record of that very run, which this machine keeps beside every run (P0.54), holds it
  * caught (`recordAt`): a
  * verdict written into the results by hand stands on no run, and a machine with no record (CI) runs it.
@@ -612,7 +617,7 @@ const whyNotStanding = (m, r, { inHistory, changedSince, entryAt, recordAt, proo
   const moved = changed.filter((c) => standsOn(m, c));
   if (moved.length) return `${moved.join(', ')} changed since its run`;
   if (asEntry(entryAt(r.commit, m.id) ?? null) !== asEntry(m)) return 'its entry changed since its run';
-  // Its class's methods moved (a merge joined both sides'): its recorded proof id is another's now.
+  // Its proof is another test now, or one its class no longer holds: the verdict was another test's.
   const proof = proofNow?.(m);
   if (proof !== undefined && r.proof !== proof) return `its proof is ${proof} now, recorded as ${r.proof}`;
   if (!(recordAt(r.commit) ?? []).some((x) => x.mutant === m.id && x.verdict === 'caught')) return 'no private record of its run on this machine';

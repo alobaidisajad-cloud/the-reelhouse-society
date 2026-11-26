@@ -1,0 +1,149 @@
+name: 🐘 Gradle's packages, fetched once
+
+# ── ONE FETCH FOR A RUN OF MANY BUILDS ──────────────────────────────────────────
+# The nightly builds the app eighteen times (each e2e.yml call builds its own) and the speed lab
+# twice at once. Each build read GitHub's kept copy of Gradle's packages first and asked Maven
+# Central only for what it lacked; but a copy that lacked something sent every build to ask at
+# once, and two of a night's builds met 429 Too Many Requests (nightly 45829548435). So a
+# workflow that runs more than one build calls this first, and its builds `needs:` it
+# (ciWorkflows.guard): it builds the app as e2e.yml's build does, through
+# scripts/gradle-kept-first.sh, asking the network only for what the kept copy lacks, and keeps
+# the fuller copy under the run's own key. Every build after it restores that key and builds
+# offline. Called, it runs inside its caller's run, so github.run_id is the caller's.
+
+on:
+  workflow_call:
+  # By hand on main: the kept copy refreshed, for the builds of the runs after it.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    name: 🐘 Gradle's packages, fetched once for every build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # The key e2e.yml's build bakes in; the packages do not depend on it, the bundle step reads it.
+      - name: The local stack's anon key
+        id: anon
+        run: |
+          key=$(node mobile/e2e/anon-key.mjs) || { echo "$key"; exit 1; }
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Install the app's packages
+        id: install-1
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: mobile
+        run: npm ci
+      - name: Install the app's packages, once more
+        if: steps.install-1.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: mobile
+        run: npm ci
+
+      - name: The Android packages the build needs
+        id: android-packages
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: mobile
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+          node scripts/android-packages.cjs --installed
+      - name: The Android packages the build needs, once more
+        if: steps.android-packages.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: mobile
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+          node scripts/android-packages.cjs --installed
+
+      # As e2e.yml's build clears it: Gradle's caches and the native libraries fill the runner's disk.
+      - name: Room on the runner for the build
+        run: |
+          df -h / | tail -n 1
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL \
+            /usr/local/share/powershell /usr/share/swift
+          df -h / | tail -n 1
+
+      # The newest kept copy (setup-java's old one seeds it), as every build restores it.
+      - name: Gradle's packages, kept
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /home/runner/.gradle/caches
+          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}
+          restore-keys: |
+            gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-
+            setup-java-Linux-x64-gradle-${{ hashFiles('mobile/package-lock.json') }}
+            gradle-packages-
+      # Gradle's own copy, fetched from a GitHub release (504 for hours on 2026-11-08): kept once here.
+      - name: Gradle's own copy, kept
+        id: gradle-dists
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-dists-${{ hashFiles('mobile/package-lock.json') }}
+          restore-keys: gradle-dists-
+      # The very build e2e.yml makes, so what it asks for is what every build asks for. Offline
+      # first; the network only for what the kept copy lacks, each package asked patiently.
+      - name: The app, built, to fetch what the kept packages lack
+        id: build
+        working-directory: mobile
+        env:
+          E2E: '1'
+          EXPO_PUBLIC_SUPABASE_URL: http://10.0.2.2:54330
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.anon.outputs.key }}
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          set +e
+          {
+            npx expo prebuild --platform android --no-install --clean \
+            && sed -i 's/^networkTimeout=.*/networkTimeout=120000/' android/gradle/wrapper/gradle-wrapper.properties \
+            && (cd android && for i in 1 2 3 4; do ./gradlew --version --no-daemon --console=plain > /dev/null && break; [ $i -eq 4 ] && exit 1; sleep $((i * 30)); done) \
+            && (cd android && bash "$GITHUB_WORKSPACE/mobile/scripts/gradle-kept-first.sh" assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+                  "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError")
+          } > "$RUNNER_TEMP/build.log" 2>&1
+          rc=$?
+          tail -n 200 "$RUNNER_TEMP/build.log"
+          if [ $rc -ne 0 ]; then
+            {
+              grep -n -A 20 'What went wrong' "$RUNNER_TEMP/build.log" | head -n 30
+              grep -nE '^e: |[^a-z]error: |FAILED|Error: ' "$RUNNER_TEMP/build.log" | grep -v '^[0-9]*:w: ' | head -n 25
+            } > "$RUNNER_TEMP/build-errors.txt"
+            node e2e/annotate.mjs "The warm-up build failed: no build of the run starts" "$RUNNER_TEMP/build-errors.txt"
+          fi
+          pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
+          exit $rc
+
+      - name: Gradle's own copy, saved for the builds
+        if: steps.gradle-dists.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-dists-${{ hashFiles('mobile/package-lock.json') }}
+      # Only after a build that had to fetch packages, and succeeded: under the run's key, which every
+      # build of the run restores first. When nothing was fetched, the copy restored is already whole.
+      - name: Gradle's packages, kept for the builds
+        if: steps.build.outputs.fetched == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /home/runner/.gradle/caches
+          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}

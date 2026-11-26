@@ -241,7 +241,7 @@ describe('the keyboard’s panel, and its height', () => {
 
     // The judge's rule, per field: the tallest panel a member can open on it (tallestReachablePanel).
     it('fails in its place after letters that keep an emoji key', () => {
-      expect(panelAfter(letters('Emoji button'))).toEqual({ status: 1, out: 'the keyboard shows its symbols, 1005px tall (it should show its emoji panel)' });
+      expect(panelAfter(letters('Emoji button'))).toEqual({ status: 1, out: 'the keyboard shows its symbols, 1005px tall (it should show its emoji panel); the letters\' emoji place held "Emoji button"' });
     });
 
     it('a field whose emoji key is reachable still demands the emoji panel, and passes on it alone', () => {
@@ -263,7 +263,15 @@ describe('the keyboard’s panel, and its height', () => {
       writeFileSync(join(dir, 'w.txt'), windows(SHOWN));
       writeFileSync(join(dir, 'letters.json'), JSON.stringify(letters('Dot com')));
       const r = spawnSync(process.execPath, [SCRIPT, '--panel', 'emoji', join(dir, 'h.json'), join(dir, 'w.txt'), join(dir, 'letters.json')], { encoding: 'utf8' });
-      expect([r.status, r.stdout.trim()]).toEqual([1, "the keyboard shows its letters, 1005px tall (it should show its emoji panel or, this field's letters keeping no emoji key, its symbols)"]);
+      expect([r.status, r.stdout.trim()]).toEqual([1, "the keyboard shows its letters, 1005px tall (it should show its emoji panel or, this field's letters keeping no emoji key, its symbols); the letters' emoji place held \"Dot com\""]);
+    });
+
+    it('a press that opened nothing says what the letters\' emoji place held, in the phone\'s own words', () => {
+      const arabic = letters('‏مفتاح مجهول');
+      expect(panelAfter(arabic, arabic)).toEqual({ status: 1,
+        out: 'the keyboard shows its letters, 1005px tall (it should show its emoji panel); the letters\' emoji place held "‏مفتاح مجهول"' });
+      const none = { attributes: {}, children: [{ attributes: { accessibilityText: 'Symbol keyboard' } }] };
+      expect(panelAfter(none, none).out).toMatch(/; the letters had no key in the emoji place$/);
     });
   });
 

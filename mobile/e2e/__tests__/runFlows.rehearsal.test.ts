@@ -102,14 +102,20 @@ case "$1" in
       "settings put global "*_scale" "*) set -- $cmd; echo "$5" > "$T/state/$4" ;;
       "settings get secure autofill_service") echo null ;;
       date*) case "$cmd" in *S.%3N*) date +'%m-%d %H:%M:%S.%3N' ;; *S.000*) date +'%m-%d %H:%M:%S.000' ;; *) date +'%m-%d %H:%M:%S' ;; esac ;;
-      # The keyboard, bound and its process up, in Android 16's words (an emulator's dump, 26 November 2026),
-      # unless a scenario keeps it chosen and still connecting.
+      # The keyboard as Android 14 says it (InputMethodManagerService's dump): chosen at once, bound and its
+      # process started only once a field is tapped (a panel up), as Android binds a keyboard only for a
+      # text field that has the focus. Chosen as Android keeps it, unless a scenario keeps it unchosen.
+      "settings get secure default_input_method")
+        if [ -f "$T/state/ime-unchosen" ]; then echo null; else echo "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"; fi ;;
       "dumpsys input_method")
-        echo "      mSelectedMethodId=com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
-        echo "      mCurId=com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
-        if [ -f "$T/state/ime-unbound" ]; then echo "      mHasMainConnection=false"; else echo "      mHasMainConnection=true"; fi
-        echo "      mInputShown=true" ;;
-      "pidof com.google.android.inputmethod.latin") [ -f "$T/state/ime-unbound" ] || echo 9845 ;;
+        echo "  mCurMethodId=com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
+        if [ -f "$T/state/panel" ]; then
+          echo "  mCurId=com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME mHaveConnection=true mBoundToMethod=true mVisibleBound=true"
+        else
+          echo "  mCurId=null mHaveConnection=false mBoundToMethod=false mVisibleBound=false"
+        fi
+        echo "  mInputShown=true" ;;
+      "pidof com.google.android.inputmethod.latin") [ -f "$T/state/panel" ] && echo 9845 ;;
       # A mark the runner writes to the phone's log, as Android's log command writes it.
       "log -t "*) set -- $cmd; echo "$(date +'%m-%d %H:%M:%S.%3N')  4242  4242 I $3: $4" >> "$T/device.log" ;;
       "dumpsys window windows") cat "$T/fixtures/windows.txt" ;;
@@ -162,7 +168,13 @@ if [ "$1" = hierarchy ]; then
 fi
 flow="$2"; name=$(basename "$flow" .yaml); out=""; dbg=""; shots=""
 while [ $# -gt 0 ]; do case "$1" in --output) out="$2"; shift ;; --debug-output) dbg="$2"; shift ;; --test-output-dir) shots="$2"; shift ;; esac; shift; done
-case "$flow" in */emoji.tap.yaml) echo emoji > "$T/state/panel"; exit 0 ;; *.tap.yaml) echo letters > "$T/state/panel"; exit 0 ;; esac
+# A scenario's probe (state/letters-stay) whose emoji press opens nothing: its letters stay.
+case "$flow" in
+  */emoji.tap.yaml)
+    [ -f "$T/state/letters-stay" ] && [ "$(cat "$T/state/letters-stay")" = "$(cat "$T/state/tapped" 2>/dev/null)" ] && exit 0
+    echo emoji > "$T/state/panel"; exit 0 ;;
+  *.tap.yaml) echo letters > "$T/state/panel"; basename "$flow" .tap.yaml > "$T/state/tapped"; exit 0 ;;
+esac
 rm -f "$T/state/panel"
 echo "maestro: $name" >> "$T/state/order"
 echo 16631 > "$T/state/pid"   # every flow opens with launchApp
@@ -457,12 +469,14 @@ it('a crash fails a run whose every flow passed — and the flows are not blamed
   always(r);
 });
 
-it('taps a probe\'s field only once the keyboard is bound and running, and says when it never was', async () => {
-  const bound = await rehearse(['a_flow'], {});
-  expect(file(bound, 'keyboard-room.txt')).not.toMatch(/was not bound/);
-  const r = await rehearse(['a_flow'], {}, { env: { E2E_IME_TRIES: '2' }, state: { 'ime-unbound': '1' } });
+it('taps a probe\'s field once Android has the keyboard chosen, as every phone says it before the tap, and says when it never was', async () => {
+  // Nothing is bound before the tap, on any phone: a wait for a binding is a wait in vain (nightly 45829548435).
+  const chosen = await rehearse(['a_flow'], {}, { env: { E2E_IME_TRIES: '2' } });
+  expect(file(chosen, 'keyboard-room.txt')).not.toMatch(/was not (bound|chosen)/);
+  expect(file(chosen, 'keyboard-room.txt')).toMatch(/stack, letters: the keyboard shows its letters/);
+  const r = await rehearse(['a_flow'], {}, { env: { E2E_IME_TRIES: '2' }, state: { 'ime-unchosen': '1' } });
   expect(file(r, 'keyboard-room.txt')).toContain(
-    'the keyboard (com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME) was not bound 2 s after it was turned on: the field is tapped as it stands');
+    'the keyboard (com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME) was not chosen 2 s after it was turned on: the field is tapped as it stands');
 });
 
 describe('a shipped client\'s own crash (E2E_OLD_CLIENT, from the real old-clients.json)', () => {
@@ -522,6 +536,20 @@ describe('a shipped client\'s own crash (E2E_OLD_CLIENT, from the real old-clien
     expect(mine.status).toBe(1);
     expect(titled(mine, 'error', 'The keyboard covers what a member needs')).toMatch(/stack, letters: the keyboard shows neither/);
     always(old);
+  });
+
+  it('says every look\'s verdict in its annotation, the last probe\'s failure too, each before any look\'s diagnostics', async () => {
+    // The last probe's emoji press opens nothing, after four looks clear, each with its keyboard window's
+    // lines: the annotation's first forty lines held the window lines and lost the failure (nightly 45829548435).
+    const r = await rehearse(['a_flow'], {}, { env: { E2E_OLD_CLIENT: '' }, state: { 'letters-stay': 'recovery' } });
+    expect(r.status).toBe(1);
+    const said = titled(r, 'error', 'The keyboard covers what a member needs').replace(/^::error title=[^:]*::/, '').split('%0A');
+    const verdicts = file(r, 'keyboard-room.txt').split('\n').filter((l) => /^\S/.test(l));
+    expect(verdicts.filter((v) => v.startsWith('recovery, emoji: the keyboard shows its letters'))).toHaveLength(1);
+    expect(said.slice(0, verdicts.length)).toEqual(verdicts);
+    expect(said.slice(verdicts.length).every((l) => /^\s|^…/.test(l))).toBe(true);
+    // The whole report, in its own order, stays the run summary's.
+    expect(file(r, 'keyboard-room.txt')).toMatch(/stack, letters · [^\n]*\nstack, emoji: /);
   });
 
   it('is the app\'s crash in a run of this app: not run again, and the run fails', async () => {

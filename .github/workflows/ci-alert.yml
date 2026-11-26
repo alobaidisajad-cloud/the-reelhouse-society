@@ -32,6 +32,7 @@ on:
       - "CI — Lighthouse Performance Gate"
       - "🌙 Nightly"
       - "🧪 Mutants on demand"
+      - "🐘 Gradle's packages, fetched once"
     types: [completed]
 
 permissions:

@@ -11525,14 +11525,14 @@ mutants:
         find: "  const ok = shows === want || shows === demanded;"
         replace: "  const ok = shows === demanded;"
     proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: "passes an emoji panel that opened there all the same: taller than the symbols" }
-  - id: shape-keyboard-bound-by-a-word-no-phone-says
+  - id: shape-keyboard-waits-for-a-binding-before-the-tap
     class: E2E-keyboard-covers-the-field
     source: shape
     edits:
       - file: e2e/run-flows.sh
-        find: "grep -qF \"mCurId=$want\" <<< \"$ime\" && grep -qF 'mHasMainConnection=true' <<< \"$ime\""
-        replace: "grep -qF \"mCurMethodId=$want\" <<< \"$ime\""
-    proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "taps a probe's field only once the keyboard is bound and running, and says when it never was" }
+        find: "    [ \"$(timeout 20 adb shell settings get secure default_input_method < /dev/null 2>/dev/null | tr -d '\\r')\" = \"$want\" ] && return 0"
+        replace: "    timeout 20 adb shell dumpsys input_method < /dev/null 2>/dev/null | grep -qF 'mHaveConnection=true' && return 0"
+    proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "taps a probe's field once Android has the keyboard chosen, as every phone says it before the tap, and says when it never was" }
   - id: shape-a-slow-write-voided-by-itself
     class: E2E-lab-sample-taken-while-the-phone-starved
     source: shape
@@ -11589,3 +11589,35 @@ mutants:
         find: "          path: /home/runner/.gradle/caches\n          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}\n          restore-keys:"
         replace: "          path: |\n            /home/runner/.gradle/caches\n            /home/runner/.gradle/wrapper\n          key: gradle-packages-${{ hashFiles('mobile/package-lock.json') }}-${{ github.run_id }}\n          restore-keys:"
     proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every Gradle run finds its Android packages installed by a step tried once more, downloads none itself, and builds from the kept packages first" }
+  - id: shape-a-build-before-the-warm-up
+    class: CI-build-reads-a-version-list
+    source: shape
+    edits:
+      - file: ../.github/workflows/nightly.yml
+        find: "    name: 🎬 The fault runs\n    needs: gradle\n"
+        replace: "    name: 🎬 The fault runs\n"
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "a run of more than one Gradle build fetches once first, and every build needs that fetch" }
+  - id: shape-keyboard-verdicts-after-their-diagnostics
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/run-flows.sh
+        find: "\"$OUT/keyboard-room.txt\" error --first '^\\S'"
+        replace: "\"$OUT/keyboard-room.txt\" error"
+    proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "says every look's verdict in its annotation, the last probe's failure too, each before any look's diagnostics" }
+  - id: shape-a-failed-press-silent-on-the-emoji-place
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/keyboard-room.mjs
+        find: "  const asked = !ok && want === 'emoji' && letters !== null;"
+        replace: "  const asked = false;"
+    proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: "a press that opened nothing says what the letters' emoji place held, in the phone's own words" }
+  - id: shape-a-proof-known-by-its-place
+    class: TOOL-a-proof-known-by-its-place
+    source: shape
+    edits:
+      - file: scripts/mutants.cjs
+        find: '  return held ? `p${createHash'
+        replace: '  return held ? `m${(c?.methods ?? []).findIndex((x) => x.file === m.proof?.file && x.test === m.proof?.test) + 1}` : null; // `p${createHash'
+    proof: { file: scripts/__tests__/mutantVerdictsStand.test.ts, test: "a proof is known by its test, not its place: a method inserted before it keeps every recorded verdict its own" }

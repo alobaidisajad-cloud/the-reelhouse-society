@@ -391,22 +391,22 @@ keys_on() {
   local want
   want="$(echo "$imes_all" | grep -m 1 latin || echo "$imes_all" | head -n 1)"
   timeout 20 adb shell ime set "$want" > /dev/null 2>&1
-  # The field is tapped only once Android has bound the keyboard and its process runs: a tap before
-  # it asked a keyboard that was still starting, the show failed at the server, and Android held it
-  # shown with no window, through a tap again and a probe run again (pages-16k, plant run
-  # 45638318347: "onFailed at PHASE_SERVER_UPDATE_CLIENT_VISIBILITY", Gboard's process up 300 ms on).
-  # Bound is Android's own word for it: the keyboard it connects to (mCurId) is that one, and its
-  # connection made (mHasMainConnection; Android 14 and on, where the run's phones are, has no
-  # mCurMethodId, which every probe of nightly 45676715897 waited 30 s for in vain).
-  local _ ime
+  # The field is tapped only once Android has the keyboard chosen, as it keeps the choice
+  # (default_input_method): the same words on every phone, in every language and on every Android;
+  # until then it is turned on and chosen again. Not bound: Android binds a keyboard, and so starts its process,
+  # only for a text field that has the focus (InputMethodManagerService's startInputUncheckedLocked,
+  # reached only with an editor), so before the tap nothing is bound on any phone, and every probe
+  # of nightly 45829548435, on each of the seven shards whose report shows them, waited 30 s for a binding that only
+  # the tap makes. A first show that races the keyboard's own start is met after the tap: the field
+  # tapped again, then the probe run again (below).
+  local _
   for _ in $(seq 1 "${E2E_IME_TRIES:-30}"); do
-    ime="$(timeout 20 adb shell dumpsys input_method < /dev/null 2>/dev/null | tr -d '\r')"
-    grep -qF "mCurId=$want" <<< "$ime" && grep -qF 'mHasMainConnection=true' <<< "$ime" \
-      && timeout 20 adb shell pidof "${want%%/*}" < /dev/null > /dev/null 2>&1 && return 0
+    [ "$(timeout 20 adb shell settings get secure default_input_method < /dev/null 2>/dev/null | tr -d '\r')" = "$want" ] && return 0
+    timeout 20 adb shell ime enable "$want" < /dev/null > /dev/null 2>&1
     timeout 20 adb shell ime set "$want" < /dev/null > /dev/null 2>&1
     sleep 1
   done
-  echo "the keyboard ($want) was not bound ${E2E_IME_TRIES:-30} s after it was turned on: the field is tapped as it stands" >> "$OUT/keyboard-room.txt"
+  echo "the keyboard ($want) was not chosen ${E2E_IME_TRIES:-30} s after it was turned on: the field is tapped as it stands" >> "$OUT/keyboard-room.txt"
 }
 keys_off() {
   timeout 20 adb shell settings delete secure show_ime_with_hard_keyboard > /dev/null 2>&1
@@ -565,13 +565,15 @@ for probe in ${probes[@]+"${probes[@]}"}; do
   done
 done
 keys_off
+# Each look's verdicts lead the annotation (--first: a line not indented), its diagnostics after them:
+# four looks' keyboard windows filled its forty lines, and the last probe's failure went unread.
 if [ $room_rc -ne 0 ] && [ -n "${E2E_OLD_CLIENT:-}" ]; then
   # A shipped client's layout is that build's, never to change: its run asks whether it still works
   # against this database, as its flows say. Its keyboard's room is reported, as its screen times are.
-  node mobile/e2e/annotate.mjs "The keyboard's room in ${E2E_OLD_CLIENT} is reported (its layout is that build's)" "$OUT/keyboard-room.txt" warning
+  node mobile/e2e/annotate.mjs "The keyboard's room in ${E2E_OLD_CLIENT} is reported (its layout is that build's)" "$OUT/keyboard-room.txt" warning --first '^\S'
 elif [ $room_rc -ne 0 ]; then
   rc=1
-  node mobile/e2e/annotate.mjs "The keyboard covers what a member needs" "$OUT/keyboard-room.txt"
+  node mobile/e2e/annotate.mjs "The keyboard covers what a member needs" "$OUT/keyboard-room.txt" error --first '^\S'
 else
   note "The keyboard's room" "$OUT/keyboard-room.txt"
 fi

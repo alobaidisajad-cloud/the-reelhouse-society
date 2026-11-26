@@ -45,8 +45,15 @@ permissions:
   contents: read
 
 jobs:
+  # Gradle's packages, fetched once before the two Android jobs build at once, which each need it
+  # and build from the copy it keeps, offline (gradle-warm-up.yml).
+  gradle:
+    name: 🐘 Gradle's packages, fetched once
+    uses: ./.github/workflows/gradle-warm-up.yml
+
   android:
     name: 🔬 Android — the builds, one emulator boot
+    needs: gradle
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     env:
@@ -311,6 +318,7 @@ jobs:
   # arms (or the Dispatch's) are built beside it, and their screen opened and scrolled on each, rounds turned.
   scrolls:
     name: 🔬 Android — the busy screens, signed in and scrolled
+    needs: gradle
     if: ${{ inputs.scrolls }}
     runs-on: ubuntu-24.04
     timeout-minutes: 240

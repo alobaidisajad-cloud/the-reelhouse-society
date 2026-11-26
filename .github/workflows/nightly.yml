@@ -151,22 +151,32 @@ jobs:
     with:
       mutants: true
 
+  # Gradle's packages, fetched once before the night's eighteen app builds, which each need it
+  # and build from the copy it keeps, offline (gradle-warm-up.yml): two of a night's builds asking
+  # Maven Central at once met 429 Too Many Requests (nightly 45829548435).
+  gradle:
+    name: 🐘 Gradle's packages, fetched once
+    uses: ./.github/workflows/gradle-warm-up.yml
+
   # ── FLAKES (P0.37) ───────────────────────────────────────────────────────────
   # Every E2E flow three times on tonight's commit, and the suite in an order
   # jest picks at random. A test that both passes and fails at one commit is a
   # flake: a defect with a register entry, and the night fails by its name.
   e2e-round-1:
     name: 🎬 Every flow, round 1 of 3
+    needs: gradle
     uses: ./.github/workflows/e2e.yml
     with:
       round: '1'
   e2e-round-2:
     name: 🎬 Every flow, round 2 of 3
+    needs: gradle
     uses: ./.github/workflows/e2e.yml
     with:
       round: '2'
   e2e-round-3:
     name: 🎬 Every flow, round 3 of 3
+    needs: gradle
     uses: ./.github/workflows/e2e.yml
     with:
       round: '3'
@@ -175,6 +185,7 @@ jobs:
   # house broken on purpose, each flow judged by e2e/fault-judges.mjs.
   e2e-faults:
     name: 🎬 The fault runs
+    needs: gradle
     uses: ./.github/workflows/e2e.yml
     with:
       faults: true
@@ -184,6 +195,7 @@ jobs:
   # group of their own.
   e2e-lifecycle:
     name: 🎬 The lifecycle runs
+    needs: gradle
     uses: ./.github/workflows/e2e.yml
     with:
       lifecycle: true
@@ -193,6 +205,7 @@ jobs:
   # failed, no sign-out, no refresh loop).
   e2e-clock:
     name: 🎬 The clock runs, ${{ matrix.clock }}
+    needs: gradle
     strategy:
       fail-fast: false
       matrix:
@@ -206,6 +219,7 @@ jobs:
   # four for a variant that runs every flow first.
   e2e-variants:
     name: 🎬 The route walk, ${{ matrix.variant }}
+    needs: gradle
     strategy:
       fail-fast: false
       max-parallel: 4

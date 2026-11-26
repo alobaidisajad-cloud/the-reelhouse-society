@@ -69,6 +69,12 @@ export function panelOf(tree) {
  * screen: the recovery card's letters, ?123 and the header's GIF tapped, the letters stayed).
  */
 export function lettersKeepNoEmoji(tree) {
+  const slot = emojiPlaceOf(tree);
+  return slot !== null && ADDRESS_KEY.includes(slot);
+}
+
+/** The name of the key in the letters' emoji place (key_pos_switch_to_smiley), or null where there is none. */
+export function emojiPlaceOf(tree) {
   let slot = null;
   const walk = (node) => {
     if (slot !== null || !node || typeof node !== 'object') return;
@@ -77,7 +83,7 @@ export function lettersKeepNoEmoji(tree) {
     for (const c of node.children ?? []) walk(c);
   };
   walk(tree);
-  return slot !== null && ADDRESS_KEY.includes(slot);
+  return slot;
 }
 
 /**
@@ -234,9 +240,14 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.arg
   // A panel it cannot name says the names it saw (words, never single letters), so the next run
   // can be taught them.
   const seen = shows == null ? [...keyNames(tree)].filter((n) => [...n].length > 1).slice(-16) : [];
+  // And a failed press says what the letters' emoji place held, by its name in the phone's language,
+  // so a key there that is not the emoji key is known by what Gboard calls it.
+  const asked = !ok && want === 'emoji' && letters !== null;
+  const place = asked ? emojiPlaceOf(letters) : null;
   console.log(`the keyboard shows ${said(shows)}${height == null ? ', and no window of its own' : `, ${height}px tall`}`
     + (ok ? (shows === want ? '' : ' (this field\'s letters keep no emoji key, its place the address key: its symbols are the tallest panel a member can open on it)')
       : ` (it should show ${said(want)}${noEmoji ? ' or, this field\'s letters keeping no emoji key, its symbols' : ''})`)
+    + (asked ? (place !== null ? `; the letters' emoji place held "${place}"` : '; the letters had no key in the emoji place') : '')
     + (seen.length ? `; the names on the screen: ${seen.join(' | ')}` : ''));
   process.exit(ok && height != null ? 0 : 1);
 } else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {

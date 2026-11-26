@@ -372,6 +372,56 @@ it('every Gradle run finds its Android packages installed by a step tried once m
 
 /** Whether a command installs through apt, and whether it waits for the lock a try cut short leaves. */
 const installsByApt = (run: string) => /\bapt(-get)? install\b|--with-deps\b/.test(run);
+/** The workflow a run of more than one Gradle build calls first, and its builds need. */
+const WARM_UP = './.github/workflows/gradle-warm-up.yml';
+const GRADLE_BUILD = /gradle-kept-first\.sh/;
+type BuildJob = Job & { needs?: string | string[]; strategy?: { matrix?: Record<string, unknown> } };
+/**
+ * A run's Gradle builds, counted (a job's own step, or a call to a workflow that builds; each cell
+ * of a matrix one, a matrix given by an expression many), and the jobs of them that may start
+ * before the warm-up has kept its fetch: each build that found the kept copy short asked Maven
+ * Central at once, and two of a night's met 429 Too Many Requests (nightly 45829548435).
+ */
+const warmUp = (wf: Workflow, builds: (file: string) => boolean) => {
+  const jobs = Object.entries(wf.jobs) as [string, BuildJob][];
+  const warm = jobs.filter(([, j]) => j.uses === WARM_UP).map(([name]) => name);
+  const building = jobs.filter(([, j]) => j.uses !== WARM_UP
+    && ((j.steps ?? []).some((s) => GRADLE_BUILD.test((s as RunStep).run ?? '')) || (calls(j) && builds(j.uses!.split('/').pop()!))));
+  const cells = (j: BuildJob) => {
+    const matrix: unknown = j.strategy?.matrix;
+    if (matrix === undefined) return 1;
+    if (typeof matrix !== 'object' || matrix === null) return 2;
+    return Object.values(matrix).reduce<number>((n, v) => n * (Array.isArray(v) ? v.length : 2), 1);
+  };
+  const count = building.reduce((n, [, j]) => n + cells(j), 0);
+  if (count < 2) return { count, faults: [] as string[] };
+  if (warm.length !== 1) return { count, faults: [`${count} builds, and ${warm.length} jobs that call the warm-up`] };
+  return { count, faults: building.filter(([, j]) => ![j.needs ?? []].flat().includes(warm[0]!)).map(([name]) => `${name}: builds before the warm-up has kept its fetch`) };
+};
+
+it('a run of more than one Gradle build fetches once first, and every build needs that fetch', () => {
+  const builds = (file: string) => GRADLE_BUILD.test(workflows.find((w) => w.file === file)?.text ?? '');
+  const many = workflows.filter((w) => warmUp(w.wf, builds).count > 1);
+  expect(many.map((w) => w.file).sort()).toEqual(['nightly.yml', 'speed-lab.yml']);
+  expect(warmUp(workflows.find((w) => w.file === 'nightly.yml')!.wf, builds).count).toBe(18);
+  expect(many.flatMap((w) => warmUp(w.wf, builds).faults.map((f) => `${w.file} › ${f}`))).toEqual([]);
+  // The warm-up itself builds as every build does, and keeps only what a build that succeeded fetched.
+  expect(builds('gradle-warm-up.yml')).toBe(true);
+  // Planted: two builds with no warm-up, one that starts beside it, and a call made many by its matrix.
+  const wf = (jobs: string) => parse(`name: x\non: push\njobs:\n${jobs}`) as Workflow;
+  const own = (name: string, extra = '') => `  ${name}:\n${extra}    steps:\n      - run: bash scripts/gradle-kept-first.sh assembleRelease\n`;
+  const call = (name: string, extra = '') => `  ${name}:\n${extra}    uses: ./.github/workflows/e2e.yml\n`;
+  const warm = `  gradle:\n    uses: ${WARM_UP}\n`;
+  const yes = (f: string) => f === 'e2e.yml';
+  expect(warmUp(wf(own('a') + own('b')), yes)).toEqual({ count: 2, faults: ['2 builds, and 0 jobs that call the warm-up'] });
+  expect(warmUp(wf(warm + own('a', '    needs: gradle\n') + call('b')), yes)).toEqual({ count: 2, faults: ['b: builds before the warm-up has kept its fetch'] });
+  expect(warmUp(wf(warm + own('a', '    needs: [x, gradle]\n') + call('b', '    needs: gradle\n')), yes)).toEqual({ count: 2, faults: [] });
+  expect(warmUp(wf(call('b', '    strategy:\n      matrix:\n        v: [1, 2]\n')), yes).faults).toEqual(['2 builds, and 0 jobs that call the warm-up']);
+  expect(warmUp(wf(call('b', '    strategy:\n      matrix: ${{ fromJSON(x) }}\n')), yes).count).toBe(2);
+  expect(warmUp(wf(call('b') + call('c')), () => false)).toEqual({ count: 0, faults: [] });
+  expect(warmUp(wf(own('a')), yes)).toEqual({ count: 1, faults: [] });
+});
+
 /**
  * dpkg's lock waited on (DPkg::Lock::Timeout), and before any apt is run, the runner's own apt run
  * waited out: the timeout covers dpkg's lock alone, and an apt-get update met the lists lock held
@@ -724,6 +774,7 @@ const NOT_ON_MAIN: Record<string, string> = {
   'ci.yml': "the website's Lighthouse gate, by hand since the owner stopped it emailing on every push (its own comment); the website is becoming a landing page (PLAN §3c-6)",
   'ci-alert.yml': 'it is the alert: it runs when any other workflow ends',
   'speed-lab.yml': 'a measurement started by hand (WORKLIST P0.104): its runs take hours, and the arms it builds are checked on every push by e2e/__tests__/speedLab.test.ts',
+  'gradle-warm-up.yml': 'called first by the nightly and the speed lab, inside their runs, before their builds; by hand it only refreshes the kept packages',
   'mutants-on-demand.yml': 'a builder\'s own mutants, started by scripts/mutants-remote.cjs on a plant branch at its commit, so they run on GitHub\'s runners and not beside the push gate; main\'s own are run by god_tier_ci.yml and the nightly',
 };
 

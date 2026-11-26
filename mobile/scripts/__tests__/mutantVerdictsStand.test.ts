@@ -39,7 +39,7 @@ it('a recorded verdict stands only where its run is in this history and nothing 
     mutants.whyNotStanding(m, r('b1'), ctx({ entryAt: () => ({ ...m, edits: [{ file: 'src/a.ts', find: 'a', replace: 'c' }] }) })),
     // A verdict written into the results by hand stands on no run.
     mutants.whyNotStanding(m, r('b1'), ctx({ recordAt: () => null })),
-    // Its class's methods moved in a merge: recorded as m1, its test is m2 now.
+    // Its proof is another test now (its title changed in its class): recorded as m1, it is m2 now.
     mutants.whyNotStanding(m, r('b1'), ctx({ proofNow: () => 'm2' })),
   ]).toEqual([
     'no verdict recorded', 'recorded survived', 'run at a9, which is not in this history', 'src/a.ts changed since its run',
@@ -47,6 +47,22 @@ it('a recorded verdict stands only where its run is in this history and nothing 
     'no private record of its run on this machine', 'its proof is m2 now, recorded as m1',
   ]);
   expect(mutants.whyNotStanding(m, r('b1'), ctx({ proofNow: () => 'm1' }))).toBeNull();
+});
+
+it('a proof is known by its test, not its place: a method inserted before it keeps every recorded verdict its own', () => {
+  const ids = require('../mutants.cjs') as { proofId: (x: M, classes: { id: string; methods: { file: string; test: string }[] }[]) => string | null };
+  const own = { file: 'src/__tests__/a.test.ts', test: 't' };
+  const other = { file: 'src/__tests__/b.test.ts', test: 'u' };
+  const before = ids.proofId(m, [{ id: 'X-y', methods: [own] }]);
+  // Inserted mid-list (nightly 45829548435: shape-picker-lets-the-first-tap-go's recorded proof id became another place's).
+  expect(ids.proofId(m, [{ id: 'X-y', methods: [other, own] }])).toBe(before);
+  expect(before).toMatch(/^p[0-9a-f]{12}$/);
+  // Its test, and its class's: another test is another id, and a test its class does not hold has none.
+  expect(ids.proofId({ ...m, proof: other }, [{ id: 'X-y', methods: [other, own] }])).not.toBe(before);
+  expect(ids.proofId(m, [{ id: 'X-y', methods: [other] }])).toBeNull();
+  expect(ids.proofId(m, [{ id: 'Z-z', methods: [own] }])).toBeNull();
+  // Ids only: the test's words never leave in it.
+  expect(before).not.toContain('a.test');
 });
 
 it('a merge keeps the verdict that stands on the merged files, else the later run, and leaves out a mutant neither side ran', () => {
