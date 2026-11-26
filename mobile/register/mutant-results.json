@@ -7661,7 +7661,7 @@
     "class": "TOOL-a-heavy-run-beside-the-push-gate",
     "mutant": "shape-remote-verdicts-at-two-commits",
     "proof": "m3",
-    "commit": "d8eec58b369b6d3435fd2c06424f6c54343937b8",
+    "commit": "a1a618a3c17a682ca84d6c4ae9c22ebc06e89210",
     "verdict": "caught"
   },
   {
