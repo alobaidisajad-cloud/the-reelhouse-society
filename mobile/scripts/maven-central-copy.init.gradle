@@ -1,0 +1,34 @@
+// maven-central-copy.init.gradle: every build gradle-kept-first.sh runs asks Maven Central through
+// Google's copy of it (maven-central.storage-download.googleapis.com), never repo.maven.apache.org.
+//
+// Maven Central answers GitHub's runners, whose addresses many share, with 429 Too Many Requests, and
+// Gradle answers that by turning the repository off for the rest of the build: nightly 45894847027's
+// one warm-up build met 429 on the Kotlin plugin marker's jar for eleven minutes, eight tries apart, and
+// fetched nothing, so no build of the night started. Google's copy holds the same files for runners to
+// read. The kept packages are held by the repository they were read from, so the offline run and the
+// online one name the same copy (gradle-kept-first.sh passes this script to both).
+def CENTRAL = 'https://repo.maven.apache.org/maven2'
+def COPY = 'https://maven-central.storage-download.googleapis.com/maven2/'
+
+def central = { repo ->
+  def url = repo.url
+  if (url instanceof org.gradle.api.provider.Provider) url = url.getOrNull()
+  url != null && url.toString().replaceAll('/+$', '') == CENTRAL
+}
+def toCopy = { RepositoryHandler repos ->
+  repos.withType(MavenArtifactRepository).configureEach { repo ->
+    if (central(repo)) repo.url = COPY
+  }
+}
+
+// The settings' own repositories (plugins, and the projects' when the settings name them), and each
+// project's: every place a build is told where Maven Central is, read as each is added.
+gradle.beforeSettings { settings ->
+  toCopy(settings.buildscript.repositories)
+  toCopy(settings.pluginManagement.repositories)
+  toCopy(settings.dependencyResolutionManagement.repositories)
+}
+gradle.allprojects { project ->
+  toCopy(project.buildscript.repositories)
+  toCopy(project.repositories)
+}

@@ -218,7 +218,7 @@ it('no real build profile sets E2E, or points at a local backend', () => {
 
 it('the workflows that build with E2E=1 are the ones app.config.js names, and no other', () => {
   const setting = universe('workflows').filter((p) => /^\s*E2E: '1'\s*$/m.test(readFileSync(p, 'utf8'))).map((p) => basename(p)).sort();
-  expect(setting).toEqual(['e2e.yml', 'ios-launch.yml', 'speed-lab.yml']);
+  expect(setting).toEqual(['e2e.yml', 'gradle-warm-up.yml', 'ios-launch.yml', 'speed-lab.yml']);
   const header = readFileSync(join(MOBILE, 'app.config.js'), 'utf8').split('*/')[0] ?? '';
   expect(setting.filter((f) => !header.includes(f))).toEqual([]);
 });

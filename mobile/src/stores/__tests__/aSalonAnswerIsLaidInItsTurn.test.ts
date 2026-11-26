@@ -72,13 +72,13 @@ beforeEach(() => {
   mockStillHeld = false;
   onlineManager.setOnline(true);
   useLoungeStore.setState({ lounges: [], loungesRead: false, currentLoungeId: null, currentMessages: [], messagesLoading: false });
+  // An empty house, its corridor held, before every test: put back by one block's hooks alone, a
+  // test of another block met the house and the held answers the test before it left.
+  mockHouse = houseOf([]);
+  mockHeld = heldClient(mockHouse.client, { rpcs: ['get_lounge_list'] });
 });
 
 describe('the corridor', () => {
-  beforeEach(() => {
-    mockHouse = houseOf([]);
-    mockHeld = heldClient(mockHouse.client, { rpcs: ['get_lounge_list'] });
-  });
 
   it('read twice, lays the later asked, whichever lands last', async () => {
     const first = useLoungeStore.getState().fetchLounges();

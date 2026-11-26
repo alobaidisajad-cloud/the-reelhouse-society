@@ -282,9 +282,9 @@ describe('the keyboard’s panel, and its height', () => {
     });
 
     it('a press that opened nothing says what the letters\' emoji place held, in the phone\'s own words', () => {
-      const arabic = letters('‏مفتاح مجهول');
+      const arabic = letters('\u200fمفتاح مجهول');
       expect(panelAfter(arabic, arabic)).toEqual({ status: 1,
-        out: 'the keyboard shows its letters, 1005px tall (it should show its emoji panel); the letters\' emoji place held "‏مفتاح مجهول"' });
+        out: 'the keyboard shows its letters, 1005px tall (it should show its emoji panel); the letters\' emoji place held "\u200fمفتاح مجهول"' });
       const none = { attributes: {}, children: [{ attributes: { accessibilityText: 'Symbol keyboard' } }] };
       expect(panelAfter(none, none).out).toMatch(/; the letters had no key in the emoji place$/);
     });

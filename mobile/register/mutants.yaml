@@ -11400,8 +11400,8 @@ mutants:
     source: shape
     edits:
       - file: scripts/gradle-kept-first.sh
-        find: './gradlew --offline "$@" 2>&1 | tee "$LOG"'
-        replace: './gradlew "$@" 2>&1 | tee "$LOG"'
+        find: './gradlew --offline --init-script "$COPY" "$@" 2>&1 | tee "$LOG"'
+        replace: './gradlew --init-script "$COPY" "$@" 2>&1 | tee "$LOG"'
     proof: { file: e2e/__tests__/gradleKeptFirst.test.ts, test: "builds offline, once, when the kept packages hold everything, and fetches nothing" }
   - id: shape-the-stand-ins-port-unkept
     class: CI-a-listener-port-lent-before-it-is-kept
@@ -11974,3 +11974,11 @@ mutants:
         find: "  const symbolsId = want === 'letters' && shows === 'letters' ? symbolsKeyIdOf(tree) : null;"
         replace: "  const symbolsId = null;"
     proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: "says the ?123 key's id on the letters' look, in every language, and says so when it carries none" }
+  - id: shape-the-kept-build-asks-central-itself
+    class: CI-build-reads-a-version-list
+    source: shape
+    edits:
+      - file: scripts/gradle-kept-first.sh
+        find: './gradlew --offline --init-script "$COPY" "$@" 2>&1 | tee "$LOG"'
+        replace: './gradlew --offline "$@" 2>&1 | tee "$LOG"'
+    proof: { file: e2e/__tests__/gradleKeptFirst.test.ts, test: "asks Maven Central through Google's copy, offline and online alike, and asks repo.maven.apache.org nothing" }

@@ -107,7 +107,7 @@ export function symbolsKeyIdOf(tree) {
   const walk = (node) => {
     if (id !== null || !node || typeof node !== 'object') return;
     const a = node.attributes ?? {};
-    const name = (a.accessibilityText ?? '').replace(/[‎‏؜‪-‮⁦-⁩]/g, '').trim();
+    const name = (a.accessibilityText ?? '').replace(/[\u200e\u200f\u061c\u202a-\u202e\u2066-\u2069]/g, '').trim();
     if (LETTERS_KEY.includes(name)) { id = (a['resource-id'] ?? '').replace(/^.*:id\//, ''); return; }
     for (const c of node.children ?? []) walk(c);
   };

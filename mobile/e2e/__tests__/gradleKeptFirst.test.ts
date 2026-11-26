@@ -2,6 +2,7 @@
  * gradleKeptFirst.test.ts — scripts/gradle-kept-first.sh, run in bash against a fake `gradlew`: the
  * build runs offline from the kept packages first, asks the network only when they lack something
  * (a library or a plugin Gradle could not resolve), patiently, and says so in the step's output; any other failure stops it.
+ * Both runs ask Maven Central through Google's copy of it (scripts/maven-central-copy.init.gradle).
  */
 import { spawnSync } from 'child_process';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
@@ -12,6 +13,10 @@ import { MOBILE } from '../../test-utils/readCode';
 const BASH = process.platform === 'win32' ? 'C:\\Program Files\\Git\\bin\\bash.exe' : 'bash';
 const SCRIPT = join(MOBILE, 'scripts', 'gradle-kept-first.sh');
 const posix = (p: string) => p.replace(/\\/g, '/');
+const COPY = join(MOBILE, 'scripts', 'maven-central-copy.init.gradle');
+/** A call's init script, written COPY when it is the copy beside the script (an absolute path, in any shell). */
+const named = (call: string) => call.replace(/--init-script (\S+)/, (_all, f: string) =>
+  `--init-script ${f.endsWith('/mobile/scripts/maven-central-copy.init.gradle') ? 'COPY' : f}`);
 
 // Each run of the fake takes its next outcome from __T__/outcomes: ok, missing (a library the kept
 // copy lacks, as Gradle says it offline), plugin (a plugin it lacks, as Gradle says that) or broken
@@ -37,34 +42,49 @@ function build(outcomes: string[]) {
     cwd: T, encoding: 'utf8', env: { ...process.env, GITHUB_OUTPUT: `${T}/output` },
   });
   const read = (f: string) => (existsSync(join(T, f)) ? readFileSync(join(T, f), 'utf8').trim() : '');
-  return { status: r.status, stdout: r.stdout, calls: read('calls').split('\n'), output: read('output') };
+  return { status: r.status, stdout: r.stdout, calls: read('calls').split('\n').map(named), output: read('output') };
 }
 
 const PATIENT = '-Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000';
 
 describe('a Gradle build from the kept packages first', () => {
   it('builds offline, once, when the kept packages hold everything, and fetches nothing', () => {
-    expect(build(['ok'])).toMatchObject({ status: 0, calls: ['--offline assembleRelease --no-daemon'], output: '' });
+    expect(build(['ok'])).toMatchObject({ status: 0, calls: ['--offline --init-script COPY assembleRelease --no-daemon'], output: '' });
   });
 
   it('asks the network, patiently, only for what the kept packages lack, and says it fetched', () => {
     const r = build(['missing', 'ok']);
-    expect(r).toMatchObject({ status: 0, calls: ['--offline assembleRelease --no-daemon', `${PATIENT} assembleRelease --no-daemon`], output: 'fetched=true' });
+    expect(r).toMatchObject({ status: 0, calls: ['--offline --init-script COPY assembleRelease --no-daemon', `--init-script COPY ${PATIENT} assembleRelease --no-daemon`], output: 'fetched=true' });
     expect(r.stdout).toMatch(/the kept packages lack what the build asks for/);
   });
 
   it('asks the network for a plugin the kept packages lack, which Gradle names without a word of offline mode', () => {
     // As every build of nightly 45804336594 failed: the foojay toolchain plugin, in 24 s, offline.
     expect(build(['plugin', 'ok'])).toMatchObject({
-      status: 0, calls: ['--offline assembleRelease --no-daemon', `${PATIENT} assembleRelease --no-daemon`], output: 'fetched=true' });
+      status: 0, calls: ['--offline --init-script COPY assembleRelease --no-daemon', `--init-script COPY ${PATIENT} assembleRelease --no-daemon`], output: 'fetched=true' });
   });
 
   it('stops on any other failure, offline, never asking the network', () => {
-    expect(build(['broken', 'ok'])).toMatchObject({ status: 1, calls: ['--offline assembleRelease --no-daemon'], output: '' });
+    expect(build(['broken', 'ok'])).toMatchObject({ status: 1, calls: ['--offline --init-script COPY assembleRelease --no-daemon'], output: '' });
   });
 
   it('fails as the online build fails', () => {
     expect(build(['missing', 'broken'])).toMatchObject({ status: 1, output: 'fetched=true' });
+  });
+
+  // Nightly 45894847027: the one warm-up build met Maven Central's 429 on the Kotlin plugin marker's jar
+  // for eleven minutes and fetched nothing. Both runs name the copy: the kept packages are held by the
+  // repository they were read from, so an offline run naming another would find none of them.
+  it('asks Maven Central through Google\'s copy, offline and online alike, and asks repo.maven.apache.org nothing', () => {
+    expect(build(['missing', 'ok']).calls.every((c) => c.startsWith('--offline --init-script COPY ') || c.startsWith('--init-script COPY '))).toBe(true);
+    const copy = readFileSync(COPY, 'utf8');
+    expect(copy).toContain("def CENTRAL = 'https://repo.maven.apache.org/maven2'");
+    expect(copy).toContain("def COPY = 'https://maven-central.storage-download.googleapis.com/maven2/'");
+    // Every place a build is told where Central is: the settings' repositories and each project's.
+    for (const at of ['settings.buildscript.repositories', 'settings.pluginManagement.repositories',
+      'settings.dependencyResolutionManagement.repositories', 'project.buildscript.repositories', 'project.repositories']) {
+      expect(copy).toContain(`toCopy(${at})`);
+    }
   });
 
   it('runs in bash as stored', () => {

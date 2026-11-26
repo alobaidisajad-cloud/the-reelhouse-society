@@ -16,6 +16,7 @@ import { useAuthStore } from '../auth';
 // Loaded under the mocks below: jest hoists every jest.mock above the imports.
 import { useVaultStore } from '../vaultStore';
 import { resetAllStores } from '../resetAllStores';
+import { resetMarkCounts } from '../markCounts';
 
 const mockFetch = jest.fn();
 const mockSet = jest.fn();
@@ -67,6 +68,10 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockQueued = [];
   useVaultStore.getState().clear();
+  // A note a test queued with no signal stays in the acts ledger as the member's latest word on its
+  // viewing, and the next test's read then lays no answer there (nightly 45894847027, seed 56285631).
+  // Every test starts with the ledger empty.
+  resetMarkCounts();
   signIn(ALICE);
 });
 

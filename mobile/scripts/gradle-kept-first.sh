@@ -19,13 +19,17 @@
 # the network). Both are a resolution Gradle could not make, and that is what LACKING reads.
 LACKING='offline mode|could not resolve'
 set -u
+# Maven Central is asked through Google's copy of it, offline and online alike: Central answers the
+# runners with 429 (nightly 45894847027's warm-up, eleven minutes on one jar), and the kept packages
+# are held by the repository they were read from, so both runs name the same one.
+COPY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/maven-central-copy.init.gradle"
 LOG="$(mktemp)"
-./gradlew --offline "$@" 2>&1 | tee "$LOG"
+./gradlew --offline --init-script "$COPY" "$@" 2>&1 | tee "$LOG"
 rc=${PIPESTATUS[0]}
 if [ "$rc" -ne 0 ] && grep -qiE "$LACKING" "$LOG"; then
   echo "(the kept packages lack what the build asks for: it is run again, asking the network)"
   if [ -n "${GITHUB_OUTPUT:-}" ]; then echo "fetched=true" >> "$GITHUB_OUTPUT"; fi
-  ./gradlew -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 "$@"
+  ./gradlew --init-script "$COPY" -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 "$@"
   rc=$?
 fi
 rm -f "$LOG"
