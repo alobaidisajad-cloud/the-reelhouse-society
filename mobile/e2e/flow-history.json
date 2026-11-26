@@ -2,300 +2,6 @@
   "about": "Each part of the sealed E2E (a flow, a keyboard probe, the launch with animations on), its seconds on each run's shard, from the runs' e2e-logs (e2e/flow-history.mjs --add). e2e/shards.json is what shardsFrom makes of it, held by shards.test.ts.",
   "samples": [
     {
-      "run": 38780996970,
-      "shard": 1,
-      "part": "auth_deep_link",
-      "seconds": 42
-    },
-    {
-      "run": 38780996970,
-      "shard": 1,
-      "part": "launch",
-      "seconds": 30
-    },
-    {
-      "run": 38780996970,
-      "shard": 1,
-      "part": "log probe",
-      "seconds": 306
-    },
-    {
-      "run": 38780996970,
-      "shard": 1,
-      "part": "stack probe",
-      "seconds": 370
-    },
-    {
-      "run": 38780996970,
-      "shard": 2,
-      "part": "boot_verification",
-      "seconds": 34
-    },
-    {
-      "run": 38780996970,
-      "shard": 2,
-      "part": "flow_critical_path",
-      "seconds": 272
-    },
-    {
-      "run": 38780996970,
-      "shard": 2,
-      "part": "log_film_flow",
-      "seconds": 223
-    },
-    {
-      "run": 38780996970,
-      "shard": 2,
-      "part": "lounge_flow",
-      "seconds": 139
-    },
-    {
-      "run": 38780996970,
-      "shard": 2,
-      "part": "session_survives_restart",
-      "seconds": 140
-    },
-    {
-      "run": 38780996970,
-      "shard": 3,
-      "part": "auth_flow",
-      "seconds": 162
-    },
-    {
-      "run": 38780996970,
-      "shard": 3,
-      "part": "browse_vault",
-      "seconds": 197
-    },
-    {
-      "run": 38780996970,
-      "shard": 3,
-      "part": "darkroom_search",
-      "seconds": 106
-    },
-    {
-      "run": 38780996970,
-      "shard": 3,
-      "part": "error_recovery",
-      "seconds": 93
-    },
-    {
-      "run": 38780996970,
-      "shard": 3,
-      "part": "film_log",
-      "seconds": 234
-    },
-    {
-      "run": 38780996970,
-      "shard": 3,
-      "part": "lobby_wall_flow",
-      "seconds": 164
-    },
-    {
-      "run": 38780996970,
-      "shard": 3,
-      "part": "login_flow",
-      "seconds": 159
-    },
-    {
-      "run": 38786642483,
-      "shard": 1,
-      "part": "auth_deep_link",
-      "seconds": 44
-    },
-    {
-      "run": 38786642483,
-      "shard": 1,
-      "part": "launch",
-      "seconds": 31
-    },
-    {
-      "run": 38786642483,
-      "shard": 1,
-      "part": "log probe",
-      "seconds": 305
-    },
-    {
-      "run": 38786642483,
-      "shard": 1,
-      "part": "offline_resilience",
-      "seconds": 295
-    },
-    {
-      "run": 38786642483,
-      "shard": 1,
-      "part": "stack probe",
-      "seconds": 331
-    },
-    {
-      "run": 38786642483,
-      "shard": 2,
-      "part": "boot_verification",
-      "seconds": 38
-    },
-    {
-      "run": 38786642483,
-      "shard": 2,
-      "part": "flow_critical_path",
-      "seconds": 378
-    },
-    {
-      "run": 38786642483,
-      "shard": 2,
-      "part": "log_film_flow",
-      "seconds": 289
-    },
-    {
-      "run": 38786642483,
-      "shard": 2,
-      "part": "lounge_flow",
-      "seconds": 175
-    },
-    {
-      "run": 38786642483,
-      "shard": 2,
-      "part": "session_survives_restart",
-      "seconds": 203
-    },
-    {
-      "run": 38786642483,
-      "shard": 3,
-      "part": "auth_flow",
-      "seconds": 64
-    },
-    {
-      "run": 38786642483,
-      "shard": 3,
-      "part": "browse_vault",
-      "seconds": 87
-    },
-    {
-      "run": 38786642483,
-      "shard": 3,
-      "part": "darkroom_search",
-      "seconds": 41
-    },
-    {
-      "run": 38786642483,
-      "shard": 3,
-      "part": "error_recovery",
-      "seconds": 68
-    },
-    {
-      "run": 38786642483,
-      "shard": 3,
-      "part": "film_log",
-      "seconds": 108
-    },
-    {
-      "run": 38786642483,
-      "shard": 3,
-      "part": "lobby_wall_flow",
-      "seconds": 81
-    },
-    {
-      "run": 38786642483,
-      "shard": 3,
-      "part": "login_flow",
-      "seconds": 69
-    },
-    {
-      "run": 38790116312,
-      "shard": 1,
-      "part": "auth_deep_link",
-      "seconds": 47
-    },
-    {
-      "run": 38790116312,
-      "shard": 1,
-      "part": "launch",
-      "seconds": 32
-    },
-    {
-      "run": 38790116312,
-      "shard": 1,
-      "part": "log probe",
-      "seconds": 358
-    },
-    {
-      "run": 38790116312,
-      "shard": 1,
-      "part": "offline_resilience",
-      "seconds": 338
-    },
-    {
-      "run": 38790116312,
-      "shard": 1,
-      "part": "stack probe",
-      "seconds": 415
-    },
-    {
-      "run": 38790116312,
-      "shard": 2,
-      "part": "boot_verification",
-      "seconds": 35
-    },
-    {
-      "run": 38790116312,
-      "shard": 2,
-      "part": "flow_critical_path",
-      "seconds": 280
-    },
-    {
-      "run": 38790116312,
-      "shard": 2,
-      "part": "log_film_flow",
-      "seconds": 191
-    },
-    {
-      "run": 38790116312,
-      "shard": 2,
-      "part": "lounge_flow",
-      "seconds": 136
-    },
-    {
-      "run": 38790116312,
-      "shard": 3,
-      "part": "auth_flow",
-      "seconds": 133
-    },
-    {
-      "run": 38790116312,
-      "shard": 3,
-      "part": "browse_vault",
-      "seconds": 198
-    },
-    {
-      "run": 38790116312,
-      "shard": 3,
-      "part": "darkroom_search",
-      "seconds": 128
-    },
-    {
-      "run": 38790116312,
-      "shard": 3,
-      "part": "error_recovery",
-      "seconds": 90
-    },
-    {
-      "run": 38790116312,
-      "shard": 3,
-      "part": "film_log",
-      "seconds": 245
-    },
-    {
-      "run": 38790116312,
-      "shard": 3,
-      "part": "lobby_wall_flow",
-      "seconds": 186
-    },
-    {
-      "run": 38790116312,
-      "shard": 3,
-      "part": "login_flow",
-      "seconds": 149
-    },
-    {
       "run": 38796451028,
       "shard": 2,
       "part": "boot_verification",
@@ -3378,6 +3084,564 @@
       "shard": 3,
       "part": "push_tap_house",
       "seconds": 62
+    },
+    {
+      "run": 45288232020,
+      "shard": 1,
+      "part": "auth_flow",
+      "seconds": 42
+    },
+    {
+      "run": 45288232020,
+      "shard": 1,
+      "part": "error_recovery",
+      "seconds": 72
+    },
+    {
+      "run": 45288232020,
+      "shard": 1,
+      "part": "house_link",
+      "seconds": 78
+    },
+    {
+      "run": 45288232020,
+      "shard": 1,
+      "part": "launch",
+      "seconds": 37
+    },
+    {
+      "run": 45288232020,
+      "shard": 1,
+      "part": "log probe",
+      "seconds": 157
+    },
+    {
+      "run": 45288232020,
+      "shard": 1,
+      "part": "push_tap_salon",
+      "seconds": 70
+    },
+    {
+      "run": 45288232020,
+      "shard": 1,
+      "part": "recovery probe",
+      "seconds": 90
+    },
+    {
+      "run": 45288232020,
+      "shard": 1,
+      "part": "stack probe",
+      "seconds": 153
+    },
+    {
+      "run": 45288232020,
+      "shard": 2,
+      "part": "admin_second_key",
+      "seconds": 152
+    },
+    {
+      "run": 45288232020,
+      "shard": 2,
+      "part": "auth_deep_link",
+      "seconds": 47
+    },
+    {
+      "run": 45288232020,
+      "shard": 2,
+      "part": "boot_verification",
+      "seconds": 20
+    },
+    {
+      "run": 45288232020,
+      "shard": 2,
+      "part": "browse_vault",
+      "seconds": 90
+    },
+    {
+      "run": 45288232020,
+      "shard": 2,
+      "part": "darkroom_search",
+      "seconds": 53
+    },
+    {
+      "run": 45288232020,
+      "shard": 2,
+      "part": "film_log",
+      "seconds": 134
+    },
+    {
+      "run": 45288232020,
+      "shard": 2,
+      "part": "flow_critical_path",
+      "seconds": 182
+    },
+    {
+      "run": 45288232020,
+      "shard": 2,
+      "part": "launch",
+      "seconds": 16
+    },
+    {
+      "run": 45288232020,
+      "shard": 2,
+      "part": "lounge_flow",
+      "seconds": 105
+    },
+    {
+      "run": 45288232020,
+      "shard": 2,
+      "part": "member_pages",
+      "seconds": 148
+    },
+    {
+      "run": 45288232020,
+      "shard": 2,
+      "part": "push_tap_critique",
+      "seconds": 92
+    },
+    {
+      "run": 45288232020,
+      "shard": 3,
+      "part": "email_link_chrome",
+      "seconds": 20
+    },
+    {
+      "run": 45288232020,
+      "shard": 3,
+      "part": "email_link_customtab",
+      "seconds": 15
+    },
+    {
+      "run": 45288232020,
+      "shard": 3,
+      "part": "launch",
+      "seconds": 12
+    },
+    {
+      "run": 45288232020,
+      "shard": 3,
+      "part": "lobby_wall_flow",
+      "seconds": 84
+    },
+    {
+      "run": 45288232020,
+      "shard": 3,
+      "part": "log_film_flow",
+      "seconds": 118
+    },
+    {
+      "run": 45288232020,
+      "shard": 3,
+      "part": "login_flow",
+      "seconds": 61
+    },
+    {
+      "run": 45288232020,
+      "shard": 3,
+      "part": "offline_resilience",
+      "seconds": 128
+    },
+    {
+      "run": 45288232020,
+      "shard": 3,
+      "part": "push_tap",
+      "seconds": 91
+    },
+    {
+      "run": 45288232020,
+      "shard": 3,
+      "part": "push_tap_house",
+      "seconds": 67
+    },
+    {
+      "run": 45288232020,
+      "shard": 3,
+      "part": "session_survives_restart",
+      "seconds": 77
+    },
+    {
+      "run": 45288232020,
+      "shard": 3,
+      "part": "trailer",
+      "seconds": 54
+    },
+    {
+      "run": 45288232020,
+      "shard": 3,
+      "part": "turned",
+      "seconds": 76
+    },
+    {
+      "run": 45669814004,
+      "shard": 1,
+      "part": "auth_flow",
+      "seconds": 44
+    },
+    {
+      "run": 45669814004,
+      "shard": 1,
+      "part": "error_recovery",
+      "seconds": 72
+    },
+    {
+      "run": 45669814004,
+      "shard": 1,
+      "part": "house_link",
+      "seconds": 79
+    },
+    {
+      "run": 45669814004,
+      "shard": 1,
+      "part": "launch",
+      "seconds": 36
+    },
+    {
+      "run": 45669814004,
+      "shard": 1,
+      "part": "log probe",
+      "seconds": 163
+    },
+    {
+      "run": 45669814004,
+      "shard": 1,
+      "part": "push_tap_salon",
+      "seconds": 72
+    },
+    {
+      "run": 45669814004,
+      "shard": 1,
+      "part": "recovery probe",
+      "seconds": 95
+    },
+    {
+      "run": 45669814004,
+      "shard": 1,
+      "part": "stack probe",
+      "seconds": 159
+    },
+    {
+      "run": 45669814004,
+      "shard": 2,
+      "part": "admin_second_key",
+      "seconds": 110
+    },
+    {
+      "run": 45669814004,
+      "shard": 2,
+      "part": "auth_deep_link",
+      "seconds": 41
+    },
+    {
+      "run": 45669814004,
+      "shard": 2,
+      "part": "boot_verification",
+      "seconds": 16
+    },
+    {
+      "run": 45669814004,
+      "shard": 2,
+      "part": "browse_vault",
+      "seconds": 72
+    },
+    {
+      "run": 45669814004,
+      "shard": 2,
+      "part": "darkroom_search",
+      "seconds": 43
+    },
+    {
+      "run": 45669814004,
+      "shard": 2,
+      "part": "film_log",
+      "seconds": 114
+    },
+    {
+      "run": 45669814004,
+      "shard": 2,
+      "part": "flow_critical_path",
+      "seconds": 148
+    },
+    {
+      "run": 45669814004,
+      "shard": 2,
+      "part": "launch",
+      "seconds": 11
+    },
+    {
+      "run": 45669814004,
+      "shard": 2,
+      "part": "lounge_flow",
+      "seconds": 85
+    },
+    {
+      "run": 45669814004,
+      "shard": 2,
+      "part": "member_pages",
+      "seconds": 123
+    },
+    {
+      "run": 45669814004,
+      "shard": 2,
+      "part": "push_tap_critique",
+      "seconds": 77
+    },
+    {
+      "run": 45669814004,
+      "shard": 3,
+      "part": "email_link_chrome",
+      "seconds": 18
+    },
+    {
+      "run": 45669814004,
+      "shard": 3,
+      "part": "email_link_customtab",
+      "seconds": 19
+    },
+    {
+      "run": 45669814004,
+      "shard": 3,
+      "part": "launch",
+      "seconds": 39
+    },
+    {
+      "run": 45669814004,
+      "shard": 3,
+      "part": "lobby_wall_flow",
+      "seconds": 80
+    },
+    {
+      "run": 45669814004,
+      "shard": 3,
+      "part": "log_film_flow",
+      "seconds": 130
+    },
+    {
+      "run": 45669814004,
+      "shard": 3,
+      "part": "login_flow",
+      "seconds": 67
+    },
+    {
+      "run": 45669814004,
+      "shard": 3,
+      "part": "offline_resilience",
+      "seconds": 140
+    },
+    {
+      "run": 45669814004,
+      "shard": 3,
+      "part": "push_tap",
+      "seconds": 95
+    },
+    {
+      "run": 45669814004,
+      "shard": 3,
+      "part": "push_tap_house",
+      "seconds": 74
+    },
+    {
+      "run": 45669814004,
+      "shard": 3,
+      "part": "session_survives_restart",
+      "seconds": 79
+    },
+    {
+      "run": 45669814004,
+      "shard": 3,
+      "part": "trailer",
+      "seconds": 58
+    },
+    {
+      "run": 45669814004,
+      "shard": 3,
+      "part": "turned",
+      "seconds": 86
+    },
+    {
+      "run": 45696683263,
+      "shard": 1,
+      "part": "auth_flow",
+      "seconds": 43
+    },
+    {
+      "run": 45696683263,
+      "shard": 1,
+      "part": "error_recovery",
+      "seconds": 72
+    },
+    {
+      "run": 45696683263,
+      "shard": 1,
+      "part": "house_link",
+      "seconds": 79
+    },
+    {
+      "run": 45696683263,
+      "shard": 1,
+      "part": "launch",
+      "seconds": 33
+    },
+    {
+      "run": 45696683263,
+      "shard": 1,
+      "part": "log probe",
+      "seconds": 164
+    },
+    {
+      "run": 45696683263,
+      "shard": 1,
+      "part": "push_tap_salon",
+      "seconds": 69
+    },
+    {
+      "run": 45696683263,
+      "shard": 1,
+      "part": "recovery probe",
+      "seconds": 91
+    },
+    {
+      "run": 45696683263,
+      "shard": 1,
+      "part": "stack probe",
+      "seconds": 150
+    },
+    {
+      "run": 45696683263,
+      "shard": 2,
+      "part": "admin_second_key",
+      "seconds": 103
+    },
+    {
+      "run": 45696683263,
+      "shard": 2,
+      "part": "auth_deep_link",
+      "seconds": 39
+    },
+    {
+      "run": 45696683263,
+      "shard": 2,
+      "part": "boot_verification",
+      "seconds": 15
+    },
+    {
+      "run": 45696683263,
+      "shard": 2,
+      "part": "browse_vault",
+      "seconds": 64
+    },
+    {
+      "run": 45696683263,
+      "shard": 2,
+      "part": "darkroom_search",
+      "seconds": 43
+    },
+    {
+      "run": 45696683263,
+      "shard": 2,
+      "part": "film_log",
+      "seconds": 106
+    },
+    {
+      "run": 45696683263,
+      "shard": 2,
+      "part": "flow_critical_path",
+      "seconds": 139
+    },
+    {
+      "run": 45696683263,
+      "shard": 2,
+      "part": "launch",
+      "seconds": 12
+    },
+    {
+      "run": 45696683263,
+      "shard": 2,
+      "part": "lounge_flow",
+      "seconds": 79
+    },
+    {
+      "run": 45696683263,
+      "shard": 2,
+      "part": "member_pages",
+      "seconds": 116
+    },
+    {
+      "run": 45696683263,
+      "shard": 2,
+      "part": "push_tap_critique",
+      "seconds": 71
+    },
+    {
+      "run": 45696683263,
+      "shard": 3,
+      "part": "email_link_chrome",
+      "seconds": 17
+    },
+    {
+      "run": 45696683263,
+      "shard": 3,
+      "part": "email_link_customtab",
+      "seconds": 15
+    },
+    {
+      "run": 45696683263,
+      "shard": 3,
+      "part": "launch",
+      "seconds": 11
+    },
+    {
+      "run": 45696683263,
+      "shard": 3,
+      "part": "lobby_wall_flow",
+      "seconds": 88
+    },
+    {
+      "run": 45696683263,
+      "shard": 3,
+      "part": "log_film_flow",
+      "seconds": 118
+    },
+    {
+      "run": 45696683263,
+      "shard": 3,
+      "part": "login_flow",
+      "seconds": 62
+    },
+    {
+      "run": 45696683263,
+      "shard": 3,
+      "part": "offline_resilience",
+      "seconds": 133
+    },
+    {
+      "run": 45696683263,
+      "shard": 3,
+      "part": "push_tap",
+      "seconds": 92
+    },
+    {
+      "run": 45696683263,
+      "shard": 3,
+      "part": "push_tap_house",
+      "seconds": 69
+    },
+    {
+      "run": 45696683263,
+      "shard": 3,
+      "part": "session_survives_restart",
+      "seconds": 77
+    },
+    {
+      "run": 45696683263,
+      "shard": 3,
+      "part": "trailer",
+      "seconds": 56
+    },
+    {
+      "run": 45696683263,
+      "shard": 3,
+      "part": "turned",
+      "seconds": 78
     }
   ]
 }
