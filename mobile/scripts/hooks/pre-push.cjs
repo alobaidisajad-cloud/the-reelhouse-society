@@ -400,6 +400,9 @@ function main() {
     }, (e) => { console.error(`\nPush refused: the push check itself failed: ${e.message}`); process.exit(1); });
     return;
   }
+  // A code push is the gate itself, or one beside it: only the gate's own (push-head.ps1 holds the
+  // lock, gate-lock.cjs) runs while the lock is held. A plant push, and the plan alone, take no machine.
+  if (!plan) require('../gate-lock.cjs').refuseWhileGate('this push gate');
   const bases = basesOf(input, git);
   const faults = [];
   const placed = mutantInPlace(ROOT);

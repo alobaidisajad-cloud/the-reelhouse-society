@@ -34,7 +34,9 @@ const mockHouse = supabaseFake({
 });
 jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHouse.client; } }));
 jest.mock('@/src/stores/dispatch', () => ({
-  useDispatch: { getState: () => ({ loadMarks: jest.fn(), certifiedIds: new Set<string>(), critiqued: {} }) },
+  useDispatch: { getState: () => ({ loadMarks: jest.fn(), certifiedIds: new Set<string>(), critiqued: {}, givenAgain: jest.fn() }) },
+  goneMoment: () => 0,
+  useAsTheHouseNowHolds: (filings: unknown[]) => filings,
 }));
 jest.mock('@/src/utils/logger', () => ({
   logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },

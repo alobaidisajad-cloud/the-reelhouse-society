@@ -120,8 +120,8 @@ const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /**
  * The box a member's queued words were written in (useKeptWords' places): a Dispatch critique
- * under its filing, a critique under a log or a stack, a salon message in its room. A take keeps
- * no box (a take is a sentence): it has none here, and is sent whatever its age.
+ * under its filing, a critique under a log or a stack, a salon message in its room. A take's desk
+ * lets its draft go once the queue holds it: it has no box here, and is sent whatever its age.
  */
 function boxOf(m: QueuedMutation): { kind: WordsKind; scope: string; words: string } | null {
     const p = m.payload as Record<string, unknown>;

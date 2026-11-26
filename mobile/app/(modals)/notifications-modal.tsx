@@ -275,8 +275,8 @@ export default function NotificationsModal() {
   // Pull-to-refresh handler matching dispatch.tsx pattern
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchNotifications();
-    setRefreshing(false);
+    // A pull asks for the newest: the board read from its top.
+    try { await fetchNotifications({ fromTop: true }); } finally { setRefreshing(false); }
     // The notices on screen stay; the member is told the pull reached nothing.
     const after = useNotificationStore.getState();
     if (after.fetchFailed && after.notifications.length > 0) reelToast.error(REFRESH_FAILED);

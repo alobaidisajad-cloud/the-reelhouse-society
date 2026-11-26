@@ -79,8 +79,13 @@ async function readPage(filmId: string, from: Cursor, size = PAGE_SIZE) {
     .order('created_at', { ascending: false })
     .order('id', { ascending: false });
   if (from) query = query.or(afterCursor(from));
-  const { data, error } = await query.limit(size);
-  return { data, error, askedAt, size };
+  // Never thrown: a read that threw is an answer that failed, so the screen is never left loading.
+  try {
+    const { data, error } = await query.limit(size);
+    return { data, error, askedAt, size };
+  } catch (thrown) {
+    return { data: null, error: thrown as Error, askedAt, size };
+  }
 }
 
 const PARAMS = { id: P.tmdbId, title: P.words(200) };

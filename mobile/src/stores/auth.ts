@@ -237,6 +237,14 @@ async function signOutClosedAccount(): Promise<void> {
   reelToast.error(ACCOUNT_CLOSED_SAID);
 }
 
+/** Each read of the rank history takes the next number: only the latest is laid. */
+let rankHistoryReads = 0;
+/**
+ * Each read of the member's profile again, and each change made to it here, takes the next number:
+ * a read whose number is no longer the latest answers for a profile already behind.
+ */
+let profileTurns = 0;
+
 /**
  * Whether this member once held a rank: the source that last granted one. Not
  * a column anyone may read (it would tell every member how every other pays),
@@ -245,6 +253,9 @@ async function signOutClosedAccount(): Promise<void> {
  * what was known.
  */
 async function readRankHistory(userId: string): Promise<void> {
+  // Asked again by each restore (the polling after a purchase runs several): an older answer,
+  // landing last, would put back the history the purchase just changed.
+  const mine = ++rankHistoryReads;
   let data: unknown;
   let error: { message: string } | null;
   try {
@@ -257,7 +268,7 @@ async function readRankHistory(userId: string): Promise<void> {
     logger.warn('[auth] could not read the member\'s rank history', error.message);
     return;
   }
-  if (!memberUnchanged(userId)) return;
+  if (!memberUnchanged(userId) || mine !== rankHistoryReads) return;
   useAuthStore.setState((s) => {
     if (!s.user) return {};
     const user = { ...s.user, entitlement_source: typeof data === 'string' ? data : null };
@@ -616,6 +627,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (!id) return false;
     // What waited for the house goes first, then the read; still unreached, it is laid over the read.
     await sendPendingPrefs(id);
+    const mine = ++profileTurns;
     const { data, error } = await supabase.from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', id).single();
     // No row for this member: the account closed on another phone is signed out here (restoreSession's).
     if (noProfileRow(error) && memberUnchanged(id) && await accountIsClosed() && memberUnchanged(id)) {
@@ -624,6 +636,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
     // Only onto the member it was read for, as the login's read lands.
     if (error || !data || !memberUnchanged(id)) return profileRead(get().user);
+    // A newer read, or a change made here, since it was asked: what it holds is laid by that one.
+    if (mine !== profileTurns) return profileRead(get().user);
     rankWasRead(id);
     set((s) => {
       const updatedUser = s.user ? ({ ...s.user, ...withPendingPrefs(id, data) } as User) : null;
@@ -778,7 +792,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // Prevent client-side role elevation
     const { role: _stripped, ...safeUpdates } = updates as Partial<User> & { role?: unknown };
     
-    // Optimistic update
+    // Optimistic update; a profile read still out was asked before it.
+    profileTurns += 1;
     set((state) => {
       const updatedUser = state.user ? { ...state.user, ...safeUpdates } : null;
       if (updatedUser) setSensitive(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));

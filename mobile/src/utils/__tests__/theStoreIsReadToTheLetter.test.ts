@@ -5,7 +5,7 @@
  * nothing; and every answer the store, the seat and the grant can give is told by its own words.
  */
 import { accountsIn, isAccountId } from '../../../supabase/functions/revenuecat-webhook/decide';
-import { applyStoreRecord, inForce, tierFromRecord } from '../../../supabase/functions/_shared/storeRecord';
+import { applyStoreRecord, inForce, stampOf, tierFromRecord } from '../../../supabase/functions/_shared/storeRecord';
 
 const UID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
 const NOW = Date.parse('2026-10-03T12:00:00Z');
@@ -29,6 +29,17 @@ describe('what a record grants', () => {
     expect(inForce({ expires_date: AT_NOW }, NOW)).toBe(false);
     expect(inForce({ expires_date: AT_NOW, grace_period_expires_date: AT_NOW }, NOW)).toBe(false);
     expect(inForce({ expires_date: new Date(NOW + 1).toISOString() }, NOW)).toBe(true);
+  });
+
+  it('reads an end field by field: a day no calendar shows is no end ahead, whatever the engine would roll it into', () => {
+    // The engine reads a 31st of February as the 3rd of March, years ahead: it names nothing.
+    expect(inForce({ expires_date: '2027-02-31T00:00:00Z' }, NOW)).toBe(false);
+    expect(['2027-13-01T00:00:00Z', '2027-01-01T24:00:00Z', '2027-01-01T00:60:00Z', '2027-01-01 00:00:00Z', 'Jan 1 2027']
+      .map((d) => inForce({ expires_date: d }, NOW))).toEqual([false, false, false, false, false]);
+    expect(stampOf('2026-11-03T12:00:00.123456Z')).toBe(Date.UTC(2026, 10, 3, 12, 0, 0, 123));
+    expect(stampOf('2026-11-03T15:00:00+03:00')).toBe(Date.UTC(2026, 10, 3, 12));
+    expect(stampOf('2026-11-03T12:00:00')).toBeNaN();
+    expect(inForce({ expires_date: AHEAD }, NOW)).toBe(true);
   });
 
   it('reads only a written date as an end: a bare number, even a year ahead, is none', () => {

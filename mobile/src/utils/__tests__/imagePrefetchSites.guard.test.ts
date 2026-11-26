@@ -19,7 +19,25 @@
  */
 import { readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
+import { Image } from 'expo-image';
 import { files as universe } from '@/test-utils/universe';
+import { tmdb } from '@/src/lib/tmdb';
+import { rehydrateFilmStore, useFilmStore } from '@/src/stores/films';
+
+/** What the films store's storage holds as a cold start reads it. */
+const mockStored: { value: string | null } = { value: null };
+// The films store and all it imports are loaded with this file, as a test file's modules are, never
+// inside the cold start's own test: loaded there (after jest.resetModules), they were most of its
+// time, and under a loaded machine ran it past its five seconds.
+jest.mock('@/src/stores/mmkv-storage', () => ({
+  ...jest.requireActual('@/src/stores/mmkv-storage'),
+  createAsyncMMKVStorage: () => ({
+    // As the app's storage hands it back: already parsed.
+    getItem: () => (mockStored.value ? JSON.parse(mockStored.value) : null),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+  }),
+}));
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const read = (f: string) => readFileSync(join(MOBILE, f), 'utf8');
@@ -67,30 +85,15 @@ describe('the places that fetch a picture ahead', () => {
 });
 
 describe('a cold start', () => {
-  const mockStored: { value: string | null } = { value: null };
-  beforeAll(() => {
-    jest.resetModules();
-  });
-
   it('restores the films store without fetching a picture or a list ahead', async () => {
     const film = (id: number) => ({ id, title: `Film ${id}`, poster_path: `/p${id}.jpg`, year: 2020 });
     mockStored.value = JSON.stringify({
       state: { logs: [], watchlist: [film(1), film(2)], physicalArchive: [film(3)], lists: [], interactions: [] },
       version: 0,
     });
-    jest.doMock('@/src/stores/mmkv-storage', () => ({
-      ...jest.requireActual('@/src/stores/mmkv-storage'),
-      createAsyncMMKVStorage: () => ({
-        // As the app's storage hands it back: already parsed.
-        getItem: () => (mockStored.value ? JSON.parse(mockStored.value) : null),
-        setItem: jest.fn(),
-        removeItem: jest.fn(),
-      }),
-    }));
-    // The store's own copies of both: modules were reset for the stored state above.
-    const prefetch = jest.spyOn(require('expo-image').Image, 'prefetch');
-    const trending = jest.spyOn(require('@/src/lib/tmdb').tmdb, 'trending');
-    const { rehydrateFilmStore, useFilmStore } = require('@/src/stores/films');
+    // The very copies the store calls: it was loaded with this file, from the same registry.
+    const prefetch = jest.spyOn(Image, 'prefetch');
+    const trending = jest.spyOn(tmdb, 'trending');
     await rehydrateFilmStore();
     await new Promise((r) => setTimeout(r, 0));
     // It did restore: the watchlist is back, so a fetch had every reason to run.

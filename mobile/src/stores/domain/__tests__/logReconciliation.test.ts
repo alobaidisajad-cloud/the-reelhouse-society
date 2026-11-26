@@ -72,6 +72,23 @@ describe('a queued change is laid over its row', () => {
   });
 });
 
+describe('a queued rewatch moves its record’s head', () => {
+  const ROW = { id: 'log-1', user_id: ME, film_id: 7, film_title: 'Late Spring', rating: 3, status: 'watched', view_count: 1, created_at: '2026-01-01T00:00:00.000Z' };
+
+  it('a rewatch added offline is laid over the record, as the member saw it, while it waits', () => {
+    const queue = [{ type: 'add_viewing', payload: { log_id: 'log-1', viewing_id: 'v2', fields: { rating: 5, status: 'rewatched' }, head: { rating: 5, status: 'rewatched', view_count: 2 } } }];
+    const drawn = overlayQueuedLogs(ME, [ROW], queue).page[0];
+    expect([drawn?.rating, drawn?.status, drawn?.viewCount]).toEqual([5, 'rewatched', 2]);
+  });
+
+  it('a rewatch taken back offline leaves the head it fell back to; one an older build queued lays its fields', () => {
+    const back = [{ type: 'remove_viewing', payload: { log_id: 'log-1', viewing_id: 'v2', head: { rating: 2, status: 'watched', view_count: 1 } } }];
+    expect(overlayQueuedLogs(ME, [{ ...ROW, rating: 5, view_count: 2 }], back).page[0]?.rating).toBe(2);
+    const older = [{ type: 'add_viewing', payload: { log_id: 'log-1', viewing_id: 'v2', fields: { rating: 4 } } }];
+    expect(overlayQueuedLogs(ME, [ROW], older).page[0]?.rating).toBe(4);
+  });
+});
+
 describe('a queued log the house does not have yet', () => {
   it('stands ready to lead a fresh page, with its own changes, unless it was removed too', () => {
     fc.assert(fc.property(fc.uniqueArray(rowArb, { selector: (r) => r.id, minLength: 1, maxLength: 15 }), (queued) => {

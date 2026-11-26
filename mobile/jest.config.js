@@ -17,6 +17,9 @@ module.exports = {
   testPathIgnorePatterns: ['/node_modules/', '/android/', '/ios/', '<rootDir>/\\.claude/', '<rootDir>/\\.stryker-tmp/',
     ...(process.env.JEST_OUTSIDE_UTC === '1' ? require('./scripts/test-timezones').ONLY_IN_UTC.map((p) => `<rootDir>/${p}`) : [])],
   modulePathIgnorePatterns: ['<rootDir>/\\.stryker-tmp/'],
+  // A file outside mobile/ that a test loads (an edge function's own module) is compiled with
+  // babel's helpers, which live here: CI's checkout has no node_modules above mobile/ to find them.
+  modulePaths: ['<rootDir>/node_modules'],
   // A --shard split by each file's measured time, so no part of CI's split run outgrows its limit
   // (the header of that file); without --shard, jest's own order.
   testSequencer: '<rootDir>/test-utils/weightedSequencer.js',

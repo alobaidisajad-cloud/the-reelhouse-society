@@ -133,3 +133,37 @@ describe('the founding form', () => {
     expect(named()[1]).not.toBe(named()[0]);
   });
 });
+
+/** Stage C, every word written is kept: the words lived in the sheet alone, gone with the corridor. */
+describe('the words of a salon not yet founded', () => {
+  const { useAuthStore } = require('@/src/stores/auth');
+  const { readDraft } = require('@/src/utils/memberDrafts');
+  const kept = () => [readDraft('me', 'founding', 'name')?.data.body, readDraft('me', 'founding', 'description')?.data.body];
+  beforeEach(() => {
+    require('@/src/stores/mmkv-storage').storage.clearAll();
+    useAuthStore.setState({ user: { id: 'me', username: 'kane' } });
+  });
+  afterEach(() => { useAuthStore.setState({ user: null }); });
+
+  it('are kept as they are written, and opened on again when the corridor is come back to', async () => {
+    const api = render(<Corridor />);
+    await fireEvent.changeText(api.getByLabelText('Salon name'), 'The Noir Corner');
+    await fireEvent.changeText(api.getByLabelText('Salon description'), 'Shadows, and who cast them.');
+    await act(async () => { api.unmount(); });
+    expect(kept()).toEqual(['The Noir Corner', 'Shadows, and who cast them.']);
+    const again = render(<Corridor />);
+    expect(again.getByLabelText('Salon name').props.value).toBe('The Noir Corner');
+    expect(again.getByLabelText('Salon description').props.value).toBe('Shadows, and who cast them.');
+  });
+
+  it('are let go once a room is made', async () => {
+    mockCreateLounge.mockResolvedValueOnce('room-1');
+    const api = render(<Corridor />);
+    await fireEvent.changeText(api.getByLabelText('Salon name'), 'The Noir Corner');
+    // Kept on the phone once the box rests; founded, let go.
+    await act(async () => { await new Promise((done) => setTimeout(done, 1000)); });
+    expect(kept()[0]).toBe('The Noir Corner');
+    await found(api, 'The Noir Corner');
+    expect(kept()).toEqual([undefined, undefined]);
+  });
+});

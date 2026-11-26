@@ -12,6 +12,7 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { testQueryClient } from '@/test-utils/testQueryClient';
 import { SanctionsList, liftRefusal, sanctionWords } from '../SanctionsList';
 import reelToast from '@/src/utils/reelToast';
+import { ONE_PRESS_MS } from '@/src/utils/onePress';
 
 const mockGetSanctioned = jest.fn();
 const mockLift = jest.fn();
@@ -101,4 +102,34 @@ it('an admin under a sanction of their own is offered no lift of it: another adm
   } finally {
     useAuthStore.setState({ user: null });
   }
+});
+
+/** Stage C, every word written is kept: a sheet closed emptied the word for the member. */
+describe('the word for the member', () => {
+  const { useAuthStore } = require('@/src/stores/auth');
+  const { readDraft } = require('@/src/utils/memberDrafts');
+  const kept = () => readDraft('admin-9', 'hearing', 'lift:m-1')?.data.body;
+  beforeEach(() => {
+    require('@/src/stores/mmkv-storage').storage.clearAll();
+    useAuthStore.setState({ user: { id: 'admin-9', username: 'keeper', role: 'admin' } as never });
+  });
+  afterEach(() => { useAuthStore.setState({ user: null }); });
+
+  it('is kept per lift: closed and opened again, the sheet opens on it; lifted, it is let go', async () => {
+    const r = mount();
+    await waitFor(() => expect(r.getByLabelText('Lift the ban on loud_one')).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText('Lift the ban on loud_one')); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('your word to the member'), 'A second chance, after an apology.'); });
+    const xs = r.getAllByLabelText('Close');
+    await act(async () => { await fireEvent.press(xs[xs.length - 1]!); });
+    expect(kept()).toBe('A second chance, after an apology.');
+    // A press on the same act again is heard once the one-press window has passed (onePress).
+    await act(async () => { await new Promise((done) => setTimeout(done, ONE_PRESS_MS)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Lift the ban on loud_one')); });
+    expect(r.getByLabelText('your word to the member').props.value).toBe('A second chance, after an apology.');
+    mockGetSanctioned.mockResolvedValue([EXILED]);
+    await act(async () => { await fireEvent.press(r.getByRole('button', { name: 'Lift the ban' })); });
+    await waitFor(() => expect(r.queryByText('@loud_one')).toBeNull());
+    expect(kept()).toBeUndefined();
+  });
 });

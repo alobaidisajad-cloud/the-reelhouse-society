@@ -37,7 +37,7 @@ const NEVER_ONE: Record<string, string> = {
   'src/features/archive/archiveImport.ts · ${uniqueEntries.size} films': 'a fraction ("1 / 1 films matched"), read as a tally',
   'src/utils/timeAgo.ts · ${days} DAYS': 'drawn only past YESTERDAY: two days up',
   'app/(modals)/list-modal.tsx · ${trueFilmCount} reels': 'said only of an index larger than the sheet can hold',
-  'app/dispatch/series/[id].tsx · ${total} PARTS': 'said only when the series has more parts than the page shows (MOST_PARTS)',
+  'app/dispatch/series/[id].tsx · ${partsTotal} PARTS': 'said only when the series has more parts than the page shows (MOST_PARTS)',
   'app/year-in-cinema.tsx · ${stats.perMonth.toFixed(1)} entries': 'a decimal: "1.0 entries" is read as English is',
   'app/(admin)/tribunal.tsx · {count} REPORTS': 'the badge is drawn only past one report (a count of one or none draws nothing)',
   'src/components/auth/PasswordStrengthMeter.tsx · ${PASSWORD_MAX_BYTES} characters': 'the password ceiling, a constant of dozens',

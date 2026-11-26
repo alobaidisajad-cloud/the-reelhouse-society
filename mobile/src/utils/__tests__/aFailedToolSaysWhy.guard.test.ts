@@ -33,6 +33,7 @@ const QUIET: Record<string, { count: number; why: string }> = {
   'mobile/scripts/install-hooks.cjs': { count: 2, why: 'outside a git checkout there are no hooks to install, and a worktree with no hooks path set has none to unset' },
   'mobile/test-utils/universe.js': { count: 1, why: 'a folder that is not a checkout ignores nothing' },
   'mobile/scripts/hooks/verdicts.cjs': { count: 1, why: 'a folder that is no repository has no git list: its own files are walked instead' },
+  'mobile/scripts/mutants.cjs': { count: 1, why: '`git merge-base --is-ancestor` answers by its exit alone: 0 in the history, else not (a commit the repository does not hold is not)' },
 };
 
 type Run = { file: string; fn: string; args: string; kept: string | null; statement: boolean };

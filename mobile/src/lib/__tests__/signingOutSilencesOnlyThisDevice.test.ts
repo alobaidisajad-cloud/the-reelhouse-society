@@ -50,6 +50,8 @@ jest.mock('../supabase', () => ({
   },
 }));
 jest.mock('../../utils/logger', () => ({ logger: { warn: jest.fn(), debug: jest.fn(), error: jest.fn() } }));
+// member-1 is the one signed in: a registration landing for anyone else is forgotten, not remembered.
+jest.mock('@/src/stores/domain/helpers/sessionGuard', () => ({ stillSignedIn: (id: string) => id === 'member-1' }));
 
 beforeEach(() => {
   mockStore.clear();

@@ -30,10 +30,10 @@ const judged = (text: string) => {
   });
 };
 
-it('keeps gitleaks\' own rules and the four shapes they miss', () => {
+it('keeps gitleaks\' own rules and the five shapes they miss', () => {
   expect(CONFIG).toMatch(/\[extend\]\nuseDefault = true/);
   const ids = [...CONFIG.matchAll(/^id = "([^"]+)"/gm)].map((m) => m[1]);
-  expect(ids).toEqual(['supabase-personal-token', 'postgres-url-password', 'password-in-code', 'vapid-private-key']);
+  expect(ids).toEqual(['supabase-personal-token', 'postgres-url-password', 'password-in-code', 'vapid-private-key', 'hex-key-32']);
 });
 
 it('allows no path, and one value: the local stack\'s default password', () => {
@@ -45,7 +45,7 @@ it('allows no path, and one value: the local stack\'s default password', () => {
 it('excuses each finding by its fingerprint alone, under a reason from the list', () => {
   const entries = judged(BASELINE);
   expect(entries.length).toBeGreaterThanOrEqual(12);
-  const bad = entries.filter((e) => !/^[0-9a-f]{40}:[^:]+:[a-z-]+:\d+$/.test(e.fingerprint) || !REASONS.includes(e.reason ?? ''));
+  const bad = entries.filter((e) => !/^[0-9a-f]{40}:[^:]+:[a-z][a-z0-9-]*:\d+$/.test(e.fingerprint) || !REASONS.includes(e.reason ?? ''));
   expect(bad).toEqual([]);
 });
 
@@ -58,8 +58,20 @@ it('runs on every push, after proving each rule fires', () => {
   expect(job).toContain('fetch-depth: 0');
   expect(job).toMatch(/sha256sum -c/);
   expect(job).toContain('node mobile/scripts/secrets-planted.cjs');
+  expect(job).toContain('node mobile/scripts/secrets-history.cjs');
   expect(job).toMatch(/gitleaks git[^\n]*--log-opts/);
   expect(job).toContain('--gitleaks-ignore-path .gitleaksignore');
+});
+
+it('counts the whole history against the register, and says only numbers', () => {
+  const script = read('mobile/scripts/secrets-history.cjs');
+  expect(script).toContain("const CLASS = 'SEC-secret-committed'");
+  expect(script).toContain("'--log-opts=HEAD'");
+  expect(script).toContain("'--redact=100'");
+  expect(script).toContain("'--gitleaks-ignore-path'");
+  expect(script).toMatch(/if \(standing !== entry\.count\) \{/);
+  // Never where a finding stands: its File, its Fingerprint or its line.
+  expect(script).not.toMatch(/\.(File|Fingerprint|StartLine|Commit|Secret|Match)\b/);
 });
 
 it('the baseline check says NO — to a fingerprint under no reason, and under one not on the list', () => {

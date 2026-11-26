@@ -5,7 +5,8 @@
  * previous page already showed, or rows nobody ever sees. There is no error to
  * notice, so the arithmetic has to be pinned here rather than found in use.
  */
-import { parseCursor, buildCursor, pgLiteral, keysetFilter, sortAxis } from '../keysetCursor';
+import { parseCursor, buildCursor, pgLiteral, keysetFilter, keysetAfter, sortAxis } from '../keysetCursor';
+import { holdsFilter, postgresOrder, type Row as PgRow } from '@/test-utils/postgrestFilter';
 
 describe('a cursor survives the round trip', () => {
   it('splits on the LAST separator, so a title may contain one', () => {
@@ -224,5 +225,60 @@ describe('paging a whole shelf never repeats or skips a row', () => {
   it('orders by the axis, not by insertion', () => {
     expect(page('az', 3).slice(0, 3)).toEqual(['1', '2', '6']);   // three Aliens, by id
     expect(page('default', 3)[0]).toBe('7');                       // newest first
+  });
+});
+
+describe('a page after a row, on any number of axes, nulls where Postgres puts them', () => {
+  /** Rows with ties on every axis but the last, and nulls on the nullable one, made the same each run. */
+  function rows(n: number): PgRow[] {
+    let seed = 7;
+    const next = () => { seed = (seed * 48271) % 2147483647; return seed; };
+    return Array.from({ length: n }, (_, i) => ({
+      rank: next() % 4 === 0 ? null : next() % 3,
+      at: `2026-03-0${1 + (next() % 3)}`,
+      id: i + 1,
+    }));
+  }
+
+  type Axis = { column: string; direction: 'asc' | 'desc'; nullable?: boolean };
+  const SHAPES: { name: string; axes: Axis[] }[] = [
+    { name: 'a stack: rank (none last), then when added, then the film', axes: [{ column: 'rank', direction: 'asc', nullable: true }, { column: 'at', direction: 'asc' }, { column: 'id', direction: 'asc' }] },
+    { name: 'most certified: count, then newest, then the row', axes: [{ column: 'rank', direction: 'desc', nullable: true }, { column: 'at', direction: 'desc' }, { column: 'id', direction: 'desc' }] },
+    { name: 'newest: when, then the row', axes: [{ column: 'at', direction: 'desc' }, { column: 'id', direction: 'desc' }] },
+    { name: 'up then down', axes: [{ column: 'rank', direction: 'asc', nullable: true }, { column: 'id', direction: 'desc' }] },
+  ];
+
+  it.each(SHAPES.flatMap((s) => [1, 2, 3, 5].map((size) => [s.name, size, s.axes] as const)))('%s, %i a page: every row once, in order', (_name, size, axes) => {
+    const all = rows(23);
+    const ordered = [...all].sort(postgresOrder(axes));
+    const seen: PgRow[] = [];
+    let last: PgRow | null = null;
+    for (let guard = 0; guard < 100; guard += 1) {
+      const from: PgRow | null = last;
+      const filter: string | null = from ? keysetAfter(axes.map((a) => ({ ...a, value: from[a.column] ?? null }))) : '';
+      if (filter === null) break;
+      const page: PgRow[] = ordered.filter((r) => !filter || holdsFilter(filter, r)).slice(0, size);
+      if (page.length === 0) break;
+      seen.push(...page);
+      last = page[page.length - 1]!;
+    }
+    expect(all.some((r) => r.rank === null)).toBe(true);
+    expect(seen.map((r) => r.id)).toEqual(ordered.map((r) => r.id));
+  });
+
+  it('writes each disjunct as the axes before it equal and this one beyond, a quote escaped', () => {
+    expect(keysetAfter([
+      { column: 'certify_count', direction: 'desc', value: 3 },
+      { column: 'created_at', direction: 'desc', value: '2026-03-01T10:00:00+00:00' },
+      { column: 'id', direction: 'desc', value: 'a"b' },
+    ])).toBe('certify_count.lt.3,and(certify_count.eq.3,created_at.lt."2026-03-01T10:00:00+00:00"),and(certify_count.eq.3,created_at.eq."2026-03-01T10:00:00+00:00",id.lt."a\\"b")');
+  });
+
+  it('past a row with none going up comes nothing on that axis; going down, every row with one', () => {
+    expect(keysetAfter([{ column: 'rank_position', direction: 'asc', value: null, nullable: true }, { column: 'film_id', direction: 'asc', value: 9 }]))
+      .toBe('and(rank_position.is.null,film_id.gt.9)');
+    expect(keysetAfter([{ column: 'rank_position', direction: 'desc', value: null, nullable: true }, { column: 'film_id', direction: 'asc', value: 9 }]))
+      .toBe('rank_position.not.is.null,and(rank_position.is.null,film_id.gt.9)');
+    expect(keysetAfter([{ column: 'rank_position', direction: 'asc', value: null, nullable: true }])).toBeNull();
   });
 });

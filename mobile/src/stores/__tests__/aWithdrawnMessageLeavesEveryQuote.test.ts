@@ -72,7 +72,9 @@ jest.mock('@/src/lib/supabase', () => ({
 jest.mock('../auth', () => ({ useAuthStore: { getState: () => ({ user: { id: '33333333-3333-4333-8333-333333333333', username: 'me' } }) } }));
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
 jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: () => false }), subscribe: () => () => {} } }));
-jest.mock('../../utils/offlineQueue', () => ({ enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [] }));
+/** The queue as this phone holds it. */
+let mockQueue: { type: string; payload: Record<string, unknown> }[] = [];
+jest.mock('../../utils/offlineQueue', () => ({ enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => mockQueue }));
 jest.mock('../../utils/reelToast', () => {
   const fn = Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn() });
   return { __esModule: true, default: fn };
@@ -86,6 +88,7 @@ const live = (event: 'UPDATE') => {
   return handler!;
 };
 beforeEach(() => {
+  mockQueue = [];
   onlineManager.setOnline(true);
   mockHandlers.clear();
   mockHouse = house();
@@ -145,6 +148,38 @@ it('the house refuses the withdrawal: the message and its quotes come back as th
   const back = useLoungeStore.getState().currentMessages.find((m) => m.id === idOf(0));
   expect(back).toBeDefined();
   expect(back!.content).toBe(WORDS);
+});
+
+describe('withdrawn offline, the withdrawal still queued', () => {
+  /** The house's copy: the withdrawal has not reached it, and Cal's reply still quotes the words. */
+  const unsent = () => [
+    { id: idOf(0), lounge_id: ROOM, user_id: ME, content: WORDS, type: 'text', created_at: atOf(0), deleted_at: null, metadata: {} },
+    { id: idOf(1), lounge_id: ROOM, user_id: CAL, content: 'words 1', type: 'text', reply_to_id: idOf(0), reply_to_content: WORDS, created_at: atOf(1), deleted_at: null, metadata: {} },
+    { id: idOf(2), lounge_id: ROOM, user_id: CAL, content: 'words 2', type: 'text', created_at: atOf(2), deleted_at: null, metadata: {} },
+  ];
+  const stateOf = (i: number) => useLoungeStore.getState().currentMessages.find((x) => x.id === idOf(i));
+
+  it('back in the room, the message stays withdrawn and the reply stays unquoted, as the member left them', async () => {
+    useLoungeStore.setState({ currentMessages: room(ME).map((m) => (m.id === idOf(0) ? { ...m, content: '', deleted_at: '2026-11-19T11:00:00Z' }
+      : m.id === idOf(1) ? { ...m, reply_to_content: null } : m)) });
+    mockQueue = [{ type: 'withdraw_lounge_message', payload: { message_id: idOf(0) } }];
+    mockServer = unsent();
+    await useLoungeStore.getState().catchUpMessages(ROOM);
+    expect(stateOf(0)?.content).toBe('');
+    expect(stateOf(0)?.deleted_at).toBeTruthy();
+    expect(quoteOf(1)).toBeNull();
+  });
+
+  it('the room read afresh (the app opened again) draws it withdrawn too', async () => {
+    useLoungeStore.setState({ currentLoungeId: null, currentMessages: [] });
+    mockQueue = [{ type: 'withdraw_lounge_message', payload: { message_id: idOf(0) } }];
+    mockServer = unsent();
+    await useLoungeStore.getState().fetchMessages(ROOM);
+    expect(stateOf(0)?.content).toBe('');
+    expect(stateOf(0)?.deleted_at).toBeTruthy();
+    expect(quoteOf(1)).toBeNull();
+    expect(stateOf(2)?.content).toBe('words 2');
+  });
 });
 
 describe('a message or a card the house puts back (a verdict overturned) is drawn whole again, live and on return', () => {

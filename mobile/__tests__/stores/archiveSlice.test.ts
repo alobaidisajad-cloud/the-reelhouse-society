@@ -26,6 +26,8 @@ const mockEnqueue = jest.fn((..._args: unknown[]) => true);
 jest.mock('../../src/utils/offlineQueue', () => ({
     enqueueMutation: (...args: unknown[]) => mockEnqueue(...args),
     flushOfflineQueue: jest.fn(),
+    // Nothing waiting in the queue: the shelf read is drawn as the house answered it.
+    getOfflineQueue: () => [],
 }));
 
 const mockFileOnShelf = jest.fn();

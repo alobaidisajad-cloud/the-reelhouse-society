@@ -36,8 +36,8 @@ const LOGGED = { id: LOG, viewing_id: VIEWING, user_id: ME, film_id: 11, film_ti
 /** The films of the records the phone holds: LOG's is 42, OTHER_LOG's 99, anything else's 77. */
 const FILMS: Record<string, number> = { [LOG]: 42, [OTHER_LOG]: 99 };
 let invalidate: jest.SpyInstance;
-/** Each film whose page was read again, in order. */
-const filmsRead = () => invalidate.mock.calls.map(([filters]) => filters);
+/** Each film whose page was read again, in order (a record's or a stack's own page is another test's). */
+const filmsRead = () => invalidate.mock.calls.map(([filters]) => filters).filter((f) => f.queryKey[0] === 'film');
 
 beforeEach(() => {
   mockHouse = house();

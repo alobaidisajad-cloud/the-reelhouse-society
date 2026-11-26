@@ -30,6 +30,7 @@ import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import { tmdb } from '@/src/lib/tmdb';
 import { STACK_COMMENT_PAGE, StackService } from '@/src/services/StackService';
 import { useAuthStore } from '@/src/stores/auth';
+import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useListStore } from '@/src/stores/films';
 import { tellMarks } from '@/src/stores/tellMarks';
@@ -37,7 +38,8 @@ import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 import { colors, fonts } from '@/src/theme/theme';
 import { UNINKED, UNREADY, UNREADY_INK } from '@/src/theme/unready';
 import { logger } from '@/src/utils/logger';
-import { enqueueMutation, flushOfflineQueue } from '@/src/utils/offlineQueue';
+import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
+import { filmsQueuedOff, overlayQueuedStack } from '@/src/stores/domain/queuedStack';
 import { isNetworkError } from '@/src/utils/networkError';
 import { saidOfARefusal } from '@/src/utils/saidOfARefusal';
 import { critiquePaceSaid } from '@/src/utils/housePace';
@@ -246,9 +248,12 @@ function StackDetailScreen({ id }: { id: string }) {
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await queryClient.invalidateQueries({ queryKey: ['stack', id] });
-    await queryClient.invalidateQueries({ queryKey: ['stackComments', id] });
-    setRefreshing(false);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['stack', id] });
+      await queryClient.invalidateQueries({ queryKey: ['stackComments', id] });
+    } finally {
+      setRefreshing(false);
+    }
     // The page stays as it was; a pull that reached nothing says so, as every list does. The
     // critiques count only while their sheet asks for them: shut, their read is not refetched, and
     // its old failure once said "Could not refresh" over a stack read that worked.
@@ -304,8 +309,15 @@ function StackDetailScreen({ id }: { id: string }) {
         // The shared store, which the Reel's card reads too.
         tellMarks('list', [{ id, certify: endorseCount, certified }], askedAt);
 
-        // Everything else, whole: a field copied by hand can be left behind.
-        const listDetail: ListDetail = stack;
+        // Everything else, whole: a field copied by hand can be left behind. The member's own changes
+        // to it still in the queue are laid over it (a film added or taken off, an edit), so a read
+        // again never drops one that waits to be sent.
+        const whole = stack.films.length >= (stack.filmCount ?? stack.films.length);
+        const laid = overlayQueuedStack(id, stack as ListDetail, getOfflineQueue(), useAuthStore.getState().user?.id,
+          (filmId, title, poster) => ({ id: filmId, title, poster_path: poster }), whole);
+        const listDetail: ListDetail = laid.sizeChange && laid.stack.filmCount != null
+          ? { ...laid.stack, filmCount: Math.max(0, laid.stack.filmCount + laid.sizeChange) }
+          : laid.stack;
         // Whether the member's own certification was answered: the heart is known only then.
         return { list: listDetail, endorseCount, certifiedKnown: typeof certified === 'boolean' };
       } catch (error) {
@@ -406,15 +418,22 @@ function StackDetailScreen({ id }: { id: string }) {
     [list, later],
   );
   const readingMore = useRef(false);
+  // A later page that could not be read, for the read it followed: said at the grid's foot, and the
+  // grid's end asks no more until TRY AGAIN does. The grid never ends as though whole.
+  const [moreFailedFor, setMoreFailedFor] = useState<FilmItem[] | null>(null);
+  const moreFailed = !!list && moreFailedFor === list.films;
   const readMoreFilms = useCallback(async () => {
     if (!list || readingMore.current || films.length >= (list.filmCount ?? 0)) return;
     readingMore.current = true;
     try {
-      const page = await StackService.getStackItemsPage(id, films.length);
-      const held = new Set(films.map((f) => f.id));
+      const page = await StackService.getStackItemsPage(id, films[films.length - 1]?.id ?? null);
+      // A film taken off offline is still on the house's later pages until the queue sends it.
+      const held = new Set([...films.map((f) => f.id), ...filmsQueuedOff(id, getOfflineQueue(), useAuthStore.getState().user?.id)]);
       setLater((was) => ({ after: list.films, films: [...(was.after === list.films ? was.films : []), ...page.filter((f) => !held.has(f.id))] }));
+      setMoreFailedFor(null);
     } catch (e) {
       logger.warn('[stacks] reading more films failed', e);
+      setMoreFailedFor(list.films);
     } finally {
       readingMore.current = false;
     }
@@ -702,8 +721,9 @@ function StackDetailScreen({ id }: { id: string }) {
       void offerWord('critique', user.id);
 
     } catch (err: unknown) {
-      // Kept for the network's return; one the phone had no room to keep comes off the page.
-      if (isNetworkError(err) && enqueueMutation({
+      // Kept for the network's return; one the phone had no room to keep comes off the page, and
+      // one whose member has signed out meanwhile is never queued in whoever's name is here now.
+      if (isNetworkError(err) && stillSignedIn(user.id) && enqueueMutation({
         type: 'add_list_comment',
         payload: { id: commentId, list_id: id, user_id: user.id, content }
       })) {
@@ -774,7 +794,8 @@ function StackDetailScreen({ id }: { id: string }) {
     try {
       await StackService.deleteStackComment(commentId, user.id);
     } catch (err: unknown) {
-      if (isNetworkError(err)) {
+      // Queued only in the name of the member who took it back, never of whoever signed in since.
+      if (isNetworkError(err) && stillSignedIn(user.id)) {
         if (enqueueMutation({ type: 'remove_list_comment', payload: { comment_id: commentId, user_id: user.id } })) {
           flushOfflineQueue();
           reelToast('Removed offline. Will sync when connected.');
@@ -961,7 +982,7 @@ function StackDetailScreen({ id }: { id: string }) {
         <CinematicFlashList
           data={films}
           keyExtractor={(item: any) => String(item.id)}
-          onEndReached={() => { void readMoreFilms(); }}
+          onEndReached={moreFailed ? undefined : () => { void readMoreFilms(); }}
           onEndReachedThreshold={0.6}
           numColumns={COLUMNS}
           contentContainerStyle={{ ...s.scrollContent, paddingBottom: end }}
@@ -1112,6 +1133,12 @@ function StackDetailScreen({ id }: { id: string }) {
             </>
           }
           renderItem={renderItem as any}
+          ListFooterComponent={moreFailed ? (
+            <View style={s.moreFoot}>
+              <Text style={s.moreFootWords}>The rest could not be reached.</Text>
+              <TryAgainLine onPress={readMoreFilms} what="ask for the rest" />
+            </View>
+          ) : null}
           ListEmptyComponent={
             <View style={s.emptyState}>
               <Text style={s.emptyTitle}>An Empty Stack</Text>
@@ -1411,6 +1438,9 @@ const s = StyleSheet.create({
   critiqueSignIn: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.ink, paddingHorizontal: 14 },
 
   emptyState: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
+  // A later page that could not be read: the search's foot, in its words and its look.
+  moreFoot: { alignItems: 'center', paddingVertical: 16, gap: 8 },
+  moreFootWords: { fontFamily: fonts.body, fontSize: 12, color: colors.fogQuiet, textAlign: 'center' },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, marginBottom: 8 },
   emptySubtitle: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.fog, textAlign: 'center' },
 

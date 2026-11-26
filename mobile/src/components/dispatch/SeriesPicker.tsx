@@ -41,6 +41,8 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { EDGE_LIT } from '@/src/theme/light';
 import { roman } from './paper/paperText';
 import { useKeyboardLift } from '@/src/hooks/useKeyboardLift';
+import { useKeptWords } from '@/src/hooks/useKeptWords';
+import { readDraft } from '@/src/utils/memberDrafts';
 import Animated from 'react-native-reanimated';
 
 export interface SeriesChoice { id: string; title: string; part: number }
@@ -138,6 +140,9 @@ export async function freshPartFor(
   }
 }
 
+/** Where a new series' name is kept while it is written: one name at a time. */
+const NAMING = 'new';
+
 interface PickerProps {
   visible: boolean;
   chosen: SeriesChoice | null;
@@ -147,7 +152,11 @@ interface PickerProps {
   bottomInset: number;
 }
 
-/** Mounted only while open, so every opening starts from `chosen` and nothing half-typed. */
+/**
+ * Mounted only while open, so every opening starts from `chosen`. A new series' name half-typed is
+ * kept (useKeptWords, 'series') and is there again under BEGIN A NEW SERIES; with no series chosen,
+ * the sheet opens on it.
+ */
 export function SeriesPicker({ visible, ...sheet }: PickerProps) {
   return visible ? <SeriesSheet {...sheet} /> : null;
 }
@@ -162,8 +171,8 @@ function SeriesSheet({ chosen, onClose, onSet, onClear, bottomInset }: Omit<Pick
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [pick, setPick] = useState<SeriesChoice | null>(chosen);
-  const [naming, setNaming] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
+  const [naming, setNaming] = useState(() => !chosen && !!readDraft(userId, 'series', NAMING)?.data.body?.trim());
+  const [newTitle, setNewTitle, letGoNewTitle] = useKeptWords(userId, 'series', NAMING);
 
   useEffect(() => {
     if (!userId) return;
@@ -201,10 +210,12 @@ function SeriesSheet({ chosen, onClose, onSet, onClear, bottomInset }: Omit<Pick
       // A new series needs an id nothing else holds. Generated here rather than
       // by the server because the filing carries it on the same write.
       onSet({ id: Crypto.randomUUID(), title: t, part: 1 });
+      // The essay holds it now, in its own draft.
+      letGoNewTitle();
       return;
     }
     if (pick) onSet(pick);
-  }, [naming, newTitle, pick, onSet]);
+  }, [naming, newTitle, pick, onSet, letGoNewTitle]);
 
   const ready = naming ? newTitle.trim().length > 0 : !!pick;
   // The new series' name is typed at the foot of the sheet, above SET THE SERIES.

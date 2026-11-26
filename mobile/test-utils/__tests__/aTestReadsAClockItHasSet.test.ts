@@ -58,6 +58,7 @@ const READS: Judged = {
   'src/components/lounge/__tests__/zz-lounge.gen.test.tsx': { sites: 1, why: 'the salons of a drawn page, last spoken in minutes back from now; the test reads only that a page was drawn' },
   'src/features/settings/__tests__/theSignOutNamesWhatItErases.test.tsx': { sites: 3, why: 'refused writes stamped now only to be writes; the test counts them, never their age' },
   'src/hooks/__tests__/aFeedMovesOnlyAtItsTop.test.tsx': { sites: 1, why: 'when the file opened, so the clock can be set an hour on from it: an age, not a day' },
+  'src/hooks/__tests__/aMemberFileReadAgainKeepsItsLaterPages.test.tsx': { sites: 1, why: 'when the file opened, so the clock can be set six minutes on from it: an age, not a day' },
   'src/hooks/__tests__/aPageIsCurrentOnReturn.test.tsx': { sites: 1, why: 'when the file opened, so the clock can be set a time on from it: an age, not a day' },
   'src/hooks/__tests__/theWelcomeIsNotLostInTheBreath.test.tsx': { sites: 1, why: 'a member who joined a minute before now, under timers faked in the beforeEach: new at any hour' },
   'src/hooks/__tests__/theWelcomeWaitsForTheLobby.test.tsx': { sites: 1, why: 'a member who joined a minute before now, under timers faked in the beforeEach: new at any hour' },
@@ -119,6 +120,7 @@ const DAYS_TO_COME: Judged = {
   'src/stores/__tests__/anOpenBallotIsCountedForItsVoters.test.ts': { sites: 1, why: '2099 stands for a ballot still open, true until that year' },
   'src/utils/__tests__/aLeapDayIsADay.test.tsx': { sites: 11, why: 'the leap day of 2028 and the days beside it, each handed in as the moment, or set by a spy on Date.now (at)' },
   'src/utils/__tests__/anInstantIsReadOneWay.test.ts': { sites: 4, why: 'instants handed to the reader of instants, the leap day of 2028 and the far ends of its range: no clock is read' },
+  'src/utils/__tests__/theStoreIsReadToTheLetter.test.ts': { sites: 4, why: 'ends no calendar shows (a 31st of February, a 13th month, a 24th hour, a 60th minute), each weighed against NOW, a moment handed in: no clock is read' },
 };
 
 const HOOKS = new Set(['beforeEach', 'beforeAll']);

@@ -7,8 +7,9 @@
  *     the first; it now closes back to the Dispatch already there;
  *   · BACK on an amended take cleared the form but kept the amend, and the route opened the
  *     ESSAY desk on a take; an amend now goes back to the filing it came from;
- *   · a take's words (the desk keeps no draft) went without a word on any way out; every way out
- *     with words in it now asks first;
+ *   · a take's words went without a word on any way out; the desk now keeps its draft, as the
+ *     essay and the ballot keep theirs (stage C: nothing a member types is lost), one for each
+ *     form and one for each amend, taken up with START CLEAN, and every way out keeps it;
  *   · Android's back closed the whole sheet; on a desk it is BACK, to the choice of form;
  *   · the ballot opened on the last ballot in silence, with no way to a clean desk but emptying
  *     it by hand; it now says it was taken up, with START CLEAN, as every writing room does, and
@@ -73,6 +74,8 @@ beforeEach(() => {
   mockEditId = undefined;
   mockHeld = null;
   clearDraft('u1', 'ballot');
+  // No draft of any desk carried from the last test.
+  require('@/src/stores/mmkv-storage').storage.clearAll();
   held = [];
   jest.spyOn(BackHandler, 'addEventListener').mockImplementation(((event: string, handler: () => boolean) => {
     const sub = { handler, remove: jest.fn() };
@@ -112,15 +115,15 @@ describe('a short desk', () => {
     expect(router.setParams).toHaveBeenCalledWith({ kind: '' });
   });
 
-  it('BACK with words asks first, and only a discard goes to the forms', async () => {
+  it('BACK with words goes to the forms at once, asking nothing: the words are kept', async () => {
     const r = render(<ComposeShortScreen kind="take" />);
     await type(r.getByLabelText('Your take'), 'Ozu never once stood up.');
     await press(r.getByLabelText('Back, without filing'));
-    expect(alerts[0]?.[0]).toBe('Discard what you wrote?');
-    expect(alerts[0]?.[1]).toBe('This desk keeps no draft. Leave now and these words are gone.');
-    expect(router.setParams).not.toHaveBeenCalled();
-    await act(async () => { alerts[0]![2]!.find((b) => b.text === 'Discard')!.onPress!(); });
+    expect(alerts).toEqual([]);
     expect(router.setParams).toHaveBeenCalledWith({ kind: '' });
+    // The desk goes with the kind: what was typed a moment before is kept as it goes.
+    r.unmount();
+    expect(readDraft('u1', 'short', 'take')?.data.body).toBe('Ozu never once stood up.');
   });
 
   it("Android's back is BACK: to the forms, the sheet still open", async () => {
@@ -185,6 +188,89 @@ describe('a short desk', () => {
     expect(amend.getByLabelText('Amend it')).toBeTruthy();
     expect(amend.queryByLabelText('Name a film')).toBeNull();
     expect(amend.queryByLabelText('Add a still')).toBeNull();
+  });
+});
+
+describe('a short desk keeps its draft', () => {
+  it('a take taken up says so, with START CLEAN, which empties the desk and the draft', async () => {
+    writeDraft('u1', 'short', { body: 'Ozu never once stood up.', source: '', film: null, filmId: null, spoiler: true }, 'take');
+    const r = render(<ComposeShortScreen kind="take" />);
+    expect(r.getByLabelText('Your take').props.value).toBe('Ozu never once stood up.');
+    expect(r.getByText(/TAKEN UP WHERE YOU LEFT IT/)).toBeTruthy();
+    await press(r.getByLabelText('Start clean, and discard what was here'));
+    expect(r.getByLabelText('Your take').props.value).toBe('');
+    expect(r.queryByText(/TAKEN UP WHERE YOU LEFT IT/)).toBeNull();
+    expect(readDraft('u1', 'short', 'take')).toBeNull();
+  });
+
+  it('the line goes on the first change, as the essay’s does', async () => {
+    writeDraft('u1', 'short', { body: 'Ozu never once stood up.' }, 'take');
+    const r = render(<ComposeShortScreen kind="take" />);
+    await type(r.getByLabelText('Your take'), 'Ozu never once stood up, and that is the point.');
+    expect(r.queryByText(/TAKEN UP WHERE YOU LEFT IT/)).toBeNull();
+  });
+
+  it('each form keeps its own: a take is never opened into a seeking’s desk, and a wire keeps its source', async () => {
+    writeDraft('u1', 'short', { body: 'Ozu never once stood up.' }, 'take');
+    writeDraft('u1', 'short', { body: 'A print of Tokyo Story, unrestored.', source: 'BFI' }, 'wire');
+    const seeking = render(<ComposeShortScreen kind="seeking" />);
+    expect(seeking.getByLabelText('Your seeking').props.value).toBe('');
+    expect(seeking.queryByText(/TAKEN UP WHERE YOU LEFT IT/)).toBeNull();
+    seeking.unmount();
+    const wire = render(<ComposeShortScreen kind="wire" />);
+    expect(wire.getByLabelText('Your wire').props.value).toBe('A print of Tokyo Story, unrestored.');
+    expect(wire.getByDisplayValue('BFI')).toBeTruthy();
+  });
+
+  it('kept once the desk rests, and at once if it closes first; filed, the draft goes', async () => {
+    const r = render(<ComposeShortScreen kind="take" />);
+    await type(r.getByLabelText('Your take'), 'Ozu never once stood up.');
+    await act(async () => { jest.advanceTimersByTime(1000); });
+    expect(readDraft('u1', 'short', 'take')?.data.body).toBe('Ozu never once stood up.');
+    await type(r.getByLabelText('Your take'), 'Ozu never once stood up. Not once.');
+    await press(r.getByLabelText('File it'));
+    expect(mockFiled).toHaveLength(1);
+    r.unmount();
+    expect(readDraft('u1', 'short', 'take')).toBeNull();
+  });
+
+  describe('an amend', () => {
+    beforeEach(() => {
+      mockEditId = '00000019-0000-4000-8000-000000000019';
+      mockHeld = {
+        id: mockEditId, kind: 'take', authorId: 'u1', author: { name: 'me', memberNo: 7, tier: 'free' },
+        film: null, subjectId: null, subjectKind: null, title: null, body: 'Ozu never once stood up.',
+        fullContent: null, source: null, sourceUrl: null, options: null, closesAt: null, frozenTotals: null,
+        answerId: null, seriesId: null, seriesTitle: null, partNumber: null, spoilerLabel: null,
+        withheldAt: null, endedAt: null, endedBy: null, certifyCount: 0, commentCount: 0,
+        createdAt: '2026-08-28T21:00:00Z', editedAt: null,
+      };
+    });
+
+    it('is kept by its filing, apart from a new take, and taken up over the words as filed', async () => {
+      const r = render(<ComposeShortScreen kind="take" />);
+      await type(r.getByLabelText('Your take'), 'Ozu never once stood up, and that is the argument.');
+      r.unmount();
+      expect(readDraft('u1', 'edit', mockEditId)?.data.content).toBe('Ozu never once stood up, and that is the argument.');
+      expect(readDraft('u1', 'short', 'take')).toBeNull();
+      const again = render(<ComposeShortScreen kind="take" />);
+      expect(again.getByLabelText('Your take').props.value).toBe('Ozu never once stood up, and that is the argument.');
+      // START CLEAN puts back the words as filed.
+      await press(again.getByLabelText('Start clean, and discard what was here'));
+      expect(again.getByLabelText('Your take').props.value).toBe('Ozu never once stood up.');
+      expect(readDraft('u1', 'edit', mockEditId)).toBeNull();
+    });
+
+    it('left as filed keeps nothing; amended, its draft goes', async () => {
+      const r = render(<ComposeShortScreen kind="take" />);
+      r.unmount();
+      expect(readDraft('u1', 'edit', mockEditId)).toBeNull();
+      const amend = render(<ComposeShortScreen kind="take" />);
+      await type(amend.getByLabelText('Your take'), 'Ozu never once stood up, and that is the argument.');
+      await press(amend.getByLabelText('Amend it'));
+      amend.unmount();
+      expect(readDraft('u1', 'edit', mockEditId)).toBeNull();
+    });
   });
 });
 

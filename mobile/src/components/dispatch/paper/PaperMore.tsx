@@ -8,7 +8,7 @@
  * changing shape is a page nobody learns. Where a screen needed something the
  * feed does not have, it is written here rather than bent into `paperStyles`.
  */
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -428,11 +428,16 @@ export const PaperRoom = memo(function PaperRoom({
   );
 });
 
+/** The lines a reported filing shows before READ IT WHOLE opens the rest. */
+const CASE_LINES = 3;
+
 /* ═══ THE REPORTED DOCKET ═══════════════════════════════════════════════════════
  * A reported filing, in the Dispatch's language: the report count in the margin
  * (it orders the queue; no number of reports acts by itself), the filing under
- * its reasons, and two verdicts of equal weight.
+ * its reasons, read whole a tap away before it is ruled on, and two verdicts of
+ * equal weight.
  */
+
 export const PaperCase = memo(function PaperCase({
   reports, reasons, kind, body, author, age, onStand, onStrike, onAuthor,
 }: {
@@ -440,6 +445,18 @@ export const PaperCase = memo(function PaperCase({
   reports: number; reasons: string; kind: keyof typeof KIND_RULE;
   body: string; author: PaperAuthor; age: string;
 }) {
+  // The filing is ruled on, so it is read whole first: three lines, and a tap opens the rest.
+  // Measured lines, never a character count: an unclamped copy says how the words wrap.
+  const [whole, setWhole] = useState(false);
+  const [measured, setMeasured] = useState<{ body: string; lines: number } | null>(null);
+  const cut = measured?.body === body && measured.lines > CASE_LINES;
+  const words = (
+    <>
+      {isRTLText(body) ? RTL_MARK : null}
+      <Text style={[p.leadIn, LEAD_STYLE[kind]]} {...scaledTextProps}>{nameOf(kind)} — </Text>
+      {body}
+    </>
+  );
   return (
     <View style={{ paddingVertical: 12 }}>
       <View style={p.postRow}>
@@ -450,11 +467,31 @@ export const PaperCase = memo(function PaperCase({
           <Text style={m.caseReasons} numberOfLines={1} {...decorativeTextProps}>
             {reasons.toUpperCase()}
           </Text>
-          <Text style={[m.caseBody, isRTLText(body) && p.rtlText]} numberOfLines={3} {...scaledTextProps}>
-            {isRTLText(body) ? RTL_MARK : null}
-            <Text style={[p.leadIn, LEAD_STYLE[kind]]}>{nameOf(kind)} — </Text>
-            {body}
-          </Text>
+          <View>
+            {measured?.body !== body && (
+              <Text style={[m.caseBody, isRTLText(body) && p.rtlText, m.caseMeasure]} {...scaledTextProps}
+                onTextLayout={(e) => setMeasured({ body, lines: e.nativeEvent.lines.length })}
+                accessible={false} importantForAccessibility="no-hide-descendants" pointerEvents="none" testID="case-measure">
+                {words}
+              </Text>
+            )}
+            {cut ? (
+              <PressableScale room="vertical" haptic="selection" onPress={() => setWhole((w) => !w)}
+                accessibilityRole="button"
+                accessibilityLabel={`${nameOf(kind)}: ${body}`}
+                accessibilityHint={whole ? 'Folds it to three lines' : 'Reads it whole'}>
+                <Text style={[m.caseBody, isRTLText(body) && p.rtlText]} numberOfLines={whole ? undefined : CASE_LINES} {...scaledTextProps}>
+                  {words}
+                </Text>
+                <Text style={m.caseWhole} {...deckLabelProps}>{whole ? 'FOLD ▴' : 'READ IT WHOLE ▾'}</Text>
+              </PressableScale>
+            ) : (
+              // Held to three lines until measured; measured to fit, nothing is held back.
+              <Text style={[m.caseBody, isRTLText(body) && p.rtlText]} numberOfLines={measured?.body === body ? undefined : CASE_LINES} {...scaledTextProps}>
+                {words}
+              </Text>
+            )}
+          </View>
           <View style={{ marginTop: 8 }}>
             <Byline author={author} trailing={age} />
           </View>
@@ -986,6 +1023,12 @@ const m = StyleSheet.create({
   caseBody: {
     fontFamily: fonts.serifItalic, fontSize: 13.5, lineHeight: 24,
     color: colors.parchment,
+  },
+  /** The unclamped copy that counts the lines: out of flow, unseen, at the column's width. */
+  caseMeasure: { position: 'absolute', left: 0, right: 0, top: 0, opacity: 0 },
+  caseWhole: {
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia,
+    marginTop: 8, includeFontPadding: false,
   },
   verdicts: {
     flexDirection: 'row', gap: 8, marginTop: 12,

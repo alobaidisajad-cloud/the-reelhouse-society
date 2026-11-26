@@ -1511,7 +1511,7 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useProfileData.ts
-        find: "      if (isMounted.current && uid === targetUserIdRef.current) setTabAnswered((a) => ({ ...a, [tab]: true }));\n"
+        find: "      if (current()) setTabAnswered((a) => ({ ...a, [tab]: true }));\n"
         replace: ""
     proof: { file: src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx, test: "a room is answered once its read comes back, not when it is asked, and not by a failed one" }
 
@@ -1592,8 +1592,8 @@ mutants:
     source: shape
     edits:
       - file: app/(admin)/tribunal.tsx
-        find: "  if (priorityData && priorityData !== priorityFrom) {\n    setPriorityFrom(priorityData);\n    setPriorityItems(priorityData as unknown as TribunalReport[]);\n    setHasMorePriority(priorityData.length >= 20);\n  }\n"
-        replace: "  React.useEffect(() => {\n    if (priorityData) {\n      setPriorityFrom(priorityData);\n      setPriorityItems(priorityData as unknown as TribunalReport[]);\n      setHasMorePriority(priorityData.length >= 20);\n    }\n  }, [priorityData]);\n"
+        find: "  if (priorityData && priorityData !== priorityFrom) {\n    setPriorityFrom(priorityData);\n    setPriorityItems(priorityData);\n    setHasMorePriority(moreMayFollow(priorityData, PRIORITY_PAGE));\n  }\n"
+        replace: "  React.useEffect(() => {\n    if (priorityData) {\n      setPriorityFrom(priorityData);\n      setPriorityItems(priorityData);\n      setHasMorePriority(moreMayFollow(priorityData, PRIORITY_PAGE));\n    }\n  }, [priorityData]);\n"
     proof: { file: app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts, test: "rebuilds each docket from its read during the render that brings it, never an effect after" }
 
   - id: shape-sweep-blind-to-handed-on
@@ -1808,7 +1808,7 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "      for (const c of critiques) known.add(c.id);\n"
+        find: "        known.add(c.id);\n"
         replace: ""
     proof: { file: src/stores/__tests__/aCritiqueMarkIsReadBeforeItIsDrawn.test.ts, test: "answered, knows each critique asked about: certified or not" }
 
@@ -2003,6 +2003,42 @@ mutants:
         find: "const PostWords = memo(function PostWords({"
         replace: "const PostWords = (function PostWords({"
     proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the member's marks, read, redraw each filing's bar and none of its words" }
+
+  - id: shape-docket-case-drawn-at-every-change
+    class: SPEED-a-mark-redraws-the-words
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "}, (was, now) => (Object.keys(now) as (keyof typeof now)[]).every("
+        replace: "}, (was, now) => false && (Object.keys(now) as (keyof typeof now)[]).every("
+    proof: { file: app/(admin)/__tests__/aVerdictRedrawsOnlyTheCasesItChanged.test.tsx, test: "a verdict, and the docket read again behind it, draw again none of the cases left on the docket" }
+
+  - id: shape-docket-case-compared-by-reference
+    class: SPEED-a-mark-redraws-the-words
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "const sameCase = (a: TribunalReport, b: TribunalReport) => a === b || JSON.stringify(a) === JSON.stringify(b);"
+        replace: "const sameCase = (a: TribunalReport, b: TribunalReport) => a === b;"
+    proof: { file: app/(admin)/__tests__/aVerdictRedrawsOnlyTheCasesItChanged.test.tsx, test: "a verdict, and the docket read again behind it, draw again none of the cases left on the docket" }
+
+  - id: shape-docket-dismiss-made-anew
+    class: SPEED-a-mark-redraws-the-words
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "    [resolveCase],\n"
+        replace: "    [resolveCase, resolveV2Mutation],\n"
+    proof: { file: app/(admin)/__tests__/aVerdictRedrawsOnlyTheCasesItChanged.test.tsx, test: "a verdict, and the docket read again behind it, draw again none of the cases left on the docket" }
+
+  - id: shape-docket-record-reread-made-anew
+    class: SPEED-a-mark-redraws-the-words
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "reread={item.target_user_id ? readOf(item.target_user_id)?.refetch : undefined}"
+        replace: "reread={item.target_user_id ? () => readOf(item.target_user_id!)!.refetch() : undefined}"
+    proof: { file: app/(admin)/__tests__/aVerdictRedrawsOnlyTheCasesItChanged.test.tsx, test: "a page more draws the cases it brings, and none of the cases already on the docket" }
 
   - id: shape-gwp-asan-unrun
     class: RUNTIME-gwp-asan-crashes-hermes
@@ -2490,6 +2526,43 @@ mutants:
         replace: "  if (worded && trimmed === '') {"
     proof: { file: src/features/archive/__tests__/archiveImport.test.ts, test: "reads a month written as a word, either way round, by itself and not the engine" }
 
+  - id: shape-a-store-stamp-read-by-the-engine
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    # The kinds pass's instance put back: the store's end read by the engine.
+    edits:
+      - file: supabase/functions/_shared/storeRecord.ts
+        find: "(typeof d === 'string' ? stampOf(d) : NaN)"
+        replace: "(typeof d === 'string' ? Date.parse(d) : NaN)"
+    proof: { file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts, test: "hands no text to the engine to read as a date in any edge function, of either tree: each reads its stamps itself" }
+
+  - id: shape-a-release-day-read-by-the-engine
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    edits:
+      - file: ../supabase/functions/sync-films/reread.js
+        find: "release_date ? dayOf(release_date) + SETTLE_DAYS"
+        replace: "release_date ? Date.parse(release_date) + SETTLE_DAYS"
+    proof: { file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts, test: "hands no text to the engine to read as a date in any edge function, of either tree: each reads its stamps itself" }
+
+  - id: shape-a-store-stamp-past-its-month
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    edits:
+      - file: supabase/functions/_shared/storeRecord.ts
+        find: "  if (!whole) return NaN;"
+        replace: "  void whole;"
+    proof: { file: src/utils/__tests__/theStoreIsReadToTheLetter.test.ts, test: "reads an end field by field: a day no calendar shows is no end ahead, whatever the engine would roll it into" }
+
+  - id: shape-the-parse-finder-blind
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts
+        find: "=== 'Date.parse';"
+        replace: "=== 'Date.parsed';"
+    proof: { file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts, test: "finds a date made from text, and not one made from a number, a Date or nothing" }
+
   - id: shape-critique-authors-asked-apart
     class: SPEED-a-page-waits-for-what-it-knows
     source: shape
@@ -2639,8 +2712,8 @@ mutants:
     source: shape
     edits:
       - file: src/services/StackService.ts
-        find: "      .order('film_id', { ascending: true })\n      .range(offset"
-        replace: "      .range(offset"
+        find: "      .order('film_id', { ascending: true })\n      .limit(STACK_ITEMS_LIMIT);"
+        replace: "      .limit(STACK_ITEMS_LIMIT);"
     proof: { file: src/utils/__tests__/aPageEndsOnAKeyNoTwoRowsShare.guard.test.ts, test: "ends every paged read of the app on a key no two of its rows share" }
 
   - id: shape-paper-kept-never-drawn
@@ -3712,8 +3785,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "      if ((st.critiquesOrder[postId] ?? order) !== order) return {};"
-        replace: "      if (st.critiquesOrder[postId] === undefined && order !== order) return {};"
+        find: "    const readNo = (critiqueReads.get(postId) ?? 0) + 1;\n    critiqueReads.set(postId, readNo);"
+        replace: "    const readNo = critiqueReads.get(postId) ?? 1;\n    critiqueReads.set(postId, readNo);"
     proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "never draws an answer in an order the member has already left" }
 
   - id: shape-a-failed-batch-steps-back
@@ -3784,8 +3857,8 @@ mutants:
     source: shape
     edits:
       - file: app/lounge/[id].tsx
-        find: "  if (pending && myStatus === 'pending') setPending(false);"
-        replace: "  if (pending && myStatus === 'banned') setPending(false);"
+        find: "      if (asked > requestAnsweredAt.current) setPending(false);"
+        replace: "      if (asked < requestAnsweredAt.current) setPending(false);"
     proof: { file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "a request the host declines is the door to ask again, never \"with the host\" for ever" }
 
   - id: shape-refusal-left-to-the-player
@@ -3847,7 +3920,7 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "    set((st) => ((st.critiquesOrder[postId] ?? order) !== order ? {} : { critiquesFailed: { ...st.critiquesFailed, [postId]: true } }));"
+        find: "    set((st) => ({ critiquesFailed: { ...st.critiquesFailed, [postId]: true } }));"
         replace: "    set(() => ({}));"
     proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "is said as failed, the first page or the next, and a read that lands clears it" }
 
@@ -4234,9 +4307,19 @@ mutants:
     source: shape
     edits:
       - file: ../.github/workflows/god_tier_ci.yml
-        find: "--part ${{ matrix.part }}/6"
-        replace: "--part ${{ matrix.part }}/5"
+        find: "--part ${{ matrix.part }}/${{ needs.mutants-plan.outputs.n }}"
+        replace: "--part ${{ matrix.part }}/6"
     proof: { file: src/utils/__tests__/theMutantsJobRunsEveryPart.guard.test.ts, test: "the matrix holds every part from 1 to n, and the step asks for its own part of that n" }
+
+  - id: shape-the-parts-floored
+    class: CI-gate-never-runs
+    source: shape
+    # 61 mutants in one part, 1,240 in 20: parts of more than 60, past the time a part is given.
+    edits:
+      - file: scripts/mutants-plan.cjs
+        find: "Math.max(1, Math.ceil(count / PER))"
+        replace: "Math.max(1, Math.floor(count / PER))"
+    proof: { file: src/utils/__tests__/theMutantsJobRunsEveryPart.guard.test.ts, test: "sizes the parts by the mutants the push stands on: one for every 60, at least one" }
 
   - id: shape-host-beneath-opens-its-sheet
     class: UI-a-sheet-opened-by-a-screen-beneath
@@ -4315,18 +4398,9 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "    const from = st0.critiquesRead[postId] ?? (st0.critiques[postId] ?? []).length;"
-        replace: "    const from = (st0.critiques[postId] ?? []).length;"
-    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique of the member's own, set at the top, does not move the next page past a row" }
-
-  - id: shape-withdrawn-row-still-counted
-    class: READ-a-page-begun-past-its-row
-    source: shape
-    edits:
-      - file: src/stores/dispatch.ts
-        find: "      critiquesRead: { ...st.critiquesRead, [postId]: Math.max(0, (st.critiquesRead[postId] ?? 0) - 1) },"
-        replace: "      critiquesRead: st.critiquesRead,"
-    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique withdrawn from a page read moves the next page back one, so none is skipped" }
+        find: "    const lastKey = lastKeyOf(data ?? []);"
+        replace: "    const lastKey = lastKeyOf(critiques.map((c) => ({ id: c.id, created_at: c.createdAt, certify_count: c.certifyCount })));"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a row the house sent and the parser dropped still stands in the order: the next page follows it" }
 
   - id: shape-leave-put-back-by-a-read
     class: WRITE-a-failure-put-back-by-a-read
@@ -4450,8 +4524,8 @@ mutants:
     source: shape
     edits:
       - file: src/features/settings/SettingsScreen.tsx
-        find: "    if (visibilityChanged) await updateUserMutation({ is_social_private });\n    let filed"
-        replace: "    let filed"
+        find: "    if (visibilityChanged) await updateUserMutation({ is_social_private });\n"
+        replace: ""
       - file: src/features/settings/SettingsScreen.tsx
         find: "    return filed;\n  };\n  const filedSaid"
         replace: "    if (visibilityChanged) await updateUserMutation({ is_social_private });\n    return filed;\n  };\n  const filedSaid"
@@ -4561,8 +4635,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/dispatch/ComposeDesks.tsx
-        find: "          takenUp={takenUpAt !== null ? <TakenUpLine savedAt={takenUpAt || null} onStartClean={startClean} /> : null}"
-        replace: "          takenUp={null}"
+        find: "          onBack={toForms}\n          onFile={onFile}\n          takenUp={takenUpAt !== null ? <TakenUpLine savedAt={takenUpAt || null} onStartClean={startClean} /> : null}"
+        replace: "          onBack={toForms}\n          onFile={onFile}\n          takenUp={null}"
     proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "a ballot taken up says so, with START CLEAN, which empties the desk and the draft" }
 
   - id: shape-reopen-over-a-tapped-launch
@@ -4624,8 +4698,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/dispatch/ComposeDesks.tsx
-        find: "    if (amending) { nav.back(); return; }\n    const toForms"
-        replace: "    const toForms"
+        find: "    if (amending) { nav.back(); return; }\n    router.setParams({ kind: '' });"
+        replace: "    router.setParams({ kind: '' });"
     proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK goes back to the filing, never to another desk" }
 
   - id: shape-log-search-forgotten
@@ -4642,9 +4716,9 @@ mutants:
     source: shape
     edits:
       - file: src/components/dispatch/ComposeDesks.tsx
-        find: "    if (!unsaved) { toForms(); return; }"
-        replace: "    { toForms(); return; }"
-    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK with words asks first, and only a discard goes to the forms" }
+        find: "    const kept = unkept.current;\n    unkept.current = null;\n    kept?.();"
+        replace: "    unkept.current = null;"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK with words goes to the forms at once, asking nothing: the words are kept" }
 
   - id: shape-essay-last-second-dropped
     class: WRITE-words-lost-on-the-way-out
@@ -4887,7 +4961,9 @@ mutants:
       - file: src/components/dispatch/FilingRow.tsx
         find: "  const f: Filing = acted ? { ...given, ...acted } : given;"
         replace: "  const f: Filing = given;"
-    proof: { file: src/components/dispatch/__tests__/archiveScreen.test.tsx, test: "a filing withdrawn in the reader is drawn withdrawn here, not in its old words" }
+    # The lists lay the member's acts over their copies now (useAsTheHouseNowHolds):
+    # the row's own laying is proved on a row handed an old copy.
+    proof: { file: src/components/dispatch/__tests__/aCritiqueMovesTheRowsOwnCount.test.tsx, test: "a row handed its list's old copy draws what the member's act left: the amended words, then the withdrawal" }
 
   - id: shape-act-kept-for-no-list
     class: STATE-one-screen-changed-another-printing-the-old
@@ -5038,7 +5114,7 @@ mutants:
     source: shape
     edits:
       - file: app/dispatch/series/[id].tsx
-        find: "useLeavesWhenHidden(parts.find((f) => !!f.authorId)?.authorId)"
+        find: "useLeavesWhenHidden(asRead.find((f) => !!f.authorId)?.authorId)"
         replace: "useLeavesWhenHidden(null)"
     proof: { file: src/components/dispatch/__tests__/seriesScreen.test.tsx, test: "a muted author leaves too; another author stays" }
 
@@ -5299,7 +5375,7 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useFollowRequests.ts
-        find: "    if (ok) useNotificationStore.getState().forgetRequestNotices(req.requesterId);"
+        find: "    if (ok && stillSignedIn(me)) useNotificationStore.getState().forgetRequestNotices(req.requesterId);"
         replace: ""
     proof: { file: src/hooks/__tests__/anAnsweredRequestLeavesTheBell.test.tsx, test: "admitting a member takes their request off the board and the bell, and leaves their other notices" }
 
@@ -5308,7 +5384,7 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useFollowRequests.ts
-        find: "    if (n >= 0) useNotificationStore.getState().forgetRequestNotices(null);"
+        find: "    if (n >= 0 && stillSignedIn(me)) useNotificationStore.getState().forgetRequestNotices(null);"
         replace: ""
     proof: { file: src/hooks/__tests__/anAnsweredRequestLeavesTheBell.test.tsx, test: "declining all takes every request off the board and the bell" }
 
@@ -6747,8 +6823,8 @@ mutants:
     source: shape
     edits:
       - file: app/(admin)/tribunal.tsx
-        find: "                    accessible={multiSelectMode}\n"
-        replace: "                    accessible={multiSelectMode || undefined}\n"
+        find: "      accessible={multiSelectMode}\n"
+        replace: "      accessible={multiSelectMode || undefined}\n"
     proof: { file: app/(admin)/__tests__/everyVerdictIsReachedByAScreenReader.test.tsx, test: "reaches every verdict, the accused and the evidence, each as its own stop, not lost inside the case card" }
 
   - id: shape-stack-row-offers-no-remove
@@ -7188,7 +7264,7 @@ mutants:
     source: shape
     edits:
       - file: src/lib/endSession.ts
-        find: "      try { setSensitive(OTHERS_OWED_KEY, member); } catch { /* asked again at the next \"sign out every other device\" */ }\n"
+        find: "      try { setSensitive(OTHERS_OWED_KEY, asked); } catch { /* asked again at the next \"sign out every other device\" */ }\n"
         replace: ""
     proof: { file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a forget of the other phones’ tokens that failed is owed, and asked again, under this phone’s session" }
 
@@ -7689,8 +7765,8 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useProfileData.ts
-        find: "          ProfileDataService.fetchHighestRated(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),\n        ]);\n"
-        replace: "          ProfileDataService.fetchHighestRated(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),\n          ProfileDataService.fetchCalendarData(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),\n        ]);\n"
+        find: "          ProfileDataService.fetchHighestRated(state.targetUser, held.signal),\n        ]);\n"
+        replace: "          ProfileDataService.fetchHighestRated(state.targetUser, held.signal),\n          ProfileDataService.fetchCalendarData(state.targetUser, held.signal),\n        ]);\n"
     proof: { file: src/hooks/__tests__/theProjectorDrawsOnTheHousesThreeReads.test.tsx, test: "an Auteur's projector draws once the house's three summaries answer" }
 
   - id: shape-summary-failure-taken-as-none
@@ -8280,8 +8356,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: "          const quote = mark.reply_to_content ?? null;"
-        replace: "          const quote = mark.reply_to_content ?? m.reply_to_content ?? null;"
+        find: "          const quote = m.reply_to_id && withdrawnHere.has(m.reply_to_id) ? null : mark.reply_to_content ?? null;"
+        replace: "          const quote = m.reply_to_id && withdrawnHere.has(m.reply_to_id) ? null : mark.reply_to_content ?? m.reply_to_content ?? null;"
     proof:
       file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts
       test: "back in a kept room after the removal, Cal's reply is read again without the words"
@@ -9278,8 +9354,11 @@ mutants:
     source: shape
     edits:
       - file: src/components/dispatch/ComposeDesks.tsx
-        find: "  const unsaved = !done && !sending && (amending"
-        replace: "  const unsaved = !done && (amending"
+        find: "import { useHoldWhileSending } from '@/src/hooks/useAskBeforeLeaving';"
+        replace: "import { useAskBeforeLeaving, useHoldWhileSending } from '@/src/hooks/useAskBeforeLeaving';"
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "  useHoldWhileSending(sending);"
+        replace: "  useHoldWhileSending(sending);\n  useAskBeforeLeaving(!!body.trim(), { title: 'Discard what you wrote?', message: 'These words are gone.' });"
     proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "3: no hold offers Discard over a save in flight, and work on its way is held or kept" }
 
   - id: shape-busy-row-held-as-one-id
@@ -9438,8 +9517,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "    if (isNetworkError(e) || isRateLimited(e)) {\n      enqueueMutation(queued);"
-        replace: "    if (isNetworkError(e)) {\n      enqueueMutation(queued);"
+        find: "    if (isNetworkError(e) || isRateLimited(e)) {\n      if (enqueueMutation(queued)) acts.queue();"
+        replace: "    if (isNetworkError(e)) {\n      if (enqueueMutation(queued)) acts.queue();"
     proof: { file: src/stores/__tests__/dispatchGuards.test.ts, test: "keeps a certification, a save and a vote for later: never undone, reported or said as a refusal" }
 
   - id: shape-a-held-filing-said-as-the-wire
@@ -9652,6 +9731,43 @@ mutants:
         find: "  if (c.refusedWith) return got.startsWith(`${c.refusedWith} `) ? 'refused' : 'refused otherwise';\n"
         replace: ""
     proof: { file: e2e/__tests__/attack.test.ts, test: "holds a pace's probe to the pace's own refusal, never another rule's" }
+
+  - id: shape-a-call-to-the-store-unpaced
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    # The kinds pass's instance put back: the member's call that asks the store answers no pace of its own.
+    edits:
+      - file: supabase/functions/sync-entitlement/index.ts
+        find: "Number(wait) }, 429, { 'Retry-After': wait });"
+        replace: "Number(wait) }, 503, { 'Retry-After': wait });"
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "lets no member call a deployed edge function without end: each answers a pace of its own, or is a door only the house or the store opens" }
+
+  - id: shape-a-write-through-a-call-unread
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts
+        find: "[...insertsOf(body), ...callsOf(h, body).flatMap((c) => reachOf(h, c, seen))]"
+        replace: "[...insertsOf(body)]"
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "runs no member-run function that writes where no pace stands, unless it paces itself or is judged" }
+
+  - id: shape-a-request-sent-out-unread
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts
+        find: "out.add(NET_QUEUE);"
+        replace: "void NET_QUEUE;"
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "find a member-run function that writes through another, into any schema, or sends a request out, with no pace" }
+
+  - id: shape-a-change-that-grows-unread
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts
+        find: "['INSERT', 'UPDATE', 'DELETE'].includes(e)"
+        replace: "['INSERT'].includes(e)"
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "adds no row past a pace when a member changes, takes away or writes through a trigger, unless it is judged" }
 
   - id: shape-a-stacks-count-read-past-its-stack
     class: DB-rule-kept-on-one-path
@@ -9996,3 +10112,1352 @@ mutants:
         find: "  WHILE private.member_grams_fill(5000) <> 'complete' LOOP"
         replace: "  WHILE false LOOP"
     proof: { file: e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts, test: "each seed laying a source with its triggers off makes every kept table of it again" }
+  - id: shape-a-verdict-kept-whose-files-moved
+    class: TOOL-a-rebase-loses-the-mutant-verdicts
+    source: shape
+    # A recorded verdict taken again though a file the mutant stands on changed since its run.
+    edits:
+      - file: scripts/mutants.cjs
+        find: "  if (moved.length) return `${moved.join(', ')} changed since its run`;"
+        replace: "  if (moved.length < 0) return `${moved.join(', ')} changed since its run`;"
+    proof: { file: scripts/__tests__/mutantVerdictsStand.test.ts, test: "a recorded verdict stands only where its run is in this history and nothing it stands on, nor the runner, changed since" }
+  - id: shape-a-merge-keeps-the-older-run
+    class: TOOL-a-rebase-loses-the-mutant-verdicts
+    source: shape
+    # A merge's results file keeps our side's verdict whatever stands.
+    edits:
+      - file: scripts/mutants.cjs
+        find: "  return sides.length ? [keep(standing[0] ?? (b && later(b, a) ? b : a))] : [];"
+        replace: "  return sides.length ? [keep(a)] : [];"
+    proof: { file: scripts/__tests__/mutantVerdictsStand.test.ts, test: "a merge keeps the verdict that stands on the merged files, else the later run, and leaves out a mutant neither side ran" }
+  - id: shape-a-private-mutant-run-everywhere
+    class: TOOL-a-private-mutant-of-unpushed-work
+    source: shape
+    # A private mutant run in every checkout, whether or not its commit is there.
+    edits:
+      - file: scripts/mutants.cjs
+        find: "  const kept = entries.filter((m) => !bare.includes(m) && inHistory(m.since));"
+        replace: "  const kept = entries.filter((m) => !bare.includes(m));"
+    proof: { file: scripts/__tests__/mutantVerdictsStand.test.ts, test: "runs a private mutant only where the commit it names is in HEAD's history, and refuses one that names none" }
+  - id: shape-the-gate-lock-lets-everyone-by
+    class: TOOL-a-heavy-run-beside-the-push-gate
+    source: shape
+    # Every run taken for the gate's own child, so the lock holds nothing back.
+    edits:
+      - file: scripts/gate-lock.cjs
+        find: "  const mine = env[CHILD] && (lock.token === null || env[CHILD] === lock.token);"
+        replace: "  const mine = !!env[CHILD] || lock.token !== undefined;"
+    proof: { file: scripts/__tests__/gateLock.test.ts, test: "refuses a heavy run while a gate holds the machine, and lets the gate's own children and a free machine run" }
+  - id: shape-remote-verdicts-at-two-commits
+    class: TOOL-a-heavy-run-beside-the-push-gate
+    source: shape
+    # A remote run's parts recorded though they ran at different commits.
+    edits:
+      - file: scripts/mutants-remote.cjs
+        find: "    ...(commits.length > 1 ? [`the parts ran at"
+        replace: "    ...(commits.length > 9 ? [`the parts ran at"
+    proof: { file: scripts/__tests__/mutantsRemote.test.ts, test: "records a run's parts only when every verdict is at the one commit, each id once, each with its record" }
+  - id: shape-a-test-held-to-its-whole-limit
+    class: TEST-a-test-near-its-time-limit
+    source: shape
+    # A test found only once it has reached its limit, as it fails, not while it still passes.
+    edits:
+      - file: scripts/slow-tests.cjs
+        find: "filter((t) => t.ms > t.limit * share)"
+        replace: "filter((t) => t.ms > t.limit)"
+    proof: { file: scripts/__tests__/slowTests.test.ts, test: "finds both tests that failed the push gates, and none at half its limit or under" }
+  - id: shape-a-dead-run-told-by-its-tail
+    class: TOOL-a-dead-run-told-without-its-error
+    source: shape
+    # A dead run told by the last lines of its words, the error itself cut.
+    edits:
+      - file: scripts/mutants.cjs
+        find: "  const at = lines.findIndex((l) => ERROR_LINE.test(l));"
+        replace: "  const at = -1;"
+    proof: { file: scripts/__tests__/mutantVerdictsStand.test.ts, test: "keeps a dead run's own error, not the tail of its stack" }
+  - id: shape-the-circle-first-read-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: app/(modals)/social-modal.tsx
+        find: "readSocial().then((read) => { if (mine === readGen.current) showRead(read); }"
+        replace: "readSocial().then((read) => { showRead(read); }"
+    proof: { file: app/(modals)/__tests__/social-modal.telemetry.test.tsx, test: "a first read asked again after the wait ran long: the older answer, landing last, is dropped" }
+
+  - id: shape-the-circle-next-page-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: app/(modals)/social-modal.tsx
+        find: "if (!isMounted.current || mine !== readGen.current) return;"
+        replace: "if (!isMounted.current) return;"
+    proof: { file: app/(modals)/__tests__/social-modal.telemetry.test.tsx, test: "a next page asked of one circle is not laid under another read since" }
+
+  - id: shape-a-room-read-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "const current = () => isMounted.current && uid === targetUserIdRef.current && _roomAbortRef.current[room] === held;"
+        replace: "const current = () => isMounted.current && uid === targetUserIdRef.current;"
+    proof: { file: src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx, test: "a room's first read, answering after a search in it, is not laid over the search" }
+
+  - id: shape-a-room-next-page-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "if (uid !== targetUserIdRef.current || _roomAbortRef.current['watchlist'] !== held) return;"
+        replace: "if (uid !== targetUserIdRef.current) return;"
+    proof: { file: src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx, test: "a next page of the last search is not joined to the new one, nor does it end the new one's wait" }
+
+  - id: shape-a-room-failure-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "if (isMounted.current && uid === targetUserIdRef.current && _roomAbortRef.current[tab] === controller) setTabFailed((f) => ({ ...f, ['watchlist']: true }));"
+        replace: "if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, ['watchlist']: true }));"
+    proof: { file: src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx, test: "a search's failure, answering after a newer search began, is not said over it" }
+
+  - id: shape-the-file-spinner-let-down-by-a-member-left
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "else void fetchUserData().finally(() => { if (!gone) dispatch("
+        replace: "else void fetchUserData().finally(() => { if (gone || !gone) dispatch("
+    proof: { file: src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx, test: "the file's spinner stands for the next member while the last one's read lets go" }
+
+  - id: shape-the-profile-reread-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "if (mine !== profileTurns) return profileRead(get().user);"
+        replace: ""
+    proof: { file: src/stores/__tests__/anOlderProfileReadIsNotLaidOver.test.ts, test: "of two reads of the profile, the older answering last is not laid over the newer" }
+
+  - id: shape-a-profile-change-unmarked
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "profileTurns += 1;"
+        replace: ""
+    proof: { file: src/stores/__tests__/anOlderProfileReadIsNotLaidOver.test.ts, test: "a read asked before a change made here does not undo the change" }
+
+  - id: shape-the-rank-history-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "if (!memberUnchanged(userId) || mine !== rankHistoryReads) return;"
+        replace: "if (!memberUnchanged(userId)) return;"
+    proof: { file: src/stores/__tests__/anOlderProfileReadIsNotLaidOver.test.ts, test: "the rank history: an older answer landing last does not put back what a newer one laid" }
+
+  - id: shape-the-blocks-older-sync-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/blockStore.ts
+        find: "if (mine !== blockSyncs) return;"
+        replace: ""
+    proof: { file: src/stores/__tests__/aBlockSyncAskedBeforeIsNotLaidOver.test.ts, test: "of two reads, the older answering last is not laid over the newer" }
+
+  - id: shape-the-blocks-act-unheard
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/blockStore.ts
+        find: "if (actsBefore !== blockActs) return;"
+        replace: ""
+    proof: { file: src/stores/__tests__/aBlockSyncAskedBeforeIsNotLaidOver.test.ts, test: "a read asked before a block made here does not draw the member blocked again" }
+
+  - id: shape-finder-a-reducer-unseen
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "|| reducers.has(t) ? m : null"
+        replace: "? m : null"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a reducer's dispatch is a write; a busy flag let down without its own mark is not let off" }
+
+  - id: shape-finder-any-flag-let-down
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "return block.statements.some((s) => s.getEnd() <= w.getStart() && raised.has(markOf(s, 'false') ?? ''));"
+        replace: "return true;"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a reducer's dispatch is a write; a busy flag let down without its own mark is not let off" }
+
+  - id: shape-finder-any-signal-a-check
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "const cancelledByTheNext = (signal: string): boolean => {"
+        replace: "const cancelledByTheNext = (signal: string): boolean => { if (signal) return true;"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a reducer's dispatch is a write; a busy flag let down without its own mark is not let off" }
+
+  - id: shape-finder-a-key-entry-no-token
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "if (ts.isElementAccessExpression(e) && ts.isPropertyAccessExpression(e.expression) && e.expression.name.text === 'current') return from.includes(e.expression.expression.getText(sf));"
+        replace: ""
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: and passes a ref's entry for its key, a keeper's latest, and a busy flag let down with its own mark" }
+
+  - id: shape-finder-a-wait-in-the-other-arm
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: test-utils/afterAwait.js
+        find: "return !!x && !!y && x !== y;"
+        replace: "return false;"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: and passes a ref's entry for its key, a keeper's latest, and a busy flag let down with its own mark" }
+
+  - id: shape-finder-a-wait-that-leaves
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: test-utils/afterAwait.js
+        find: "if (ts.isReturnStatement(n) || ts.isThrowStatement(n)) return !(node.getStart() >= n.getStart() && node.getEnd() <= n.getEnd());"
+        replace: ""
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: and passes a ref's entry for its key, a keeper's latest, and a busy flag let down with its own mark" }
+
+  - id: shape-settings-refusal-kept-nowhere
+    class: EXIT-work-past-its-screen
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "writeDraft(me, 'settings', { form: data, refused: saidOfAFailure(err, 'Your last amendments could not be filed.') });"
+        replace: "writeDraft(me, 'settings', { form: data });"
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "refused after leaving: the return opens with the changes unsent, and the refusal said" }
+
+  - id: shape-settings-filed-draft-kept
+    class: EXIT-work-past-its-screen
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "clearDraft(me, 'settings');"
+        replace: ""
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "filed after leaving: the return opens on the house's settings, the draft gone" }
+
+  - id: shape-stack-page-from-the-top
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/services/StackService.ts
+        find: "    if (after) q = q.or(after);\n"
+        replace: ""
+    proof: { file: src/services/__tests__/aStackPageBeginsAfterItsLastFilm.test.ts, test: "a film taken out of the stack while the first page was held: the next page still begins at the film after the last drawn" }
+
+  - id: shape-keyset-unranked-never-beyond
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/keysetCursor.ts
+        find: "    return nullable ? [`${column}.gt.${v}`, `${column}.is.null`] : [`${column}.gt.${v}`];"
+        replace: "    return [`${column}.gt.${v}`];"
+    proof: { file: src/services/__tests__/aStackPageBeginsAfterItsLastFilm.test.ts, test: "pages a stack whose films are unranked and added together, every film once and in its order" }
+
+  - id: shape-critique-page-from-the-top
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      if (beyond) q = q.or(beyond);\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "continues after the last row it was sent, and keeps both pages" }
+
+  - id: shape-certified-page-keyed-on-two
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "  return order === 'CERTIFIED' ? [{ column: 'certify_count', direction: 'desc', value: after.certifyCount }, ...newest] : newest;"
+        replace: "  return newest;"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "under CERTIFIED, the next page begins after the last row on all three of its places: its count, when, its id" }
+
+  - id: shape-older-critique-read-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    if (!memberUnchanged(startedAs) || readNo !== critiqueReads.get(postId)) return;\n\n    const { critiques } = parseCritiqueRows(data ?? []);"
+        replace: "    if (!memberUnchanged(startedAs)) return;\n\n    const { critiques } = parseCritiqueRows(data ?? []);"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a first page asked again in the same order: the older answer, landing last, is not drawn" }
+
+  - id: shape-replaced-read-leaves-more-spinning
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      critiquesLoadingMore: { ...st.critiquesLoadingMore, [postId]: false },\n      critiquesOrder"
+        replace: "      critiquesOrder"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a next page of a read since asked again is not joined to the new first page, and its spinner is let down" }
+
+  - id: shape-older-filing-read-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      if (mine !== filingReads.get(id) || actedSince('filing', id, askedAt)"
+        replace: "      if (actedSince('filing', id, askedAt)"
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "of two reads of a filing, the older answering last is not laid over the newer" }
+
+  - id: shape-filing-read-over-an-amend
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      if (mine !== filingReads.get(id) || actedSince('filing', id, askedAt) || "
+        replace: "      if (mine !== filingReads.get(id) || "
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a filing read asked before the member amends it does not put the old words back" }
+
+  - id: shape-older-tally-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      if (!memberUnchanged(startedAs) || mine !== tallyReads.get(id)) return;"
+        replace: "      if (!memberUnchanged(startedAs)) return;"
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "of two reads of a ballot’s count, the older answering last is not laid over the newer" }
+
+  - id: shape-mark-read-over-an-uncertify
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "        if (!certs.error && !actedSince('filingCertify', id, askedAt)) {"
+        replace: "        if (!certs.error) {"
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a read of the member’s marks asked before they take a certification back does not draw the heart again" }
+
+  - id: shape-paper-act-kept-out-of-the-ledger
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "  const acts = beginActs(marks);"
+        replace: "  const acts = beginActs([]);"
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a read of the member’s marks asked before they take a certification back does not draw the heart again" }
+
+  - id: shape-queued-mark-read-over
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    return !!mark && mark[0] === kind && mark[1] === id;"
+        replace: "    return false;"
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a certification taken back and waiting in the queue is not undone by a read the house answers before it" }
+
+  - id: shape-critique-mark-read-over-a-certify
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "        if (actedSince('critiqueCertify', c.id, askedAt)) continue;\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a critique’s mark read before the member takes its certification back does not draw the heart again" }
+
+  - id: shape-finder-per-thing-moment-unasked
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "if (at && ts.isIdentifier(at) && (takenAt.get(at.text) ?? Infinity) <= since) found = true;"
+        replace: "if (at) found = true;"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a write laid thing by thing passes only when each thing the member acted on since the ask is skipped, the moment taken before the wait" }
+
+  - id: shape-heart-read-over-a-take-back
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/domain/interactionSlice.ts
+        find: "if (i.type === 'endorse' && !tappedSince('certify', i.targetId, askedAt) && !queued.has(i.targetId)) idx[i.targetId] = i;"
+        replace: "if (i.type === 'endorse') idx[i.targetId] = i;"
+    proof: { file: src/stores/__tests__/interactionSlice.test.ts, test: "a read asked before the member takes a heart back does not draw it again" }
+
+  - id: shape-stack-heart-read-over-a-take-back
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/domain/interactionSlice.ts
+        find: "newListEndorsements.forEach(i => { if (!tappedSince('certify', i.targetId, askedAt) && !queued.has(i.targetId)) idx[i.targetId] = i; });"
+        replace: "newListEndorsements.forEach(i => { idx[i.targetId] = i; });"
+    proof: { file: src/stores/__tests__/interactionSlice.test.ts, test: "a stack’s read asked before the member takes its heart back does not draw it again" }
+
+  - id: shape-older-heart-read-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/domain/interactionSlice.ts
+        find: "        if (!stillSignedIn(user.id) || mine !== logEndorseReads) return;"
+        replace: "        if (!stillSignedIn(user.id)) return;"
+    proof: { file: src/stores/__tests__/interactionSlice.test.ts, test: "of two reads, the older answering last is not laid over the newer" }
+
+  - id: shape-older-corridor-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      if (!memberUnchanged(startedAs) || mine !== _corridorReads) return;\n      set({ lounges: enriched"
+        replace: "      if (!memberUnchanged(startedAs)) return;\n      set({ lounges: enriched"
+    proof: { file: src/stores/__tests__/anOlderSalonReadIsNotLaidOver.test.ts, test: "of two reads of the corridor, the older answering last is not laid over the newer" }
+
+  - id: shape-older-room-read-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "        if (!memberUnchanged(startedAs) || mine !== _roomReads.get(loungeId)) return;\n        keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));\n        // Only if this room"
+        replace: "        if (!memberUnchanged(startedAs)) return;\n        keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));\n        // Only if this room"
+    proof: { file: src/stores/__tests__/anOlderSalonReadIsNotLaidOver.test.ts, test: "of two whole reads of a room, the older answering last does not take away a word the newer holds" }
+
+  - id: shape-older-page-joined-to-a-new-read
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "        const filteredOlder = olderMessages.filter(m => !hiddenHere(m));\n        if (!memberUnchanged(startedAs) || mine !== roomRead(loungeId)) return;"
+        replace: "        const filteredOlder = olderMessages.filter(m => !hiddenHere(m));\n        if (!memberUnchanged(startedAs)) return;"
+    proof: { file: src/stores/__tests__/anOlderSalonReadIsNotLaidOver.test.ts, test: "a next page asked before the room was read again from what it kept is not joined to it" }
+
+  - id: shape-kept-room-drawn-unnumbered
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      _roomReads.set(loungeId, (_roomReads.get(loungeId) ?? 0) + 1);\n      set({ currentLoungeId: loungeId, currentMessages: kept"
+        replace: "      set({ currentLoungeId: loungeId, currentMessages: kept"
+    proof: { file: src/stores/__tests__/anOlderSalonReadIsNotLaidOver.test.ts, test: "a next page asked before the room was read again from what it kept is not joined to it" }
+
+  - id: shape-note-read-over-a-save
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/vaultStore.ts
+        find: "              if (notesLog[viewingId] === logId && !writtenSince(viewingId)) {"
+        replace: "              if (notesLog[viewingId] === logId) {"
+    proof: { file: src/stores/__tests__/aNoteWrittenWhileTheVaultIsReadStays.test.ts, test: "a note saved while the record’s notes are read again is not taken away by the answer" }
+
+  - id: shape-note-read-over-a-take-back
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/vaultStore.ts
+        find: "              if (writtenSince(row.viewing_id)) continue;\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aNoteWrittenWhileTheVaultIsReadStays.test.ts, test: "a note taken back while the record’s notes are read again does not come back" }
+
+  - id: shape-finder-key-mark-unseen
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "    for (const m of t.matchAll(/(\\w+):\\s*\\{\\s*\\.\\.\\.\\w+\\.\\1\\s*,\\s*\\[\\w+\\]:\\s*true\\s*\\}/g)) raised.add(m[1] ?? '');\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a read raising its own mark for one key, and leaving while that key's mark is up, is one at a time; without the leave it is not" }
+
+  - id: shape-queued-send-reads-no-page-again
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/utils/mutationExecutor.ts
+        find: "    if (page) void queryClient.invalidateQueries({ queryKey: page(mapped) });\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aQueuedWriteReadsItsPageAgain.test.ts, test: "a stack's critique sent by the queue reads the stack's critiques again" }
+
+  - id: shape-queued-stack-page-left-unread
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/utils/mutationExecutor.ts
+        find: "    update_list: (p) => ['stack', p.list_id],\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "2: every queued write does, once sent, what its online twin does once answered" }
+
+  - id: shape-gone-filing-kept-on-lists
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    .filter((f) => st.gone[f.id] === undefined)\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aFilingFoundGoneLeavesEveryList.test.ts, test: "a filing the reader finds gone leaves a list holding its own copy" }
+
+  - id: shape-series-deaf-to-acts
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: app/dispatch/series/[id].tsx
+        find: "  const parts = useAsTheHouseNowHolds(asRead).filter((f) => !f.endedAt);"
+        replace: "  const parts = useAsTheHouseNowHolds([]).concat(asRead);"
+    proof: { file: src/components/dispatch/__tests__/seriesScreen.test.tsx, test: "amended by its author here, prints the new title" }
+
+  - id: shape-room-keeps-a-gone-filing
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/hooks/useMemberRoom.ts
+        find: "    author, memberId, filings: held, filed,"
+        replace: "    author, memberId, filings, filed,"
+    proof: { file: src/hooks/__tests__/theRoomDoesNotRepeatItself.test.tsx, test: "found gone by the reader, leaves the room" }
+
+  - id: shape-given-again-never-heard
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    if (back.length) set((st) => ({ gone: withoutKeys(st.gone, back) }));\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aFilingFoundGoneLeavesEveryList.test.ts, test: "a list's read asked after the mark, giving the filing again, takes the mark away; one asked before does not" }
+
+  - id: shape-holder-trusted-by-its-name
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts
+        find: "      if ('follows' in h) for (const piece of h.follows) if (!code.includes(piece)) faults.push(`${key}: follows by ${piece}, which ${file} no longer holds`);\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "1: to a kept list of the house named nowhere, one whose way of following has gone, and one named but gone" }
+
+  - id: shape-twin-read-in-its-catch
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts
+        find: "    if (ts.isCatchClause(n)) return;\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "2: to a queued write that, once sent, skips what its online twin does once answered" }
+
+  - id: shape-channel-trusted-unpublished
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts
+        find: "      if (!published.has(t)) faults.push(`${t}: heard by its channel, but the house does not publish it`);\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "3: to an ended table named nowhere, a channel the house does not publish or the app does not hear, and a read again gone" }
+
+  - id: shape-salon-notice-opens-the-asker
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: src/utils/noticeRoute.ts
+        find: "  if (notice.related_lounge_id && UUID.test(notice.related_lounge_id)) return `/lounge/${notice.related_lounge_id}?door=1`;\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aNoticeOpensWhatItIsAbout.guard.test.ts, test: "opens the room it is about" }
+
+  - id: shape-log-critique-notice-unkeyed
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: supabase/schema/live-schema.sql
+        find: "                'endorse:log:' || NEW.log_id,\n                jsonb_build_object('comment_id', NEW.id));"
+        replace: "                NULL,\n                jsonb_build_object('comment_id', NEW.id));"
+    proof: { file: src/utils/__tests__/aNoticeOpensWhatItIsAbout.guard.test.ts, test: "opens the room it is about" }
+
+  - id: shape-notice-route-trusted
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aNoticeOpensWhatItIsAbout.guard.test.ts
+        find: "    if (wrong.length) faults.push(`${k}: about a ${room}, opens ${wrong.map((r) => r || 'nothing').join(', ')}`);\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aNoticeOpensWhatItIsAbout.guard.test.ts, test: "to a critique of a log keyed by nothing, a writer named nowhere, and a name gone" }
+
+  - id: shape-amend-link-files-new
+    class: DATA-edit-sealed-over-an-unread-record
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "  const amending = !!editId;\n"
+        replace: "  const amending = !!editId && !!existing;\n"
+    proof: { file: src/components/dispatch/__tests__/anAmendLinkReadsItsFiling.test.tsx, test: "is read from the house, said while it is read, and opens on the filing as filed" }
+
+  - id: shape-amend-desk-drawn-unread
+    class: DATA-edit-sealed-over-an-unread-record
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "reading={amendRead === 'held' ? null : { state: amendRead, onReadAgain: readFiled }}"
+        replace: "reading={null}"
+    proof: { file: src/components/dispatch/__tests__/anAmendLinkReadsItsFiling.test.tsx, test: "out of reach, says so, offers it again, and opens when asked again" }
+
+  - id: shape-records-film-pages-only
+    class: DATA-edit-sealed-over-an-unread-record
+    source: shape
+    edits:
+      - file: src/stores/films.ts
+        find: " ?? Object.values(_loggedIndex).find((l) => l?.id === logId);"
+        replace: ";"
+    proof: { file: src/stores/__tests__/aRecordsFilmIsFoundPastThePages.test.ts, test: "is found for a record older than the pages, by the index of films logged" }
+
+  - id: shape-lookup-way-trusted
+    class: DATA-edit-sealed-over-an-unread-record
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aRecordIsFoundPastItsPages.guard.test.ts
+        find: "    if ('falls' in s) for (const piece of s.falls) if (!code.includes(piece)) faults.push(`${key}: falls to ${piece}, which its file no longer holds`);\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aRecordIsFoundPastItsPages.guard.test.ts, test: "to a look-up named nowhere, one whose way past the pages has gone, and a name gone" }
+
+  - id: shape-request-waits-for-no-later-roster
+    class: STATE-a-request-held-after-its-answer
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "    if (myStatus === 'pending' || pending) refreshMembership();"
+        replace: "    if (myStatus === 'pending') refreshMembership();"
+    proof: { file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "a request whose first roster could not be read, then declined, is the door to ask again once a roster is read" }
+
+  - id: shape-refresh-left-turning
+    class: STATE-a-request-held-after-its-answer
+    source: shape
+    edits:
+      - file: app/(modals)/notifications-modal.tsx
+        find: "    try { await fetchNotifications({ fromTop: true }); } finally { setRefreshing(false); }"
+        replace: "    await fetchNotifications({ fromTop: true });\n    setRefreshing(false);"
+    proof: { file: src/utils/__tests__/aMarkInFlightEndsWithItsAnswer.guard.test.ts, test: "ends with its answer: lowered in a finally, or named with what ends it" }
+
+  - id: shape-sent-again-marked-on-screen-alone
+    class: WRITE-a-sent-message-taken-off-the-screen
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      inRoomWords(msg.lounge_id, (words) => words.map(m =>\n        m.id === messageId ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const } : m\n      ));\n"
+        replace: "      set(s => ({ currentMessages: s.currentMessages.map(m =>\n        m.id === messageId ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const } : m\n      ) }));\n"
+    proof: { file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "sent again, answered after another room was opened, is sent in the room’s kept words" }
+
+  - id: shape-sending-mark-unread
+    class: WRITE-a-sent-message-taken-off-the-screen
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMarkInFlightEndsWithItsAnswer.guard.test.ts
+        find: "          out.add(`${file}#${nameOf(p)}:sending`);\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aMarkInFlightEndsWithItsAnswer.guard.test.ts, test: "to a flag lowered in no finally, a message marked sending, each named nowhere; a way gone; a name gone" }
+
+  - id: shape-late-registration-kept-for-the-departed
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: src/lib/pushNotifications.ts
+        find: "    if (!stillSignedIn(userId)) {"
+        replace: "    if (!stillSignedIn(userId) && !token) {"
+    proof: { file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a registration answered after the member signed out is forgotten again, kept by nothing, and an owed forget stays owed" }
+
+  - id: shape-others-forget-owed-in-the-next-name
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: src/lib/endSession.ts
+        find: "    if (asked && stillSignedIn(asked)) {"
+        replace: "    if (asked) {"
+    proof: { file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a forget of the other phones’ tokens refused after another member signed in is owed in no one’s name" }
+
+  - id: shape-rank-queued-as-whoever-is-here
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: src/lib/revenueCat.ts
+        find: "    if (!stillSignedIn(account.toLowerCase())) return;"
+        replace: ""
+    proof: { file: src/lib/__tests__/aRankBoughtOfflineIsKept.test.ts, test: "signed out while the store answered, or another member signed in: nothing is queued as whoever is here" }
+
+  - id: shape-tapped-notice-read-as-whoever-is-here
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: src/utils/openNoticeFromPush.ts
+        find: "  if (notice && !notice.read && stillSignedIn(tappedBy)) void store.markRead(notice.id);"
+        replace: "  if (notice && !notice.read) void store.markRead(notice.id);"
+    proof: { file: src/utils/__tests__/theTappedNoticeOpensIt.test.ts, test: "a notice read for a member who signed out while it was read is marked read in no one’s name" }
+
+  - id: shape-stack-critique-queued-as-whoever-is-here
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "      if (isNetworkError(err) && stillSignedIn(user.id) && enqueueMutation({"
+        replace: "      if (isNetworkError(err) && enqueueMutation({"
+    proof: { file: src/stores/__tests__/staleWriteGuard.test.ts, test: "EVERY write after a wait, in the whole app, is checked after its own last wait — enumerated" }
+
+  - id: shape-stale-guard-blind-to-the-phone
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: src/stores/__tests__/staleWriteGuard.test.ts
+        find: "  if (ts.isIdentifier(on) && on.text === 'storage' && act === 'set') return 'storage.set(';"
+        replace: ""
+    proof: { file: src/stores/__tests__/staleWriteGuard.test.ts, test: "a write after a wait with no check, a check before the wait, or a check in another handler" }
+
+  - id: shape-a-wait-in-a-leaving-arm-reaches-on
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: test-utils/afterAwait.js
+        find: " || leavesItsArm(w, node)))"
+        replace: "))"
+    proof: { file: src/stores/__tests__/staleWriteGuard.test.ts, test: "a wait in an arm that leaves does not reach past it; one in a try whose finally holds the write does" }
+
+  - id: shape-a-page-setter-stepping-back-unseen
+    class: READ-the-next-page-asks-an-old-one
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts
+        find: "    if (ts.isCallExpression(n) && /^set\\w*Page$/i.test(n.expression.getText(sf).replace(/^.*\\./, '')) && n.arguments.some(subtracts)) out.push(`${file}:${AW.lineOf(sf, n)}`);\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "1: a page number stepped back, by a setter, an assignment or a decrement" }
+
+  - id: shape-a-page-judged-by-a-parse-unseen
+    class: READ-a-page-judged-by-the-rows-kept
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts
+        find: "const DROPS_ROWS = /\\.(?:filter|flatMap)\\(|\\b(?:safeParse|parse\\w*)\\(/;"
+        replace: "const DROPS_ROWS = /\\.(?:filter|flatMap)\\(/;"
+    proof: { file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "2: a page judged by rows kept after a filter or a parse; never by the rows sent" }
+
+  - id: shape-a-screens-copy-put-back-unseen
+    class: WRITE-a-rollback-that-undoes-another-write
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts
+        find: "      return LIVE.test(from) || drawn.has(from) ? m.name.text : null;"
+        replace: "      return LIVE.test(from) ? m.name.text : null;"
+    proof: { file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, test: "1: a whole copy of a store, a query or a store's field taken before the wait, written back after it" }
+
+  - id: shape-door-cleared-puts-back-the-whole-copy
+    class: WRITE-a-rollback-that-undoes-another-write
+    source: shape
+    edits:
+      - file: src/hooks/useFollowRequests.ts
+        find: "      setItems((now) => [...snapshot.filter((r) => !now.some((n) => n.requesterId === r.requesterId)), ...now]\n        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)));"
+        replace: "      setItems(snapshot);"
+    proof: { file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, test: "1: no failed write puts back a whole copy over changes made since" }
+
+  - id: shape-a-catch-that-only-reads-unseen
+    class: WRITE-a-failure-put-back-by-a-read
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts
+        find: "      if (ts.isCatchClause(m)) return m.block;\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, test: "2: a change made before the wait, on failure only read again; never when the failure takes its own change back" }
+
+  - id: shape-stack-rest-fails-unsaid
+    class: READ-a-later-page-failing-in-silence
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "      logger.warn('[stacks] reading more films failed', e);\n      setMoreFailedFor(list.films);"
+        replace: "      logger.warn('[stacks] reading more films failed', e);"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a later page that could not be read is said at the foot, the grid asks no more as it is scrolled, and TRY AGAIN asks again" }
+
+  - id: shape-stack-asks-every-scroll
+    class: READ-a-later-page-failing-in-silence
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "onEndReached={moreFailed ? undefined : () => { void readMoreFilms(); }}"
+        replace: "onEndReached={() => { void readMoreFilms(); }}"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a later page that could not be read is said at the foot, the grid asks no more as it is scrolled, and TRY AGAIN asks again" }
+
+  - id: shape-later-page-failure-unseen
+    class: READ-a-later-page-failing-in-silence
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts
+        find: "const SAYS_A_LATER_PAGE_FAILED = /\\b(?:\\w*MoreFailed|moreFailed\\w*|isFetchNextPageError|\\w*NextFailed)\\b/;"
+        replace: "const SAYS_A_LATER_PAGE_FAILED = /\\b(?:\\w*MoreFailed|moreFailed\\w*|isFetchNextPageError|\\w*NextFailed|readMore\\w*)\\b/;"
+    proof: { file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "finds the instances it was made for, put back" }
+
+  - id: shape-queued-shelf-entry-dropped
+    class: STATE-an-unsent-write-left-off-a-redrawn-page
+    source: shape
+    edits:
+      - file: src/stores/domain/archiveSlice.ts
+        find: "const shown = overlayQueuedShelf(uid, items, getOfflineQueue(), !loadMore);"
+        replace: "const shown = items;"
+    proof: { file: src/stores/__tests__/aQueuedShelfWriteStaysOnTheShelf.test.ts, test: "keeps an entry filed offline, keeps one taken off away, and keeps a change made, while each waits" }
+
+  - id: shape-queued-stack-film-dropped
+    class: STATE-an-unsent-write-left-off-a-redrawn-page
+    source: shape
+    edits:
+      - file: src/stores/domain/queuedStack.ts
+        find: "      films = [...films, film(filmId, str(p.film_title) ?? 'Unknown', str(p.poster_path))];\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aQueuedStackChangeStaysOnTheStacks.test.ts, test: "keeps a film added and one taken off offline, and a name changed, while each waits" }
+
+  - id: shape-stack-page-reads-no-queue
+    class: STATE-an-unsent-write-left-off-a-redrawn-page
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "overlayQueuedStack(id, stack as ListDetail, getOfflineQueue(),"
+        replace: "overlayQueuedStack(id, stack as ListDetail, [],"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "read again, keeps the member’s queued changes to it: a film added and one taken off offline, and an edit" }
+
+  - id: shape-rewatch-head-dropped
+    class: STATE-an-unsent-write-left-off-a-redrawn-page
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "        if (q.type === 'add_viewing' || q.type === 'remove_viewing') return [{ id: q.payload.log_id, updates: q.payload.head ?? q.payload.fields }];\n"
+        replace: ""
+    proof: { file: src/stores/domain/__tests__/logReconciliation.test.ts, test: "a rewatch added offline is laid over the record, as the member saw it, while it waits" }
+
+  - id: shape-withdrawn-message-put-back
+    class: STATE-an-unsent-write-left-off-a-redrawn-page
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "const putBack = !mark.deleted_at && !!m.deleted_at && !withdrawnHere.has(m.id);"
+        replace: "const putBack = !mark.deleted_at && !!m.deleted_at;"
+    proof: { file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts, test: "back in the room, the message stays withdrawn and the reply stays unquoted, as the member left them" }
+
+  - id: shape-queued-critique-off-the-page
+    class: STATE-an-unsent-write-left-off-a-redrawn-page
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "const existing = after ? (st.critiques[postId] ?? []) : filed;"
+        replace: "const existing = after ? (st.critiques[postId] ?? []) : [];"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique filed offline leads the page, and one taken off offline stays off, until the queue sends them" }
+
+  - id: shape-ledger-count-read-as-row
+    class: STATE-an-unsent-write-left-off-a-redrawn-page
+    source: shape
+    edits:
+      - file: src/utils/__tests__/everyQueuedWriteIsReadBack.guard.test.ts
+        find: "    for (const t of read.keys()) if (!(file === LEDGER && counted.has(t))) readBy.add(t);"
+        replace: "    for (const t of read.keys()) readBy.add(t);"
+    proof: { file: src/utils/__tests__/everyQueuedWriteIsReadBack.guard.test.ts, test: "finds the instances it found, put back: a filing’s queued critique, a shelf entry, a salon withdrawal" }
+
+  - id: shape-machinery-read-as-page
+    class: STATE-an-unsent-write-left-off-a-redrawn-page
+    source: shape
+    edits:
+      - file: src/utils/__tests__/everyQueuedWriteIsReadBack.guard.test.ts
+        find: "    if (MACHINERY.has(file)) continue;\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/everyQueuedWriteIsReadBack.guard.test.ts, test: "says no to a type queued that nothing reads back, and yes to each way of reading one" }
+
+  - id: shape-sanctions-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/components/admin/SanctionsList.tsx
+        find: "}), asFar.current, PAGE)"
+        replace: "}), PAGE, PAGE)"
+    proof: { file: src/components/admin/__tests__/aDocketReadAgainKeepsItsLaterPages.test.tsx, test: "SANCTIONS: a member lifted reads the list again as far as the admin had read, not its first page alone" }
+
+  - id: shape-appeals-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/components/admin/AppealsDocket.tsx
+        find: "}), asFar.current, PAGE)"
+        replace: "}), PAGE, PAGE)"
+    proof: { file: src/components/admin/__tests__/aDocketReadAgainKeepsItsLaterPages.test.tsx, test: "APPEALS: read again after a hearing, the docket keeps the appeals read past its first page" }
+
+  - id: shape-record-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/components/moderation/VerdictRecord.tsx
+        find: "}), asFar.current, PAGE)"
+        replace: "}), PAGE, PAGE)"
+    proof: { file: src/components/admin/__tests__/aDocketReadAgainKeepsItsLaterPages.test.tsx, test: "A MEMBER’S RECORD: read again after an appeal is filed, the record keeps the verdicts read past its first page" }
+
+  - id: shape-docket-forgets-how-far
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/components/admin/AppealsDocket.tsx
+        find: "  useEffect(() => { asFar.current = Math.max(PAGE, items.length); }, [items.length]);\n"
+        replace: ""
+    proof: { file: src/components/admin/__tests__/aDocketReadAgainKeepsItsLaterPages.test.tsx, test: "APPEALS: read again after a hearing, the docket keeps the appeals read past its first page" }
+
+  - id: shape-read-as-far-stops-at-one-page
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/utils/readAsFar.ts
+        find: "if (got.length < page || rows.length >= want ||"
+        replace: "if (got.length < page || rows.length >= 0 ||"
+    proof: { file: src/utils/__tests__/readAsFar.test.ts, test: "reads page after page until as many rows as were held, and no further" }
+
+  - id: shape-pages-finder-takes-a-choice-as-kept
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aListReadAgainKeepsItsLaterPages.guard.test.ts
+        find: "else if (branches(v, w).some((b) => !emptied(b) && !fromOld(b, w, sf)))"
+        replace: "else if (branches(v, w).every((b) => !emptied(b) && !fromOld(b, w, sf)))"
+    proof: { file: src/utils/__tests__/aListReadAgainKeepsItsLaterPages.guard.test.ts, test: "follows a first page through its names, its sort and dedupe, and each side of a choice" }
+
+  - id: shape-pages-finder-trusts-a-keep
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aListReadAgainKeepsItsLaterPages.guard.test.ts
+        find: "  return new RegExp(k.by).test(body);"
+        replace: "  return true;"
+    proof: { file: src/utils/__tests__/aListReadAgainKeepsItsLaterPages.guard.test.ts, test: "finds the instances it was made for, put back" }
+
+  - id: shape-tribunal-docket-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "queryFn: () => readPendingAsFar(pendingAsFar.current),"
+        replace: "queryFn: () => readPendingAsFar(REPORTS_PAGE_SIZE),"
+    proof: { file: app/(admin)/__tests__/theDocketsReadAgainKeepTheirLaterPages.test.tsx, test: "THE DOCKET: a verdict reads the docket again as far as the moderator had read, not its first page alone" }
+
+  - id: shape-tribunal-docket-forgets-how-far
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "  useEffect(() => { pendingAsFar.current = Math.max(REPORTS_PAGE_SIZE, pendingItems.length); }, [pendingItems.length]);\n"
+        replace: ""
+    proof: { file: app/(admin)/__tests__/theDocketsReadAgainKeepTheirLaterPages.test.tsx, test: "THE DOCKET: a verdict reads the docket again as far as the moderator had read, not its first page alone" }
+
+  - id: shape-tribunal-urgent-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "priorityCursorOf, priorityAsFar.current, PRIORITY_PAGE)"
+        replace: "priorityCursorOf, PRIORITY_PAGE, PRIORITY_PAGE)"
+    proof: { file: app/(admin)/__tests__/theDocketsReadAgainKeepTheirLaterPages.test.tsx, test: "URGENT: a verdict reads the queue again as far as the moderator had read, not its first page alone" }
+
+  - id: shape-member-file-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: ", logsAsFar.current);"
+        replace: ", LOGS_PAGE);"
+    proof: { file: src/hooks/__tests__/aMemberFileReadAgainKeepsItsLaterPages.test.tsx, test: "come back to after its read went stale, the file keeps the logs read past its first page" }
+
+  - id: shape-own-logs-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "readOnAsFar(readPage, Math.max(PAGE_SIZE, state.logs.length))"
+        replace: "readOnAsFar(readPage, PAGE_SIZE)"
+    proof: { file: src/stores/domain/__tests__/theOwnLogsReadAgainKeepTheirLaterPages.test.ts, test: "read again from the top, the logs come back as far as the member had read them, as the house holds them" }
+
+  - id: shape-read-on-as-far-stops-at-one-read
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/utils/readAsFar.ts
+        find: "if (got.nextCursor === null || items.length >= want ||"
+        replace: "if (got.nextCursor === null || items.length >= 0 ||"
+    proof: { file: src/utils/__tests__/readAsFar.test.ts, test: "reads as far as was held, each read no larger than the most one read asks, and hands on the cursor past it" }
+
+  - id: shape-board-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "Math.min(LOCAL_NOTIFICATION_CAP, Math.max(PAGE_SIZE, state.notifications.length))"
+        replace: "PAGE_SIZE"
+    proof: { file: src/stores/__tests__/theBoardReadAgainKeepsItsLaterPages.test.ts, test: "read again (the app come back to), the board keeps the notices read past its first page, as the house holds them" }
+
+  - id: shape-board-read-past-one-read-dropped
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "const past = data && !error && lastRead === asked && data.length < want ? cursorPast(data) : null;"
+        replace: "const past = data && !error && lastRead === asked && data.length < 0 ? cursorPast(data) : null;"
+    proof: { file: src/stores/__tests__/theBoardReadAgainKeepsItsLaterPages.test.ts, test: "read past the most one read of the board asks, it is read on from the first read’s last row" }
+
+  - id: shape-board-cut-short-on-a-failed-page
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "if (older.error || !older.data) { error = older.error ?? { message: 'an older page answered nothing' }; data = null; }"
+        replace: "if (older.error || !older.data) { /* the board kept as read so far */ }"
+    proof: { file: src/stores/__tests__/theBoardReadAgainKeepsItsLaterPages.test.ts, test: "a page past the first that cannot be read leaves the board as it was, said as not read" }
+
+  - id: shape-board-pull-reads-as-far
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "const want = how?.fromTop ? PAGE_SIZE :"
+        replace: "const want = how?.fromTop === undefined ? PAGE_SIZE :"
+    proof: { file: src/stores/__tests__/theBoardReadAgainKeepsItsLaterPages.test.ts, test: "a pull asks for the newest: the board is read from its top" }
+
+  - id: shape-word-finder-passes-a-box-by-no-shape
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/hooks/__tests__/everyWordWrittenIsKept.guard.test.ts
+        find: "if (attr(el, 'secureTextEntry', sf) !== null) return 'a secret';"
+        replace: "if (attr(el, 'secureTextEntry', sf) === null) return 'a secret';"
+    proof: { file: src/hooks/__tests__/everyWordWrittenIsKept.guard.test.ts, test: "finds a box whose words nothing keeps, and passes one kept where it is held, by a keeper naming it, by its hook, or by its shape" }
+
+  - id: shape-word-finder-trusts-every-screen-handing-a-box-in
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/hooks/__tests__/everyWordWrittenIsKept.guard.test.ts
+        find: "return uses.length > 0 && uses.every((u) => keptIn(u.src, u.passed, app, depth + 1));"
+        replace: "return uses.length >= 0;"
+    proof: { file: src/hooks/__tests__/everyWordWrittenIsKept.guard.test.ts, test: "finds a box whose words nothing keeps, and passes one kept where it is held, by a keeper naming it, by its hook, or by its shape" }
+
+  - id: shape-verdict-reason-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "useKeptWords(userId, 'verdict', state.report?.id)"
+        replace: "useKeptWords(userId, 'verdict', null)"
+    proof: { file: app/(admin)/__tests__/aVerdictOnACaseThatMovedOnIsTold.test.tsx, test: "is kept per case: the sheet closed and opened again on the case opens on it; another case on its own" }
+
+  - id: shape-verdict-reason-not-put-back
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "      putBackWords(user?.id, 'verdict', reportId, reason);\n"
+        replace: ""
+    proof: { file: app/(admin)/__tests__/aVerdictOnACaseThatMovedOnIsTold.test.tsx, test: "refused, with the case still standing, is put back for the case; judged, it is let go" }
+
+  - id: shape-hearing-word-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/admin/AppealsDocket.tsx
+        find: "useKeptWords(adminId, 'hearing', pending ? `${pending.appeal.id}:${pending.outcome}` : null)"
+        replace: "useKeptWords(adminId, 'hearing', null)"
+    proof: { file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "is kept per hearing: closed and opened again, the sheet opens on it; the other hearing on its own" }
+
+  - id: shape-hearing-word-kept-after-it-is-heard
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/admin/AppealsDocket.tsx
+        find: "      leave(appeal.id);\n      letGoWord();\n      setPending(null);\n      rereadAll();\n      TactileEngine.success();"
+        replace: "      leave(appeal.id);\n      setPending(null);\n      rereadAll();\n      TactileEngine.success();"
+    proof: { file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "is let go once the hearing is heard" }
+
+  - id: shape-lift-word-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/admin/SanctionsList.tsx
+        find: "useKeptWords(me, 'hearing', lifting ? `lift:${lifting.member.id}` : null)"
+        replace: "useKeptWords(me, 'hearing', null)"
+    proof: { file: src/components/admin/__tests__/aBanIsLiftedByAnAdmin.test.tsx, test: "is kept per lift: closed and opened again, the sheet opens on it; lifted, it is let go" }
+
+  - id: shape-report-details-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/moderation/ReportSheet.tsx
+        find: "useKeptWords(user?.id, 'report', visible ? `${contentType}:${contentId}` : null)"
+        replace: "useKeptWords(user?.id, 'report', null)"
+    proof: { file: src/components/moderation/__tests__/ReportSheet.test.tsx, test: "are kept per piece as they are written: closed and opened again, the sheet opens on them" }
+
+  - id: shape-report-details-kept-after-the-house-holds-it
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/moderation/ReportSheet.tsx
+        find: "      letGoDetails();\n"
+        replace: ""
+    proof: { file: src/components/moderation/__tests__/ReportSheet.test.tsx, test: "are let go once the house holds the report, and kept when it did not take it" }
+
+  - id: shape-share-message-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/ShareToLoungeModal.tsx
+        find: "useKeptWords(me, 'share', sharing)"
+        replace: "useKeptWords(me, 'share', null)"
+    proof: { file: src/components/__tests__/theShareSheetSaysWhenTheSalonsAreAway.test.tsx, test: "is kept as it is written: the sheet closed and opened again on the piece opens on it" }
+
+  - id: shape-share-message-refused-not-put-back
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/ShareToLoungeModal.tsx
+        find: "if (sent === false) putBackWords(me, 'share', sharing, content);"
+        replace: "if (sent === true) putBackWords(me, 'share', sharing, content);"
+    proof: { file: src/components/__tests__/theShareSheetSaysWhenTheSalonsAreAway.test.tsx, test: "is let go once sent, and put back when the house refuses it" }
+
+  - id: shape-founding-words-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/lounge/CreateLoungeSheet.tsx
+        find: "useKeptWords(me, 'founding', 'name')"
+        replace: "useKeptWords(me, 'founding', null)"
+    proof: { file: src/components/lounge/__tests__/aSalonFormAsksForOneRoom.test.tsx, test: "are kept as they are written, and opened on again when the corridor is come back to" }
+
+  - id: shape-founding-words-kept-after-the-room-is-made
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/lounge/CreateLoungeSheet.tsx
+        find: "      letGoName(); letGoDescription(); setIsPrivate(false);"
+        replace: "      setIsPrivate(false);"
+    proof: { file: src/components/lounge/__tests__/aSalonFormAsksForOneRoom.test.tsx, test: "are let go once a room is made" }
+
+  - id: shape-series-name-held-by-the-sheet-alone
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/dispatch/SeriesPicker.tsx
+        find: "useKeptWords(userId, 'series', NAMING)"
+        replace: "useKeptWords(userId, 'series', null)"
+    proof: { file: src/components/dispatch/__tests__/theSeriesSheet.test.tsx, test: "keeps a name half-typed: closed, it opens on it again, and once the series is set it is let go" }
+
+  - id: shape-short-desk-keeps-no-draft
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "    return writeDraft(userId, 'short', { body, source, film, filmId, spoiler }, kind);"
+        replace: "    return false;"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK with words goes to the forms at once, asking nothing: the words are kept" }
+
+  - id: shape-short-desk-takes-up-nothing
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "      const held = readDraft(userId, 'short', kind);"
+        replace: "      const held = readDraft(userId, 'short', `another-${kind}`);"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "a take taken up says so, with START CLEAN, which empties the desk and the draft" }
+
+  - id: shape-short-desk-draft-kept-after-filing
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "      letGo();\n      reelToast.success(filedSaid(filed, 'Filed'));"
+        replace: "      reelToast.success(filedSaid(filed, 'Filed'));"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "kept once the desk rests, and at once if it closes first; filed, the draft goes" }
+
+  - id: shape-amend-kept-as-a-new-take
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "      return writeDraft(userId, 'edit', { content: body, source, spoiler }, editId);"
+        replace: "      return writeDraft(userId, 'short', { body, source, spoiler }, kind);"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "is kept by its filing, apart from a new take, and taken up over the words as filed" }
+
+  - id: shape-picker-blind-to-a-short-draft
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: app/dispatch/compose.tsx
+        find: "                            || shortDrafts.has(f.kind),"
+        replace: "                            || shortDrafts.has(''),"
+    proof: { file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "says a take or a wire is in progress, each by its own draft (stage C: every desk keeps its draft)" }
+
+  - id: shape-kept-words-taken-up-once-per-place
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/hooks/useKeptWords.ts
+        find: "  if (takenFor !== place) {"
+        replace: "  if (place && takenFor !== place) {"
+    proof: { file: src/hooks/__tests__/aWordWrittenIsKept.test.tsx, test: "a box closed (no place) and opened again on the same place opens on the words kept for it" }
+
+  - id: shape-words-let-go-kept-again-as-the-box-goes
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/hooks/useKeptWords.ts
+        find: "    unsaved.current = null;\n    setWords('');"
+        replace: "    setWords('');"
+    proof: { file: src/hooks/__tests__/aWordWrittenIsKept.test.tsx, test: "words let go as the box goes in the same moment are not kept again by its going" }
+
+  - id: shape-words-put-back-for-another-member
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/hooks/useKeptWords.ts
+        find: "  if (!memberId || !words.trim() || useAuthStore.getState().user?.id !== memberId) return;"
+        replace: "  if (!memberId || !words.trim()) return;"
+    proof: { file: src/hooks/__tests__/aWordWrittenIsKept.test.tsx, test: "words refused after their box went are put back, after any written there since, for the member signed in alone" }
+
+  - id: shape-the-house-reader-blind-to-private
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: test-utils/houseFunctions.ts
+        find: "const name = withSchema(m.groups?.schema, m.groups?.name);"
+        replace: "const name = withSchema(undefined, m.groups?.name);"
+    proof: { file: src/utils/__tests__/aNoticeOpensWhatItIsAbout.guard.test.ts, test: "opens the room it is about" }
+
+  - id: shape-a-private-table-ended-read-as-a-members
+    class: COPY-a-change-that-misses-a-holder
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts
+        find: "  private: { own: 'the house"
+        replace: "  privat: { own: 'the house"
+    proof: { file: src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts, test: "3: every table whose rows are ended is named with how another phone holding one learns" }
+
+  - id: shape-share-sending-left-raised
+    class: STATE-a-request-held-after-its-answer
+    source: shape
+    edits:
+      - file: src/components/ShareToLoungeModal.tsx
+        find: "        }).finally(() => setSending(false));"
+        replace: "        });"
+    proof: { file: src/utils/__tests__/aMarkInFlightEndsWithItsAnswer.guard.test.ts, test: "ends with its answer: lowered in a finally, or named with what ends it" }
+
+  - id: shape-the-board-walked-at-launch
+    class: SPEED-a-launch-read-walks-page-by-page
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "            if (data && past) {\n                asked = want - data.length;"
+        replace: "            while (data && past && data.length < want) {\n                asked = Math.min(BOARD_READ_MOST, want - data.length);"
+    proof: { file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "walks no read of the house page by page at launch, and every walk away from it is judged" }
+
+  - id: shape-cut-finder-reads-a-field-on-an-error-only
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts
+        find: "if (FIELD.has(name) && !NOT_A_MEMBER.has(on)) { found = n.getText(); return; }"
+        replace: "if (FIELD.has(name) && NOT_A_MEMBER.has(on)) { found = n.getText(); return; }"
+    proof: { file: src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts, test: "finds a member’s words cut where no tap opens them, and passes a film’s, an error’s, another field, an expander and a card" }
+
+  - id: shape-cut-finder-follows-no-local
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts
+        find: "if (made && depth < 2) found = memberWords(made, locals, depth + 1) && n.text;"
+        replace: "if (made && depth < 0) found = memberWords(made, locals, depth + 1) && n.text;"
+    proof: { file: src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts, test: "finds the instances it was made for, put back" }
+
+  - id: shape-cut-finder-passes-every-clamp-it-is-given
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts
+        find: 'const lifts = clamp?.initializer && /\bundefined\b/.test(clamp.initializer.getText(sf));'
+        replace: "const lifts = !!clamp?.initializer;"
+    proof: { file: src/utils/__tests__/aMembersWordsAreReadWhole.guard.test.ts, test: "finds a member’s words cut where no tap opens them, and passes a film’s, an error’s, another field, an expander and a card" }
+
+  - id: shape-a-past-verdicts-reason-cut-to-a-line
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "            <Text style={s.historyReason} selectable>"
+        replace: "            <Text style={s.historyReason} numberOfLines={1}>"
+    proof: { file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "a past verdict’s reason on the record is drawn whole, never cut to a line" }
+
+  - id: shape-a-reported-title-cut-at-two-lines
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "<Text style={s.evidenceTitle} selectable>{words.title}</Text>"
+        replace: "<Text style={s.evidenceTitle} numberOfLines={2}>{words.title}</Text>"
+    proof: { file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "a reported title is drawn whole, as it stands and as it was reported" }
+
+  - id: shape-a-reported-filing-ruled-on-three-lines
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/PaperMore.tsx
+        find: "numberOfLines={whole ? undefined : CASE_LINES}"
+        replace: "numberOfLines={CASE_LINES}"
+    proof: { file: src/components/dispatch/paper/__tests__/aReportedFilingIsReadWholeBeforeItIsRuledOn.test.tsx, test: "cut at three lines opens whole on READ IT WHOLE, and folds again" }
+
+  - id: shape-both-ways-taken-as-either-way
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts
+        find: "else if (!p.says.length || !p.allows.length)"
+        replace: "else if (!p.says.length && !p.allows.length)"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "can say NO: a kind with no proof, one proven one way, a near miss that wants it, a label that is nothing" }
+
+  - id: shape-both-ways-blind-to-a-printed-kind
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts
+        find: "if (led) kinds.add(led);"
+        replace: "if (led && !led) kinds.add(led);"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "can say NO: a kind with no proof, one proven one way, a near miss that wants it, a label that is nothing" }
+
+  - id: shape-order-never-read-out-of-turn
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "if (stacked && b.bottom <= a.top - 2) {"
+        replace: "if (stacked && b.bottom <= a.top - 2 && !stacked) {"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a stop built after one it is drawn above is read out of turn (order-late)" }
+
+  - id: shape-beneath-asks-a-hidden-page
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: 'const stopOf = (e) => !e.closest(''[aria-hidden="true"]'') && !e.parentElement?.closest(STOP);'
+        replace: 'const stopOf = (e) => !e.parentElement?.closest(STOP);'
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "the same page hidden while the sheet is up is not asked (beneath-hidden)" }
+
+  - id: shape-colour-blind-to-an-underline
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "return [n.tagName, cs.fontWeight, cs.fontStyle, cs.textDecorationLine, filled(cs.backgroundColor),"
+        replace: "return [n.tagName, cs.fontWeight, cs.fontStyle, filled(cs.backgroundColor),"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "the same option underlined as well is told apart in any colour (colour-marked)" }
+
+  - id: shape-short-never-listed
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "if ((SHORTS || mustBeWhole) && truncates(e)) {"
+        replace: "if (mustBeWhole && truncates(e)) {"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a one-line text the phone ends with an ellipsis is listed as shortened (short-cut)" }
+  - id: shape-sign-in-forwards-no-address
+    class: AUTH-sign-in-counted-together
+    source: shape
+    # The member's address no longer sent to Auth: every sign-in by handle counted at the function's one address.
+    edits:
+      - file: ../supabase/functions/sign-in-with-username/index.ts
+        find: "        ...(SECRET_KEY && forAuth && ADDRESS.test(forAuth) ? { 'Sb-Forwarded-For': forAuth } : {}),\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aSignInIsCountedAtItsMembersAddress.guard.test.ts, test: "counts every password the house tries at the member's own address" }
+  - id: shape-sign-in-with-the-public-key
+    class: AUTH-sign-in-counted-together
+    source: shape
+    # The public key in the secret key's place: Auth reads no forwarded address from it.
+    edits:
+      - file: ../supabase/functions/sign-in-with-username/index.ts
+        find: "    const key = SECRET_KEY || ANON_KEY\n"
+        replace: "    const key = ANON_KEY\n"
+    proof: { file: src/utils/__tests__/aSignInIsCountedAtItsMembersAddress.guard.test.ts, test: "counts every password the house tries at the member's own address" }

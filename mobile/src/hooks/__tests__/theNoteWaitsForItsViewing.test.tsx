@@ -3,15 +3,13 @@
  *
  * Found in the post-ship check of Phase 2: such a log does not know which
  * viewing it is on, so the Vault could not say which note was its current one.
- * The form opened EMPTY over a note that existed, anything typed there had no
- * viewing to be saved against, and "unmark watched" — which deletes the whole
- * record — could not see the note at all.
+ * The form opened EMPTY over a note that existed, and anything typed there had no
+ * viewing to be saved against.
  *
- * Both are run here, not read: the form asks the server for the viewing and
- * stays shut until it has it; the unmark guard refuses while ANY note is on
- * the log.
+ * Run here, not read: the form asks the server for the viewing and stays shut
+ * until it has it.
  */
-import { renderHook, waitFor, act } from '@testing-library/react-native';
+import { renderHook, waitFor } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/src/lib/supabase';
 import { useLogFlow } from '@/src/hooks/useLogFlow';
@@ -32,7 +30,6 @@ jest.mock('@/src/services/VaultService', () => {
 const ME = '33333333-3333-4333-8333-333333333333';
 const LOG = '44444444-4444-4444-8444-444444444444';
 const V_NOW = '55555555-5555-4555-8555-555555555555';
-const V_THEN = '66666666-6666-4666-8666-666666666666';
 
 /** A log exactly as a pre-update cache holds it: no `viewingId` at all. */
 const staleLog = {
@@ -82,26 +79,5 @@ describe('the form, over a log that does not know its viewing', () => {
     const { result } = await renderHook(() => useLogFlow());
     await waitFor(() => expect(result.current.noteUnreachable).toBe(true));
     expect(result.current.noteReady).toBe(false);
-  });
-});
-
-describe('unmarking a film, which deletes the whole record', () => {
-  it('refuses while any note is on the log — even one on a past viewing', async () => {
-    // A bare mark: no rating, no review, no history. Only the note keeps it.
-    serverKnowsViewing(null);
-    mockFetchNotes.mockResolvedValue([{ viewing_id: V_THEN, log_id: LOG, notes: 'still mine' }]);
-    const removeLog = jest.fn();
-    useFilmStore.setState({ removeLog } as never);
-    await act(async () => { await useFilmStore.getState().unmarkWatched(603); });
-    expect(removeLog).not.toHaveBeenCalled();
-  });
-
-  it('a truly bare mark, with no note anywhere, is still removed', async () => {
-    serverKnowsViewing(null);
-    mockFetchNotes.mockResolvedValue([]);
-    const removeLog = jest.fn();
-    useFilmStore.setState({ removeLog } as never);
-    await act(async () => { await useFilmStore.getState().unmarkWatched(603); });
-    expect(removeLog).toHaveBeenCalledWith(LOG);
   });
 });

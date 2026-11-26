@@ -15,6 +15,7 @@ import { supabase } from './supabase';
 import { logger } from '../utils/logger';
 import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
 import { recordGateEvent } from '../utils/gateTelemetry';
+import { stillSignedIn } from '../stores/domain/helpers/sessionGuard';
 
 // ── The app's own view of an entitlement ──
 export type ReelHouseTier = 'cinephile' | 'archivist' | 'auteur' | 'founding';
@@ -434,6 +435,10 @@ export async function syncEntitlementToSupabase(tier: ReelHouseTier): Promise<vo
     if (!isConfigured || !Purchases) return;
     const account = await Purchases.getAppUserID();
     if (!ACCOUNT_ID.test(account)) return;
+    // Only for that member while they are the one signed in here: queued as whoever is (the queue
+    // sends as the member signed in when it is kept), another's rank would be refused for good.
+    // Their rank reaches the house by the store's own word all the same.
+    if (!stillSignedIn(account.toLowerCase())) return;
 
     // Queued (a dropped network only delays it); `user_id` keeps it off the
     // WRONG account (see sync_entitlement in types/mutations.ts).

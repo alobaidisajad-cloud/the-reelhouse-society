@@ -43,6 +43,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { ToastHost } from '@/src/components/ToastHost';
 import { arrive, MS } from '@/src/theme/motion';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { useKeptWords } from '@/src/hooks/useKeptWords';
 import { overlayTop, useSheetBottom } from '@/src/components/layout/navMetrics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -161,7 +162,10 @@ function ReportSheet({
 
   // ── Local State ─────────────────────────────────────────────────────────
   const [selectedReason, setSelectedReason] = useState<ReportReason | null>(null);
-  const [details, setDetails] = useState('');
+  // The details are kept per piece as they are written, and at once as the sheet closes: a sheet
+  // closed, or a report the house did not take, opens on them again; let go once the house or the
+  // queue holds the report.
+  const [details, setDetails, letGoDetails] = useKeptWords(user?.id, 'report', visible ? `${contentType}:${contentId}` : null);
   const detailsRef = useRef<TextInput>(null);
   // A refused filing says why under the details, with them, and goes there.
   const { refuse, wrongWith } = useFieldRefusal([details, selectedReason], { details: detailsRef });
@@ -183,8 +187,8 @@ function ReportSheet({
   const { isRendered, opacity, translateY } = useSheetPresence({
     visible,
     offscreen: windowHeight,
-    // Every report starts clean.
-    onOpen: () => { setSelectedReason(null); setDetails(''); setBlockToggle(false); setIsFocused(false); },
+    // Every report starts on its choices clean, and on the details kept for its piece, or none.
+    onOpen: () => { setSelectedReason(null); setBlockToggle(false); setIsFocused(false); },
   });
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
@@ -251,9 +255,10 @@ function ReportSheet({
 
     // Already reported is done too: the house holds that report, and says so.
     if (result.status === 'submitted' || result.status === 'queued' || result.status === 'duplicate') {
+      letGoDetails();
       onDismiss();
     }
-  }, [selectedReason, user, submitReport, contentId, contentType, details, blockToggle, targetUserId, onDismiss, refuse]);
+  }, [selectedReason, user, submitReport, contentId, contentType, details, blockToggle, targetUserId, onDismiss, refuse, letGoDetails]);
 
   // ── Computed Values ─────────────────────────────────────────────────────
   const isSubmitDisabled = !selectedReason || isSubmitting;

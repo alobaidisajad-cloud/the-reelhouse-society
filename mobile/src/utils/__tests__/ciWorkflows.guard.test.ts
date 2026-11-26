@@ -679,6 +679,7 @@ const NOT_ON_MAIN: Record<string, string> = {
   'ci.yml': "the website's Lighthouse gate, by hand since the owner stopped it emailing on every push (its own comment); the website is becoming a landing page (PLAN §3c-6)",
   'ci-alert.yml': 'it is the alert: it runs when any other workflow ends',
   'speed-lab.yml': 'a measurement started by hand (WORKLIST P0.104): its runs take hours, and the arms it builds are checked on every push by e2e/__tests__/speedLab.test.ts',
+  'mutants-on-demand.yml': 'a builder\'s own mutants, started by scripts/mutants-remote.cjs on a plant branch at its commit, so they run on GitHub\'s runners and not beside the push gate; main\'s own are run by god_tier_ci.yml and the nightly',
 };
 
 it('runs every gate on a push to main or on a schedule, or names why not (CI-02)', () => {
@@ -787,6 +788,7 @@ it('starts no Node child it does not wait for (CI-15)', () => {
 const SIDE_BY_SIDE: Record<string, string> = {
   'mobile/scripts/hooks/pre-push.cjs': 'the push check runs its checks side by side; runAll ends only once every check has closed',
   'mobile/scripts/hooks/mutant-lanes.cjs': 'each lane runs its mutants side by side with the others; the script waits for every lane to close',
+  'mobile/scripts/gate-lock.cjs': 'hold runs the push as its one child, holding the machine\'s lock beside it, and lets the lock go only once that child has closed',
 };
 
 it('finds a background start the rule would let through, in a planted script', () => {
@@ -871,7 +873,7 @@ function minutesPerPart(mutants: { proof?: { file?: string } }[], parts: number)
 
 it('installs the root packages and Chromium wherever mutants are judged: the measuring tools prove some of them', () => {
   const jobs = mutantJobs();
-  expect(jobs.map((j) => j.at).sort()).toEqual(['god_tier_ci.yml › mutants', 'nightly.yml › mutants']);
+  expect(jobs.map((j) => j.at).sort()).toEqual(['god_tier_ci.yml › mutants', 'mutants-on-demand.yml › mutants', 'nightly.yml › mutants']);
   for (const { at, before } of jobs) {
     const atRoot = before.some((s) => (s.run ?? '').trim() === 'npm ci' && !(s as { 'working-directory'?: string })['working-directory']);
     expect([at, atRoot]).toEqual([at, true]);

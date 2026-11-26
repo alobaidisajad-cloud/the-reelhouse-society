@@ -24,12 +24,14 @@ import {
 } from 'lucide-react-native';
 
 import { useAuthStore } from '@/src/stores/auth';
+import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 import { profileRead } from '@/src/utils/profileRead';
 import { useSettingsStore } from '@/src/stores/settings';
 import { supabase } from '@/src/lib/supabase';
 import { captureAuthRefusal, testCrash } from '@/src/lib/sentry';
 import { isNetworkError } from '@/src/utils/networkError';
 import reelToast from '@/src/utils/reelToast';
+import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useUpdateUser } from '@/src/hooks/useUpdateUser';
 import { AuthService } from '@/src/services/AuthService';
@@ -318,7 +320,25 @@ export function SettingsScreen() {
    * at the next launch. 'kept' while the house cannot be reached; a refusal is said, and thrown.
    */
   const [filing, setFiling] = useState(false);
+  /**
+   * Filed as below, and kept as a draft until the house answers: Settings can be left while they are
+   * on their way, and refused after, they wait here with what the member was told. Filed (or kept on
+   * the phone to send), the draft goes.
+   */
   const fileAmendments = async (data: SettingsFormData): Promise<'saved' | 'kept'> => {
+    const me = useAuthStore.getState().user?.id;
+    writeDraft(me, 'settings', { form: data });
+    try {
+      const filed = await fileAmendmentsNow(data);
+      clearDraft(me, 'settings');
+      return filed;
+    } catch (err) {
+      writeDraft(me, 'settings', { form: data, refused: saidOfAFailure(err, 'Your last amendments could not be filed.') });
+      throw err;
+    }
+  };
+  const fileAmendmentsNow = async (data: SettingsFormData): Promise<'saved' | 'kept'> => {
+    const asked = useAuthStore.getState().user?.id;
     const { is_social_private, preferences } = amendments(data);
     // Changed from what the form opened with, not from the profile's copy: a key the profile never
     // held reads as its default on the form, and sent unasked it put back what another phone set.
@@ -329,6 +349,9 @@ export function SettingsScreen() {
     // the phone, its "changes reverted" stood over the preferences the phone was keeping to send.
     const visibilityChanged = is_social_private !== !!useAuthStore.getState().user?.is_social_private;
     if (visibilityChanged) await updateUserMutation({ is_social_private });
+    // Signed out while the visibility was filed, or another member signed in: the rest is never filed
+    // in the name of whoever is here now. It waits in the member's own draft (fileAmendments), unsaid.
+    if (!stillSignedIn(asked)) throw new Error('Signed out while the amendments were filed.');
     let filed: 'saved' | 'kept' = 'saved';
     if (Object.keys(changed).length > 0) {
       try {
@@ -379,6 +402,20 @@ export function SettingsScreen() {
       });
     }
   }, [currentPrefs, user?.is_social_private, isDirty, reset]);
+
+  // Amendments the house refused after the member had left: the form opens with them, unsent, and
+  // what was said of them. A draft with no refusal is a filing whose answer is still to come.
+  const draftOpened = useRef(false);
+  useEffect(() => {
+    if (draftOpened.current || !profileKnown || !memberId) return;
+    draftOpened.current = true;
+    const kept = readDraft(memberId, 'settings')?.data;
+    if (!kept?.refused || !kept.form) return;
+    for (const [field, value] of Object.entries(kept.form) as [keyof SettingsFormData, SettingsFormData[keyof SettingsFormData]][]) {
+      setValue(field, value, { shouldDirty: true });
+    }
+    reelToast.error(`${kept.refused} Your amendments are here, unsent.`);
+  }, [profileKnown, memberId, setValue]);
 
   const save = async (data: SettingsFormData) => {
     // Never over a profile not read: the form's defaults would be saved as the member's settings.
@@ -452,7 +489,7 @@ export function SettingsScreen() {
   usePreventRemove(isDirty && !saving && !leavingTo, ({ data }) => {
     Alert.alert('Discard changes?', 'You have unsaved modifications in your dossier.', [
       { text: 'Keep editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+      { text: 'Discard', style: 'destructive', onPress: () => { clearDraft(memberId, 'settings'); navigation.dispatch(data.action); } },
     ]);
   });
 

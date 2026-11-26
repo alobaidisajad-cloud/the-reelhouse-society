@@ -5,6 +5,7 @@ import { sanitizeInput } from '@/src/utils/sanitizeInput';
 import { atTheHousesPace } from '@/src/utils/housePace';
 import { captureError } from '@/src/lib/sentry';
 import { useAuthStore } from '@/src/stores/auth';
+import { keysetAfter } from '@/src/utils/keysetCursor';
 
 const CommentPayloadSchema = z.object({
   /** Made on the phone, as a log critique's is, so the queue replays the same row. */
@@ -64,20 +65,41 @@ export const STACK_COMMENT_PAGE = 50;
 
 export const StackService = {
   /**
-   * The stack's films from `offset`, a page at a time, in the order its page draws them (rank, then
-   * when added): the films past the first page, so a stack of any size is drawn whole. A failed read
-   * is thrown, never answered as a stack that ends here.
+   * The stack's films after the film `afterFilmId` (from the first when null), a page at a time, in
+   * the order its page draws them (rank, then when added): the films past the first page, so a stack
+   * of any size is drawn whole. The page begins after that film's own place, never after a count of
+   * rows: a film taken out or put in meanwhile would shift a counted page, and one would be skipped or
+   * drawn twice. A failed read is thrown, never answered as a stack that ends here; so is a film the
+   * stack no longer holds, its place unknown.
    */
-  async getStackItemsPage(stackId: string, offset: number): Promise<{ id: number; title: string; poster_path: string | null }[]> {
-    const { data, error } = await supabase.from('list_items')
+  async getStackItemsPage(stackId: string, afterFilmId: number | null): Promise<{ id: number; title: string; poster_path: string | null }[]> {
+    let after: string | null = null;
+    if (afterFilmId !== null) {
+      const { data: anchor, error: anchorError } = await supabase.from('list_items')
+        .select('rank_position, created_at')
+        .eq('list_id', stackId)
+        .eq('film_id', afterFilmId)
+        .maybeSingle();
+      if (anchorError) throw anchorError;
+      if (!anchor) throw new Error('StackService.getStackItemsPage: the film the page follows is no longer in the stack');
+      after = keysetAfter([
+        { column: 'rank_position', direction: 'asc', value: (anchor.rank_position as number | null) ?? null, nullable: true },
+        { column: 'created_at', direction: 'asc', value: anchor.created_at as string },
+        { column: 'film_id', direction: 'asc', value: afterFilmId },
+      ]);
+      if (after === null) return [];
+    }
+    let q = supabase.from('list_items')
       .select('film_id, film_title, poster_path')
-      .eq('list_id', stackId)
+      .eq('list_id', stackId);
+    if (after) q = q.or(after);
+    const { data, error } = await q
       .order('rank_position', { ascending: true })
       .order('created_at', { ascending: true })
       // A film is in a stack once (list_items_list_id_film_id_key): the last word, so films added
       // together, of one rank and one moment, keep one order from page to page.
       .order('film_id', { ascending: true })
-      .range(offset, offset + STACK_ITEMS_LIMIT - 1);
+      .limit(STACK_ITEMS_LIMIT);
     if (error) throw error;
     return (data ?? []).flatMap((item) => {
       const parsed = StackItemSchema.safeParse(item);

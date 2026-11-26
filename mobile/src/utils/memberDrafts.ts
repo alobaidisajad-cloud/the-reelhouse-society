@@ -40,6 +40,7 @@ import { logger } from '@/src/utils/logger';
 import { instantOf } from '@/src/utils/instant';
 import type { PaperFilm } from '@/src/components/dispatch/paper/PaperPost';
 import type { ProfileFormData } from '@/src/hooks/useEditProfile';
+import type { SettingsFormData } from '@/src/schemas/settings';
 
 /** Everything a member leaves unfinished shares this, so one sweep clears it. */
 export const DRAFT_PREFIX = 'reelhouse_draft_';
@@ -49,8 +50,11 @@ export const DRAFT_PREFIX = 'reelhouse_draft_';
  * per filing and one per post — and the scope rides at the end of the key so the
  * member's prefix still sweeps them. `profile` is Edit Profile's amendments, not yet saved.
  * `appeal` is a member's one appeal of a verdict, scoped by the verdict (round 14).
+ * `settings` is Settings' amendments while they are filed, kept for the member's return if refused.
+ * `short` is a take, a seeking or a wire being written, scoped by its form. The other words kinds
+ * (WordsKind) are each scoped by what the words are about.
  */
-export type DraftKind = 'dossier' | 'log' | 'edit' | 'critique' | 'ballot' | 'stack' | 'profile' | 'salon' | 'appeal';
+export type DraftKind = 'dossier' | 'log' | 'edit' | 'ballot' | 'stack' | 'profile' | 'settings' | 'short' | WordsKind;
 
 /** How many scoped drafts of one kind a member keeps. See `evictOldest`. */
 export const SCOPED_KEPT = 3;
@@ -95,18 +99,36 @@ export interface DossierDraft {
   series?: { id: string; title: string; part: number } | null;
 }
 
-/** A draft of words alone: a critique, a message to a salon, an appeal. */
+/**
+ * A draft of words alone: a critique, a message to a salon, an appeal; a moderator's reason for a
+ * verdict and the word given at a hearing; a report's details; the message sent with a piece shared
+ * to a salon; a salon's name and what it is for, before it is founded; a new series' name.
+ */
 export interface WordsDraft {
   body?: string;
 }
 
 /** The kinds that keep words alone. */
-export type WordsKind = 'critique' | 'salon' | 'appeal';
+export type WordsKind = 'critique' | 'salon' | 'appeal' | 'verdict' | 'hearing' | 'report' | 'share' | 'founding' | 'series';
 
-/** An amendment to a filed essay: its words, the film and series staying as filed. */
+/**
+ * An amendment to a filing: an essay's words, the film and series staying as filed; a take's,
+ * seeking's or wire's words in `content`, with its source and its spoiler mark.
+ */
 export interface EditDraft {
   title?: string;
   content?: string;
+  source?: string;
+  spoiler?: boolean;
+}
+
+/** A take, a seeking or a wire being written, whole: its words, a wire's source, its film and its mark. */
+export interface ShortDraft {
+  body?: string;
+  source?: string;
+  film?: PaperFilm | null;
+  filmId?: number | null;
+  spoiler?: boolean;
 }
 
 /** The log sheet's draft: its film, words and stars, and the rest of the form beside them. */
@@ -129,6 +151,15 @@ export interface StackDraft {
 }
 
 /**
+ * Settings' amendments on their way: the whole form as filed, and once the house refused them, what
+ * the member was told. Settings can be left while they are filed; refused after, they open with it.
+ */
+export interface SettingsDraft {
+  form?: SettingsFormData;
+  refused?: string;
+}
+
+/**
  * What each kind of draft holds. A draft is read and written through its kind alone, so the two
  * can never disagree about its shape: a reader typed apart from its writer read back half of it.
  */
@@ -142,6 +173,14 @@ export interface DraftShapes {
   profile: ProfileFormData;
   salon: WordsDraft;
   appeal: WordsDraft;
+  settings: SettingsDraft;
+  short: ShortDraft;
+  verdict: WordsDraft;
+  hearing: WordsDraft;
+  report: WordsDraft;
+  share: WordsDraft;
+  founding: WordsDraft;
+  series: WordsDraft;
 }
 
 /**

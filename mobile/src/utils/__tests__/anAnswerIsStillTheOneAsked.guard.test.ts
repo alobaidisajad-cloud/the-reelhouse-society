@@ -49,28 +49,7 @@ const CANNOT_BE_OVERTAKEN: Record<string, string> = {
  * Found by this sweep, and not yet fixed: each a finding, owned by stage C (kinds LATE). The list
  * only shrinks: a read fixed here is no longer found, and its entry then fails until it is taken out.
  */
-const STILL_TO_FIX = [
-  'app/(modals)/social-modal.tsx:loadMore',
-  'src/hooks/useFollowRequests.ts:load',
-  'src/hooks/useProfileData.ts:loadTabData',
-  'src/hooks/useProfileData.ts:refreshTabWithFilters',
-  'src/stores/auth.ts:readRankHistory',
-  'src/stores/auth.ts:rereadProfile',
-  'src/stores/blockStore.ts:syncFromServer',
-  'src/stores/dispatch.ts:hydrate',
-  'src/stores/dispatch.ts:readTally',
-  'src/stores/dispatch.ts:fetchCritiques',
-  'src/stores/dispatch.ts:loadMoreCritiques',
-  'src/stores/dispatch.ts:loadViewerState',
-  'src/stores/dispatch.ts:readCritiquePage',
-  'src/stores/dispatch.ts:loadCritiqueCertifications',
-  'src/stores/domain/interactionSlice.ts:fetchEndorsements',
-  'src/stores/domain/interactionSlice.ts:fetchListEndorsements',
-  'src/stores/lounge.ts:fetchLounges',
-  'src/stores/lounge.ts:fetchMessages',
-  'src/stores/lounge.ts:loadMoreMessages',
-  'src/stores/vaultStore.ts:loadForLog',
-];
+const STILL_TO_FIX: string[] = [];
 
 /**
  * A page asked by its count, by file, with why its rows cannot move under it. Each is still found:
@@ -79,7 +58,7 @@ const STILL_TO_FIX = [
 const PAGED_BY_COUNT: Record<string, string> = {};
 
 /** Pages asked by their count found by this sweep, not yet fixed (as STILL_TO_FIX). */
-const PAGES_STILL_TO_FIX = ['src/services/StackService.ts', 'src/stores/dispatch.ts'];
+const PAGES_STILL_TO_FIX: string[] = [];
 
 const isEquality = (k: ts.SyntaxKind) => k === ts.SyntaxKind.EqualsEqualsEqualsToken || k === ts.SyntaxKind.ExclamationEqualsEqualsToken;
 
@@ -151,6 +130,8 @@ function oneAtATime(fn: ts.FunctionLikeDeclaration, sf: ts.SourceFile): boolean 
   for (const s of before) {
     const t = s.getText(sf);
     for (const m of t.matchAll(/(\w+):\s*true\b/g)) raised.add(m[1] ?? '');
+    // A mark raised for one key of a map the store keeps (`loading: { ...s.loading, [id]: true }`).
+    for (const m of t.matchAll(/(\w+):\s*\{\s*\.\.\.\w+\.\1\s*,\s*\[\w+\]:\s*true\s*\}/g)) raised.add(m[1] ?? '');
     // An assignment to a mark already there, never a new const: a value read is no mark raised.
     for (const m of t.matchAll(/(?<!\b(?:const|let|var)\s+)(?<![.\w])(\w+)(?:\.current)?\s*=\s*(?!=)(?!null\b|false\b|undefined\b|0\b)/g)) raised.add(m[1] ?? '');
     for (const m of t.matchAll(/\b(\w+)\.set\(/g)) raised.add(m[1] ?? '');
@@ -161,11 +142,41 @@ function oneAtATime(fn: ts.FunctionLikeDeclaration, sf: ts.SourceFile): boolean 
       && before.slice(i + 1).some((later) => new RegExp(`\\b${r}\\b`).test(later.getText(sf)))));
 }
 
+/**
+ * A busy flag let down with the read's own mark (`more.current = false; setLoadingMore(false)`):
+ * the mark was raised by this call before its wait, and no other read of its kind starts while it
+ * is up, so the flag it lowers is its own, whatever answered meanwhile.
+ */
+function lowersOwnMark(fn: ts.FunctionLikeDeclaration, w: ts.CallExpression, sf: ts.SourceFile): boolean {
+  if (w.arguments.length !== 1 || w.arguments[0]!.kind !== ts.SyntaxKind.FalseKeyword) return false;
+  let block: ts.Node | undefined = w.parent;
+  while (block && !ts.isBlock(block)) block = block.parent;
+  if (!block || !ts.isBlock(block)) return false;
+  const firstWait = Math.min(...AW.ownNodes(fn, (m) => (ts.isAwaitExpression(m) ? m.getStart() : null)));
+  const markOf = (s: ts.Statement, value: 'true' | 'false') => {
+    const m = /^(\w+)\.current\s*=\s*(true|false);?$/.exec(s.getText(sf).trim());
+    return m && m[2] === value ? m[1] : null;
+  };
+  const raised = new Set(AW.ownNodes(fn, (m) => (ts.isExpressionStatement(m) && m.getEnd() <= firstWait ? markOf(m, 'true') : null)));
+  return block.statements.some((s) => s.getEnd() <= w.getStart() && raised.has(markOf(s, 'false') ?? ''));
+}
+
 /** Rule 1: each write a re-asked read makes after its wait with no "still the read asked" after it. */
 export function answersDrawnOverNewer(file: string, text: string): string[] {
   const sf = AW.parse(file, text);
   const moving = lets(sf);
   const flags = cleanupFlags(sf);
+  // A reducer's dispatch (`const [state, dispatch] = useReducer(…)`) writes state as a setter does.
+  const reducers = new Set<string>();
+  const findReducers = (n: ts.Node) => {
+    if (ts.isVariableDeclaration(n) && ts.isArrayBindingPattern(n.name) && n.initializer && ts.isCallExpression(n.initializer)
+      && /^(React\.)?useReducer$/.test(n.initializer.expression.getText(sf))) {
+      const d = n.name.elements[1];
+      if (d && ts.isBindingElement(d) && ts.isIdentifier(d.name)) reducers.add(d.name.text);
+    }
+    ts.forEachChild(n, findReducers);
+  };
+  findReducers(sf);
   // Every value the file takes into a const (`const mine = ++gen.current`), by name: a token handed on
   // as a parameter of the same name is the same token.
   const takenInFile = new Map<string, string>();
@@ -186,22 +197,63 @@ export function answersDrawnOverNewer(file: string, text: string): string[] {
     if (!READS.test(name) && !keyed) continue;
     // Each value this function (or one around it) took before it waits: a token, if it is compared with where it came from.
     const taken = new Map<string, string>();
+    // Where each was taken, by the end of its declaration.
+    const takenAt = new Map<string, number>();
     for (let fn: ts.Node | null = body.fn; fn; fn = AW.ownerOf(fn)) {
       AW.ownNodes(fn as ts.FunctionLikeDeclaration, (m) => {
-        if (ts.isVariableDeclaration(m) && ts.isIdentifier(m.name) && m.initializer) taken.set(m.name.text, m.initializer.getText(sf));
+        if (ts.isVariableDeclaration(m) && ts.isIdentifier(m.name) && m.initializer) {
+          taken.set(m.name.text, m.initializer.getText(sf));
+          if (!takenAt.has(m.name.text)) takenAt.set(m.name.text, m.getEnd());
+        }
         return null;
       });
     }
+    /**
+     * A write laid thing by thing, each thing left as it is where the member has acted on it since
+     * the read was asked (`actedSince(kind, id, askedAt)`, or markCounts' `tappedSince`), that moment
+     * taken before the wait: the member's newer act wins, and about everything else the answer is
+     * the house's at the moment it was asked, which nothing of this member's has changed since.
+     */
+    const laidPerThing = (w: ts.CallExpression, since: number): boolean => {
+      let found = false;
+      const visit = (n: ts.Node) => {
+        if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && /^(actedSince|tappedSince)$/.test(n.expression.text)) {
+          const at = n.arguments[n.arguments.length - 1];
+          if (at && ts.isIdentifier(at) && (takenAt.get(at.text) ?? Infinity) <= since) found = true;
+        }
+        ts.forEachChild(n, visit);
+      };
+      visit(w);
+      return found;
+    };
+    /**
+     * A signal this read made, that the next read cancels: its controller is put in a keeper
+     * (`last.current = controller`) whose one before it this function aborts first.
+     */
+    const cancelledByTheNext = (signal: string): boolean => {
+      const ctl = /^(\w+)\.signal$/.exec((taken.get(signal) ?? '').trim())?.[1] ?? signal;
+      if (!/^new AbortController\(\)$/.test((taken.get(ctl) ?? '').trim())) return false;
+      const own = body.fn.getText(sf);
+      return [...own.matchAll(/(\w+)\.current\s*=\s*(\w+)\s*;/g)].some((m) => m[2] === ctl
+        && own.indexOf(`${m[1]}.current?.abort()`) >= 0 && own.indexOf(`${m[1]}.current?.abort()`) < own.indexOf(m[0]));
+    };
     const live = (e: ts.Expression, from: string): boolean => {
       const t = e.getText(sf);
       if (ts.isPropertyAccessExpression(e) && e.name.text === 'current') return from.includes(e.expression.getText(sf));
+      // A ref's entry for one key (`rooms.current[tab]`, `seq.current[id]`): the ref it came from.
+      if (ts.isElementAccessExpression(e) && ts.isPropertyAccessExpression(e.expression) && e.expression.name.text === 'current') return from.includes(e.expression.expression.getText(sf));
       if (/^(get|\w+\.getState)\(\)\./.test(t)) return from.includes(t.replace(/^.*\(\)\./, ''));
       if (ts.isIdentifier(e) && moving.has(e.text)) return new RegExp(`\\b${e.text}\\b`).test(from);
-      if (ts.isCallExpression(e)) return from.includes(t);
+      if (ts.isCallExpression(e)) {
+        if (from.includes(t)) return true;
+        // Asked of the same keeper it was taken from (`reads.take(id)`, then `reads.latest(id)`).
+        return ts.isPropertyAccessExpression(e.expression) && from.trim().startsWith(`${e.expression.expression.getText(sf)}.`);
+      }
       return false;
     };
     const check = (e: ts.Expression): 'here' | 'gone' | null => {
       if (ts.isIdentifier(e) && flags.has(e.text)) return flags.get(e.text) ?? null;
+      if (ts.isPropertyAccessExpression(e) && e.name.text === 'aborted' && ts.isIdentifier(e.expression) && cancelledByTheNext(e.expression.text)) return 'gone';
       if (ts.isCallExpression(e) && ts.isIdentifier(e.expression) && e.arguments.length === 0 && closures.has(e.expression.text)) {
         return AW.provesHere(closures.get(e.expression.text)!, check) ? 'here' : null;
       }
@@ -216,11 +268,11 @@ export function answersDrawnOverNewer(file: string, text: string): string[] {
     const writes = AW.ownNodes(body.fn, (m) => {
       if (!ts.isCallExpression(m)) return null;
       const t = m.expression.getText(sf);
-      return (/^set[A-Z]\w*$/.test(t) && !NOT_STATE.test(t)) || t === 'set' || /\.(setQueryData|setQueriesData|setState)$/.test(t) ? m : null;
+      return (/^set[A-Z]\w*$/.test(t) && !NOT_STATE.test(t)) || t === 'set' || /\.(setQueryData|setQueriesData|setState)$/.test(t) || reducers.has(t) ? m : null;
     });
     const unasked = writes.filter((w) => {
-      const since = AW.lastWaitBefore(body, w.getStart());
-      return since >= 0 && !AW.coveredAfter(body.fn, w, since, check);
+      const since = AW.lastWaitBefore(body, w.getStart(), w);
+      return since >= 0 && !AW.coveredAfter(body.fn, w, since, check) && !lowersOwnMark(body.fn, w, sf) && !laidPerThing(w, since);
     });
     if (unasked.length) out.push(`${file}:${name || 'an effect'} (${unasked.map((w) => AW.lineOf(sf, w)).join(', ')})`);
   }
@@ -262,6 +314,42 @@ describe('each rule says no to its planted shape', () => {
         readAll: async () => { const before = written(); const r = await ask(); if (written() !== before) return; set({ r }); },
       };
       useEffect(() => { let gone = false; ask(q).then((rows) => { if (!gone) setRows(rows); }); return () => { gone = true; }; }, [q]);`)).toEqual([]);
+  });
+
+  it('1: a reducer\'s dispatch is a write; a busy flag let down without its own mark is not let off', () => {
+    expect(answersDrawnOverNewer('src/hooks/planted.ts', `export function useP() {
+      const [state, dispatch] = useReducer(reduce, {});
+      const loadRoom = async () => { const r = await ask(); dispatch({ type: 'PAGE', r }); };
+      const loadMore = async () => { busy.current = true; try { await ask(); } finally { other.current = false; setLoadingMore(false); } };
+      const fetchFile = async () => { const controller = new AbortController(); last.current = controller; const signal = controller.signal; const r = await ask(signal); if (signal.aborted) return; setRows(r); };
+      return loadRoom; }`)).toEqual(['src/hooks/planted.ts:loadRoom (3)', 'src/hooks/planted.ts:loadMore (4)', 'src/hooks/planted.ts:fetchFile (5)']);
+  });
+
+  it('1: and passes a ref\'s entry for its key, a keeper\'s latest, and a busy flag let down with its own mark', () => {
+    expect(answersDrawnOverNewer('src/hooks/planted.ts', `export function useP() {
+      const loadTab = async (tab) => { const mine = (seq.current[tab] = (seq.current[tab] ?? 0) + 1); const r = await ask(); if (mine !== seq.current[tab]) return; setRows(r); };
+      const refresh = async (id) => { const mine = reads.take(id); const r = await ask(); if (mine === reads.latest(id)) set({ r }); };
+      const loadMore = async () => { more.current = true; try { await ask(); } finally { more.current = false; setLoadingMore(false); } };
+      const readKind = async (k) => { if (k) { await ask(); } else { setBusy(true); } };
+      const readOne = async (k) => { if (k) return note(await ask()); setBusy(true); };
+      const readCase = async (k) => { switch (k) { case 1: return note(await ask()); default: break; } setBusy(true); };
+      const fetchFile = async () => { last.current?.abort(); const controller = new AbortController(); last.current = controller; const signal = controller.signal; const r = await ask(signal); if (signal.aborted) return; setRows(r); };
+      return loadTab; }`)).toEqual([]);
+  });
+
+  it('1: a write laid thing by thing passes only when each thing the member acted on since the ask is skipped, the moment taken before the wait', () => {
+    expect(answersDrawnOverNewer('src/stores/planted.ts', `export const s = {
+      loadMarks: async (ids) => { const askedAt = Date.now(); const r = await ask(ids); set((st) => { for (const id of ids) if (!actedSince('mark', id, askedAt)) st.on[id] = r.has(id); return st; }); },
+      loadOther: async (ids) => { const r = await ask(ids); const askedAt = Date.now(); set((st) => { for (const id of ids) if (!tappedSince('mark', id, askedAt)) st.on[id] = r.has(id); return st; }); },
+      loadLast: async (ids) => { const r = await ask(ids); set((st) => { for (const id of ids) if (!tappedSince('mark', id, Date.now())) st.on[id] = r.has(id); return st; }); },
+    };`)).toEqual(['src/stores/planted.ts:loadOther (3)', 'src/stores/planted.ts:loadLast (4)']);
+  });
+
+  it('1: a read raising its own mark for one key, and leaving while that key\'s mark is up, is one at a time; without the leave it is not', () => {
+    expect(answersDrawnOverNewer('src/stores/planted.ts', `export const s = {
+      loadOne: async (k) => { if (get().loading[k]) return; set((s) => ({ loading: { ...s.loading, [k]: true } })); const r = await ask(k); set({ r }); },
+      loadTwo: async (k) => { set((s) => ({ loading: { ...s.loading, [k]: true } })); const r = await ask(k); set({ r }); },
+    };`)).toEqual(['src/stores/planted.ts:loadTwo (3)']);
   });
 
   it('2: a page asked by its count', () => {

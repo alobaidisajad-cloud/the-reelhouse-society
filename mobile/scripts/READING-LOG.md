@@ -498,3 +498,8 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/e2e/db/fixtures/up-down-up/jobs-left-down.sql | — |  |
 | mobile/e2e/db/fixtures/up-down-up/jobs-left-up.sql | — |  |
 | mobile/e2e/db/fixtures/up-down-up/jobs-up.sql | — |  |
+| mobile/githooks/pre-merge-commit | — |  |
+| mobile/scripts/push-head.ps1 | — |  |
+| mobile/supabase/diagnostics/a_members_call_to_the_store_is_paced_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261125_10_a_members_call_to_the_store_is_paced.sql | — |  |
+| supabase/migrations/20261125_10_a_members_call_to_the_store_is_paced.sql | — |  |
