@@ -199,7 +199,7 @@ export function SettingsScreen() {
     await sendOtp();
   }, [sendOtp, setOtpCode, setOtpError, setOtpModalVisible]);
 
-  /** The one erasure, whichever check (the phone's lock or the emailed code) let the member through. */
+  /** The one erasure, once the emailed code has let the member through. */
   // Signed out, or the account deleted: the session is gone, and the screen leaves without asking
   // to keep edits no one can save. Asked first, a member could "Keep editing" a members-only page
   // they were no longer signed in to (and after a deletion, an account that was gone).
@@ -207,7 +207,7 @@ export function SettingsScreen() {
   useEffect(() => { if (leavingTo === '/login') nav.replace('/login'); }, [leavingTo]);
 
   // Whether what the member wrote for others goes with the account: off each time Settings opens.
-  // The choice shown when DELETE was pressed is the one carried out, whichever check follows.
+  // The choice shown when DELETE was pressed is the one carried out, after the code that follows.
   const [eraseWriting, setEraseWriting] = useState(false);
   const eraseWritingRef = useRef(false);
 
@@ -528,37 +528,9 @@ export function SettingsScreen() {
         { text: 'CANCEL', style: 'cancel' },
         { text: 'DELETE', style: 'destructive', onPress: async () => {
           eraseWritingRef.current = erase;
-          const biometricEnabled = user?.preferences?.biometric_lock === true;
-          if (biometricEnabled) {
-            const hasHardware = await lockAnswer(LocalAuthentication.hasHardwareAsync());
-            const isEnrolled = await lockAnswer(LocalAuthentication.isEnrolledAsync());
-
-            if (hasHardware && isEnrolled) {
-              try {
-                const result = await LocalAuthentication.authenticateAsync({
-                  promptMessage: 'Confirm your identity to delete account',
-                  fallbackLabel: 'Use Passcode',
-                  disableDeviceFallback: false,
-                });
-                if (!result.success) {
-                  if (LOCK_PUT_AWAY.has(result.error)) return;
-                  requestOtpAuth('deleteAccount');
-                  return;
-                }
-              } catch {
-                requestOtpAuth('deleteAccount');
-                return;
-              }
-            } else {
-              requestOtpAuth('deleteAccount');
-              return;
-            }
-          } else {
-            requestOtpAuth('deleteAccount');
-            return;
-          }
-          // Same erasure as the code route — one function, no drift.
-          await completeAccountDeletion();
+          // Always the emailed code: the house deletes only for a sign-in made moments ago
+          // (20261126_12), and the phone's lock proves nothing to the house.
+          await requestOtpAuth('deleteAccount');
         }},
       ]
     );

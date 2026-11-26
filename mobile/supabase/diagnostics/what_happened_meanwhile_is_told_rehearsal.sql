@@ -198,7 +198,7 @@ GRANT USAGE ON SEQUENCE rh_a15_got_n_seq TO authenticated;
 
 -- The moderator judges, as themselves, in this order.
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_a15_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_a15_members WHERE n = 1), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO rh_a15_got (what, got) VALUES ('remove the gone log', pg_temp.rh_a15_judge('case: gone log', 'delete_content'));
 INSERT INTO rh_a15_got (what, got) VALUES ('then dismiss it', pg_temp.rh_a15_judge('case: gone log', 'dismiss'));
 INSERT INTO rh_a15_got (what, got) VALUES ('remove the removed message', pg_temp.rh_a15_judge('case: removed message', 'delete_content'));
@@ -323,7 +323,7 @@ UPDATE public.profiles SET role = 'admin' WHERE id = (SELECT id FROM rh_f1_membe
 
 -- 2 withdraws the first message, as themselves.
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_f1_members WHERE n = 2), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_f1_members WHERE n = 2), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 SELECT public.withdraw_lounge_message((SELECT id FROM rh_f1_rows WHERE what = 'withdrawn message')) AS done \gset rh_
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
@@ -342,7 +342,7 @@ GRANT EXECUTE ON FUNCTION pg_temp.rh_f1_remove(text) TO authenticated;
 
 -- The moderator reads both exhibits, then tries to remove the withdrawn one, as themselves.
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_f1_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_f1_members WHERE n = 1), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO rh_f1_got VALUES
   ('withdrawn', public.get_report_evidence((SELECT id FROM rh_f1_rows WHERE what = 'case: withdrawn'))::text),
   ('standing', public.get_report_evidence((SELECT id FROM rh_f1_rows WHERE what = 'case: standing'))::text);
@@ -397,7 +397,7 @@ DELETE FROM public.lounge_sanctions
 
 -- Member 2 knocks at both while they stand, as themselves.
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 2), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 2), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 DO $$
 BEGIN
   BEGIN
@@ -415,11 +415,11 @@ BEGIN
 END $$;
 
 -- The host dissolves both, as themselves.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 DELETE FROM public.lounges WHERE id IN (SELECT id FROM a2_rooms);
 
 -- Member 2 knocks again.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 2), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 2), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 DO $$
 BEGIN
   BEGIN
@@ -500,7 +500,7 @@ CREATE TEMP TABLE rh_a7_counted ON COMMIT DROP AS
 
 -- 1 presses ADMIT on each, as themselves.
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_a7_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_a7_members WHERE n = 1), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO rh_a7_got SELECT 3, public.accept_follow_request((SELECT id FROM rh_a7_members WHERE n = 3))::text;
 INSERT INTO rh_a7_got SELECT 2, public.accept_follow_request((SELECT id FROM rh_a7_members WHERE n = 2))::text;
 INSERT INTO rh_a7_got SELECT 4, public.accept_follow_request((SELECT id FROM rh_a7_members WHERE n = 4))::text;
@@ -573,29 +573,29 @@ VALUES ((SELECT id FROM b1_ballots WHERE what = 'closed'), (SELECT id FROM rehea
 
 SET LOCAL ROLE authenticated;
 -- 3 has not voted: nothing.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 3), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 3), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO b1_seen SELECT '3 before voting', public.ballot_tally((SELECT id FROM b1_ballots WHERE what = 'open'));
 -- 2 votes for the second film, and reads.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 2), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 2), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO public.dispatch_votes (post_id, user_id, option_index)
 VALUES ((SELECT id FROM b1_ballots WHERE what = 'open'), (SELECT id FROM rehearsal_members WHERE n = 2), 1);
 INSERT INTO b1_seen SELECT '2 voted', public.ballot_tally((SELECT id FROM b1_ballots WHERE what = 'open'));
 -- 3 votes for the second film too, and reads.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 3), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 3), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO public.dispatch_votes (post_id, user_id, option_index)
 VALUES ((SELECT id FROM b1_ballots WHERE what = 'open'), (SELECT id FROM rehearsal_members WHERE n = 3), 1);
 INSERT INTO b1_seen SELECT '3 voted', public.ballot_tally((SELECT id FROM b1_ballots WHERE what = 'open'));
 -- 4 never voted: the open one is not theirs to see, the closed one is.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 4), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 4), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO b1_seen SELECT '4 open', public.ballot_tally((SELECT id FROM b1_ballots WHERE what = 'open'));
 INSERT INTO b1_seen SELECT '4 closed', public.ballot_tally((SELECT id FROM b1_ballots WHERE what = 'closed'));
 RESET ROLE;
 
 -- The author withdraws the open ballot, as themselves; 2, who voted, reads nothing of it.
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 SELECT public.end_filing((SELECT id FROM b1_ballots WHERE what = 'open'), 'author') AS done \gset rh_
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 2), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 2), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO b1_seen SELECT '2 withdrawn', public.ballot_tally((SELECT id FROM b1_ballots WHERE what = 'open'));
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
@@ -669,7 +669,7 @@ SELECT (SELECT id FROM rh_b25_members WHERE n = 2), 990001210 + k, 'rh ended ' |
 
 -- 1, as themselves: sees the second film again tonight, marked 2, and reads their own file.
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b25_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b25_members WHERE n = 1), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 SELECT public.log_viewing_add((SELECT id FROM rh_b25_rows WHERE what = 'night 2'), gen_random_uuid(),
                               jsonb_build_object('watched_date', current_date, 'rating', 2)) AS done \gset rh_
 INSERT INTO rh_b25_got
@@ -698,7 +698,7 @@ SELECT 'read on', (SELECT count(*) FROM rh_b25_page WHERE k = 2)::text || '|'
         (SELECT string_agg(p.day::text || '/' || p.viewing_id::text, ',' ORDER BY p.k) FROM rh_b25_page p WHERE p.k > 2))::text;
 
 -- 2, as themselves: their calendar and their file; then with a viewing dated a month ahead.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b25_members WHERE n = 2), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b25_members WHERE n = 2), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO rh_b25_got
 SELECT 'ended calendar', coalesce(string_agg((current_date - c.day)::text || ':' || c.films, ',' ORDER BY c.day DESC), 'none')
   FROM public.calendar_days((SELECT id FROM rh_b25_members WHERE n = 2)) c;
@@ -710,7 +710,7 @@ INSERT INTO rh_b25_got
 SELECT 'ahead', public.get_user_analytics((SELECT id FROM rh_b25_members WHERE n = 2))::text;
 
 -- 3, a stranger, reads 1's open file.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b25_members WHERE n = 3), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b25_members WHERE n = 3), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO rh_b25_got
 SELECT 'stranger, open', coalesce(string_agg((current_date - c.day)::text || ':' || c.films, ',' ORDER BY c.day DESC), 'none')
   FROM public.calendar_days((SELECT id FROM rh_b25_members WHERE n = 1)) c;
@@ -720,7 +720,7 @@ RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 UPDATE public.profiles SET is_social_private = true WHERE id = (SELECT id FROM rh_b25_members WHERE n = 1);
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b25_members WHERE n = 3), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b25_members WHERE n = 3), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO rh_b25_got
 SELECT 'stranger, private',
        (SELECT count(*) FROM public.calendar_days((SELECT id FROM rh_b25_members WHERE n = 1)))::text || '|'
@@ -806,7 +806,7 @@ VALUES ((SELECT id FROM rh_b4_members WHERE n = 3), (SELECT id FROM rh_b4_member
 
 -- 3 reads, as themselves, with 2 muted.
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b4_members WHERE n = 3), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b4_members WHERE n = 3), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO rh_b4_got SELECT 'house feed, muted', f.critique_count::text
   FROM public.get_community_feed_auth_cursor(200, NULL, NULL) f WHERE f.id = (SELECT id FROM rh_b4_log);
 INSERT INTO rh_b4_got SELECT 'following feed, muted', f.critique_count::text
@@ -816,7 +816,7 @@ INSERT INTO rh_b4_got SELECT 'the page, muted', count(*)::text
 INSERT INTO rh_b4_got SELECT 'critiques_seen, muted', public.critiques_seen(l)::text
   FROM public.logs l WHERE l.id = (SELECT id FROM rh_b4_log);
 -- 4 reads, hiding no one.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b4_members WHERE n = 4), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b4_members WHERE n = 4), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO rh_b4_got SELECT 'house feed, hiding no one', f.critique_count::text
   FROM public.get_community_feed_auth_cursor(200, NULL, NULL) f WHERE f.id = (SELECT id FROM rh_b4_log);
 INSERT INTO rh_b4_got SELECT 'critiques_seen, hiding no one', public.critiques_seen(l)::text
@@ -827,7 +827,7 @@ RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 DELETE FROM public.user_blocks WHERE blocker_id = (SELECT id FROM rh_b4_members WHERE n = 3) AND blocked_id = (SELECT id FROM rh_b4_members WHERE n = 2);
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b4_members WHERE n = 3), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_b4_members WHERE n = 3), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO rh_b4_got SELECT 'following feed, let back', f.critique_count::text
   FROM public.get_following_feed_auth_cursor(200, NULL, NULL) f WHERE f.id = (SELECT id FROM rh_b4_log);
 RESET ROLE;
@@ -935,7 +935,7 @@ $$;
 -- A member takes back their own certification, as themselves.
 CREATE FUNCTION pg_temp.rh_f11_take_back(p_member bigint, p_sql text) RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_f11_members WHERE n = p_member), 'role', 'authenticated')::text, true);
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_f11_members WHERE n = p_member), 'role', 'authenticated', 'aal', 'aal2')::text, true);
   PERFORM set_config('role', 'authenticated', true);
   EXECUTE p_sql;
   PERFORM set_config('role', 'none', true);
@@ -1079,16 +1079,16 @@ CREATE TEMP TABLE rh_d1_handles ON COMMIT DROP AS
 SET LOCAL ROLE authenticated;
 
 -- 1 renames "Rh_R11.Kept" to its cleaned form, in Edit Profile, as themselves.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_d1_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_d1_members WHERE n = 1), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO rh_d1_got SELECT 1, public.rename_my_handle('rh_r11kept');
 INSERT INTO rh_d1_got SELECT 10, coalesce(current_setting('reelhouse.deliberate_rename', true), '');
 
 -- 2's old build saves a bio, sending the cleaned form of "Rh_R11.Old" with it, by a plain write.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_d1_members WHERE n = 2), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_d1_members WHERE n = 2), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 UPDATE public.profiles SET username = 'rh_r11old', bio = 'rh d1 saved' WHERE id = (SELECT id FROM rh_d1_members WHERE n = 2);
 
 -- 3 renames to a fresh handle, then asks for the one 1 now holds.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_d1_members WHERE n = 3), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_d1_members WHERE n = 3), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 INSERT INTO rh_d1_got SELECT 3, public.rename_my_handle('rh_r11fresh');
 DO $$
 BEGIN
@@ -1099,7 +1099,7 @@ EXCEPTION WHEN OTHERS THEN
 END $$;
 
 -- 4, banned, tries a rename.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_d1_members WHERE n = 4), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_d1_members WHERE n = 4), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 DO $$
 BEGIN
   PERFORM public.rename_my_handle('rh_r11banned');
@@ -1173,7 +1173,7 @@ SELECT pg_temp.rh_need('the card', (SELECT count(*) FROM rh_f4_rows WHERE what L
 
 -- Member 1, as themselves, withdraws the take, as the app does.
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 SELECT public.end_filing((SELECT id FROM rh_f4_rows WHERE what = 'take'), 'author') AS done \gset rh_
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
@@ -1359,13 +1359,16 @@ $$;
 GRANT EXECUTE ON FUNCTION pg_temp.rh_d2_words(text) TO authenticated;
 
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT pg_temp.rh_d2('K')), 'role', 'authenticated')::text, true) AS done \gset rh_
+-- Each signed in a minute ago, as the app signs in to leave (the emailed code: 20261126_12).
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT pg_temp.rh_d2('K')), 'role', 'authenticated',
+  'amr', json_build_array(json_build_object('method', 'otp', 'timestamp', floor(extract(epoch FROM now())) - 60)))::text, true) AS done \gset rh_
 INSERT INTO rh_d2_got VALUES ('K leaves', pg_temp.rh_d2_try('SELECT public.request_account_deletion()'));
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT pg_temp.rh_d2('E')), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT pg_temp.rh_d2('E')), 'role', 'authenticated',
+  'amr', json_build_array(json_build_object('method', 'otp', 'timestamp', floor(extract(epoch FROM now())) - 60)))::text, true) AS done \gset rh_
 INSERT INTO rh_d2_got VALUES ('E leaves', pg_temp.rh_d2_try('SELECT public.request_account_deletion(p_erase_writing => true)'));
 
 -- ── What S reads afterwards, as S ──────────────────────────────────────────────────────────────
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT pg_temp.rh_d2('S')), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT pg_temp.rh_d2('S')), 'role', 'authenticated', 'aal', 'aal2')::text, true) AS done \gset rh_
 
 INSERT INTO rh_d2_read VALUES ('K words', pg_temp.rh_d2_words('rh-d2-K'));
 INSERT INTO rh_d2_read VALUES ('E words', pg_temp.rh_d2_words('rh-d2-E'));
