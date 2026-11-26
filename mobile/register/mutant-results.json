@@ -4392,7 +4392,7 @@
     "class": "STATE-one-screen-changed-another-printing-the-old",
     "mutant": "shape-row-critique-count-kept",
     "proof": "m15",
-    "commit": "2465e8cab897c0bb6eb64a2a8fb9edc55e60b374",
+    "commit": "d6cc997800e8127eb0110151f36eefda24b429cc",
     "verdict": "caught"
   },
   {
