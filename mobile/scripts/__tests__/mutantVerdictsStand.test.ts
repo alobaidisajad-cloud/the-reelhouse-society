@@ -6,7 +6,7 @@
  */
 type R = { class: string; mutant: string; proof: string | null; commit: string; verdict: string };
 type M = { id: string; class: string; source: string; edits?: { file: string; find: string; replace: string }[]; proof?: { file: string; test: string }; since?: string };
-type Ctx = { inHistory: (c: string) => boolean; changedSince: (c: string) => string[]; entryAt: (c: string, id: string) => M | undefined; recordAt: (c: string) => { mutant: string; verdict: string }[] | null };
+type Ctx = { inHistory: (c: string) => boolean; changedSince: (c: string) => string[]; entryAt: (c: string, id: string) => M | undefined; recordAt: (c: string) => { mutant: string; verdict: string }[] | null; proofNow?: (m: M) => string | null | undefined };
 const mutants = require('../mutants.cjs') as {
   whyNotStanding: (m: M, r: R | undefined, ctx: Ctx) => string | null;
   mergeResults: (ours: R[], theirs: R[], all: M[], whyNot: (m: M, r: R) => string | null, later?: (a: R, b: R) => boolean) => R[];
@@ -39,11 +39,14 @@ it('a recorded verdict stands only where its run is in this history and nothing 
     mutants.whyNotStanding(m, r('b1'), ctx({ entryAt: () => ({ ...m, edits: [{ file: 'src/a.ts', find: 'a', replace: 'c' }] }) })),
     // A verdict written into the results by hand stands on no run.
     mutants.whyNotStanding(m, r('b1'), ctx({ recordAt: () => null })),
+    // Its class's methods moved in a merge: recorded as m1, its test is m2 now.
+    mutants.whyNotStanding(m, r('b1'), ctx({ proofNow: () => 'm2' })),
   ]).toEqual([
     'no verdict recorded', 'recorded survived', 'run at a9, which is not in this history', 'src/a.ts changed since its run',
     'src/__tests__/a.test.ts changed since its run', 'the runner changed since its run', 'its entry changed since its run',
-    'no private record of its run on this machine',
+    'no private record of its run on this machine', 'its proof is m2 now, recorded as m1',
   ]);
+  expect(mutants.whyNotStanding(m, r('b1'), ctx({ proofNow: () => 'm1' }))).toBeNull();
 });
 
 it('a merge keeps the verdict that stands on the merged files, else the later run, and leaves out a mutant neither side ran', () => {

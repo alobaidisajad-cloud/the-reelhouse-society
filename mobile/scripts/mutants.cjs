@@ -597,11 +597,13 @@ const asEntry = (m) => JSON.stringify({ ...m, private: undefined });
  * again. It stands when it is caught; its run's commit is in this history (`inHistory`: a merge keeps a
  * branch's commits, where a rebase writes new ones and every verdict recorded on the old ones is lost);
  * nothing the mutant stands on (pathsOf) and not the runner itself changed from that commit to now
- * (`changedSince`); its entry is the one the registry held then (`entryAt`); and the private record of
- * that very run, which this machine keeps beside every run (P0.54), holds it caught (`recordAt`): a
+ * (`changedSince`); its entry is the one the registry held then (`entryAt`); the proof id it was
+ * recorded by is its test's place among its class's methods now (`proofNow`, where there are classes);
+ * and the private record of that very run, which this machine keeps beside every run (P0.54), holds it
+ * caught (`recordAt`): a
  * verdict written into the results by hand stands on no run, and a machine with no record (CI) runs it.
  */
-const whyNotStanding = (m, r, { inHistory, changedSince, entryAt, recordAt }) => {
+const whyNotStanding = (m, r, { inHistory, changedSince, entryAt, recordAt, proofNow }) => {
   if (!r) return 'no verdict recorded';
   if (r.verdict !== 'caught') return `recorded ${r.verdict}`;
   if (!inHistory(r.commit)) return `run at ${String(r.commit).slice(0, 8)}, which is not in this history`;
@@ -610,6 +612,9 @@ const whyNotStanding = (m, r, { inHistory, changedSince, entryAt, recordAt }) =>
   const moved = changed.filter((c) => standsOn(m, c));
   if (moved.length) return `${moved.join(', ')} changed since its run`;
   if (asEntry(entryAt(r.commit, m.id) ?? null) !== asEntry(m)) return 'its entry changed since its run';
+  // Its class's methods moved (a merge joined both sides'): its recorded proof id is another's now.
+  const proof = proofNow?.(m);
+  if (proof !== undefined && r.proof !== proof) return `its proof is ${proof} now, recorded as ${r.proof}`;
   if (!(recordAt(r.commit) ?? []).some((x) => x.mutant === m.id && x.verdict === 'caught')) return 'no private record of its run on this machine';
   return null;
 };
@@ -624,11 +629,22 @@ const standingContext = (head = 'HEAD', root = ROOT) => {
   const diff = (c) => execFileSync('git', ['diff', '--name-only', c, ...(head ? [head] : [])], { cwd: root, encoding: 'utf8', maxBuffer: 1e9, stdio: ['ignore', 'pipe', 'pipe'] }).split('\n');
   const entries = once((c) => registryAt(c, root));
   const dir = privateDir();
+  // The classes as the working files hold them, the private ones too; undefined where there are none.
+  const classesNow = once(() => {
+    const file = join(root, 'mobile', 'register', 'classes.yaml');
+    if (!existsSync(file)) return undefined;
+    const joined = root === ROOT ? require('./register.cjs').readPrivate() : null;
+    return [...(yaml.parse(readFileSync(file, 'utf8')).classes ?? []), ...(joined?.classes ?? [])];
+  });
   return {
     inHistory: once((c) => (head ? ancestor(c, head, root) : ancestor(c, 'HEAD', root) || ancestor(c, 'MERGE_HEAD', root))),
     changedSince: once((c) => { try { return fromMobile(diff(c), root); } catch { return ['scripts/mutants.cjs']; } }),
     entryAt: (c, id) => entries(c).find((b) => b.id === id),
     recordAt: once((c) => { try { return JSON.parse(readFileSync(join(dir, 'mutants', `${c}.json`), 'utf8')); } catch { return null; } }),
+    proofNow: (m) => {
+      const classes = classesNow('working files');
+      return classes ? (m.source === 'judge' ? 'judge' : proofId(m, classes)) : undefined;
+    },
   };
 };
 
