@@ -290,7 +290,7 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "judge-keyboard-covers",
     "proof": "judge",
-    "commit": "344eda9e011b4ed9164e96aae6660daa56d31370",
+    "commit": "7f64694ed66b9c913e82431166b85966f81c65ed",
     "verdict": "caught"
   },
   {
@@ -2404,14 +2404,14 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-keyboard-panel-unchecked",
     "proof": "p5ae5eb426703",
-    "commit": "344eda9e011b4ed9164e96aae6660daa56d31370",
+    "commit": "7f64694ed66b9c913e82431166b85966f81c65ed",
     "verdict": "caught"
   },
   {
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-keyboard-emoji-not-judged",
     "proof": "p2c0e4542693d",
-    "commit": "344eda9e011b4ed9164e96aae6660daa56d31370",
+    "commit": "7f64694ed66b9c913e82431166b85966f81c65ed",
     "verdict": "caught"
   },
   {
@@ -2474,7 +2474,7 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-field-under-its-press",
     "proof": "p090f2308f909",
-    "commit": "344eda9e011b4ed9164e96aae6660daa56d31370",
+    "commit": "7f64694ed66b9c913e82431166b85966f81c65ed",
     "verdict": "caught"
   },
   {
@@ -4203,7 +4203,7 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-keyboard-named-in-english-only",
     "proof": "p9588d1885156",
-    "commit": "344eda9e011b4ed9164e96aae6660daa56d31370",
+    "commit": "7f64694ed66b9c913e82431166b85966f81c65ed",
     "verdict": "caught"
   },
   {
@@ -8655,21 +8655,21 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-symbols-taken-for-emoji",
     "proof": "pd71a44298a36",
-    "commit": "344eda9e011b4ed9164e96aae6660daa56d31370",
+    "commit": "7f64694ed66b9c913e82431166b85966f81c65ed",
     "verdict": "caught"
   },
   {
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-symbols-after-any-letters",
     "proof": "pbaadf029f420",
-    "commit": "344eda9e011b4ed9164e96aae6660daa56d31370",
+    "commit": "7f64694ed66b9c913e82431166b85966f81c65ed",
     "verdict": "caught"
   },
   {
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-a-taller-panel-refused",
     "proof": "pd9c1c15380d7",
-    "commit": "344eda9e011b4ed9164e96aae6660daa56d31370",
+    "commit": "7f64694ed66b9c913e82431166b85966f81c65ed",
     "verdict": "caught"
   },
   {
@@ -8746,7 +8746,7 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-a-failed-press-silent-on-the-emoji-place",
     "proof": "p4d08b57251b7",
-    "commit": "344eda9e011b4ed9164e96aae6660daa56d31370",
+    "commit": "7f64694ed66b9c913e82431166b85966f81c65ed",
     "verdict": "caught"
   },
   {
@@ -9089,7 +9089,7 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-the-symbols-key-unknown-by-its-id",
     "proof": "pe8c1b48ff92f",
-    "commit": "344eda9e011b4ed9164e96aae6660daa56d31370",
+    "commit": "7f64694ed66b9c913e82431166b85966f81c65ed",
     "verdict": "caught"
   },
   {
@@ -9118,6 +9118,27 @@
     "mutant": "shape-a-mark-left-to-the-next-test",
     "proof": "pf6d2649f312a",
     "commit": "d91d03a00503453c422cfc4afc5c8211d5d5a6fc",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-keyboard-covers-the-field",
+    "mutant": "shape-letters-with-no-emoji-place-demand-emoji",
+    "proof": "p73407ce16cbd",
+    "commit": "7f64694ed66b9c913e82431166b85966f81c65ed",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-keyboard-covers-the-field",
+    "mutant": "shape-the-symbols-key-pressed-by-its-english-name",
+    "proof": "p2c0e4542693d",
+    "commit": "7f64694ed66b9c913e82431166b85966f81c65ed",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-keyboard-covers-the-field",
+    "mutant": "shape-a-symbols-page-silent-on-its-keys",
+    "proof": "p3a8a7c921cdf",
+    "commit": "7f64694ed66b9c913e82431166b85966f81c65ed",
     "verdict": "caught"
   }
 ]
