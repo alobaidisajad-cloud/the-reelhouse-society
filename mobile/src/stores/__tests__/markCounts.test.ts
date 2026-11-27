@@ -9,7 +9,7 @@
  */
 import {
   useMarkCounts, tellMarkCounts, beginTap, settleTap, withdrawTap,
-  selectMarkCount, resetMarkCounts,
+  selectMarkCount,
 } from '../markCounts';
 import { resetAllStores } from '../resetAllStores';
 import { markCount } from '@/src/schemas/feed.schema';
@@ -19,7 +19,6 @@ const shown = (id: string, fallback?: number | null, kind: 'certify' | 'critique
 
 let now = 1_000;
 beforeEach(() => {
-  resetMarkCounts();
   now = 1_000;
   jest.spyOn(Date, 'now').mockImplementation(() => now);
 });

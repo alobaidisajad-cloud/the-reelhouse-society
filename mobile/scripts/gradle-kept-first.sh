@@ -19,18 +19,28 @@
 # the network). Both are a resolution Gradle could not make, and that is what LACKING reads.
 LACKING='offline mode|could not resolve'
 set -u
-# Maven Central is asked through Google's copy of it, offline and online alike: Central answers the
-# runners with 429 (nightly 45894847027's warm-up, eleven minutes on one jar), and the kept packages
-# are held by the repository they were read from, so both runs name the same one.
+# Google's copy of Maven Central is asked first and Central itself second, offline and online alike
+# (maven-central-copy.init.gradle): Central answers the runners with 429 (nightly 45894847027's
+# warm-up, eleven minutes on one jar), and the kept packages are held by the repository they were read
+# from, so both runs name the same ones. Gradle moves to the next repository only past a 404, never past
+# an error, so a copy that answers with an error (COPY_DOWN) is met here: the build runs once more
+# from Central alone.
 COPY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/maven-central-copy.init.gradle"
+COPY_DOWN="Could not (GET|HEAD) 'https://maven-central\.storage-download\.googleapis\.com/"
+PATIENT=(-Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000)
 LOG="$(mktemp)"
 ./gradlew --offline --init-script "$COPY" "$@" 2>&1 | tee "$LOG"
 rc=${PIPESTATUS[0]}
 if [ "$rc" -ne 0 ] && grep -qiE "$LACKING" "$LOG"; then
   echo "(the kept packages lack what the build asks for: it is run again, asking the network)"
   if [ -n "${GITHUB_OUTPUT:-}" ]; then echo "fetched=true" >> "$GITHUB_OUTPUT"; fi
-  ./gradlew --init-script "$COPY" -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=5000 "$@"
-  rc=$?
+  ./gradlew --init-script "$COPY" "${PATIENT[@]}" "$@" 2>&1 | tee "$LOG"
+  rc=${PIPESTATUS[0]}
+  if [ "$rc" -ne 0 ] && grep -qE "$COPY_DOWN" "$LOG"; then
+    echo "(Google's copy of Maven Central answered with an error: it is run again, from Maven Central alone)"
+    ./gradlew "${PATIENT[@]}" "$@"
+    rc=$?
+  fi
 fi
 rm -f "$LOG"
 exit "$rc"

@@ -51,7 +51,6 @@ import LogComments from '@/src/components/log/LogComments';
 // eslint-disable-next-line import/first
 import { StackCan } from '@/src/components/reels/StackCan';
 // eslint-disable-next-line import/first
-import { resetMarkCounts } from '@/src/stores/markCounts';
 
 type Bar = (certify: number | null, critique: number | null, on: boolean) => React.ReactElement;
 
@@ -99,7 +98,7 @@ const hangOf = (r: ReturnType<typeof render>, figure: string) => {
   return n;
 };
 
-beforeEach(() => { resetMarkCounts(); mockFilms._endorsedIndex = {}; });
+beforeEach(() => { mockFilms._endorsedIndex = {}; });
 
 describe.each(Object.entries(BARS))('%s', (_name, bar) => {
   it('hangs each count beside its icon, and leaves the words alone', () => {

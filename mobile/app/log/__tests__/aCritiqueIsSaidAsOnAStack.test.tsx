@@ -13,7 +13,6 @@
 import React, { act } from 'react';
 import { Alert, type AlertButton } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
-import { resetMarkCounts } from '@/src/stores/markCounts';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { clearDraft, readDraft } from '@/src/utils/memberDrafts';
@@ -93,7 +92,6 @@ const MINE = { id: 'c-mine', user_id: ME, username: 'visitor', avatar_url: null,
 const rereadLog = jest.fn();
 
 beforeEach(() => {
-  resetMarkCounts();
   jest.clearAllMocks();
   mockCache = { log: LOG, profile: PROFILE, comments: [MINE], commentTotal: 1, certifyCount: 7 };
   mockQuery = { data: mockCache, isLoading: false, refetch: rereadLog };

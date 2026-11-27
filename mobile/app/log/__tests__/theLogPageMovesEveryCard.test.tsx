@@ -9,7 +9,7 @@
  */
 import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import { resetMarkCounts, selectMarkCount, tellMarkCounts, useMarkCounts } from '@/src/stores/markCounts';
+import { selectMarkCount, tellMarkCounts, useMarkCounts } from '@/src/stores/markCounts';
 
 import LogDetailScreen from '../[id]';
 
@@ -84,7 +84,6 @@ const PROFILE = { id: 'u1', username: 'morpho', role: 'archivist', avatar_url: n
 const shown = (kind: 'certify' | 'critique') => selectMarkCount(useMarkCounts.getState(), kind, LOG_ID);
 
 beforeEach(() => {
-  resetMarkCounts();
   jest.requireActual('@/src/stores/films').useFilmStore.setState({ _endorsedIndex: {}, interactions: [] });
   jest.clearAllMocks();
   // The house's answer, with the member's own certification in it.

@@ -11,7 +11,6 @@
  */
 import { supabaseFake } from '@/test-utils/supabaseFake';
 import { useDispatch } from '../dispatch';
-import { resetMarkCounts } from '../markCounts';
 
 const ME = '33333333-3333-4333-8333-333333333333';
 const AUTHOR = '55555555-5555-4555-8555-555555555555';
@@ -54,7 +53,6 @@ const postsRow = () => mockHouse.rows('dispatch_posts')[0] as Record<string, unk
 beforeEach(() => {
   mockHouse = house();
   mockQueue = [];
-  resetMarkCounts();
   useDispatch.setState({
     filings: [], opened: {}, acted: {}, certifiedIds: new Set(), savedIds: new Set(), myVotes: {}, tallies: {},
     marksKnown: { certified: new Set(), saved: new Set(), voted: new Set() },

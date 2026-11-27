@@ -1,34 +1,54 @@
-// maven-central-copy.init.gradle: every build gradle-kept-first.sh runs asks Maven Central through
-// Google's copy of it (maven-central.storage-download.googleapis.com), never repo.maven.apache.org.
+// maven-central-copy.init.gradle: every build gradle-kept-first.sh runs asks Google's copy of Maven
+// Central first (maven-central.storage-download.googleapis.com), and Central itself second.
 //
 // Maven Central answers GitHub's runners, whose addresses many share, with 429 Too Many Requests, and
 // Gradle answers that by turning the repository off for the rest of the build: nightly 45894847027's
 // one warm-up build met 429 on the Kotlin plugin marker's jar for eleven minutes, eight tries apart, and
 // fetched nothing, so no build of the night started. Google's copy holds the same files for runners to
-// read. The kept packages are held by the repository they were read from, so the offline run and the
-// online one name the same copy (gradle-kept-first.sh passes this script to both).
+// read. Where a build names Central, the copy takes its place, and Central itself is added after every
+// other repository, so a file the copy does not hold yet (404) is still found. Gradle does not move to
+// the next repository on an error, only on a 404: a copy that errors is met by gradle-kept-first.sh,
+// which then builds once more from Central alone. The kept packages are held by the repository they
+// were read from, so the offline run and the online one name the same two (gradle-kept-first.sh passes
+// this script to both).
 def CENTRAL = 'https://repo.maven.apache.org/maven2'
 def COPY = 'https://maven-central.storage-download.googleapis.com/maven2/'
+def ITSELF = 'MavenCentralItself'
 
-def central = { repo ->
+def urlOf = { repo ->
   def url = repo.url
   if (url instanceof org.gradle.api.provider.Provider) url = url.getOrNull()
-  url != null && url.toString().replaceAll('/+$', '') == CENTRAL
+  url == null ? '' : url.toString().replaceAll('/+$', '')
 }
+// Central, as each repository is added, becomes the copy (a URL changed, nothing added mid-callback).
 def toCopy = { RepositoryHandler repos ->
   repos.withType(MavenArtifactRepository).configureEach { repo ->
-    if (central(repo)) repo.url = COPY
+    if (repo.name != ITSELF && urlOf(repo) == CENTRAL) repo.url = COPY
   }
 }
+// And once the repositories are named, before anything is read from them, Central itself goes last.
+def centralLast = { RepositoryHandler repos ->
+  def copied = repos.withType(MavenArtifactRepository).any { urlOf(it) == COPY.replaceAll('/+$', '') }
+  if (copied && repos.findByName(ITSELF) == null) repos.maven { name = ITSELF; url = CENTRAL }
+}
 
-// The settings' own repositories (plugins, and the projects' when the settings name them), and each
-// project's: every place a build is told where Maven Central is, read as each is added.
+// The settings' repositories (plugins, and the projects' where the settings name them).
 gradle.beforeSettings { settings ->
   toCopy(settings.buildscript.repositories)
   toCopy(settings.pluginManagement.repositories)
   toCopy(settings.dependencyResolutionManagement.repositories)
 }
+gradle.settingsEvaluated { settings ->
+  centralLast(settings.pluginManagement.repositories)
+  centralLast(settings.dependencyResolutionManagement.repositories)
+}
+// Each project's: its build script's classpath, read as soon as its buildscript block ends, and its
+// own, read once it is evaluated.
 gradle.allprojects { project ->
   toCopy(project.buildscript.repositories)
   toCopy(project.repositories)
+  project.buildscript.configurations.matching { it.name == 'classpath' }.all { classpath ->
+    classpath.incoming.beforeResolve { centralLast(project.buildscript.repositories) }
+  }
+  project.afterEvaluate { centralLast(project.repositories) }
 }

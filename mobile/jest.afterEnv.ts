@@ -39,6 +39,13 @@ beforeEach(() => {
   // typed, opened the next test's box holding it (nightly 2026-11-18 to -24).
   const phone = G.__mockPhoneStore as Record<string, string> | undefined;
   for (const key of Object.keys(phone ?? {})) if (key.startsWith('kept_') || key.startsWith(DRAFT_PREFIX)) delete phone![key];
+  // And no mark a test made in the marks' ledger (src/stores/markCounts): a tap still in flight is the
+  // member's newest word on its mark, so one test's tap kept the next test's read off it (nightly
+  // 45829548435, seed -2139178644: the interaction slice and the reader; nightly 45894847027, seed
+  // 56285631: the Vault). Each copy of the ledger a file loaded puts its own reset here as it loads
+  // (markCounts.ts): nothing is loaded for a file that never reads it (loading it here moved the
+  // keystore tests' modules), and a file that mocks the ledger keeps its own, as it says.
+  for (const empty of (G.__emptiedBeforeEachTest as (() => void)[] | undefined) ?? []) empty();
 });
 
 /**

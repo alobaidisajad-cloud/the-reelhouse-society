@@ -11981,4 +11981,28 @@ mutants:
       - file: scripts/gradle-kept-first.sh
         find: './gradlew --offline --init-script "$COPY" "$@" 2>&1 | tee "$LOG"'
         replace: './gradlew --offline "$@" 2>&1 | tee "$LOG"'
-    proof: { file: e2e/__tests__/gradleKeptFirst.test.ts, test: "asks Maven Central through Google's copy, offline and online alike, and asks repo.maven.apache.org nothing" }
+    proof: { file: e2e/__tests__/gradleKeptFirst.test.ts, test: "asks Google's copy of Maven Central first and Central itself second, offline and online alike" }
+  - id: shape-central-not-kept-second
+    class: CI-build-reads-a-version-list
+    source: shape
+    edits:
+      - file: scripts/maven-central-copy.init.gradle
+        find: '  if (copied && repos.findByName(ITSELF) == null) repos.maven { name = ITSELF; url = CENTRAL }'
+        replace: '  // Central itself, never added'
+    proof: { file: e2e/__tests__/gradleKeptFirst.test.ts, test: "asks Google's copy of Maven Central first and Central itself second, offline and online alike" }
+  - id: shape-a-copy-down-stops-the-build
+    class: CI-build-reads-a-version-list
+    source: shape
+    edits:
+      - file: scripts/gradle-kept-first.sh
+        find: '  if [ "$rc" -ne 0 ] && grep -qE "$COPY_DOWN" "$LOG"; then'
+        replace: '  if false; then'
+    proof: { file: e2e/__tests__/gradleKeptFirst.test.ts, test: "builds once more from Maven Central alone when Google's copy answers with an error, and only then" }
+  - id: shape-a-mark-left-to-the-next-test
+    class: TEST-order-dependent
+    source: shape
+    edits:
+      - file: jest.afterEnv.ts
+        find: '  for (const empty of (G.__emptiedBeforeEachTest as (() => void)[] | undefined) ?? []) empty();'
+        replace: '  // the ledger left as the last test left it'
+    proof: { file: test-utils/__tests__/aMarkIsNeverLeftToTheNextTest.guard.test.ts, test: "no test sees a mark an earlier test left in flight, in the written order or any seed's" }

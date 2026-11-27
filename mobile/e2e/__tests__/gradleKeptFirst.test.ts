@@ -19,8 +19,9 @@ const named = (call: string) => call.replace(/--init-script (\S+)/, (_all, f: st
   `--init-script ${f.endsWith('/mobile/scripts/maven-central-copy.init.gradle') ? 'COPY' : f}`);
 
 // Each run of the fake takes its next outcome from __T__/outcomes: ok, missing (a library the kept
-// copy lacks, as Gradle says it offline), plugin (a plugin it lacks, as Gradle says that) or broken
-// (the code), and writes its arguments to __T__/calls.
+// copy lacks, as Gradle says it offline), plugin (a plugin it lacks, as Gradle says that), copydown
+// (Google's copy of Maven Central answering with an error) or broken (the code), and writes its
+// arguments to __T__/calls.
 const GRADLEW = `#!/usr/bin/env bash
 echo "$*" >> __T__/calls
 n=$(( $(cat __T__/n 2>/dev/null || echo 0) + 1 )); echo $n > __T__/n
@@ -30,6 +31,8 @@ case "$(sed -n "\${n}p" __T__/outcomes)" in
   plugin) echo "Plugin [id: 'org.gradle.toolchains.foojay-resolver-convention', version: '1.0.0'] was not found in any of the following sources:"
     echo "- Plugin Repositories (could not resolve plugin artifact 'org.gradle.toolchains.foojay-resolver-convention:org.gradle.toolchains.foojay-resolver-convention.gradle.plugin:1.0.0')"
     echo "BUILD FAILED in 24s"; exit 1 ;;
+  copydown) echo "> Could not GET 'https://maven-central.storage-download.googleapis.com/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.8.0/kotlin-stdlib-jdk8-1.8.0.pom'. Received status code 503 from server: Service Unavailable"
+    echo "BUILD FAILED in 2m"; exit 1 ;;
   *) echo "e: file:///app/src/Main.kt:3:1 Unresolved reference: x"; echo "BUILD FAILED"; exit 1 ;;
 esac
 `;
@@ -73,9 +76,10 @@ describe('a Gradle build from the kept packages first', () => {
   });
 
   // Nightly 45894847027: the one warm-up build met Maven Central's 429 on the Kotlin plugin marker's jar
-  // for eleven minutes and fetched nothing. Both runs name the copy: the kept packages are held by the
-  // repository they were read from, so an offline run naming another would find none of them.
-  it('asks Maven Central through Google\'s copy, offline and online alike, and asks repo.maven.apache.org nothing', () => {
+  // for eleven minutes and fetched nothing. Both runs name the copy first and Central second: the kept
+  // packages are held by the repository they were read from, so an offline run naming others would
+  // find none of them.
+  it('asks Google\'s copy of Maven Central first and Central itself second, offline and online alike', () => {
     expect(build(['missing', 'ok']).calls.every((c) => c.startsWith('--offline --init-script COPY ') || c.startsWith('--init-script COPY '))).toBe(true);
     const copy = readFileSync(COPY, 'utf8');
     expect(copy).toContain("def CENTRAL = 'https://repo.maven.apache.org/maven2'");
@@ -85,6 +89,24 @@ describe('a Gradle build from the kept packages first', () => {
       'settings.dependencyResolutionManagement.repositories', 'project.buildscript.repositories', 'project.repositories']) {
       expect(copy).toContain(`toCopy(${at})`);
     }
+    // And Central itself after every other, wherever the copy took its place, before anything is read.
+    expect(copy).toContain('repos.maven { name = ITSELF; url = CENTRAL }');
+    for (const at of ['settings.pluginManagement.repositories', 'settings.dependencyResolutionManagement.repositories',
+      'project.buildscript.repositories', 'project.repositories']) {
+      expect(copy).toContain(`centralLast(${at})`);
+    }
+  });
+
+  // Gradle moves to the next repository past a 404 alone: a copy answering with an error turns it off
+  // and fails the build, Central second or not.
+  it('builds once more from Maven Central alone when Google\'s copy answers with an error, and only then', () => {
+    const r = build(['missing', 'copydown', 'ok']);
+    expect(r).toMatchObject({ status: 0, output: 'fetched=true', calls: [
+      '--offline --init-script COPY assembleRelease --no-daemon', `--init-script COPY ${PATIENT} assembleRelease --no-daemon`,
+      `${PATIENT} assembleRelease --no-daemon`] });
+    expect(r.stdout).toMatch(/Google's copy of Maven Central answered with an error/);
+    expect(build(['missing', 'broken', 'ok'])).toMatchObject({ status: 1, calls: [
+      '--offline --init-script COPY assembleRelease --no-daemon', `--init-script COPY ${PATIENT} assembleRelease --no-daemon`] });
   });
 
   it('runs in bash as stored', () => {

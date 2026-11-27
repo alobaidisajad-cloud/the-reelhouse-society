@@ -11,7 +11,6 @@
 import { supabaseFake } from '@/test-utils/supabaseFake';
 import { useAuthStore } from '@/src/stores/auth';
 import { useVaultStore } from '@/src/stores/vaultStore';
-import { resetMarkCounts } from '@/src/stores/markCounts';
 import { storage } from '@/src/stores/mmkv-storage';
 import { QUEUE_KEY } from '@/src/utils/queueOwnership';
 
@@ -37,7 +36,6 @@ const settled = async () => { for (let i = 0; i < 6; i += 1) await new Promise<v
 beforeEach(() => {
   mockHeld = null;
   storage.delete(QUEUE_KEY);
-  resetMarkCounts();
   useAuthStore.setState({ user: { id: ME, username: 'me' } as never, isAuthenticated: true } as never);
   useVaultStore.getState().clear();
 });

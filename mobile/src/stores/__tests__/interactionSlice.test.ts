@@ -49,10 +49,9 @@ describe('interactionSlice', () => {
         const { InteractionService } = jest.requireMock('../../services/InteractionService');
         InteractionService.addEndorsement.mockReset().mockResolvedValue(undefined);
         InteractionService.removeEndorsement.mockReset().mockResolvedValue(undefined);
-        // A tap the count's tests left in the marks' ledger, or a certification the heart's tests left
-        // in the offline queue, is the member's latest act to a read: the read then keeps its log out
-        // of the index (nightly 45829548435, seed -2139178644). Every test starts with neither.
-        jest.requireActual('../markCounts').resetMarkCounts();
+        // A certification the heart's tests left in the offline queue is the member's latest act to a
+        // read: the read then keeps its log out of the index (nightly 45829548435, seed -2139178644).
+        // Every test starts with none (and with the marks' ledger empty: jest.afterEnv.ts).
         jest.requireActual('../../utils/offlineQueue').clearOfflineQueue('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
         useLogStore.setState({
             logs: [],
@@ -322,11 +321,10 @@ describe('interactionSlice', () => {
 
     describe('the count every bar draws', () => {
         const { InteractionService } = jest.requireMock('../../services/InteractionService');
-        const { resetMarkCounts, tellMarkCounts, useMarkCounts, selectMarkCount } = jest.requireActual('../markCounts');
+        const { tellMarkCounts, useMarkCounts, selectMarkCount } = jest.requireActual('../markCounts');
         const shown = (kind: string, id: string) => selectMarkCount(useMarkCounts.getState(), kind, id);
 
         beforeEach(() => {
-            resetMarkCounts();
             InteractionService.addEndorsement.mockReset().mockResolvedValue(undefined);
             InteractionService.removeEndorsement.mockReset().mockResolvedValue(undefined);
         });
@@ -396,13 +394,11 @@ describe('interactionSlice', () => {
     // ── The heart is the server's answer, post by post (learnEndorsements) ──
 
     describe('the heart', () => {
-        const { resetMarkCounts, beginTap } = jest.requireActual('../markCounts');
+        const { beginTap } = jest.requireActual('../markCounts');
         const { enqueueMutation } = jest.requireActual('../../utils/offlineQueue');
         const learn = (kind: 'log' | 'list', rows: { id: string; certified: boolean | null }[], askedAt = Date.now()) =>
             useLogStore.getState().learnEndorsements(kind, rows, askedAt);
         const hearted = (id: string) => !!useLogStore.getState()._endorsedIndex[id];
-
-        beforeEach(() => resetMarkCounts());
 
         it('fills for a certification older than the sign-in index held', () => {
             // The index knows the newest 500; this is the 501st.

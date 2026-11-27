@@ -2197,3 +2197,5 @@ files of the reading map this one does not.
 | src/features/archive/__tests__/anExportComesBackWhole.test.ts | — |  |
 | src/features/settings/houseArchive.ts | — |  |
 | ../.github/workflows/gradle-warm-up.yml | — |  |
+| test-utils/__tests__/aMarkIsNeverLeftToTheNextTest.guard.test.ts | — |  |
+| test-utils/__tests__/ledgerFixtures/aMarkLeftInFlight.fixture.ts | — |  |

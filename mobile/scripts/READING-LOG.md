@@ -514,3 +514,4 @@ record taken from the reader's own work log, or "—" for a file never read.
 | supabase/migrations/20261126_10_a_filings_marks_are_its_own.sql | — |  |
 | supabase/migrations/20261126_11_a_copy_of_the_house_calls_no_one.sql | — |  |
 | supabase/migrations/20261126_12_leaving_asks_a_fresh_proof.sql | — |  |
+| mobile/scripts/maven-central-copy.init.gradle | — |  |

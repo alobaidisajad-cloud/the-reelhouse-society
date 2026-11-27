@@ -25,7 +25,6 @@
 import React, { act } from 'react';
 import { Share, View, StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
-import { resetMarkCounts } from '@/src/stores/markCounts';
 import { FrameWords } from '@/src/components/feed/ActivityCard';
 
 import LogDetailScreen from '../[id]';
@@ -150,7 +149,6 @@ async function page(log: Record<string, unknown> = {}, extra: Record<string, unk
 }
 
 beforeEach(() => {
-  resetMarkCounts();
   const { useFilmStore } = jest.requireActual('@/src/stores/films');
   useFilmStore.setState({ _endorsedIndex: {}, interactions: [], logs: [], watchlist: [] });
   jest.clearAllMocks();

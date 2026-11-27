@@ -235,3 +235,10 @@ export function resetMarkCounts(): void {
 }
 
 registerStoreReset(() => { resetMarkCounts(); });
+
+// Under jest, this copy of the ledger is emptied before every test (jest.afterEnv.ts): a tap one test
+// left in flight was the next test's newest word on its mark (nightly 45894847027). Never on a phone.
+if (process.env.JEST_WORKER_ID) {
+  const tests = globalThis as { __emptiedBeforeEachTest?: (() => void)[] };
+  (tests.__emptiedBeforeEachTest ??= []).push(resetMarkCounts);
+}
