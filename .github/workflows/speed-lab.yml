@@ -257,7 +257,7 @@ jobs:
           heap-size: 576M
           disable-animations: true
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
-          script: bash mobile/e2e/lab/lab.sh
+          script: node mobile/e2e/on-the-emulator.cjs bash mobile/e2e/lab/lab.sh
 
       - name: The light, judged
         if: ${{ !cancelled() && inputs.mode != 'timed' }}
@@ -602,7 +602,7 @@ jobs:
           heap-size: 576M
           disable-animations: true
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
-          script: LAB_PART=screens LAB_IDS="$RUNNER_TEMP/lab-ids.json" bash mobile/e2e/lab/scrolls.sh
+          script: LAB_PART=screens LAB_IDS="$RUNNER_TEMP/lab-ids.json" node mobile/e2e/on-the-emulator.cjs bash mobile/e2e/lab/scrolls.sh
 
       # Maestro's record holds the member's password as typed: out of every kept file first.
       - name: The member's password, out of the lab's files
@@ -635,7 +635,7 @@ jobs:
           heap-size: 576M
           disable-animations: true
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
-          script: bash mobile/e2e/lab/films.sh
+          script: node mobile/e2e/on-the-emulator.cjs bash mobile/e2e/lab/films.sh
 
       - name: The cache's writes, judged
         if: ${{ !cancelled() }}
@@ -674,7 +674,7 @@ jobs:
           heap-size: 576M
           disable-animations: true
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
-          script: FLOOR_APK="$RUNNER_TEMP/apks/floor.apk" LAB_IDS="$RUNNER_TEMP/lab-ids.json" bash mobile/e2e/lab/feel.sh
+          script: FLOOR_APK="$RUNNER_TEMP/apks/floor.apk" LAB_IDS="$RUNNER_TEMP/lab-ids.json" node mobile/e2e/on-the-emulator.cjs bash mobile/e2e/lab/feel.sh
 
       # Perfetto's trace processor, fetched by its own launcher, which checks what it downloads.
       - name: The feel, judged against the limits
@@ -724,7 +724,7 @@ jobs:
           heap-size: 576M
           disable-animations: true
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
-          script: bash mobile/e2e/lab/explore.sh
+          script: node mobile/e2e/on-the-emulator.cjs bash mobile/e2e/lab/explore.sh
 
       - name: Keep the explorer's run
         if: always()
@@ -747,7 +747,7 @@ jobs:
           heap-size: 576M
           disable-animations: true
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
-          script: LAB_PART=arms LAB_IDS="$RUNNER_TEMP/lab-ids.json" bash mobile/e2e/lab/scrolls.sh
+          script: LAB_PART=arms LAB_IDS="$RUNNER_TEMP/lab-ids.json" node mobile/e2e/on-the-emulator.cjs bash mobile/e2e/lab/scrolls.sh
 
       - name: The scrolls, judged
         if: ${{ !cancelled() }}

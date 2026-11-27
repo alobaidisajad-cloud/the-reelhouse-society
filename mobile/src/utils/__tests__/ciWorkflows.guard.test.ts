@@ -34,6 +34,9 @@
  *    the same place. Without them the CLI cannot bundle it, and the stack stops.
  * 13. A jest run writes its record, its coverage and its log under $RUNNER_TEMP:
  *    the checkout is what every guard of a later jest run reads as source.
+ * 14. An emulator step ends with its script, never held by its emulator: every
+ *    android-emulator-runner script runs through e2e/on-the-emulator.cjs, which
+ *    stops the emulator itself and sees it end (nightly 45951561421).
  *
  * Parsed as YAML, not matched as text: the rules are about the structure.
  */
@@ -298,6 +301,35 @@ it("the emulator has no keyboard of keys and no dock's lid, as a member's phone 
   expect(script).toContain("sed -i '/^hw\\.keyboard/d'");
   expect(script).toMatch(/hw\.keyboard=no\\n/);
   expect(script).toMatch(/hw\.keyboard\.lid=no\\n/);
+});
+
+/**
+ * Each emulator step whose script does not stop its emulator itself, as `file job › step` faults. The
+ * action stops it with one `adb emu kill` and then waits, with no limit, for its processes to let go
+ * of the step's output: an emulator that took the kill and never stopped held the three-button walk to
+ * its 50 minutes after every route was judged (nightly 45951561421). e2e/on-the-emulator.cjs runs the
+ * script, stops the emulator, sees it end (or ends it, written down), and keeps the script's exit code.
+ */
+const ON_THE_EMULATOR = /^(?:[A-Z_]+=\S+ )*node mobile\/e2e\/on-the-emulator\.cjs bash mobile\/e2e\/\S+\.sh$/;
+const unstoppedEmulators = (file: string, wf: Workflow) => Object.entries(wf.jobs ?? {}).flatMap(([job, j]) =>
+  ((j.steps ?? []) as RunStep[]).filter((s) => s.uses && actionOf(s.uses) === 'reactivecircus/android-emulator-runner')
+    .filter((s) => !ON_THE_EMULATOR.test(String((s.with as Record<string, unknown> | undefined)?.script ?? '').trim()))
+    .map((s) => `${file} ${job} › ${s.name ?? s.uses}`));
+
+it('every emulator step stops its emulator itself and sees it end, keeping its script\'s exit code', () => {
+  const steps = workflows.flatMap(({ wf }) => Object.values(wf.jobs ?? {}).flatMap((j) => ((j.steps ?? []) as RunStep[])
+    .filter((s) => s.uses && actionOf(s.uses) === 'reactivecircus/android-emulator-runner')));
+  expect(steps.length).toBeGreaterThanOrEqual(7);
+  expect(workflows.flatMap(({ file, wf }) => unstoppedEmulators(file, wf))).toEqual([]);
+});
+
+it('finds an emulator step left to the action\'s own stop, in a planted workflow', () => {
+  const planted = (script: string) => ({ name: 'p', on: 'push', jobs: { j: { steps: [
+    { name: 'flows', uses: 'reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d', with: { script } },
+  ] } } }) as unknown as Workflow;
+  expect(unstoppedEmulators('p.yml', planted('bash mobile/e2e/run-flows.sh'))).toEqual(['p.yml j › flows']);
+  expect(unstoppedEmulators('p.yml', planted('bash mobile/e2e/run-flows.sh; node mobile/e2e/on-the-emulator.cjs true'))).toEqual(['p.yml j › flows']);
+  expect(unstoppedEmulators('p.yml', planted('LAB_PART=arms node mobile/e2e/on-the-emulator.cjs bash mobile/e2e/lab/scrolls.sh'))).toEqual([]);
 });
 
 /** A hosted runner's home: os.homedir() there, the one place setup-java writes its paths from. */

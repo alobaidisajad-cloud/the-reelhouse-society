@@ -85,7 +85,7 @@ describe("the judge of the cache's writes", () => {
 describe('the speed lab', () => {
   const yml = readFileSync(WORKFLOW, 'utf8');
   it('opens the thirty films on an emulator, and fails on the judge\'s word', () => {
-    expect(yml).toMatch(/script: bash mobile\/e2e\/lab\/films\.sh/);
+    expect(yml).toMatch(/script: node mobile\/e2e\/on-the-emulator\.cjs bash mobile\/e2e\/lab\/films\.sh/);
     const judge = /- name: The cache's writes, judged[\s\S]*?exit \$rc/.exec(yml)?.[0] ?? '';
     expect(judge).toMatch(/node e2e\/lab\/films\.mjs judge "\$F"/);
     expect(judge).toMatch(/rc=\$\?/);

@@ -16,11 +16,14 @@ import { heardFromPlayer, TrailerModal, UNREACHED_AFTER_MS } from '../TrailerMod
 
 const mockSeen: Record<string, any>[] = [];
 const mockInjected: string[] = [];
+/** Each page the box opened (a WebView mounted). */
+const mockPages: number[] = [];
 jest.mock('react-native-webview', () => {
   const React = require('react');
   return {
     WebView: React.forwardRef((props: Record<string, any>, ref: React.Ref<unknown>) => {
       React.useImperativeHandle(ref, () => ({ injectJavaScript: (js: string) => { mockInjected.push(js); } }));
+      React.useEffect(() => { mockPages.push(mockPages.length + 1); }, []);
       mockSeen.push(props);
       return null;
     }),
@@ -89,22 +92,22 @@ function runPage(online: boolean) {
 describe('the player\'s page', () => {
   it('offline, it says at once that the player cannot be reached', () => {
     const page = runPage(false);
-    expect(page.posted).toEqual([JSON.stringify({ event: 'unreached' })]);
+    expect(page.posted).toEqual([JSON.stringify({ event: 'watching' }), JSON.stringify({ event: 'unreached' })]);
   });
 
   it('online, a player that never speaks is said unreached at its time, and not before', () => {
     const page = runPage(true);
     page.pass(UNREACHED_AFTER_MS - 1);
-    expect(page.posted).toEqual([]);
+    expect(page.posted).toEqual([JSON.stringify({ event: 'watching' })]);
     page.pass(1);
-    expect(page.posted).toEqual([JSON.stringify({ event: 'unreached' })]);
+    expect(page.posted).toEqual([JSON.stringify({ event: 'watching' }), JSON.stringify({ event: 'unreached' })]);
   });
 
   it('a player that arrives in time is never said unreached', () => {
     const page = runPage(true);
     page.playerSays('onReady');
     page.pass(UNREACHED_AFTER_MS * 2);
-    expect(page.posted.map((m) => JSON.parse(m).event)).toEqual(['onReady']);
+    expect(page.posted.map((m) => JSON.parse(m).event)).toEqual(['watching', 'onReady']);
   });
 
   it('asked again, it loads the player once more, says so, and watches for it again', () => {
@@ -114,14 +117,14 @@ describe('the player\'s page', () => {
     expect(page.player.loads).toBe(1);
     expect(page.player.src).toBe('embed');
     page.pass(UNREACHED_AFTER_MS);
-    expect(page.posted.map((m) => JSON.parse(m).event)).toEqual(['unreached', 'asking', 'unreached']);
+    expect(page.posted.map((m) => JSON.parse(m).event)).toEqual(['watching', 'unreached', 'asking', 'watching', 'unreached']);
   });
 
   it('the connection back, a player that never arrived is asked for again by itself', () => {
     const page = runPage(false);
     page.phoneSays('online');
     expect(page.player.loads).toBe(1);
-    expect(page.posted.map((m) => JSON.parse(m).event)).toEqual(['unreached', 'asking']);
+    expect(page.posted.map((m) => JSON.parse(m).event)).toEqual(['watching', 'unreached', 'asking', 'watching']);
   });
 
   it('the connection back, a player already playing is left alone', () => {
@@ -189,6 +192,55 @@ describe('the box, when the player cannot be reached', () => {
     expect(r.getByTestId('trailer-ready')).toBeTruthy();
     await said({ event: 'unreached' });
     expect(r.getByTestId('trailer-ready')).toBeTruthy();
+  });
+
+  describe('a page that never speaks (nightly 45951561421: 20 s of a box that said nothing)', () => {
+    beforeEach(() => { jest.useFakeTimers(); });
+    afterEach(() => { jest.useRealTimers(); });
+    const pass = (ms: number) => act(async () => { jest.advanceTimersByTime(ms); });
+    const fresh = () => { mockSeen.length = 0; mockInjected.length = 0; mockPages.length = 0; };
+
+    it('is said unreached by the box at the page\'s own time, and TRY AGAIN opens a fresh page', async () => {
+      fresh();
+      const r = render(<TrailerModal visible videoId={KEY} label="Official Trailer" onClose={jest.fn()} />);
+      await pass(UNREACHED_AFTER_MS - 1);
+      expect(r.queryByTestId('trailer-unreached')).toBeNull();
+      await pass(1);
+      expect(r.getByText('THE FOOTAGE COULD NOT BE REACHED.')).toBeTruthy();
+      expect(r.getByTestId('trailer-unreached')).toBeTruthy();
+      await fireEvent.press(r.getByLabelText('Try again: play the footage'));
+      expect(mockPages).toEqual([1, 2]);
+      expect(mockInjected).toEqual([]);
+      expect(r.queryByText('THE FOOTAGE COULD NOT BE REACHED.')).toBeNull();
+      // The fresh page is watched as the first was.
+      await pass(UNREACHED_AFTER_MS);
+      expect(r.getByTestId('trailer-unreached')).toBeTruthy();
+    });
+
+    it('leaves the watch to a page that said it is watching, and a page late to say so clears the box\'s word', async () => {
+      fresh();
+      const r = render(<TrailerModal visible videoId={KEY} label="Official Trailer" onClose={jest.fn()} />);
+      await said({ event: 'watching' });
+      await pass(UNREACHED_AFTER_MS * 2);
+      expect(r.queryByTestId('trailer-unreached')).toBeNull();
+      mockSeen.length = 0;
+      const late = render(<TrailerModal visible videoId={KEY} label="Official Trailer" onClose={jest.fn()} />);
+      await pass(UNREACHED_AFTER_MS);
+      expect(late.getByTestId('trailer-unreached')).toBeTruthy();
+      await said({ event: 'watching' });
+      expect(late.queryByTestId('trailer-unreached')).toBeNull();
+    });
+
+    it('a page whose browser is gone is said unreached, over a player that was ready, and TRY AGAIN opens a fresh page', async () => {
+      fresh();
+      const r = render(<TrailerModal visible videoId={KEY} label="Official Trailer" onClose={jest.fn()} />);
+      await said({ event: 'onReady', info: null });
+      await act(async () => { latest().onRenderProcessGone({ nativeEvent: { didCrash: false } }); });
+      expect(r.getByTestId('trailer-unreached')).toBeTruthy();
+      await fireEvent.press(r.getByLabelText('Try again: play the footage'));
+      expect(mockPages).toEqual([1, 2]);
+      expect(latest().onContentProcessDidTerminate).toBe(latest().onRenderProcessGone);
+    });
   });
 
   // Left on screen: the captures measure the word and both ways on in the box, at every text size.

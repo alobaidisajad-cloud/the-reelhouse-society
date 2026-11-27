@@ -12030,3 +12030,51 @@ mutants:
         find: "  const symbolsKeys = shows === 'symbols' ? namedKeysOf(tree) : [];"
         replace: "  const symbolsKeys = [];"
     proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: "says a symbols page's named keys by their ids, so the key that opens its emoji panel is known by what it is" }
+  - id: shape-the-box-keeps-no-watch
+    class: UI-a-player-that-never-arrived-said-nothing
+    source: shape
+    edits:
+      - file: src/components/film/TrailerModal.tsx
+        find: "            setSaid((was) => was ?? 'unreached');\n"
+        replace: ""
+    proof: { file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "is said unreached by the box at the page's own time, and TRY AGAIN opens a fresh page" }
+  - id: shape-a-silent-page-asked-again
+    class: UI-a-player-that-never-arrived-said-nothing
+    source: shape
+    edits:
+      - file: src/components/film/TrailerModal.tsx
+        find: "                                        else setPage((n) => n + 1);"
+        replace: "                                        else webviewRef.current?.injectJavaScript(ASK_AGAIN_JS);"
+    proof: { file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "is said unreached by the box at the page's own time, and TRY AGAIN opens a fresh page" }
+  - id: shape-a-gone-page-left-unsaid
+    class: UI-a-player-that-never-arrived-said-nothing
+    source: shape
+    edits:
+      - file: src/components/film/TrailerModal.tsx
+        find: "                        onRenderProcessGone={pageGone}\n"
+        replace: ""
+    proof: { file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "a page whose browser is gone is said unreached, over a player that was ready, and TRY AGAIN opens a fresh page" }
+  - id: shape-an-emulator-step-left-to-the-action
+    class: CI-a-step-held-by-an-emulator-that-never-stopped
+    source: shape
+    edits:
+      - file: ../.github/workflows/e2e.yml
+        find: "          script: node mobile/e2e/on-the-emulator.cjs bash mobile/e2e/run-flows.sh"
+        replace: "          script: bash mobile/e2e/run-flows.sh"
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every emulator step stops its emulator itself and sees it end, keeping its script's exit code" }
+  - id: shape-a-stuck-emulator-left-running
+    class: CI-a-step-held-by-an-emulator-that-never-stopped
+    source: shape
+    edits:
+      - file: e2e/on-the-emulator.cjs
+        find: "  io.signal(left, 'SIGTERM');\n"
+        replace: ""
+    proof: { file: e2e/__tests__/onTheEmulator.test.ts, test: "writes down one that took the ask and never stopped, raises it as a warning, and ends it" }
+  - id: shape-the-step-ends-as-the-emulator-did
+    class: CI-a-step-held-by-an-emulator-that-never-stopped
+    source: shape
+    edits:
+      - file: e2e/on-the-emulator.cjs
+        find: "  process.exit(status);"
+        replace: "  process.exit(stopTheEmulator(runnerIo(process.env)).stopped === 'never' ? 1 : 0);"
+    proof: { file: e2e/__tests__/onTheEmulator.test.ts, test: "ends with its script's own exit code, the script's words passed through" }

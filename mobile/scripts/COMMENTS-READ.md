@@ -2199,3 +2199,5 @@ files of the reading map this one does not.
 | ../.github/workflows/gradle-warm-up.yml | — |  |
 | test-utils/__tests__/aMarkIsNeverLeftToTheNextTest.guard.test.ts | — |  |
 | test-utils/__tests__/ledgerFixtures/aMarkLeftInFlight.fixture.ts | — |  |
+| e2e/__tests__/onTheEmulator.test.ts | — |  |
+| e2e/on-the-emulator.cjs | — |  |

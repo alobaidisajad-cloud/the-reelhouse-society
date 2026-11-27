@@ -823,7 +823,10 @@ jobs:
           # keyboard drew a 96px bar, then nothing (nightly 42800672252). Written after the AVD is made,
           # before it starts.
           pre-emulator-launch-script: f="$ANDROID_AVD_HOME/test.avd/config.ini"; sed -i '/^hw\.keyboard/d' "$f" && printf 'hw.keyboard=no\nhw.keyboard.lid=no\n' >> "$f" && grep '^hw\.keyboard' "$f"
-          script: bash mobile/e2e/run-flows.sh
+          # Through on-the-emulator.cjs: the action's own stop is one `adb emu kill` and a wait with no
+          # limit, and an emulator that took it and never stopped held this step to its 50 minutes after
+          # the walk was judged (nightly 45951561421). It stops the emulator itself and sees it end.
+          script: node mobile/e2e/on-the-emulator.cjs bash mobile/e2e/run-flows.sh
 
       # Only the flows this shard ran (run-flows.sh's flows-run.txt).
       - name: What the flows did, found in the database

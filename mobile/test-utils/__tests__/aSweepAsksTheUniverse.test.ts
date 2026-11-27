@@ -28,6 +28,7 @@ const MAY_LIST: Record<string, string> = {
   'scripts/functions-check.mjs': "a function's whole folder is what a deploy bundles, and a download is a folder of its own",
   'mockups/tools/drawn.cjs': 'the drawn pages a run of the mockups wrote',
   'mockups/tools/harness.cjs': 'the drawn pages a run of the mockups wrote',
+  'e2e/on-the-emulator.cjs': "the runner's running processes (/proc), for the emulator's own; it lists no folder of the repo",
   'e2e/shard-verdict.mjs': 'the flows folder its workflow names, as Maestro reads it: the files directly in it',
   'e2e/db/verify-writes.mjs': 'the flows folder its workflow names, as Maestro reads it: the files directly in it',
   'src/utils/__tests__/everyCheckRuns.guard.test.ts': 'a workflow GitHub never reads can sit in any folder: git’s list of every file in the repo, outside any universe',

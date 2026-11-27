@@ -30,6 +30,11 @@ export const PLAYER_ORIGIN = 'https://www.youtube-nocookie.com';
 // the phone is offline, or when the player has not spoken in UNREACHED_AFTER_MS ('unreached').
 // askAgain ('asking') loads the player once more and watches again: on TRY AGAIN, and by itself
 // when the connection comes back.
+// The page says 'watching' each time its watch begins. Until that first word, the box keeps the same
+// watch itself (TrailerModal's own clock): a page that never ran, could not speak, or whose browser
+// died says nothing, and a sealed run's trailer waited 20 s on a box that said nothing at all (nightly
+// 45951561421, the 16 KB phone). So silence from the page is said unreached too, and its TRY AGAIN
+// opens a fresh page rather than asking a page that never answered.
 export const UNREACHED_AFTER_MS = 8000;
 const buildEmbedHtml = (key: string) => `<!DOCTYPE html>
 <html>
@@ -57,6 +62,7 @@ const buildEmbedHtml = (key: string) => `<!DOCTYPE html>
   function watch() {
     heard = false;
     clearTimeout(watchdog);
+    if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'watching' }));
     if (navigator.onLine === false) { unreached(); return; }
     watchdog = setTimeout(unreached, ${UNREACHED_AFTER_MS});
   }
@@ -113,7 +119,7 @@ export function playerMayLoad({ url, isTopFrame }: { url: string; isTopFrame?: b
  * (153: the page's origin refused; 100: no such video; 101 and 150: not to be played here), or,
  * from the page itself, that the player never arrived (unreached). Anything else is nothing.
  */
-export function heardFromPlayer(data: string): { said: 'ready' } | { said: 'refused'; code: number | null } | { said: 'unreached' } | { said: 'asking' } | null {
+export function heardFromPlayer(data: string): { said: 'ready' } | { said: 'refused'; code: number | null } | { said: 'unreached' } | { said: 'asking' } | { said: 'watching' } | null {
   let m: { event?: unknown; info?: unknown };
   try { m = JSON.parse(data); } catch { return null; }
   if (m?.event === 'onReady') return { said: 'ready' };
@@ -121,6 +127,8 @@ export function heardFromPlayer(data: string): { said: 'ready' } | { said: 'refu
   if (m?.event === 'unreached') return { said: 'unreached' };
   // The page asking for the player again (TRY AGAIN, or the connection back).
   if (m?.event === 'asking') return { said: 'asking' };
+  // The page's own watch begun: it is up, and can speak.
+  if (m?.event === 'watching') return { said: 'watching' };
   return null;
 }
 
@@ -182,6 +190,28 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
         }
     }
 
+    // The page in the box: a fresh one (a new key) when TRY AGAIN follows a page that never spoke.
+    const [page, setPage] = useState(0);
+    // Whether this page has said anything: until it has, the box keeps the watch (UNREACHED_AFTER_MS).
+    const spoke = useRef(false);
+    useEffect(() => {
+        if (!visible || !key) return;
+        spoke.current = false;
+        e2eTrace('trailer.open', { page });
+        const silence = setTimeout(() => {
+            if (spoke.current) return;
+            e2eTrace('trailer.unreached', { by: 'box' });
+            setSaid((was) => was ?? 'unreached');
+        }, UNREACHED_AFTER_MS);
+        return () => clearTimeout(silence);
+    }, [visible, key, page]);
+    // The page's browser gone (Android's renderer, iOS's content process): it can say nothing more.
+    const pageGone = () => {
+        spoke.current = false;
+        e2eTrace('trailer.gone');
+        setSaid('unreached');
+    };
+
     useEffect(() => {
         const wv = webviewRef.current;
         let timer: ReturnType<typeof setTimeout>;
@@ -215,6 +245,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
                         />
                     </View>
                     <WebView
+                        key={page}
                         ref={webviewRef}
                         source={{ html: buildEmbedHtml(key), baseUrl: PLAYER_ORIGIN }}
                         style={s.webview}
@@ -226,6 +257,13 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
                         onMessage={(e) => {
                             const heard = heardFromPlayer(e.nativeEvent.data);
                             if (!heard) return;
+                            spoke.current = true;
+                            if (heard.said === 'watching') {
+                                // The page is up and keeps the watch now: the box's word that nothing came is cleared while it does.
+                                setSaid((was) => (was === 'unreached' ? null : was));
+                                e2eTrace('trailer.watching');
+                                return;
+                            }
                             if (heard.said === 'asking') {
                                 // Asked for again (the connection back): the word that it never came is cleared while it comes.
                                 setSaid((was) => (was === 'unreached' ? null : was));
@@ -237,6 +275,9 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
                             if (heard.said === 'refused') setRefusal(heard.code ?? 0);
                             e2eTrace(`trailer.${heard.said}`, heard.said === 'refused' ? { code: heard.code } : undefined);
                         }}
+                        onLoadEnd={() => e2eTrace('trailer.page', { page })}
+                        onRenderProcessGone={pageGone}
+                        onContentProcessDidTerminate={pageGone}
                         // Nothing YouTube writes (cookies, storage, cache) outlives one play.
                         incognito
                         thirdPartyCookiesEnabled={false}
@@ -269,7 +310,9 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
                                     hitSlop={TRY_AGAIN_ABOVE_A_WAY_OUT}
                                     onPress={() => {
                                         setSaid(null);
-                                        webviewRef.current?.injectJavaScript(ASK_AGAIN_JS);
+                                        // A page that has spoken asks for its player again; one that never did is opened afresh.
+                                        if (spoke.current) webviewRef.current?.injectJavaScript(ASK_AGAIN_JS);
+                                        else setPage((n) => n + 1);
                                     }}
                                 />
                                 <WatchOnYouTube youtubeId={key} belowAnAct />
