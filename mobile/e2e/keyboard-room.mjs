@@ -64,13 +64,15 @@ export function panelOf(tree) {
 
 /**
  * Whether the letters keep no emoji key, their emoji key's place given to the address key (".com",
- * Gboard's key_pos_switch_to_smiley named "Dot com"): an address field's. The tablet's Gboard draws
+ * Gboard's key_pos_switch_to_smiley named "Dot com") or to no key at all: an address field's. The tablet's Gboard draws
  * its GIF and sticker keys off there too, so its emoji panel cannot be reached (nightly 45676715897's
  * screen: the recovery card's letters, ?123 and the header's GIF tapped, the letters stayed).
  */
 export function lettersKeepNoEmoji(tree) {
   const slot = emojiPlaceOf(tree);
-  return slot !== null && ADDRESS_KEY.includes(slot);
+  // And letters with no key in that place at all: the Arabic phone's recovery card (nightly
+  // 45916711026: "the letters had no key in the emoji place").
+  return slot === null || ADDRESS_KEY.includes(slot);
 }
 
 /** The name of the key in the letters' emoji place (key_pos_switch_to_smiley), or null where there is none. */
@@ -89,9 +91,11 @@ export function emojiPlaceOf(tree) {
 /**
  * The judge's rule, per field: the tallest panel a member can open on it is the one measured. The
  * emoji panel stands tallest, so it is demanded on every field whose letters keep their emoji key,
- * and on every field whose letters were not read. Only letters seen to give that key's place to the
- * address key (lettersKeepNoEmoji) reach no emoji panel: there the tallest panel left is the symbols
- * page, and judging it measures what the member can open, never less.
+ * and on every field whose letters were not read. Only letters seen to keep no emoji key, its place
+ * the address key's or no key's (lettersKeepNoEmoji), reach no emoji panel from the letters: there
+ * the flow presses the GIF key and the symbols' emoji key a member would press, and an emoji panel
+ * opened by either passes; else the tallest panel left is the symbols page, and judging it measures
+ * what the member can open, never less.
  */
 export function tallestReachablePanel(letters) {
   return letters !== null && lettersKeepNoEmoji(letters) ? 'symbols' : 'emoji';
@@ -113,6 +117,25 @@ export function symbolsKeyIdOf(tree) {
   };
   walk(tree);
   return id;
+}
+
+/**
+ * The keyboard's keys that carry both a resource id and a name of more than one character, as
+ * `id "name"` (the id without its package): a symbols page says so which key opens its emoji panel,
+ * in the phone's language, so a flow can press it by what it is.
+ */
+export function namedKeysOf(tree) {
+  const keys = [];
+  const walk = (node) => {
+    if (!node || typeof node !== 'object') return;
+    const a = node.attributes ?? {};
+    const id = /:id\/(?<id>key_pos_\w+)$/.exec(a['resource-id'] ?? '')?.groups?.id;
+    const name = (a.accessibilityText ?? '').replace(/[\u200e\u200f\u061c\u202a-\u202e\u2066-\u2069]/g, '').trim();
+    if (id && [...name].length > 1) keys.push(`${id} "${name}"`);
+    for (const c of node.children ?? []) walk(c);
+  };
+  walk(tree);
+  return keys;
 }
 
 /** Every resource id on the screen. */
@@ -265,11 +288,14 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.arg
   // The letters' look says the ?123 key's id, or that it carries none, so a flow can press it by
   // what it is rather than by its English name.
   const symbolsId = want === 'letters' && shows === 'letters' ? symbolsKeyIdOf(tree) : null;
+  // And a symbols page says its named keys, so the key that opens its emoji panel is known by its id.
+  const symbolsKeys = shows === 'symbols' ? namedKeysOf(tree) : [];
   console.log(`the keyboard shows ${said(shows)}${height == null ? ', and no window of its own' : `, ${height}px tall`}`
-    + (ok ? (shows === want ? '' : ' (this field\'s letters keep no emoji key, its place the address key: its symbols are the tallest panel a member can open on it)')
+    + (ok ? (shows === want ? '' : ' (this field\'s letters keep no emoji key: its symbols are the tallest panel a member can open on it)')
       : ` (it should show ${said(want)}${noEmoji ? ' or, this field\'s letters keeping no emoji key, its symbols' : ''})`)
     + (asked ? (place !== null ? `; the letters' emoji place held "${place}"` : '; the letters had no key in the emoji place') : '')
     + (symbolsId === null ? '' : symbolsId ? `; its ?123 key's id: ${symbolsId}` : '; its ?123 key carries no id')
+    + (symbolsKeys.length ? `; its keys: ${symbolsKeys.join(' | ')}` : '')
     + (seen.length ? `; the names on the screen: ${seen.join(' | ')}` : ''));
   process.exit(ok && height != null ? 0 : 1);
 } else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {

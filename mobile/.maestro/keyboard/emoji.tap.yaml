@@ -38,12 +38,17 @@ appId: com.reelhouse.society
 # 2026-11-13): its symbols may keep the emoji key, so they are opened and
 # that key pressed. Symbols with no emoji key stay open: they are the tallest
 # panel a member can open only where the letters keep no emoji key
-# (keyboard-room.mjs, tallestReachablePanel); anywhere else they fail.
+# (keyboard-room.mjs, tallestReachablePanel); anywhere else they fail. The ?123 key is
+# known by its id, key_pos_switch_to_symbol in every language (nightly 45916711026's
+# letters, on the Arabic phone too): by its name it was pressed on English phones alone,
+# and the Arabic phone's recovery card kept its letters.
 - runFlow:
     when:
-      visible: "Symbol keyboard"
+      visible:
+        id: ".*key_pos_switch_to_symbol"
     commands:
-      - tapOn: "Symbol keyboard"
+      - tapOn:
+          id: ".*key_pos_switch_to_symbol"
       - waitForAnimationToEnd:
           timeout: 3000
       - runFlow:

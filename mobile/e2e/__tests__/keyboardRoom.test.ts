@@ -266,7 +266,24 @@ describe('the keyboard’s panel, and its height', () => {
 
     it('is the tallest panel a member can open after letters whose emoji key is the address key', () => {
       expect(panelAfter(letters('Dot com'))).toEqual({ status: 0,
-        out: "the keyboard shows its symbols, 1005px tall (this field's letters keep no emoji key, its place the address key: its symbols are the tallest panel a member can open on it)" });
+        out: "the keyboard shows its symbols, 1005px tall (this field's letters keep no emoji key: its symbols are the tallest panel a member can open on it)" });
+    });
+
+    // The Arabic phone's recovery card: letters with no key in the emoji place at all, its GIF key
+    // drawn off, and the ?123 key pressed by its id (nightly 45916711026).
+    it('is the tallest panel a member can open after letters with no key in the emoji place', () => {
+      const arabic = { attributes: {}, children: [{ attributes: { accessibilityText: 'لوحة مفاتيح الرموز', 'resource-id': 'com.google.android.inputmethod.latin:id/key_pos_switch_to_symbol' } }] };
+      expect(panelAfter(arabic)).toEqual({ status: 0,
+        out: "the keyboard shows its symbols, 1005px tall (this field's letters keep no emoji key: its symbols are the tallest panel a member can open on it)" });
+      expect(panelAfter(arabic, keys(false)).status).toBe(0);
+    });
+
+    it('says a symbols page\'s named keys by their ids, so the key that opens its emoji panel is known by what it is', () => {
+      // A stand-in id: the judge prints what Gboard gives, and none is assumed.
+      const named = { attributes: {}, children: [...symbols.children,
+        { attributes: { accessibilityText: 'a key', 'resource-id': 'com.google.android.inputmethod.latin:id/key_pos_a_stand_in' } }] };
+      expect(panelAfter(letters('Dot com'), named).out).toMatch(/; its keys: key_pos_a_stand_in "a key"$/);
+      expect(panelAfter(letters('Dot com')).out).not.toMatch(/its keys/);
     });
 
     it('passes an emoji panel that opened there all the same: taller than the symbols', () => {
@@ -371,6 +388,9 @@ describe('what the runner measures exists', () => {
     expect(measure).toContain('keyboard-room.mjs --apart "$name, $panel" "${needs[0]}" "${needs[1]}" "$at.json" "$at.xml" >> "$OUT/keyboard-room.txt" || bad=1');
     const emoji = readFileSync(join(__dirname, '..', '..', '.maestro', 'keyboard', 'emoji.tap.yaml'), 'utf8');
     expect(emoji).toMatch(/tapOn: "Emoji button"/);
+    // The ?123 key by its id, in every language: by its English name the Arabic phone never pressed it.
+    expect(emoji).toMatch(/tapOn:\s+id: "\.\*key_pos_switch_to_symbol"/);
+    expect(emoji).not.toMatch(/"Symbol keyboard"/);
     expect(emoji).not.toMatch(/launchApp|hideKeyboard|back/i);
   });
 

@@ -12006,3 +12006,27 @@ mutants:
         find: '  for (const empty of (G.__emptiedBeforeEachTest as (() => void)[] | undefined) ?? []) empty();'
         replace: '  // the ledger left as the last test left it'
     proof: { file: test-utils/__tests__/aMarkIsNeverLeftToTheNextTest.guard.test.ts, test: "no test sees a mark an earlier test left in flight, in the written order or any seed's" }
+  - id: shape-letters-with-no-emoji-place-demand-emoji
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/keyboard-room.mjs
+        find: '  return slot === null || ADDRESS_KEY.includes(slot);'
+        replace: '  return slot !== null && ADDRESS_KEY.includes(slot);'
+    proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: "is the tallest panel a member can open after letters with no key in the emoji place" }
+  - id: shape-the-symbols-key-pressed-by-its-english-name
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: .maestro/keyboard/emoji.tap.yaml
+        find: "      - tapOn:\n          id: \".*key_pos_switch_to_symbol\""
+        replace: "      - tapOn: \"Symbol keyboard\""
+    proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: "every probe is judged on the letters, then again after the emoji key, with the panel checked each time" }
+  - id: shape-a-symbols-page-silent-on-its-keys
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/keyboard-room.mjs
+        find: "  const symbolsKeys = shows === 'symbols' ? namedKeysOf(tree) : [];"
+        replace: "  const symbolsKeys = [];"
+    proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: "says a symbols page's named keys by their ids, so the key that opens its emoji panel is known by what it is" }
